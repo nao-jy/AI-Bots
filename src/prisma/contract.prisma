@@ -1,21 +1,106 @@
 // use prisma-8
 
 model User {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique
-  username  String?
-  name      String?
-  posts     Post[]
-  createdAt TimestamptzString @default(now())
-  updatedAt temporal.updatedAtString()
+  id           Int         @id @default(autoincrement())
+  email        String      @unique
+  passwordHash String
+  username     String?     @unique
+  name         String?
+  chatbots     Chatbot[]
+  mcpServers   McpServer[]
+  sessions     Session[]
+  createdAt    TimestamptzString @default(now())
+  updatedAt    temporal.updatedAtString()
 }
 
-model Post {
+model Session {
   id        Int      @id @default(autoincrement())
-  title     String
-  content   String?
-  author    User     @relation(fields: [authorId], references: [id])
-  authorId  Int
+  tokenHash String   @unique
+  expiresAt TimestamptzString
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    Int
   createdAt TimestamptzString @default(now())
-  updatedAt temporal.updatedAtString()
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model Chatbot {
+  id          Int                @id @default(autoincrement())
+  name        String
+  description String?
+  isEnabled   Boolean            @default(true)
+  owner       User               @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  ownerId     Int
+  agent       AgentDefinition    @relation(fields: [agentId], references: [id])
+  agentId     Int                @unique
+  adapters    ChatAdapter[]
+  createdAt   TimestamptzString  @default(now())
+  updatedAt   temporal.updatedAtString()
+
+  @@index([ownerId])
+}
+
+model ChatAdapter {
+  id          Int               @id @default(autoincrement())
+  name        String
+  // Chat SDK adapter/provider identifier (for example: slack, discord, or teams).
+  platform    String
+  isEnabled   Boolean           @default(true)
+  // Keep credentials encrypted by the application before storing them here.
+  config      Jsonb?
+  chatbot     Chatbot           @relation(fields: [chatbotId], references: [id], onDelete: Cascade)
+  chatbotId   Int
+  createdAt   TimestamptzString @default(now())
+  updatedAt   temporal.updatedAtString()
+
+  @@index([chatbotId])
+  @@index([platform])
+}
+
+model AgentDefinition {
+  id           Int                 @id @default(autoincrement())
+  name         String
+  provider     String
+  model        String
+  systemPrompt String?
+  temperature  Float?
+  maxSteps     Int?
+  // Provider-specific AI SDK options, excluding secrets.
+  options      Jsonb?
+  chatbot      Chatbot?
+  mcpServers   AgentMcpServer[]
+  createdAt    TimestamptzString   @default(now())
+  updatedAt    temporal.updatedAtString()
+}
+
+model McpServer {
+  id          Int               @id @default(autoincrement())
+  name        String
+  description String?
+  // stdio, sse, streamable-http, or another transport supported by the runtime.
+  transport   String
+  endpoint    String?
+  // Store encrypted credentials in application-managed form; never plaintext secrets.
+  config      Jsonb?
+  owner       User              @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  ownerId     Int
+  agents      AgentMcpServer[]
+  createdAt   TimestamptzString @default(now())
+  updatedAt   temporal.updatedAtString()
+
+  @@index([ownerId])
+}
+
+model AgentMcpServer {
+  agent       AgentDefinition @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  agentId     Int
+  mcpServer   McpServer       @relation(fields: [mcpServerId], references: [id], onDelete: Cascade)
+  mcpServerId Int
+  // Per-agent tool selection and overrides, excluding secrets.
+  config      Jsonb?
+  createdAt   TimestamptzString @default(now())
+
+  @@id([agentId, mcpServerId])
+  @@index([mcpServerId])
 }
