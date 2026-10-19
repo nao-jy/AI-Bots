@@ -4,11 +4,11 @@ import {
   type EntityPageDefinition,
 } from "../components/entity-page-view";
 import {
-  createAdapter,
   deleteAdapter,
   listAdapters,
-  updateAdapter,
-} from "../.server/mock-entities";
+  saveAdapter,
+} from "../.server/entities";
+import { requireUser } from "../.server/auth";
 import { APP_NAME } from "~/const";
 
 const page: Omit<EntityPageDefinition, "records"> = {
@@ -25,22 +25,27 @@ const page: Omit<EntityPageDefinition, "records"> = {
   fields: [
     { key: "name", label: "接続名", placeholder: "例：サポート Slack" },
     {
-      key: "platform",
+      key: "platformId",
       label: "プラットフォーム",
       type: "select",
-      options: ["Slack", "Discord", "Microsoft Teams", "LINE"],
+      options: [
+        { label: "Slack", value: "slack" },
+        { label: "Discord", value: "discord" },
+        { label: "Microsoft Teams", value: "teams" },
+        { label: "LINE", value: "line" },
+      ],
     },
     {
-      key: "bot",
+      key: "chatbotId",
       label: "接続先ボット",
       type: "select",
-      options: ["カスタマーサポート", "社内ナレッジアシスタント"],
+      options: [],
     },
     {
       key: "status",
       label: "ステータス",
       type: "select",
-      options: ["接続済み", "未接続", "停止中"],
+      options: ["有効", "停止中"],
     },
     {
       key: "credential",
@@ -56,36 +61,25 @@ export function meta() {
   return [{ title: `アダプタ | ${APP_NAME}` }];
 }
 
-export async function loader(_args: Route.LoaderArgs) {
-  return { adapters: listAdapters() };
+export async function loader({ request }: Route.LoaderArgs) {
+  const user = await requireUser(request);
+  return listAdapters(user);
 }
 
 export async function action({ request }: Route.ActionArgs) {
+  const user = await requireUser(request);
   const form = await request.formData();
   const intent = String(form.get("_intent") ?? "");
   const id = Number(form.get("id"));
   if (intent === "delete")
-    return Number.isInteger(id) && deleteAdapter(id)
+    return Number.isInteger(id) && await deleteAdapter(user, id)
       ? { ok: true }
       : { ok: false, error: "アダプタが見つかりません。" };
-  const credential = String(form.get("credential") ?? "");
-  const values = {
-    name: String(form.get("name") ?? "").trim(),
-    platform: String(form.get("platform") ?? ""),
-    bot: String(form.get("bot") ?? ""),
-    status: String(form.get("status") ?? "未接続"),
-    ...(credential ? { credentialConfigured: "true" } : {}),
-  };
-  if (!values.name || !values.platform)
-    return { ok: false, error: "接続名とプラットフォームを入力してください。" };
-  if (intent === "create") return { ok: true, adapter: createAdapter(values) };
-  if (intent === "update")
-    return Number.isInteger(id) && updateAdapter(id, values)
-      ? { ok: true }
-      : { ok: false, error: "アダプタが見つかりません。" };
+  if (intent === "create") return saveAdapter(user, null, form);
+  if (intent === "update") return Number.isInteger(id) ? saveAdapter(user, id, form) : { ok: false, error: "アダプタが見つかりません。" };
   return { ok: false, error: "操作を判定できませんでした。" };
 }
 
 export default function Adapters({ loaderData }: Route.ComponentProps) {
-  return <EntityPageView page={{ ...page, records: loaderData.adapters }} />;
+  return <EntityPageView page={{ ...page, records: loaderData.records, fields: page.fields.map((field) => ({ ...field, options: field.key === "chatbotId" ? loaderData.botOptions : field.options })) }} />;
 }

@@ -5,7 +5,9 @@ import {
   SignOutIcon,
   SparkleIcon,
 } from "@phosphor-icons/react";
-import { Link, NavLink, Outlet, useLocation } from "react-router";
+import { Form, Link, NavLink, Outlet, useLocation } from "react-router";
+import type { Route } from "./+types/workspace";
+import { requireUser } from "../.server/auth";
 import { APP_NAME } from "~/const";
 import { SectionIcon, type EntitySection } from "../components/entity-page-view";
 
@@ -17,7 +19,11 @@ const items: { path: string; id: EntitySection; label: string }[] = [
   { path: "/users", id: "users", label: "ユーザー" },
 ];
 
-export default function Workspace() {
+export async function loader({ request }: Route.LoaderArgs) {
+  return { user: await requireUser(request) };
+}
+
+export default function Workspace({ loaderData }: Route.ComponentProps) {
   const location = useLocation();
   const [mobileNavOpened, { toggle: toggleMobileNav, close: closeMobileNav }] =
     useDisclosure(false);
@@ -67,17 +73,19 @@ export default function Workspace() {
         </nav>
 
         <div className="sidebar-spacer" />
-        <Link to="/login" className="logout-link">
+        <Form method="post" action="/logout" className="logout-form">
+        <button type="submit" className="logout-link">
           <SignOutIcon size={16} aria-hidden="true" />
           ログアウト
-        </Link>
+        </button>
+        </Form>
         <div className="profile">
           <Avatar color="violet" radius="xl" size={38}>
-            MS
+            {(loaderData.user.name ?? loaderData.user.email).slice(0, 2).toUpperCase()}
           </Avatar>
           <div className="profile-meta">
-            <strong>佐藤 美咲</strong>
-            <span>misaki@example.com</span>
+            <strong>{loaderData.user.name ?? "ユーザー"}</strong>
+            <span>{loaderData.user.email}</span>
           </div>
           <span className="profile-menu">
             <DotsThreeIcon size={20} aria-hidden="true" />
@@ -101,7 +109,7 @@ export default function Workspace() {
           </div>
           <div className="top-actions">
             <Avatar color="violet" radius="xl" size={34}>
-              MS
+              {(loaderData.user.name ?? loaderData.user.email).slice(0, 2).toUpperCase()}
             </Avatar>
           </div>
         </div>

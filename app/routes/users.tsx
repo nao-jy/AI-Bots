@@ -4,22 +4,20 @@ import {
   type EntityPageDefinition,
 } from "../components/entity-page-view";
 import {
-  createUser,
   deleteUser,
   listUsers,
-  updateUser,
-} from "../.server/mock-entities";
+  saveUser,
+} from "../.server/entities";
+import { requireUser } from "../.server/auth";
 import { APP_NAME } from "~/const";
 
 const page: Omit<EntityPageDefinition, "records"> = {
   title: "ユーザー",
-  description: "ワークスペースに参加するユーザーと権限を管理します。",
+  description: "ワークスペースにログインできるユーザーアカウントを管理します。",
   icon: "users",
   columns: [
     { key: "name", label: "ユーザー" },
     { key: "email", label: "メールアドレス" },
-    { key: "role", label: "権限" },
-    { key: "status", label: "ステータス" },
     { key: "updated", label: "最終更新" },
   ],
   fields: [
@@ -30,18 +28,7 @@ const page: Omit<EntityPageDefinition, "records"> = {
       type: "email",
       placeholder: "name@example.com",
     },
-    {
-      key: "role",
-      label: "権限",
-      type: "select",
-      options: ["管理者", "メンバー"],
-    },
-    {
-      key: "status",
-      label: "ステータス",
-      type: "select",
-      options: ["有効", "招待中", "停止中"],
-    },
+    { key: "password", label: "初期パスワード", type: "password", required: true, placeholder: "12文字以上（編集時は空欄のまま）" },
   ],
 };
 
@@ -49,36 +36,22 @@ export function meta() {
   return [{ title: `ユーザー | ${APP_NAME}` }];
 }
 
-export async function loader(_args: Route.LoaderArgs) {
-  return { users: listUsers() };
+export async function loader({ request }: Route.LoaderArgs) {
+  await requireUser(request);
+  return { users: await listUsers() };
 }
 
 export async function action({ request }: Route.ActionArgs) {
+  const actor = await requireUser(request);
   const form = await request.formData();
   const intent = String(form.get("_intent") ?? "");
   const id = Number(form.get("id"));
   if (intent === "delete")
-    return Number.isInteger(id) && deleteUser(id)
+    return Number.isInteger(id) && await deleteUser(id, actor.id)
       ? { ok: true }
       : { ok: false, error: "ユーザーが見つかりません。" };
-  const values = {
-    name: String(form.get("name") ?? "").trim(),
-    email: String(form.get("email") ?? "")
-      .trim()
-      .toLowerCase(),
-    role: String(form.get("role") ?? "メンバー"),
-    status: String(form.get("status") ?? "招待中"),
-  };
-  if (!values.name || !values.email.includes("@"))
-    return {
-      ok: false,
-      error: "表示名と有効なメールアドレスを入力してください。",
-    };
-  if (intent === "create") return { ok: true, user: createUser(values) };
-  if (intent === "update")
-    return Number.isInteger(id) && updateUser(id, values)
-      ? { ok: true }
-      : { ok: false, error: "ユーザーが見つかりません。" };
+  if (intent === "create") return saveUser(null, form);
+  if (intent === "update") return Number.isInteger(id) ? saveUser(id, form) : { ok: false, error: "ユーザーが見つかりません。" };
   return { ok: false, error: "操作を判定できませんでした。" };
 }
 

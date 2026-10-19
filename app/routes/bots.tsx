@@ -4,11 +4,11 @@ import {
   type EntityPageDefinition,
 } from "../components/entity-page-view";
 import {
-  createBot,
   deleteBot,
   listBots,
-  updateBot,
-} from "../.server/mock-entities";
+  saveBot,
+} from "../.server/entities";
+import { requireUser } from "../.server/auth";
 import { APP_NAME } from "~/const";
 
 const page: Omit<EntityPageDefinition, "records"> = {
@@ -38,20 +38,16 @@ const page: Omit<EntityPageDefinition, "records"> = {
       placeholder: "ボットの役割や用途",
     },
     {
-      key: "agent",
+      key: "agentId",
       label: "エージェント",
       type: "select",
-      options: [
-        "カスタマーサポート",
-        "社内ナレッジアシスタント",
-        "新しいエージェント",
-      ],
+      options: [],
     },
     {
-      key: "adapters",
+      key: "adapterIds",
       label: "接続アダプタ",
       type: "multiselect",
-      options: ["サポート窓口", "社内ワークスペース", "開発コミュニティ"],
+      options: [],
       placeholder: "接続するアダプタを選択",
     },
   ],
@@ -61,38 +57,25 @@ export function meta() {
   return [{ title: `チャットボット | ${APP_NAME}` }];
 }
 
-export async function loader(_args: Route.LoaderArgs) {
-  return { bots: listBots() };
+export async function loader({ request }: Route.LoaderArgs) {
+  const user = await requireUser(request);
+  return listBots(user);
 }
 
 export async function action({ request }: Route.ActionArgs) {
+  const user = await requireUser(request);
   const form = await request.formData();
   const intent = String(form.get("_intent") ?? "");
   const id = Number(form.get("id"));
   if (intent === "delete")
-    return Number.isInteger(id) && deleteBot(id)
+    return Number.isInteger(id) && await deleteBot(user, id)
       ? { ok: true }
       : { ok: false, error: "ボットが見つかりません。" };
-  const values = {
-    name: String(form.get("name") ?? "").trim(),
-    status: String(form.get("status") ?? "停止中"),
-    description: String(form.get("description") ?? "").trim(),
-    agent: String(form.get("agent") ?? ""),
-    adapters: String(form.get("adapters") ?? "")
-      .split(",")
-      .map((adapter) => adapter.trim())
-      .filter(Boolean)
-      .join(", "),
-  };
-  if (!values.name) return { ok: false, error: "ボット名を入力してください。" };
-  if (intent === "create") return { ok: true, bot: createBot(values) };
-  if (intent === "update")
-    return Number.isInteger(id) && updateBot(id, values)
-      ? { ok: true }
-      : { ok: false, error: "ボットが見つかりません。" };
+  if (intent === "create") return saveBot(user, null, form);
+  if (intent === "update") return Number.isInteger(id) ? saveBot(user, id, form) : { ok: false, error: "ボットが見つかりません。" };
   return { ok: false, error: "操作を判定できませんでした。" };
 }
 
 export default function Bots({ loaderData }: Route.ComponentProps) {
-  return <EntityPageView page={{ ...page, records: loaderData.bots }} />;
+  return <EntityPageView page={{ ...page, records: loaderData.records, fields: page.fields.map((field) => ({ ...field, options: field.key === "agentId" ? loaderData.agentOptions : field.key === "adapterIds" ? loaderData.adapterOptions : field.options })) }} />;
 }

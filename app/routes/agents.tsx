@@ -4,11 +4,11 @@ import {
   type EntityPageDefinition,
 } from "../components/entity-page-view";
 import {
-  createAgent,
   deleteAgent,
   listAgents,
-  updateAgent,
-} from "../.server/mock-entities";
+  saveAgent,
+} from "../.server/entities";
+import { requireUser } from "../.server/auth";
 import { APP_NAME } from "~/const";
 
 const page: Omit<EntityPageDefinition, "records"> = {
@@ -36,9 +36,11 @@ const page: Omit<EntityPageDefinition, "records"> = {
     },
     { key: "model", label: "モデル", placeholder: "例：gpt-4.1" },
     {
-      key: "tools",
+      key: "mcpServerIds",
       label: "MCPツール",
-      placeholder: "ナレッジ検索, チケット検索",
+      type: "multiselect",
+      options: [],
+      placeholder: "利用するMCPサーバーを選択",
     },
     {
       key: "prompt",
@@ -47,6 +49,8 @@ const page: Omit<EntityPageDefinition, "records"> = {
       wide: true,
       placeholder: "エージェントの役割や応答方針",
     },
+    { key: "temperature", label: "Temperature", type: "text", placeholder: "例：0.7" },
+    { key: "maxSteps", label: "最大ステップ数", type: "text", placeholder: "例：5" },
   ],
 };
 
@@ -54,46 +58,25 @@ export function meta() {
   return [{ title: `エージェント | ${APP_NAME}` }];
 }
 
-export async function loader(_args: Route.LoaderArgs) {
-  return { agents: listAgents() };
+export async function loader({ request }: Route.LoaderArgs) {
+  const user = await requireUser(request);
+  return listAgents(user);
 }
 
 export async function action({ request }: Route.ActionArgs) {
+  const user = await requireUser(request);
   const form = await request.formData();
   const intent = String(form.get("_intent") ?? "");
   const id = Number(form.get("id"));
   if (intent === "delete")
-    return Number.isInteger(id) && deleteAgent(id)
+    return Number.isInteger(id) && await deleteAgent(user, id)
       ? { ok: true }
       : { ok: false, error: "エージェントが見つかりません。" };
-  const values = {
-    name: String(form.get("name") ?? "").trim(),
-    provider: String(form.get("provider") ?? ""),
-    model: String(form.get("model") ?? "").trim(),
-    tools: String(form.get("tools") ?? "").trim(),
-    prompt: String(form.get("prompt") ?? "").trim(),
-  };
-  if (!values.name || !values.provider || !values.model)
-    return {
-      ok: false,
-      error: "エージェント名、プロバイダー、モデルを入力してください。",
-    };
-  if (intent === "create")
-    return { ok: true, agent: createAgent({ ...values, status: "未使用" }) };
-  if (intent === "update")
-    return Number.isInteger(id) && updateAgent(id, values)
-      ? { ok: true }
-      : { ok: false, error: "エージェントが見つかりません。" };
+  if (intent === "create") return saveAgent(user, null, form);
+  if (intent === "update") return Number.isInteger(id) ? saveAgent(user, id, form) : { ok: false, error: "エージェントが見つかりません。" };
   return { ok: false, error: "操作を判定できませんでした。" };
 }
 
 export default function Agents({ loaderData }: Route.ComponentProps) {
-  return (
-    <EntityPageView
-      page={{
-        ...page,
-        records: loaderData.agents,
-      }}
-    />
-  );
+  return <EntityPageView page={{ ...page, records: loaderData.records, fields: page.fields.map((field) => ({ ...field, options: field.key === "mcpServerIds" ? loaderData.serverOptions : field.options })) }} />;
 }

@@ -1,14 +1,9 @@
-import { useState } from "react";
-import {
-  Anchor,
-  Button,
-  Checkbox,
-  PasswordInput,
-  Text,
-  TextInput,
-} from "@mantine/core";
+import { Alert, Button, PasswordInput, TextInput } from "@mantine/core";
 import { ArrowRightIcon, SparkleIcon } from "@phosphor-icons/react";
-import { Link, useNavigate } from "react-router";
+import { data, Form, Link, redirect, useActionData } from "react-router";
+import type { Route } from "./+types/login";
+import { createSession, getSessionUser, hashPassword, sessionCookie, verifyPassword } from "../.server/auth";
+import { db } from "../.server/db";
 import { APP_NAME } from "~/const";
 
 export function meta() {
@@ -18,20 +13,44 @@ export function meta() {
   ];
 }
 
-export default function Login() {
-  const navigate = useNavigate();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+export async function loader({ request }: Route.LoaderArgs) {
+  if (await getSessionUser(request)) throw redirect("/bots");
+  return { setupRequired: !(await db.orm.public.User.first()) };
+}
 
-  function submit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!email.trim() || !password) {
-      setError("メールアドレスとパスワードを入力してください。");
-      return;
-    }
-    navigate("/");
+export async function action({ request }: Route.ActionArgs) {
+  const form = await request.formData();
+  const email = String(form.get("email") ?? "").trim().toLowerCase();
+  const password = String(form.get("password") ?? "");
+  const name = String(form.get("name") ?? "").trim();
+  if (!/^\S+@\S+\.\S+$/.test(email) || !password) {
+    return data({ error: "メールアドレスとパスワードを入力してください。" }, { status: 400 });
   }
+
+  let user = await db.orm.public.User.first({ email });
+  if (!user) {
+    if (await db.orm.public.User.first()) {
+      return data({ error: "メールアドレスまたはパスワードが正しくありません。" }, { status: 401 });
+    }
+    if (name.length < 1 || password.length < 12) {
+      return data({ error: "初回登録では表示名と12文字以上のパスワードが必要です。" }, { status: 400 });
+    }
+    try {
+      user = await db.orm.public.User.create({ email, name, passwordHash: await hashPassword(password) });
+    } catch {
+      return data({ error: "初回アカウントを作成できませんでした。もう一度お試しください。" }, { status: 400 });
+    }
+  } else if (!(await verifyPassword(password, user.passwordHash))) {
+    return data({ error: "メールアドレスまたはパスワードが正しくありません。" }, { status: 401 });
+  }
+
+  const session = await createSession(user.id);
+  return redirect("/bots", { headers: { "Set-Cookie": sessionCookie(session.token, session.expiresAt) } });
+}
+
+export default function Login({ loaderData }: Route.ComponentProps) {
+  const actionData = useActionData<typeof action>();
+  const setupRequired = loaderData.setupRequired;
 
   return (
     <main className="login-page">
@@ -39,54 +58,28 @@ export default function Login() {
       <div className="login-decoration decor-two" />
       <div className="login-decoration decor-three" />
       <div className="login-top">
-        <Link to="/" className="brand">
-          <span className="brand-mark"><SparkleIcon size={20} weight="fill" aria-hidden="true"/></span>
-          <span>
-            {APP_NAME}
-            <span className="brand-dot">.</span>
-            <small>AI WORKSPACE</small>
-          </span>
+        <Link to="/login" className="brand">
+          <span className="brand-mark"><SparkleIcon size={20} weight="fill" aria-hidden="true" /></span>
+          <span>{APP_NAME}<span className="brand-dot">.</span><small>AI WORKSPACE</small></span>
         </Link>
       </div>
       <div className="login-card-wrap">
         <section className="login-card">
-          <div className="login-welcome-mark"><SparkleIcon size={23} weight="fill" aria-hidden="true"/></div>
+          <div className="login-welcome-mark"><SparkleIcon size={23} weight="fill" aria-hidden="true" /></div>
           <div className="eyebrow">YOUR AI WORKSPACE</div>
-          <h1>おかえりなさい</h1>
+          <h1>{setupRequired ? "最初のアカウントを作成" : "おかえりなさい"}</h1>
           <p className="login-subtitle">
-            アカウントにログインして、ワークスペースを開きましょう。
+            {setupRequired ? "最初のアカウントを登録して、ワークスペースを始めましょう。" : "アカウントにログインして、ワークスペースを開きましょう。"}
           </p>
-          <form onSubmit={submit} className="login-form">
-            <TextInput
-              label="メールアドレス"
-              placeholder="name@company.com"
-              type="email"
-              autoComplete="email"
-              required
-              value={email}
-              onChange={(event) => setEmail(event.currentTarget.value)}
-            />
-            <PasswordInput
-              label="パスワード"
-              placeholder="パスワードを入力"
-              autoComplete="current-password"
-              required
-              value={password}
-              onChange={(event) => setPassword(event.currentTarget.value)}
-            />
-            <div className="login-options">
-              <Checkbox label="ログイン状態を保持する" />
-              <Anchor href="#forgot">パスワードをお忘れですか？</Anchor>
-            </div>
-            {error && (
-              <Text c="red" size="sm">
-                {error}
-              </Text>
-            )}
+          <Form method="post" className="login-form">
+            {setupRequired && <TextInput name="name" label="表示名" autoComplete="name" required />}
+            <TextInput name="email" label="メールアドレス" placeholder="name@company.com" type="email" autoComplete="email" required />
+            <PasswordInput name="password" label={setupRequired ? "パスワード（12文字以上）" : "パスワード"} autoComplete={setupRequired ? "new-password" : "current-password"} minLength={setupRequired ? 12 : undefined} required />
+            {actionData?.error && <Alert color="red">{actionData.error}</Alert>}
             <Button type="submit" fullWidth rightSection={<ArrowRightIcon size={16} aria-hidden="true" />}>
-              ログイン
+              {setupRequired ? "アカウントを作成" : "ログイン"}
             </Button>
-          </form>
+          </Form>
         </section>
       </div>
     </main>

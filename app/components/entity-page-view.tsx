@@ -27,7 +27,7 @@ import {
   WrenchIcon,
 } from "@phosphor-icons/react";
 import { useFetcher } from "react-router";
-import type { EntityRecord } from "../.server/mock-entities";
+import type { EntityOption, EntityRecord } from "../types/entities";
 
 export type EntityField = {
   key: string;
@@ -40,7 +40,8 @@ export type EntityField = {
     | "select"
     | "multiselect"
     | "password";
-  options?: string[];
+  options?: string[] | EntityOption[];
+  required?: boolean;
   wide?: boolean;
 };
 
@@ -187,7 +188,7 @@ export function EntityPageView({ page }: { page: EntityPageDefinition }) {
                             column.key === "endpoint" ? "mono" : "table-text"
                           }
                         >
-                          {record[column.key] ?? "—"}
+                          {record[column.key] || "—"}
                         </span>
                       )}
                     </Table.Td>
@@ -319,6 +320,7 @@ export function EntityPageView({ page }: { page: EntityPageDefinition }) {
                     label={field.label}
                     placeholder={field.placeholder}
                     autoComplete="new-password"
+                    required={field.required && dialog === "create"}
                   />
                 ) : (
                   <TextInput
@@ -398,8 +400,8 @@ export function EntityPageView({ page }: { page: EntityPageDefinition }) {
 }
 
 function Status({ value }: { value: string }) {
-  const active = ["稼働中", "接続済み", "有効"].includes(value);
-  const pending = ["招待中", "未接続"].includes(value);
+  const active = ["稼働中", "接続済み", "接続先登録済み", "有効"].includes(value);
+  const pending = ["招待中", "未接続", "接続先未設定"].includes(value);
   return (
     <Badge
       className={`status-badge ${active ? "success" : pending ? "pending" : "muted"}`}
