@@ -1,5 +1,5 @@
 import { db } from "./db";
-import type { AuthUser } from "./auth";
+import type { AuthUser } from "../auth";
 import {
   authHeaders,
   decryptMcpHeaders,

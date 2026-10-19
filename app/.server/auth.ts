@@ -6,7 +6,7 @@ import {
 } from "node:crypto";
 import { promisify } from "node:util";
 import { redirect } from "react-router";
-import { db } from "./db";
+import { db } from "./models/db";
 
 const scrypt = promisify(scryptCallback);
 const SESSION_COOKIE = "bot_manager_session";

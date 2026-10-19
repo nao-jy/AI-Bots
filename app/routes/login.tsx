@@ -9,7 +9,7 @@ import {
   sessionCookie,
   verifyPassword,
 } from "../.server/auth";
-import { db } from "../.server/db";
+import { db } from "../.server/models/db";
 import { APP_NAME } from "~/const";
 
 export function meta() {

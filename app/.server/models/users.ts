@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { hashPassword } from "./auth";
+import { hashPassword } from "../auth";
 import { record } from "./entity-shared";
 
 export async function listUsers() {
@@ -50,4 +50,3 @@ export async function deleteUser(id: number, currentUserId: number) {
   await db.orm.public.User.where({ id }).delete();
   return true;
 }
-

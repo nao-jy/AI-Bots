@@ -1,5 +1,5 @@
 import { db } from "./db";
-import type { AuthUser } from "./auth";
+import type { AuthUser } from "../auth";
 import {
   decryptAdapterEnvs,
   encryptStringMap,
@@ -159,4 +159,3 @@ export async function deleteAdapter(user: AuthUser, id: number) {
   await db.orm.public.ChatAdapter.where({ id, ownerId: user.id }).delete();
   return true;
 }
-

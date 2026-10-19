@@ -3,7 +3,12 @@ import {
   EntityPageView,
   type EntityPageDefinition,
 } from "../components/entity-page-view";
-import { deleteAdapter, listAdapters, saveAdapter, testAdapter } from "../.server/entities";
+import {
+  deleteAdapter,
+  listAdapters,
+  saveAdapter,
+  testAdapter,
+} from "../.server/models/entities";
 import { requireUser } from "../.server/auth";
 import { APP_NAME } from "~/const";
 

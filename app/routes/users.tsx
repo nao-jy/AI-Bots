@@ -3,7 +3,7 @@ import {
   EntityPageView,
   type EntityPageDefinition,
 } from "../components/entity-page-view";
-import { deleteUser, listUsers, saveUser } from "../.server/entities";
+import { deleteUser, listUsers, saveUser } from "../.server/models/entities";
 import { requireUser } from "../.server/auth";
 import { APP_NAME } from "~/const";
 

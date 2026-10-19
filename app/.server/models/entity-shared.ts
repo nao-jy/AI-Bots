@@ -1,6 +1,6 @@
 import { createCipheriv, createDecipheriv, randomBytes } from "node:crypto";
-import type { CodecTypes } from "../../src/prisma/contract.d.ts";
-import type { EntityRecord } from "../types/entities";
+import type { CodecTypes } from "../../../src/prisma/contract";
+import type { EntityRecord } from "../../types/entities.ts";
 
 export const jsonb = (value: unknown) =>
   value as CodecTypes["pg/jsonb@1"]["input"];

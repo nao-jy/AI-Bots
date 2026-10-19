@@ -1,5 +1,5 @@
 import { db } from "./db";
-import type { AuthUser } from "./auth";
+import type { AuthUser } from "../auth";
 import {
   decryptMcpHeaders,
   encryptStringMap,
@@ -143,4 +143,3 @@ export async function deleteMcpServer(user: AuthUser, id: number) {
   await db.orm.public.McpServer.where({ id, ownerId: user.id }).delete();
   return true;
 }
-

@@ -1,5 +1,5 @@
 import { db } from "./db";
-import type { AuthUser } from "./auth";
+import type { AuthUser } from "../auth";
 import { idList, record } from "./entity-shared";
 
 export async function listBots(user: AuthUser) {
@@ -133,4 +133,3 @@ export async function setBotEnabled(
   });
   return true;
 }
-

@@ -8,7 +8,7 @@ import {
   listProviders,
   saveProvider,
   testProvider,
-} from "../.server/entities";
+} from "../.server/models/entities";
 import { requireUser } from "../.server/auth";
 import { APP_NAME } from "~/const";
 

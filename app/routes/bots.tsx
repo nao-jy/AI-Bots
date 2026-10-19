@@ -3,13 +3,19 @@ import {
   EntityPageView,
   type EntityPageDefinition,
 } from "../components/entity-page-view";
-import { deleteBot, listBots, saveBot, setBotEnabled } from "../.server/entities";
+import {
+  deleteBot,
+  listBots,
+  saveBot,
+  setBotEnabled,
+} from "../.server/models/entities";
 import { requireUser } from "../.server/auth";
 import { APP_NAME } from "~/const";
 
 const page: Omit<EntityPageDefinition, "records"> = {
   title: "チャットボット",
-  description: "チャットボットの基本情報、エージェント、利用するアダプタを管理します。",
+  description:
+    "チャットボットの基本情報、エージェント、利用するアダプタを管理します。",
   icon: "bots",
   columns: [
     { key: "name", label: "ボット名" },
