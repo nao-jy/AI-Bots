@@ -8,11 +8,12 @@ import {
   TextInput,
 } from "@mantine/core";
 import { Link, useNavigate } from "react-router";
+import { APP_NAME } from "~/const";
 
 export function meta() {
   return [
-    { title: "ログイン | Orbit" },
-    { name: "description", content: "Orbit ワークスペースにログイン" },
+    { title: `ログイン | ${APP_NAME}` },
+    { name: "description", content: `${APP_NAME} ワークスペースにログイン` },
   ];
 }
 
@@ -40,7 +41,8 @@ export default function Login() {
         <Link to="/" className="brand">
           <span className="brand-mark">✳</span>
           <span>
-            orbit<span className="brand-dot">.</span>
+            {APP_NAME}
+            <span className="brand-dot">.</span>
             <small>AI WORKSPACE</small>
           </span>
         </Link>

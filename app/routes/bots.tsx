@@ -9,6 +9,7 @@ import {
   listBots,
   updateBot,
 } from "../.server/mock-entities";
+import { APP_NAME } from "~/const";
 
 const page: Omit<EntityPageDefinition, "records"> = {
   title: "チャットボット",
@@ -51,7 +52,7 @@ const page: Omit<EntityPageDefinition, "records"> = {
 };
 
 export function meta() {
-  return [{ title: "チャットボット | Orbit" }];
+  return [{ title: `チャットボット | ${APP_NAME}` }];
 }
 
 export async function loader(_args: Route.LoaderArgs) {

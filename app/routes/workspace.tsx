@@ -1,6 +1,7 @@
 import { Avatar } from "@mantine/core";
 import { Link, NavLink, Outlet, useLocation } from "react-router";
 import type { EntitySection } from "../components/entity-page-view";
+import { APP_NAME } from "~/const";
 
 const items: {
   path: string;
@@ -26,7 +27,8 @@ export default function Workspace() {
         <Link to="/bots" className="brand">
           <span className="brand-mark">✳</span>
           <span>
-            orbit<span className="brand-dot">.</span>
+            {APP_NAME}
+            <span className="brand-dot">.</span>
             <small>AI WORKSPACE</small>
           </span>
         </Link>

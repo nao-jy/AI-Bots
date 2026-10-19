@@ -9,6 +9,7 @@ import {
   listAgents,
   updateAgent,
 } from "../.server/mock-entities";
+import { APP_NAME } from "~/const";
 
 const page: Omit<EntityPageDefinition, "records"> = {
   title: "エージェント",
@@ -50,7 +51,7 @@ const page: Omit<EntityPageDefinition, "records"> = {
 };
 
 export function meta() {
-  return [{ title: "エージェント | Orbit" }];
+  return [{ title: `エージェント | ${APP_NAME}` }];
 }
 
 export async function loader(_args: Route.LoaderArgs) {

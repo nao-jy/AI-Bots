@@ -12,6 +12,7 @@
   "dependencies": {
     "@mantine/core": "^9.7.3",
     "@mantine/hooks": "^9.7.3",
+    "@phosphor-icons/react": "^2.1.10",
     "@prisma/orm-postgres": "^8.0.0-rc.18",
     "@react-router/node": "^8.4.0",
     "@react-router/serve": "^8.4.0",
@@ -33,7 +34,7 @@
     "postcss": "^8.5.31",
     "postcss-preset-mantine": "^1.18.0",
     "postcss-simple-vars": "^7.0.1",
-    "prisma": "^8.0.0-rc.23",
+    "prisma": "^7.10.1",
     "tailwindcss": "^4.2.2",
     "typescript": "^5.9.3",
     "vite": "^8.0.3"
