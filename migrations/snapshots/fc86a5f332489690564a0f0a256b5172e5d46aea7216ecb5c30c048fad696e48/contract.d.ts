@@ -18,9 +18,9 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'90303116f963c8685cd5d838420106241bdc2a09682e3fed66ba47656fd34d66'>;
+  StorageHashBase<'fc86a5f332489690564a0f0a256b5172e5d46aea7216ecb5c30c048fad696e48'>;
 export type ExecutionHash =
-  ExecutionHashBase<'630d99ce0f7c28f2943c7da17636b9c973be8aabb7d495a34d50f89953b2f784'>;
+  ExecutionHashBase<'8b50cbf3e7a3d7129e709e055e4a7b51f3ed103797223f4237ea9e19211cc84f'>;
 export type ProfileHash =
   ProfileHashBase<'3916f444a8a17ad749191acf9e08dad97d1a327b88c2f1d45d12f240296aa8b2'>;
 
@@ -237,9 +237,10 @@ export type FieldOutputTypes = {
     readonly AgentDefinition: {
       readonly createdAt: CodecTypes['pg/timestamptz-string@1']['output'];
       readonly id: CodecTypes['pg/int4@1']['output'];
-      readonly modelDefinitionId: CodecTypes['pg/int4@1']['output'];
+      readonly model_id: CodecTypes['pg/text@1']['output'];
       readonly name: CodecTypes['pg/text@1']['output'];
-      readonly parameters: CodecTypes['pg/jsonb@1']['output'] | null;
+      readonly options: CodecTypes['pg/jsonb@1']['output'] | null;
+      readonly providerId: CodecTypes['pg/int4@1']['output'];
       readonly updatedAt: CodecTypes['pg/timestamptz-string@1']['output'];
     };
     readonly AgentMcpServer: {
@@ -282,13 +283,14 @@ export type FieldOutputTypes = {
       readonly transport: CodecTypes['pg/text@1']['output'];
       readonly updatedAt: CodecTypes['pg/timestamptz-string@1']['output'];
     };
-    readonly ModelDefinition: {
-      readonly apiKeyCiphertext: CodecTypes['pg/text@1']['output'];
+    readonly Provider: {
+      readonly args: CodecTypes['pg/jsonb@1']['output'] | null;
       readonly createdAt: CodecTypes['pg/timestamptz-string@1']['output'];
+      readonly headers: CodecTypes['pg/jsonb@1']['output'] | null;
       readonly id: CodecTypes['pg/int4@1']['output'];
-      readonly modelName: CodecTypes['pg/text@1']['output'];
+      readonly name: CodecTypes['pg/text@1']['output'];
       readonly ownerId: CodecTypes['pg/int4@1']['output'];
-      readonly provider: CodecTypes['pg/text@1']['output'];
+      readonly providerName: CodecTypes['pg/text@1']['output'];
       readonly updatedAt: CodecTypes['pg/timestamptz-string@1']['output'];
     };
     readonly Session: {
@@ -313,9 +315,10 @@ export type FieldInputTypes = {
     readonly AgentDefinition: {
       readonly createdAt: CodecTypes['pg/timestamptz-string@1']['input'];
       readonly id: CodecTypes['pg/int4@1']['input'];
-      readonly modelDefinitionId: CodecTypes['pg/int4@1']['input'];
+      readonly model_id: CodecTypes['pg/text@1']['input'];
       readonly name: CodecTypes['pg/text@1']['input'];
-      readonly parameters: CodecTypes['pg/jsonb@1']['input'] | null;
+      readonly options: CodecTypes['pg/jsonb@1']['input'] | null;
+      readonly providerId: CodecTypes['pg/int4@1']['input'];
       readonly updatedAt: CodecTypes['pg/timestamptz-string@1']['input'];
     };
     readonly AgentMcpServer: {
@@ -358,13 +361,14 @@ export type FieldInputTypes = {
       readonly transport: CodecTypes['pg/text@1']['input'];
       readonly updatedAt: CodecTypes['pg/timestamptz-string@1']['input'];
     };
-    readonly ModelDefinition: {
-      readonly apiKeyCiphertext: CodecTypes['pg/text@1']['input'];
+    readonly Provider: {
+      readonly args: CodecTypes['pg/jsonb@1']['input'] | null;
       readonly createdAt: CodecTypes['pg/timestamptz-string@1']['input'];
+      readonly headers: CodecTypes['pg/jsonb@1']['input'] | null;
       readonly id: CodecTypes['pg/int4@1']['input'];
-      readonly modelName: CodecTypes['pg/text@1']['input'];
+      readonly name: CodecTypes['pg/text@1']['input'];
       readonly ownerId: CodecTypes['pg/int4@1']['input'];
-      readonly provider: CodecTypes['pg/text@1']['input'];
+      readonly providerName: CodecTypes['pg/text@1']['input'];
       readonly updatedAt: CodecTypes['pg/timestamptz-string@1']['input'];
     };
     readonly Session: {
@@ -389,9 +393,10 @@ export type StorageColumnTypes = {
     readonly AgentDefinition: {
       readonly createdAt: CodecTypes['pg/timestamptz-string@1']['output'];
       readonly id: CodecTypes['pg/int4@1']['output'];
-      readonly modelDefinitionId: CodecTypes['pg/int4@1']['output'];
+      readonly model_id: CodecTypes['pg/text@1']['output'];
       readonly name: CodecTypes['pg/text@1']['output'];
-      readonly parameters: CodecTypes['pg/jsonb@1']['output'] | null;
+      readonly options: CodecTypes['pg/jsonb@1']['output'] | null;
+      readonly providerId: CodecTypes['pg/int4@1']['output'];
       readonly updatedAt: CodecTypes['pg/timestamptz-string@1']['output'];
     };
     readonly AgentMcpServer: {
@@ -434,13 +439,14 @@ export type StorageColumnTypes = {
       readonly transport: CodecTypes['pg/text@1']['output'];
       readonly updatedAt: CodecTypes['pg/timestamptz-string@1']['output'];
     };
-    readonly ModelDefinition: {
-      readonly apiKeyCiphertext: CodecTypes['pg/text@1']['output'];
+    readonly Provider: {
+      readonly args: CodecTypes['pg/jsonb@1']['output'] | null;
       readonly createdAt: CodecTypes['pg/timestamptz-string@1']['output'];
+      readonly headers: CodecTypes['pg/jsonb@1']['output'] | null;
       readonly id: CodecTypes['pg/int4@1']['output'];
-      readonly modelName: CodecTypes['pg/text@1']['output'];
+      readonly name: CodecTypes['pg/text@1']['output'];
       readonly ownerId: CodecTypes['pg/int4@1']['output'];
-      readonly provider: CodecTypes['pg/text@1']['output'];
+      readonly providerName: CodecTypes['pg/text@1']['output'];
       readonly updatedAt: CodecTypes['pg/timestamptz-string@1']['output'];
     };
     readonly Session: {
@@ -465,9 +471,10 @@ export type StorageColumnInputTypes = {
     readonly AgentDefinition: {
       readonly createdAt: CodecTypes['pg/timestamptz-string@1']['input'];
       readonly id: CodecTypes['pg/int4@1']['input'];
-      readonly modelDefinitionId: CodecTypes['pg/int4@1']['input'];
+      readonly model_id: CodecTypes['pg/text@1']['input'];
       readonly name: CodecTypes['pg/text@1']['input'];
-      readonly parameters: CodecTypes['pg/jsonb@1']['input'] | null;
+      readonly options: CodecTypes['pg/jsonb@1']['input'] | null;
+      readonly providerId: CodecTypes['pg/int4@1']['input'];
       readonly updatedAt: CodecTypes['pg/timestamptz-string@1']['input'];
     };
     readonly AgentMcpServer: {
@@ -510,13 +517,14 @@ export type StorageColumnInputTypes = {
       readonly transport: CodecTypes['pg/text@1']['input'];
       readonly updatedAt: CodecTypes['pg/timestamptz-string@1']['input'];
     };
-    readonly ModelDefinition: {
-      readonly apiKeyCiphertext: CodecTypes['pg/text@1']['input'];
+    readonly Provider: {
+      readonly args: CodecTypes['pg/jsonb@1']['input'] | null;
       readonly createdAt: CodecTypes['pg/timestamptz-string@1']['input'];
+      readonly headers: CodecTypes['pg/jsonb@1']['input'] | null;
       readonly id: CodecTypes['pg/int4@1']['input'];
-      readonly modelName: CodecTypes['pg/text@1']['input'];
+      readonly name: CodecTypes['pg/text@1']['input'];
       readonly ownerId: CodecTypes['pg/int4@1']['input'];
-      readonly provider: CodecTypes['pg/text@1']['input'];
+      readonly providerName: CodecTypes['pg/text@1']['input'];
       readonly updatedAt: CodecTypes['pg/timestamptz-string@1']['input'];
     };
     readonly Session: {
@@ -541,14 +549,15 @@ export namespace Models {
   export type public_AgentDefinition = {
     createdAt: CodecTypes['pg/timestamptz-string@1']['output'];
     id: CodecTypes['pg/int4@1']['output'];
-    modelDefinitionId: CodecTypes['pg/int4@1']['output'];
+    model_id: CodecTypes['pg/text@1']['output'];
     name: CodecTypes['pg/text@1']['output'];
-    parameters: CodecTypes['pg/jsonb@1']['output'] | null;
+    options: CodecTypes['pg/jsonb@1']['output'] | null;
+    providerId: CodecTypes['pg/int4@1']['output'];
     updatedAt: CodecTypes['pg/timestamptz-string@1']['output'];
     chatbot: public_Chatbot | null;
     mcpServers: public_AgentMcpServer[];
-    modelDefinition: public_ModelDefinition;
-    readonly [RelationKeys]?: 'chatbot' | 'mcpServers' | 'modelDefinition';
+    provider: public_Provider;
+    readonly [RelationKeys]?: 'chatbot' | 'mcpServers' | 'provider';
   };
   export type public_AgentMcpServer = {
     agentId: CodecTypes['pg/int4@1']['output'];
@@ -606,13 +615,14 @@ export namespace Models {
     owner: public_User;
     readonly [RelationKeys]?: 'agents' | 'owner';
   };
-  export type public_ModelDefinition = {
-    apiKeyCiphertext: CodecTypes['pg/text@1']['output'];
+  export type public_Provider = {
+    args: CodecTypes['pg/jsonb@1']['output'] | null;
     createdAt: CodecTypes['pg/timestamptz-string@1']['output'];
+    headers: CodecTypes['pg/jsonb@1']['output'] | null;
     id: CodecTypes['pg/int4@1']['output'];
-    modelName: CodecTypes['pg/text@1']['output'];
+    name: CodecTypes['pg/text@1']['output'];
     ownerId: CodecTypes['pg/int4@1']['output'];
-    provider: CodecTypes['pg/text@1']['output'];
+    providerName: CodecTypes['pg/text@1']['output'];
     updatedAt: CodecTypes['pg/timestamptz-string@1']['output'];
     agents: public_AgentDefinition[];
     owner: public_User;
@@ -637,10 +647,9 @@ export namespace Models {
     adapters: public_ChatAdapter[];
     chatbots: public_Chatbot[];
     mcpServers: public_McpServer[];
-    modelDefinitions: public_ModelDefinition[];
+    providers: public_Provider[];
     sessions: public_Session[];
-    readonly [RelationKeys]?:
-      'adapters' | 'chatbots' | 'mcpServers' | 'modelDefinitions' | 'sessions';
+    readonly [RelationKeys]?: 'adapters' | 'chatbots' | 'mcpServers' | 'providers' | 'sessions';
   };
 }
 
@@ -652,7 +661,7 @@ export declare const models: {
     Chatbot: Models.public_Chatbot;
     ChatbotAdapter: Models.public_ChatbotAdapter;
     McpServer: Models.public_McpServer;
-    ModelDefinition: Models.public_ModelDefinition;
+    Provider: Models.public_Provider;
     Session: Models.public_Session;
     User: Models.public_User;
   };
@@ -695,9 +704,9 @@ type ContractBase = Omit<
                   };
                   readonly many: false;
                 };
-                readonly modelDefinitionId: {
-                  readonly dataType: 'pg/int4';
-                  readonly codecId: 'pg/int4@1';
+                readonly model_id: {
+                  readonly dataType: 'pg/text';
+                  readonly codecId: 'pg/text@1';
                   readonly nullable: false;
                   readonly many: false;
                 };
@@ -707,10 +716,16 @@ type ContractBase = Omit<
                   readonly nullable: false;
                   readonly many: false;
                 };
-                readonly parameters: {
+                readonly options: {
                   readonly dataType: 'pg/jsonb';
                   readonly codecId: 'pg/jsonb@1';
                   readonly nullable: true;
+                  readonly many: false;
+                };
+                readonly providerId: {
+                  readonly dataType: 'pg/int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
                   readonly many: false;
                 };
                 readonly updatedAt: {
@@ -724,9 +739,9 @@ type ContractBase = Omit<
               uniques: readonly [];
               indexes: readonly [
                 {
-                  readonly name: 'AgentDefinition_modelDefinitionId_idx_148da3d2';
-                  readonly prefix: 'AgentDefinition_modelDefinitionId_idx';
-                  readonly columns: readonly ['modelDefinitionId'];
+                  readonly name: 'AgentDefinition_providerId_idx_d1904c54';
+                  readonly prefix: 'AgentDefinition_providerId_idx';
+                  readonly columns: readonly ['providerId'];
                   readonly unique: false;
                 },
               ];
@@ -735,11 +750,11 @@ type ContractBase = Omit<
                   readonly source: {
                     readonly namespaceId: 'public' & NamespaceId;
                     readonly tableName: 'AgentDefinition';
-                    readonly columns: readonly ['modelDefinitionId'];
+                    readonly columns: readonly ['providerId'];
                   };
                   readonly target: {
                     readonly namespaceId: 'public' & NamespaceId;
-                    readonly tableName: 'ModelDefinition';
+                    readonly tableName: 'Provider';
                     readonly columns: readonly ['id'];
                   };
                 },
@@ -1140,12 +1155,12 @@ type ContractBase = Omit<
                 },
               ];
             };
-            readonly ModelDefinition: {
+            readonly Provider: {
               columns: {
-                readonly apiKeyCiphertext: {
-                  readonly dataType: 'pg/text';
-                  readonly codecId: 'pg/text@1';
-                  readonly nullable: false;
+                readonly args: {
+                  readonly dataType: 'pg/jsonb';
+                  readonly codecId: 'pg/jsonb@1';
+                  readonly nullable: true;
                   readonly many: false;
                 };
                 readonly createdAt: {
@@ -1153,6 +1168,12 @@ type ContractBase = Omit<
                   readonly codecId: 'pg/timestamptz-string@1';
                   readonly nullable: false;
                   readonly default: { readonly kind: 'function'; readonly expression: 'now()' };
+                  readonly many: false;
+                };
+                readonly headers: {
+                  readonly dataType: 'pg/jsonb';
+                  readonly codecId: 'pg/jsonb@1';
+                  readonly nullable: true;
                   readonly many: false;
                 };
                 readonly id: {
@@ -1165,7 +1186,7 @@ type ContractBase = Omit<
                   };
                   readonly many: false;
                 };
-                readonly modelName: {
+                readonly name: {
                   readonly dataType: 'pg/text';
                   readonly codecId: 'pg/text@1';
                   readonly nullable: false;
@@ -1177,7 +1198,7 @@ type ContractBase = Omit<
                   readonly nullable: false;
                   readonly many: false;
                 };
-                readonly provider: {
+                readonly providerName: {
                   readonly dataType: 'pg/text';
                   readonly codecId: 'pg/text@1';
                   readonly nullable: false;
@@ -1191,11 +1212,11 @@ type ContractBase = Omit<
                 };
               };
               primaryKey: { readonly columns: readonly ['id'] };
-              uniques: readonly [];
+              uniques: readonly [{ readonly columns: readonly ['ownerId', 'name'] }];
               indexes: readonly [
                 {
-                  readonly name: 'ModelDefinition_ownerId_idx_e2d0c1ef';
-                  readonly prefix: 'ModelDefinition_ownerId_idx';
+                  readonly name: 'Provider_ownerId_idx_e2d0c1ef';
+                  readonly prefix: 'Provider_ownerId_idx';
                   readonly columns: readonly ['ownerId'];
                   readonly unique: false;
                 },
@@ -1204,7 +1225,7 @@ type ContractBase = Omit<
                 {
                   readonly source: {
                     readonly namespaceId: 'public' & NamespaceId;
-                    readonly tableName: 'ModelDefinition';
+                    readonly tableName: 'Provider';
                     readonly columns: readonly ['ownerId'];
                   };
                   readonly target: {
@@ -1362,10 +1383,7 @@ type ContractBase = Omit<
       readonly model: 'ChatbotAdapter';
     };
     readonly McpServer: { readonly namespace: 'public' & NamespaceId; readonly model: 'McpServer' };
-    readonly ModelDefinition: {
-      readonly namespace: 'public' & NamespaceId;
-      readonly model: 'ModelDefinition';
-    };
+    readonly Provider: { readonly namespace: 'public' & NamespaceId; readonly model: 'Provider' };
     readonly Session: { readonly namespace: 'public' & NamespaceId; readonly model: 'Session' };
     readonly User: { readonly namespace: 'public' & NamespaceId; readonly model: 'User' };
   };
@@ -1386,17 +1404,21 @@ type ContractBase = Omit<
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
               };
-              readonly modelDefinitionId: {
+              readonly model_id: {
                 readonly nullable: false;
-                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
               };
               readonly name: {
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
               };
-              readonly parameters: {
+              readonly options: {
                 readonly nullable: true;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/jsonb@1' };
+              };
+              readonly providerId: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
               };
               readonly updatedAt: {
                 readonly nullable: false;
@@ -1430,15 +1452,15 @@ type ContractBase = Omit<
                   readonly targetFields: readonly ['agentId'];
                 };
               };
-              readonly modelDefinition: {
+              readonly provider: {
                 readonly to: {
                   readonly namespace: 'public' & NamespaceId;
-                  readonly model: 'ModelDefinition';
+                  readonly model: 'Provider';
                 };
                 readonly cardinality: 'N:1';
                 readonly nullable: false;
                 readonly on: {
-                  readonly localFields: readonly ['modelDefinitionId'];
+                  readonly localFields: readonly ['providerId'];
                   readonly targetFields: readonly ['id'];
                 };
               };
@@ -1449,9 +1471,10 @@ type ContractBase = Omit<
               readonly fields: {
                 readonly createdAt: { readonly column: 'createdAt' };
                 readonly id: { readonly column: 'id' };
-                readonly modelDefinitionId: { readonly column: 'modelDefinitionId' };
+                readonly model_id: { readonly column: 'model_id' };
                 readonly name: { readonly column: 'name' };
-                readonly parameters: { readonly column: 'parameters' };
+                readonly options: { readonly column: 'options' };
+                readonly providerId: { readonly column: 'providerId' };
                 readonly updatedAt: { readonly column: 'updatedAt' };
               };
             };
@@ -1810,11 +1833,11 @@ type ContractBase = Omit<
               };
             };
           };
-          readonly ModelDefinition: {
+          readonly Provider: {
             readonly fields: {
-              readonly apiKeyCiphertext: {
-                readonly nullable: false;
-                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              readonly args: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/jsonb@1' };
               };
               readonly createdAt: {
                 readonly nullable: false;
@@ -1823,11 +1846,15 @@ type ContractBase = Omit<
                   readonly codecId: 'pg/timestamptz-string@1';
                 };
               };
+              readonly headers: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/jsonb@1' };
+              };
               readonly id: {
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
               };
-              readonly modelName: {
+              readonly name: {
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
               };
@@ -1835,7 +1862,7 @@ type ContractBase = Omit<
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
               };
-              readonly provider: {
+              readonly providerName: {
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
               };
@@ -1856,7 +1883,7 @@ type ContractBase = Omit<
                 readonly cardinality: '1:N';
                 readonly on: {
                   readonly localFields: readonly ['id'];
-                  readonly targetFields: readonly ['modelDefinitionId'];
+                  readonly targetFields: readonly ['providerId'];
                 };
               };
               readonly owner: {
@@ -1870,15 +1897,16 @@ type ContractBase = Omit<
               };
             };
             readonly storage: {
-              readonly table: 'ModelDefinition';
+              readonly table: 'Provider';
               readonly namespaceId: 'public';
               readonly fields: {
-                readonly apiKeyCiphertext: { readonly column: 'apiKeyCiphertext' };
+                readonly args: { readonly column: 'args' };
                 readonly createdAt: { readonly column: 'createdAt' };
+                readonly headers: { readonly column: 'headers' };
                 readonly id: { readonly column: 'id' };
-                readonly modelName: { readonly column: 'modelName' };
+                readonly name: { readonly column: 'name' };
                 readonly ownerId: { readonly column: 'ownerId' };
-                readonly provider: { readonly column: 'provider' };
+                readonly providerName: { readonly column: 'providerName' };
                 readonly updatedAt: { readonly column: 'updatedAt' };
               };
             };
@@ -2002,10 +2030,10 @@ type ContractBase = Omit<
                   readonly targetFields: readonly ['ownerId'];
                 };
               };
-              readonly modelDefinitions: {
+              readonly providers: {
                 readonly to: {
                   readonly namespace: 'public' & NamespaceId;
-                  readonly model: 'ModelDefinition';
+                  readonly model: 'Provider';
                 };
                 readonly cardinality: '1:N';
                 readonly on: {
@@ -2114,7 +2142,7 @@ type ContractBase = Omit<
           readonly onCreate: { readonly id: 'timestampNow'; readonly kind: 'generator' };
           readonly onUpdate: { readonly id: 'timestampNow'; readonly kind: 'generator' };
           readonly ref: {
-            readonly entry: 'ModelDefinition';
+            readonly entry: 'Provider';
             readonly field: 'updatedAt';
             readonly namespace: 'public';
           };

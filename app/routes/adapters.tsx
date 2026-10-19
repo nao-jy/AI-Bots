@@ -14,7 +14,7 @@ const page: Omit<EntityPageDefinition, "records"> = {
   columns: [
     { key: "name", label: "接続名" },
     { key: "platform", label: "プラットフォーム" },
-    { key: "credentialConfigured", label: "認証情報" },
+    { key: "envsConfigured", label: "環境変数" },
     { key: "updated", label: "最終更新" },
   ],
   fields: [
@@ -31,11 +31,16 @@ const page: Omit<EntityPageDefinition, "records"> = {
       ],
     },
     {
-      key: "credential",
-      label: "アクセストークン",
-      type: "password",
+      key: "envs",
+      label: "環境変数",
+      type: "key-value",
+      valueType: "string",
       wide: true,
-      placeholder: "新しいトークンを入力（任意）",
+      help: {
+        text: "利用するアダプタや、プラットフォーム固有の設定方法を確認できます。",
+        linkText: "Chat SDK アダプタドキュメント",
+        href: "https://chat-sdk.dev/adapters",
+      },
     },
   ],
 };

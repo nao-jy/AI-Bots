@@ -1,16 +1,16 @@
 // use prisma-8
 model User {
-  id               Int                        @id @default(autoincrement())
-  email            String                     @unique
-  passwordHash     String
-  name             String?
-  chatbots         Chatbot[]
-  modelDefinitions ModelDefinition[]
-  adapters         ChatAdapter[]
-  mcpServers       McpServer[]
-  sessions         Session[]
-  createdAt        TimestamptzString          @default(now())
-  updatedAt        temporal.updatedAtString()
+  id           Int                        @id @default(autoincrement())
+  email        String                     @unique
+  passwordHash String
+  name         String?
+  chatbots     Chatbot[]
+  providers    Provider[]
+  adapters     ChatAdapter[]
+  mcpServers   McpServer[]
+  sessions     Session[]
+  createdAt    TimestamptzString          @default(now())
+  updatedAt    temporal.updatedAtString()
 }
 
 model Session {
@@ -68,33 +68,35 @@ model ChatbotAdapter {
   @@index([adapterId])
 }
 
-model ModelDefinition {
-  id               Int                        @id @default(autoincrement())
-  provider         String
-  modelName        String
-  // Encrypted by the application before storage.
-  apiKeyCiphertext String
-  owner            User                       @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  ownerId          Int
-  agents           AgentDefinition[]
-  createdAt        TimestamptzString          @default(now())
-  updatedAt        temporal.updatedAtString()
+model Provider {
+  id           Int                        @id @default(autoincrement())
+  name         String
+  providerName String
+  args         Jsonb?
+  headers      Jsonb?
+  owner        User                       @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  ownerId      Int
+  agents       AgentDefinition[]
+  createdAt    TimestamptzString          @default(now())
+  updatedAt    temporal.updatedAtString()
 
   @@index([ownerId])
+  @@unique([ownerId, name])
 }
 
 model AgentDefinition {
-  id                Int                        @id @default(autoincrement())
-  name              String
-  modelDefinition   ModelDefinition            @relation(fields: [modelDefinitionId], references: [id], onDelete: Restrict)
-  modelDefinitionId Int
-  parameters        Jsonb?
-  chatbot           Chatbot?
-  mcpServers        AgentMcpServer[]
-  createdAt         TimestamptzString          @default(now())
-  updatedAt         temporal.updatedAtString()
+  id         Int                        @id @default(autoincrement())
+  name       String
+  provider   Provider                   @relation(fields: [providerId], references: [id], onDelete: Restrict)
+  providerId Int
+  model_id   String
+  options    Jsonb?
+  chatbot    Chatbot?
+  mcpServers AgentMcpServer[]
+  createdAt  TimestamptzString          @default(now())
+  updatedAt  temporal.updatedAtString()
 
-  @@index([modelDefinitionId])
+  @@index([providerId])
 }
 
 model McpServer {

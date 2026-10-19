@@ -9,7 +9,8 @@ import { APP_NAME } from "~/const";
 
 const page: Omit<EntityPageDefinition, "records"> = {
   title: "エージェント",
-  description: "モデル定義、推論パラメータ、利用するMCPサーバーを設定します。",
+  description:
+    "利用するプロバイダー、モデルID、オプション、MCPサーバーを設定します。",
   icon: "agents",
   columns: [
     { key: "name", label: "エージェント" },
@@ -24,11 +25,16 @@ const page: Omit<EntityPageDefinition, "records"> = {
       placeholder: "例：カスタマーサポート",
     },
     {
-      key: "modelDefinitionId",
-      label: "モデル定義",
+      key: "providerId",
+      label: "プロバイダー",
       type: "select",
       options: [],
-      placeholder: "モデル定義を選択",
+      placeholder: "プロバイダーを選択",
+    },
+    {
+      key: "model_id",
+      label: "モデルID",
+      placeholder: "例：gpt-4.1",
     },
     {
       key: "mcpServerIds",
@@ -38,11 +44,11 @@ const page: Omit<EntityPageDefinition, "records"> = {
       placeholder: "利用するMCPサーバーを選択",
     },
     {
-      key: "parameters",
-      label: "パラメータJSON",
+      key: "options",
+      label: "モデルオプション (JSON)",
       type: "textarea",
+      placeholder: "例：{\"temperature\":0.7}",
       wide: true,
-      placeholder: '{"temperature":0.7,"maxSteps":5}',
     },
   ],
 };
@@ -84,8 +90,8 @@ export default function Agents({ loaderData }: Route.ComponentProps) {
           options:
             field.key === "mcpServerIds"
               ? loaderData.serverOptions
-              : field.key === "modelDefinitionId"
-                ? loaderData.modelOptions
+              : field.key === "providerId"
+                ? loaderData.providerOptions
                 : field.options,
         })),
       }}

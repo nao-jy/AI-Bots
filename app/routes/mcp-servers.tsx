@@ -38,10 +38,10 @@ const page: Omit<EntityPageDefinition, "records"> = {
     },
     {
       key: "headers",
-      label: "HTTPヘッダーJSON",
-      type: "textarea",
+      label: "HTTPヘッダー",
+      type: "key-value",
+      valueType: "string",
       wide: true,
-      placeholder: '{"Authorization":"Bearer ..."}',
     },
   ],
 };

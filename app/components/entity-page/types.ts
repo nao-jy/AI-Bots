@@ -8,12 +8,15 @@ export type EntityField = {
     | "text"
     | "email"
     | "textarea"
+    | "key-value"
     | "select"
     | "multiselect"
     | "password";
   options?: string[] | EntityOption[];
   required?: boolean;
   wide?: boolean;
+  valueType?: "string" | "json-scalar";
+  help?: { text: string; linkText: string; href: string };
 };
 
 export type EntitySection = "bots" | "adapters" | "agents" | "models" | "mcp" | "users";

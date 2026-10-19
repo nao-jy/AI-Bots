@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { createCipheriv, randomBytes } from "node:crypto";
+import { createCipheriv, createDecipheriv, randomBytes } from "node:crypto";
 import type { CodecTypes } from "../../src/prisma/contract.d.ts";
 import { hashPassword, type AuthUser } from "./auth";
 import type { EntityRecord } from "../types/entities";
@@ -49,7 +49,7 @@ export async function listBots(user: AuthUser) {
     .orderBy((bot) => bot.updatedAt.desc())
     .all();
   const agents = await db.orm.public.AgentDefinition.include("chatbot")
-    .include("modelDefinition")
+    .include("provider")
     .all();
   const adapters = await db.orm.public.ChatAdapter.where({
     ownerId: user.id,
@@ -70,7 +70,7 @@ export async function listBots(user: AuthUser) {
     agentOptions: agents
       .filter(
         (agent) =>
-          agent.modelDefinition.ownerId === user.id &&
+          agent.provider.ownerId === user.id &&
           (!agent.chatbot ||
             (agent.chatbot.ownerId === user.id &&
               bots.some((bot) => bot.id === agent.chatbot!.id))),
@@ -180,16 +180,13 @@ export async function listAdapters(user: AuthUser) {
   }).all();
   return {
     records: adapters.map((adapter) => {
-      const envs = adapter.envs as {
-        credentialCiphertext?: string;
-      } | null;
+      const envs = decryptAdapterEnvs(adapter.envs);
       return record(adapter.id, adapter.updatedAt, {
         name: adapter.name,
         platform: platforms[adapter.platform] ?? adapter.platform,
         platformId: adapter.platform,
-        credentialConfigured: envs?.credentialCiphertext
-          ? "設定済み"
-          : "未設定",
+        envs: JSON.stringify(envs),
+        envsConfigured: Object.keys(envs).length ? "設定済み" : "未設定",
       });
     }),
   };
@@ -199,7 +196,7 @@ function encryptCredential(credential: string) {
   const keyValue = process.env.CREDENTIALS_ENCRYPTION_KEY;
   if (!keyValue)
     throw new Error(
-      "認証情報を保存するには CREDENTIALS_ENCRYPTION_KEY を設定してください。",
+      "認証情報を暗号化するには CREDENTIALS_ENCRYPTION_KEY を設定してください。",
     );
   const key = Buffer.from(keyValue, "base64");
   if (key.length !== 32)
@@ -215,6 +212,78 @@ function encryptCredential(credential: string) {
   return `${iv.toString("base64url")}.${cipher.getAuthTag().toString("base64url")}.${ciphertext.toString("base64url")}`;
 }
 
+function decryptCredential(value: string) {
+  const keyValue = process.env.CREDENTIALS_ENCRYPTION_KEY;
+  if (!keyValue)
+    throw new Error(
+      "認証情報を復号するには CREDENTIALS_ENCRYPTION_KEY を設定してください。",
+    );
+  const key = Buffer.from(keyValue, "base64");
+  if (key.length !== 32)
+    throw new Error(
+      "CREDENTIALS_ENCRYPTION_KEY は32バイトのbase64値にしてください。",
+    );
+  const [ivValue, authTagValue, ciphertextValue] = value.split(".");
+  if (!ivValue || !authTagValue || ciphertextValue === undefined)
+    throw new Error("保存された認証情報を読み込めません。");
+  const decipher = createDecipheriv(
+    "aes-256-gcm",
+    key,
+    Buffer.from(ivValue, "base64url"),
+  );
+  decipher.setAuthTag(Buffer.from(authTagValue, "base64url"));
+  return Buffer.concat([
+    decipher.update(Buffer.from(ciphertextValue, "base64url")),
+    decipher.final(),
+  ]).toString("utf8");
+}
+
+function encryptStringMap(values: Record<string, string>) {
+  const encryptedValues: Record<string, string> = {};
+  for (const [key, value] of Object.entries(values))
+    if (key.trim()) encryptedValues[key.trim()] = encryptCredential(value);
+  return { version: 1, encryptedValues };
+}
+
+function decryptEncryptedStringMap(value: unknown): Record<string, string> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  const envelope = value as {
+    version?: number;
+    encryptedValues?: Record<string, unknown>;
+  };
+  if (envelope.version !== 1 || !envelope.encryptedValues) return {};
+  const decrypted: Record<string, string> = {};
+  for (const [key, ciphertext] of Object.entries(envelope.encryptedValues))
+    if (typeof ciphertext === "string")
+      decrypted[key] = decryptCredential(ciphertext);
+  return decrypted;
+}
+
+function decryptAdapterEnvs(value: unknown): Record<string, string> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  const envs = value as {
+    version?: number;
+    encryptedValues?: Record<string, unknown>;
+    credentialCiphertext?: unknown;
+  };
+  if (envs.version === 1) return decryptEncryptedStringMap(value);
+  if (typeof envs.credentialCiphertext === "string")
+    return { ACCESS_TOKEN: decryptCredential(envs.credentialCiphertext) };
+  return {};
+}
+
+function decryptMcpHeaders(value: unknown): Record<string, string> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  const recordValue = value as Record<string, unknown>;
+  if (recordValue.version === 1 && "encryptedValues" in recordValue)
+    return decryptEncryptedStringMap(value);
+  return Object.fromEntries(
+    Object.entries(recordValue).filter(
+      (entry): entry is [string, string] => typeof entry[1] === "string",
+    ),
+  );
+}
+
 export async function saveAdapter(
   user: AuthUser,
   id: number | null,
@@ -222,45 +291,51 @@ export async function saveAdapter(
 ) {
   const name = String(values.get("name") ?? "").trim();
   const platform = String(values.get("platformId") ?? "").trim();
-  const credential = String(values.get("credential") ?? "").trim();
+  const envsValue = String(values.get("envs") ?? "{}").trim();
   if (!name || !platform)
     return { error: "接続名とプラットフォームを入力してください。" };
+  let envs: Record<string, string>;
+  try {
+    const parsed: unknown = JSON.parse(envsValue || "{}");
+    if (
+      !parsed ||
+      typeof parsed !== "object" ||
+      Array.isArray(parsed) ||
+      Object.values(parsed).some((value) => typeof value !== "string")
+    )
+      return { error: "環境変数は文字列のキー・値ペアで入力してください。" };
+    envs = parsed as Record<string, string>;
+  } catch {
+    return { error: "環境変数の形式を確認してください。" };
+  }
   if (id !== null) {
     if (!(await db.orm.public.ChatAdapter.first({ id, ownerId: user.id })))
       return { error: "アダプタが見つかりません。" };
   }
-  let envs: unknown = null;
-  if (id !== null)
-    envs = (await db.orm.public.ChatAdapter.first({ id, ownerId: user.id }))
-      ?.envs;
-  const previousEnvs = envs as { credentialCiphertext?: string } | null;
+  let encryptedEnvs: ReturnType<typeof encryptStringMap>;
   try {
-    envs = credential
-      ? {
-          ...previousEnvs,
-          credentialCiphertext: encryptCredential(credential),
-        }
-      : previousEnvs;
+    encryptedEnvs = encryptStringMap(envs);
   } catch (error) {
     return {
       error:
         error instanceof Error
           ? error.message
-          : "認証情報を暗号化できませんでした。",
+          : "環境変数を暗号化できませんでした。",
     };
   }
+  const storedEnvs = jsonb(encryptedEnvs);
   if (id === null) {
     await db.orm.public.ChatAdapter.create({
       name,
       platform,
       ownerId: user.id,
-      envs: jsonb(envs),
+      envs: storedEnvs,
     });
   } else {
     await db.orm.public.ChatAdapter.where({ id, ownerId: user.id }).update({
       name,
       platform,
-      envs: jsonb(envs),
+      envs: storedEnvs,
     });
   }
   return { ok: true };
@@ -273,74 +348,99 @@ export async function deleteAdapter(user: AuthUser, id: number) {
   return true;
 }
 
-export async function listModelDefinitions(user: AuthUser) {
-  const models = await db.orm.public.ModelDefinition.where({ ownerId: user.id })
-    .orderBy((model) => model.updatedAt.desc())
+export async function listProviders(user: AuthUser) {
+  const providers = await db.orm.public.Provider.where({ ownerId: user.id })
+    .orderBy((provider) => provider.updatedAt.desc())
     .all();
   return {
-    records: models.map((model) =>
-      record(model.id, model.updatedAt, {
-        provider: model.provider,
-        modelName: model.modelName,
-        apiKeyConfigured: model.apiKeyCiphertext ? "設定済み" : "未設定",
-      }),
-    ),
+    records: providers.map((provider) => {
+      const headers = decryptMcpHeaders(provider.headers);
+      return record(provider.id, provider.updatedAt, {
+        name: provider.name,
+        providerName: provider.providerName,
+        args: JSON.stringify(provider.args ?? {}, null, 2),
+        headers: JSON.stringify(headers, null, 2),
+        headersConfigured: Object.keys(headers).length ? "設定済み" : "未設定",
+      });
+    }),
   };
 }
 
-export async function saveModelDefinition(
+export async function saveProvider(
   user: AuthUser,
   id: number | null,
   values: FormData,
 ) {
-  const provider = String(values.get("provider") ?? "").trim();
-  const modelName = String(values.get("modelName") ?? "").trim();
-  const apiKey = String(values.get("apiKey") ?? "").trim();
-  if (!provider || !modelName)
-    return { error: "プロバイダーとモデル名を入力してください。" };
+  const name = String(values.get("name") ?? "").trim();
+  const providerName = String(values.get("providerName") ?? "").trim();
+  const argsValue = String(values.get("args") ?? "{}").trim();
+  const headersValue = String(values.get("headers") ?? "{}").trim();
+  if (!name || !providerName)
+    return { error: "接続名とプロバイダーを入力してください。" };
+  let args: unknown;
+  let headers: Record<string, string>;
+  try {
+    args = JSON.parse(argsValue || "{}");
+    if (!args || typeof args !== "object" || Array.isArray(args))
+      return { error: "プロバイダー引数にはオブジェクトを入力してください。" };
+  } catch {
+    return { error: "プロバイダー引数JSONの形式を確認してください。" };
+  }
+  try {
+    const parsed: unknown = JSON.parse(headersValue || "{}");
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed))
+      return { error: "HTTPヘッダーにはオブジェクトを入力してください。" };
+    if (Object.values(parsed).some((value) => typeof value !== "string"))
+      return { error: "HTTPヘッダーの値は文字列で入力してください。" };
+    headers = parsed as Record<string, string>;
+  } catch {
+    return { error: "HTTPヘッダーJSONの形式を確認してください。" };
+  }
   if (
     id !== null &&
-    !(await db.orm.public.ModelDefinition.first({ id, ownerId: user.id }))
+    !(await db.orm.public.Provider.first({ id, ownerId: user.id }))
   )
-    return { error: "モデル定義が見つかりません。" };
-  if (id === null && !apiKey) return { error: "APIキーを入力してください。" };
-
-  let apiKeyCiphertext: string | undefined;
-  if (apiKey) {
-    try {
-      apiKeyCiphertext = encryptCredential(apiKey);
-    } catch (error) {
-      return {
-        error:
-          error instanceof Error
-            ? error.message
-            : "APIキーを暗号化できませんでした。",
-      };
-    }
+    return { error: "プロバイダーが見つかりません。" };
+  const duplicate = await db.orm.public.Provider.first({
+    ownerId: user.id,
+    name,
+  });
+  if (duplicate && duplicate.id !== id)
+    return { error: "同じ接続名のプロバイダーが既にあります。" };
+  let encryptedHeaders: ReturnType<typeof encryptStringMap>;
+  try {
+    encryptedHeaders = encryptStringMap(headers);
+  } catch (error) {
+    return {
+      error:
+        error instanceof Error
+          ? error.message
+          : "HTTPヘッダーを暗号化できませんでした。",
+    };
   }
+  const saved = {
+    name,
+    providerName,
+    args: jsonb(args),
+    headers: jsonb(encryptedHeaders),
+  };
   if (id === null) {
-    await db.orm.public.ModelDefinition.create({
-      provider,
-      modelName,
-      apiKeyCiphertext: apiKeyCiphertext!,
+    await db.orm.public.Provider.create({
+      ...saved,
       ownerId: user.id,
     });
   } else {
-    await db.orm.public.ModelDefinition.where({ id, ownerId: user.id }).update({
-      provider,
-      modelName,
-      ...(apiKeyCiphertext ? { apiKeyCiphertext } : {}),
-    });
+    await db.orm.public.Provider.where({ id, ownerId: user.id }).update(saved);
   }
   return { ok: true };
 }
 
-export async function deleteModelDefinition(user: AuthUser, id: number) {
-  if (!(await db.orm.public.ModelDefinition.first({ id, ownerId: user.id })))
+export async function deleteProvider(user: AuthUser, id: number) {
+  if (!(await db.orm.public.Provider.first({ id, ownerId: user.id })))
     return false;
-  if (await db.orm.public.AgentDefinition.first({ modelDefinitionId: id }))
+  if (await db.orm.public.AgentDefinition.first({ providerId: id }))
     return false;
-  await db.orm.public.ModelDefinition.where({ id, ownerId: user.id }).delete();
+  await db.orm.public.Provider.where({ id, ownerId: user.id }).delete();
   return true;
 }
 
@@ -350,7 +450,7 @@ export async function listAgents(user: AuthUser) {
     (links) => links.include("mcpServer"),
   )
     .include("chatbot")
-    .include("modelDefinition")
+    .include("provider")
     .all();
   const ownedBots = await db.orm.public.Chatbot.where({
     ownerId: user.id,
@@ -364,7 +464,7 @@ export async function listAgents(user: AuthUser) {
     records: agents
       .filter(
         (agent) =>
-          agent.modelDefinition.ownerId === user.id &&
+          agent.provider.ownerId === user.id &&
           (!agent.chatbot || ownedAgentIds.has(agent.id)),
       )
       .map((agent) => {
@@ -373,12 +473,12 @@ export async function listAgents(user: AuthUser) {
         );
         return record(agent.id, agent.updatedAt, {
           name: agent.name,
-          model: agent.modelDefinition.modelName,
-          provider: agent.modelDefinition.provider,
+          model: agent.model_id,
+          provider: agent.provider.name,
           mcpServerIds: ownedLinks.map((link) => link.mcpServerId).join(","),
           servers:
             ownedLinks.map((link) => link.mcpServer.name).join("、") || "—",
-          parameters: JSON.stringify(agent.parameters ?? {}, null, 2),
+          options: JSON.stringify(agent.options ?? {}, null, 2),
           status: agent.chatbot
             ? `ボット「${agent.chatbot.name}」で利用中`
             : "未使用",
@@ -388,11 +488,11 @@ export async function listAgents(user: AuthUser) {
       label: server.name,
       value: String(server.id),
     })),
-    modelOptions: (
-      await db.orm.public.ModelDefinition.where({ ownerId: user.id }).all()
-    ).map((model) => ({
-      label: `${model.provider} / ${model.modelName}`,
-      value: String(model.id),
+    providerOptions: (
+      await db.orm.public.Provider.where({ ownerId: user.id }).all()
+    ).map((provider) => ({
+      label: `${provider.name} (${provider.providerName})`,
+      value: String(provider.id),
     })),
   };
 }
@@ -403,30 +503,31 @@ export async function saveAgent(
   values: FormData,
 ) {
   const name = String(values.get("name") ?? "").trim();
-  const modelDefinitionId = Number(values.get("modelDefinitionId"));
-  const parametersValue = String(values.get("parameters") ?? "{}").trim();
+  const providerId = Number(values.get("providerId"));
+  const modelId = String(values.get("model_id") ?? "").trim();
+  const optionsValue = String(values.get("options") ?? "{}").trim();
   const serverIds = idList(values.get("mcpServerIds")?.toString() ?? null);
   if (!name) return { error: "エージェント名を入力してください。" };
-  if (!Number.isInteger(modelDefinitionId))
-    return { error: "モデル定義を選択してください。" };
+  if (!Number.isInteger(providerId) || !modelId)
+    return { error: "プロバイダーとモデルIDを入力してください。" };
   if (
-    !(await db.orm.public.ModelDefinition.first({
-      id: modelDefinitionId,
+    !(await db.orm.public.Provider.first({
+      id: providerId,
       ownerId: user.id,
     }))
   )
-    return { error: "選択したモデル定義が見つかりません。" };
-  let parameters: unknown;
+    return { error: "選択したプロバイダーが見つかりません。" };
+  let options: unknown;
   try {
-    parameters = JSON.parse(parametersValue || "{}");
+    options = JSON.parse(optionsValue || "{}");
     if (
-      !parameters ||
-      typeof parameters !== "object" ||
-      Array.isArray(parameters)
+      !options ||
+      typeof options !== "object" ||
+      Array.isArray(options)
     )
-      return { error: "パラメータJSONにはオブジェクトを入力してください。" };
+      return { error: "オプションにはJSONオブジェクトを入力してください。" };
   } catch {
-    return { error: "パラメータJSONの形式を確認してください。" };
+    return { error: "オプションJSONの形式を確認してください。" };
   }
   const servers = await db.orm.public.McpServer.where({
     ownerId: user.id,
@@ -439,9 +540,9 @@ export async function saveAgent(
     return { error: "選択したMCPサーバーを使用できません。" };
   if (id !== null) {
     const existing = await db.orm.public.AgentDefinition.where({ id })
-      .include("modelDefinition")
+      .include("provider")
       .first();
-    if (!existing || existing.modelDefinition.ownerId !== user.id)
+    if (!existing || existing.provider.ownerId !== user.id)
       return { error: "エージェントが見つかりません。" };
   }
   if (id !== null) {
@@ -451,8 +552,9 @@ export async function saveAgent(
   }
   const valuesToSave = {
     name,
-    modelDefinitionId,
-    parameters: jsonb(parameters),
+    providerId,
+    model_id: modelId,
+    options: jsonb(options),
   };
   await db.transaction(async (tx) => {
     const agentId =
@@ -482,9 +584,9 @@ export async function saveAgent(
 
 export async function deleteAgent(user: AuthUser, id: number) {
   const agent = await db.orm.public.AgentDefinition.where({ id })
-    .include("modelDefinition")
+    .include("provider")
     .first();
-  if (!agent || agent.modelDefinition.ownerId !== user.id) return false;
+  if (!agent || agent.provider.ownerId !== user.id) return false;
   const bot = await db.orm.public.Chatbot.first({ agentId: id });
   if (bot) return false;
   const ownServers = await db.orm.public.McpServer.where({
@@ -513,7 +615,7 @@ export async function listMcpServers(user: AuthUser) {
         transport: transports[server.transport] ?? server.transport,
         transportId: server.transport,
         endpoint: server.endpoint ?? "",
-        headers: JSON.stringify(server.headers ?? {}, null, 2),
+        headers: JSON.stringify(decryptMcpHeaders(server.headers), null, 2),
         status: server.endpoint ? "接続先登録済み" : "接続先未設定",
       });
     }),
@@ -532,13 +634,14 @@ export async function saveMcpServer(
   const headersValue = String(values.get("headers") ?? "{}").trim();
   if (!name || !transport)
     return { error: "サーバー名とトランスポートを入力してください。" };
-  let headers: unknown;
+  let headers: Record<string, string>;
   try {
-    headers = JSON.parse(headersValue || "{}");
-    if (!headers || typeof headers !== "object" || Array.isArray(headers))
+    const parsed: unknown = JSON.parse(headersValue || "{}");
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed))
       return { error: "ヘッダーJSONにはオブジェクトを入力してください。" };
-    if (Object.values(headers).some((value) => typeof value !== "string"))
+    if (Object.values(parsed).some((value) => typeof value !== "string"))
       return { error: "ヘッダーの値は文字列で入力してください。" };
+    headers = parsed as Record<string, string>;
   } catch {
     return { error: "ヘッダーJSONの形式を確認してください。" };
   }
@@ -547,12 +650,23 @@ export async function saveMcpServer(
     !(await db.orm.public.McpServer.first({ id, ownerId: user.id }))
   )
     return { error: "MCPサーバーが見つかりません。" };
+  let encryptedHeaders: ReturnType<typeof encryptStringMap>;
+  try {
+    encryptedHeaders = encryptStringMap(headers);
+  } catch (error) {
+    return {
+      error:
+        error instanceof Error
+          ? error.message
+          : "HTTPヘッダーを暗号化できませんでした。",
+    };
+  }
   const saved = {
     name,
     description: description || null,
     transport,
     endpoint: endpoint || null,
-    headers: jsonb(headers),
+    headers: jsonb(encryptedHeaders),
   };
   if (id === null)
     await db.orm.public.McpServer.create({ ...saved, ownerId: user.id });

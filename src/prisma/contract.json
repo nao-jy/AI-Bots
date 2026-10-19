@@ -28,8 +28,8 @@
       "model": "McpServer",
       "namespace": "public"
     },
-    "ModelDefinition": {
-      "model": "ModelDefinition",
+    "Provider": {
+      "model": "Provider",
       "namespace": "public"
     },
     "Session": {
@@ -61,10 +61,10 @@
                   "kind": "scalar"
                 }
               },
-              "modelDefinitionId": {
+              "model_id": {
                 "nullable": false,
                 "type": {
-                  "codecId": "pg/int4@1",
+                  "codecId": "pg/text@1",
                   "kind": "scalar"
                 }
               },
@@ -75,10 +75,17 @@
                   "kind": "scalar"
                 }
               },
-              "parameters": {
+              "options": {
                 "nullable": true,
                 "type": {
                   "codecId": "pg/jsonb@1",
+                  "kind": "scalar"
+                }
+              },
+              "providerId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
                   "kind": "scalar"
                 }
               },
@@ -122,19 +129,19 @@
                   "namespace": "public"
                 }
               },
-              "modelDefinition": {
+              "provider": {
                 "cardinality": "N:1",
                 "nullable": false,
                 "on": {
                   "localFields": [
-                    "modelDefinitionId"
+                    "providerId"
                   ],
                   "targetFields": [
                     "id"
                   ]
                 },
                 "to": {
-                  "model": "ModelDefinition",
+                  "model": "Provider",
                   "namespace": "public"
                 }
               }
@@ -147,14 +154,17 @@
                 "id": {
                   "column": "id"
                 },
-                "modelDefinitionId": {
-                  "column": "modelDefinitionId"
+                "model_id": {
+                  "column": "model_id"
                 },
                 "name": {
                   "column": "name"
                 },
-                "parameters": {
-                  "column": "parameters"
+                "options": {
+                  "column": "options"
+                },
+                "providerId": {
+                  "column": "providerId"
                 },
                 "updatedAt": {
                   "column": "updatedAt"
@@ -697,12 +707,12 @@
               "table": "McpServer"
             }
           },
-          "ModelDefinition": {
+          "Provider": {
             "fields": {
-              "apiKeyCiphertext": {
-                "nullable": false,
+              "args": {
+                "nullable": true,
                 "type": {
-                  "codecId": "pg/text@1",
+                  "codecId": "pg/jsonb@1",
                   "kind": "scalar"
                 }
               },
@@ -713,6 +723,13 @@
                   "kind": "scalar"
                 }
               },
+              "headers": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/jsonb@1",
+                  "kind": "scalar"
+                }
+              },
               "id": {
                 "nullable": false,
                 "type": {
@@ -720,7 +737,7 @@
                   "kind": "scalar"
                 }
               },
-              "modelName": {
+              "name": {
                 "nullable": false,
                 "type": {
                   "codecId": "pg/text@1",
@@ -734,7 +751,7 @@
                   "kind": "scalar"
                 }
               },
-              "provider": {
+              "providerName": {
                 "nullable": false,
                 "type": {
                   "codecId": "pg/text@1",
@@ -757,7 +774,7 @@
                     "id"
                   ],
                   "targetFields": [
-                    "modelDefinitionId"
+                    "providerId"
                   ]
                 },
                 "to": {
@@ -784,30 +801,33 @@
             },
             "storage": {
               "fields": {
-                "apiKeyCiphertext": {
-                  "column": "apiKeyCiphertext"
+                "args": {
+                  "column": "args"
                 },
                 "createdAt": {
                   "column": "createdAt"
                 },
+                "headers": {
+                  "column": "headers"
+                },
                 "id": {
                   "column": "id"
                 },
-                "modelName": {
-                  "column": "modelName"
+                "name": {
+                  "column": "name"
                 },
                 "ownerId": {
                   "column": "ownerId"
                 },
-                "provider": {
-                  "column": "provider"
+                "providerName": {
+                  "column": "providerName"
                 },
                 "updatedAt": {
                   "column": "updatedAt"
                 }
               },
               "namespaceId": "public",
-              "table": "ModelDefinition"
+              "table": "Provider"
             }
           },
           "Session": {
@@ -979,7 +999,7 @@
                   "namespace": "public"
                 }
               },
-              "modelDefinitions": {
+              "providers": {
                 "cardinality": "1:N",
                 "on": {
                   "localFields": [
@@ -990,7 +1010,7 @@
                   ]
                 },
                 "to": {
-                  "model": "ModelDefinition",
+                  "model": "Provider",
                   "namespace": "public"
                 }
               },
@@ -1064,9 +1084,9 @@
                   },
                   "nullable": false
                 },
-                "modelDefinitionId": {
-                  "codecId": "pg/int4@1",
-                  "dataType": "pg/int4",
+                "model_id": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
                   "nullable": false
                 },
                 "name": {
@@ -1074,10 +1094,15 @@
                   "dataType": "pg/text",
                   "nullable": false
                 },
-                "parameters": {
+                "options": {
                   "codecId": "pg/jsonb@1",
                   "dataType": "pg/jsonb",
                   "nullable": true
+                },
+                "providerId": {
+                  "codecId": "pg/int4@1",
+                  "dataType": "pg/int4",
+                  "nullable": false
                 },
                 "updatedAt": {
                   "codecId": "pg/timestamptz-string@1",
@@ -1088,12 +1113,12 @@
               "foreignKeys": [
                 {
                   "index": {
-                    "name": "AgentDefinition_modelDefinitionId_idx_148da3d2"
+                    "name": "AgentDefinition_providerId_idx_d1904c54"
                   },
                   "onDelete": "restrict",
                   "source": {
                     "columns": [
-                      "modelDefinitionId"
+                      "providerId"
                     ],
                     "namespaceId": "public",
                     "tableName": "AgentDefinition"
@@ -1103,17 +1128,17 @@
                       "id"
                     ],
                     "namespaceId": "public",
-                    "tableName": "ModelDefinition"
+                    "tableName": "Provider"
                   }
                 }
               ],
               "indexes": [
                 {
                   "columns": [
-                    "modelDefinitionId"
+                    "providerId"
                   ],
-                  "name": "AgentDefinition_modelDefinitionId_idx_148da3d2",
-                  "prefix": "AgentDefinition_modelDefinitionId_idx",
+                  "name": "AgentDefinition_providerId_idx_d1904c54",
+                  "prefix": "AgentDefinition_providerId_idx",
                   "unique": false
                 }
               ],
@@ -1614,12 +1639,12 @@
               },
               "uniques": []
             },
-            "ModelDefinition": {
+            "Provider": {
               "columns": {
-                "apiKeyCiphertext": {
-                  "codecId": "pg/text@1",
-                  "dataType": "pg/text",
-                  "nullable": false
+                "args": {
+                  "codecId": "pg/jsonb@1",
+                  "dataType": "pg/jsonb",
+                  "nullable": true
                 },
                 "createdAt": {
                   "codecId": "pg/timestamptz-string@1",
@@ -1630,6 +1655,11 @@
                   },
                   "nullable": false
                 },
+                "headers": {
+                  "codecId": "pg/jsonb@1",
+                  "dataType": "pg/jsonb",
+                  "nullable": true
+                },
                 "id": {
                   "codecId": "pg/int4@1",
                   "dataType": "pg/int4",
@@ -1639,7 +1669,7 @@
                   },
                   "nullable": false
                 },
-                "modelName": {
+                "name": {
                   "codecId": "pg/text@1",
                   "dataType": "pg/text",
                   "nullable": false
@@ -1649,7 +1679,7 @@
                   "dataType": "pg/int4",
                   "nullable": false
                 },
-                "provider": {
+                "providerName": {
                   "codecId": "pg/text@1",
                   "dataType": "pg/text",
                   "nullable": false
@@ -1663,7 +1693,7 @@
               "foreignKeys": [
                 {
                   "index": {
-                    "name": "ModelDefinition_ownerId_idx_e2d0c1ef"
+                    "name": "Provider_ownerId_idx_e2d0c1ef"
                   },
                   "onDelete": "cascade",
                   "source": {
@@ -1671,7 +1701,7 @@
                       "ownerId"
                     ],
                     "namespaceId": "public",
-                    "tableName": "ModelDefinition"
+                    "tableName": "Provider"
                   },
                   "target": {
                     "columns": [
@@ -1687,8 +1717,8 @@
                   "columns": [
                     "ownerId"
                   ],
-                  "name": "ModelDefinition_ownerId_idx_e2d0c1ef",
-                  "prefix": "ModelDefinition_ownerId_idx",
+                  "name": "Provider_ownerId_idx_e2d0c1ef",
+                  "prefix": "Provider_ownerId_idx",
                   "unique": false
                 }
               ],
@@ -1697,7 +1727,14 @@
                   "id"
                 ]
               },
-              "uniques": []
+              "uniques": [
+                {
+                  "columns": [
+                    "ownerId",
+                    "name"
+                  ]
+                }
+              ]
             },
             "Session": {
               "columns": {
@@ -1850,10 +1887,10 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "90303116f963c8685cd5d838420106241bdc2a09682e3fed66ba47656fd34d66"
+    "storageHash": "fc86a5f332489690564a0f0a256b5172e5d46aea7216ecb5c30c048fad696e48"
   },
   "execution": {
-    "executionHash": "630d99ce0f7c28f2943c7da17636b9c973be8aabb7d495a34d50f89953b2f784",
+    "executionHash": "8b50cbf3e7a3d7129e709e055e4a7b51f3ed103797223f4237ea9e19211cc84f",
     "mutations": {
       "defaults": [
         {
@@ -1926,7 +1963,7 @@
             "kind": "generator"
           },
           "ref": {
-            "entry": "ModelDefinition",
+            "entry": "Provider",
             "field": "updatedAt",
             "namespace": "public"
           }

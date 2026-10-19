@@ -4,43 +4,62 @@ import {
   type EntityPageDefinition,
 } from "../components/entity-page-view";
 import {
-  deleteModelDefinition,
-  listModelDefinitions,
-  saveModelDefinition,
+  deleteProvider,
+  listProviders,
+  saveProvider,
 } from "../.server/entities";
 import { requireUser } from "../.server/auth";
 import { APP_NAME } from "~/const";
 
 const page: Omit<EntityPageDefinition, "records"> = {
-  title: "モデル定義",
-  description: "AIプロバイダー、モデル名、APIキーを管理します。",
+  title: "プロバイダー",
+  description: "AI SDKプロバイダー接続とリクエスト設定を管理します。",
   icon: "models",
   columns: [
-    { key: "modelName", label: "モデル名" },
-    { key: "provider", label: "プロバイダー" },
-    { key: "apiKeyConfigured", label: "APIキー" },
+    { key: "name", label: "接続名" },
+    { key: "providerName", label: "プロバイダー" },
+    { key: "headersConfigured", label: "HTTPヘッダー" },
     { key: "updated", label: "最終更新" },
   ],
   fields: [
-    { key: "provider", label: "プロバイダー", placeholder: "例：OpenAI" },
-    { key: "modelName", label: "モデル名", placeholder: "例：gpt-4.1" },
     {
-      key: "apiKey",
-      label: "APIキー",
-      type: "password",
-      required: true,
+      key: "name",
+      label: "接続名",
+      placeholder: "例：社内OpenAI",
+    },
+    {
+      key: "providerName",
+      label: "プロバイダー識別子",
+      placeholder: "例：openai.responses",
+      help: {
+        text: "各プロバイダーのモデル名や利用可能なオプションを確認できます。",
+        linkText: "AI SDK プロバイダードキュメント",
+        href: "https://ai-sdk.dev/providers/ai-sdk-providers",
+      },
+    },
+    {
+      key: "args",
+      label: "プロバイダー引数 (JSON)",
+      type: "textarea",
       wide: true,
-      placeholder: "作成時は必須、編集時は変更する場合のみ入力",
+      placeholder: "{}",
+    },
+    {
+      key: "headers",
+      label: "HTTPヘッダー",
+      type: "textarea",
+      wide: true,
+      placeholder: '{"Authorization":"Bearer ..."}',
     },
   ],
 };
 
 export function meta() {
-  return [{ title: `モデル定義 | ${APP_NAME}` }];
+  return [{ title: `プロバイダー | ${APP_NAME}` }];
 }
 
 export async function loader({ request }: Route.LoaderArgs) {
-  return listModelDefinitions(await requireUser(request));
+  return listProviders(await requireUser(request));
 }
 
 export async function action({ request }: Route.ActionArgs) {
@@ -49,16 +68,16 @@ export async function action({ request }: Route.ActionArgs) {
   const intent = String(form.get("_intent") ?? "");
   const id = Number(form.get("id"));
   if (intent === "delete") {
-    const deleted = Number.isInteger(id) && (await deleteModelDefinition(user, id));
+    const deleted = Number.isInteger(id) && (await deleteProvider(user, id));
     return deleted
       ? { ok: true }
-      : { ok: false, error: "モデル定義が見つからないか、エージェントで使用中です。" };
+      : { ok: false, error: "プロバイダーが見つからないか、エージェントで使用中です。" };
   }
-  if (intent === "create") return saveModelDefinition(user, null, form);
+  if (intent === "create") return saveProvider(user, null, form);
   if (intent === "update")
     return Number.isInteger(id)
-      ? saveModelDefinition(user, id, form)
-      : { ok: false, error: "モデル定義が見つかりません。" };
+      ? saveProvider(user, id, form)
+      : { ok: false, error: "プロバイダーが見つかりません。" };
   return { ok: false, error: "操作を判定できませんでした。" };
 }
 

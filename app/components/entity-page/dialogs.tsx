@@ -1,7 +1,9 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
   Alert,
+  Anchor,
   Button,
+  Group,
   Modal,
   MultiSelect,
   PasswordInput,
@@ -14,6 +16,132 @@ import {
 import { useFetcher } from "react-router";
 import type { EntityRecord } from "../../types/entities";
 import type { EntityDialogMode, EntityPageDefinition } from "./types";
+
+type KeyValuePair = { key: string; value: string };
+
+function parsePairs(value: unknown): KeyValuePair[] {
+  if (typeof value !== "string" || !value) return [];
+  try {
+    const parsed: unknown = JSON.parse(value);
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed))
+      return [];
+    return Object.entries(parsed).map(([key, item]) => ({
+      key,
+      value: typeof item === "string" ? item : (JSON.stringify(item) ?? ""),
+    }));
+  } catch {
+    return [];
+  }
+}
+
+function serializePairs(
+  pairs: KeyValuePair[],
+  valueType: "string" | "json-scalar",
+) {
+  return JSON.stringify(
+    Object.fromEntries(
+      pairs
+        .filter(({ key }) => key.trim())
+        .map(({ key, value }) => {
+          if (valueType === "string") return [key.trim(), value];
+          try {
+            const parsed: unknown = JSON.parse(value);
+            return [
+              key.trim(),
+              parsed === null ||
+              ["string", "number", "boolean"].includes(typeof parsed)
+                ? parsed
+                : value,
+            ];
+          } catch {
+            return [key.trim(), value];
+          }
+        }),
+    ),
+  );
+}
+
+function KeyValueEditor({
+  name,
+  label,
+  initialValue,
+  valueType = "string",
+}: {
+  name: string;
+  label: string;
+  initialValue: unknown;
+  valueType?: "string" | "json-scalar";
+}) {
+  const [pairs, setPairs] = useState(() => parsePairs(initialValue));
+  return (
+    <div>
+      <Text size="sm" fw={500} mb={6}>
+        {label}
+      </Text>
+      <input
+        type="hidden"
+        name={name}
+        value={serializePairs(pairs, valueType)}
+      />
+      {pairs.map((pair, index) => (
+        <Group key={index} align="flex-end" wrap="nowrap" mb="xs">
+          <TextInput
+            aria-label={`${label}のキー ${index + 1}`}
+            placeholder="キー"
+            value={pair.key}
+            onChange={(event) =>
+              setPairs((current) =>
+                current.map((item, itemIndex) =>
+                  itemIndex === index
+                    ? { ...item, key: event.currentTarget.value }
+                    : item,
+                ),
+              )
+            }
+            style={{ flex: 1 }}
+          />
+          <TextInput
+            aria-label={`${label}の値 ${index + 1}`}
+            placeholder="値"
+            value={pair.value}
+            onChange={(event) =>
+              setPairs((current) =>
+                current.map((item, itemIndex) =>
+                  itemIndex === index
+                    ? { ...item, value: event.currentTarget.value }
+                    : item,
+                ),
+              )
+            }
+            style={{ flex: 1 }}
+          />
+          <Button
+            type="button"
+            variant="subtle"
+            color="red"
+            size="xs"
+            onClick={() =>
+              setPairs((current) => current.filter((_, i) => i !== index))
+            }
+            aria-label={`${label}の行 ${index + 1} を削除`}
+          >
+            削除
+          </Button>
+        </Group>
+      ))}
+      <Button
+        type="button"
+        variant="light"
+        size="xs"
+        onClick={() =>
+          setPairs((current) => [...current, { key: "", value: "" }])
+        }
+      >
+        ＋ ペアを追加
+      </Button>
+    </div>
+  );
+}
 
 export function EntityPageDialogs({
   page,
@@ -83,6 +211,13 @@ export function EntityPageDialogs({
                     minRows={3}
                     defaultValue={String(selected?.[field.key] ?? "")}
                   />
+                ) : field.type === "key-value" ? (
+                  <KeyValueEditor
+                    name={field.key}
+                    label={field.label}
+                    initialValue={selected?.[field.key]}
+                    valueType={field.valueType}
+                  />
                 ) : field.type === "select" ? (
                   <Select
                     name={field.key}
@@ -123,6 +258,18 @@ export function EntityPageDialogs({
                     placeholder={field.placeholder}
                     defaultValue={String(selected?.[field.key] ?? "")}
                   />
+                )}
+                {field.help && (
+                  <Text size="xs" c="dimmed" mt={6}>
+                    {field.help.text}{" "}
+                    <Anchor
+                      href={field.help.href}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      {field.help.linkText}
+                    </Anchor>
+                  </Text>
                 )}
               </div>
             ))}
