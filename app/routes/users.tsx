@@ -3,11 +3,7 @@ import {
   EntityPageView,
   type EntityPageDefinition,
 } from "../components/entity-page-view";
-import {
-  deleteUser,
-  listUsers,
-  saveUser,
-} from "../.server/entities";
+import { deleteUser, listUsers, saveUser } from "../.server/entities";
 import { requireUser } from "../.server/auth";
 import { APP_NAME } from "~/const";
 
@@ -28,7 +24,13 @@ const page: Omit<EntityPageDefinition, "records"> = {
       type: "email",
       placeholder: "name@example.com",
     },
-    { key: "password", label: "初期パスワード", type: "password", required: true, placeholder: "12文字以上（編集時は空欄のまま）" },
+    {
+      key: "password",
+      label: "初期パスワード",
+      type: "password",
+      required: true,
+      placeholder: "12文字以上（編集時は空欄のまま）",
+    },
   ],
 };
 
@@ -37,8 +39,8 @@ export function meta() {
 }
 
 export async function loader({ request }: Route.LoaderArgs) {
-  await requireUser(request);
-  return { users: await listUsers() };
+  const currentUser = await requireUser(request);
+  return { users: await listUsers(), currentUserId: currentUser.id };
 }
 
 export async function action({ request }: Route.ActionArgs) {
@@ -46,15 +48,30 @@ export async function action({ request }: Route.ActionArgs) {
   const form = await request.formData();
   const intent = String(form.get("_intent") ?? "");
   const id = Number(form.get("id"));
-  if (intent === "delete")
-    return Number.isInteger(id) && await deleteUser(id, actor.id)
+  if (intent === "delete") {
+    if (id === actor.id) {
+      return { ok: false, error: "自分のアカウントは削除できません。" };
+    }
+    return Number.isInteger(id) && (await deleteUser(id, actor.id))
       ? { ok: true }
       : { ok: false, error: "ユーザーが見つかりません。" };
+  }
   if (intent === "create") return saveUser(null, form);
-  if (intent === "update") return Number.isInteger(id) ? saveUser(id, form) : { ok: false, error: "ユーザーが見つかりません。" };
+  if (intent === "update")
+    return Number.isInteger(id)
+      ? saveUser(id, form)
+      : { ok: false, error: "ユーザーが見つかりません。" };
   return { ok: false, error: "操作を判定できませんでした。" };
 }
 
 export default function Users({ loaderData }: Route.ComponentProps) {
-  return <EntityPageView page={{ ...page, records: loaderData.users }} />;
+  return (
+    <EntityPageView
+      page={{
+        ...page,
+        records: loaderData.users,
+        protectedRecordId: loaderData.currentUserId,
+      }}
+    />
+  );
 }

@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import {
   isRouteErrorResponse,
   Links,
@@ -5,6 +6,7 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
+  useNavigation,
 } from "react-router";
 
 import type { Route } from "./+types/root";
@@ -50,7 +52,61 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
-  return <Outlet />;
+  const navigation = useNavigation();
+  const isPending = navigation.state !== "idle";
+  const [showPending, setShowPending] = useState(false);
+
+  useEffect(() => {
+    if (!isPending) {
+      setShowPending(false);
+      return;
+    }
+
+    const timeout = window.setTimeout(() => setShowPending(true), 120);
+    return () => window.clearTimeout(timeout);
+  }, [isPending]);
+
+  const destination = navigation.location?.pathname;
+  const destinationLabel = destination
+    ? getNavigationLabel(destination)
+    : navigation.formAction === "/logout"
+      ? "ログアウト"
+      : "処理";
+  const pendingMessage = destination
+    ? `${destinationLabel}を読み込んでいます`
+    : destinationLabel === "ログアウト"
+      ? "ログアウトしています"
+      : "送信しています";
+
+  return (
+    <>
+      <Outlet />
+      {showPending && (
+        <div className="navigation-loading-backdrop" aria-busy="true">
+          <div className="navigation-loading" role="status" aria-live="polite">
+            <span className="navigation-loading-spinner" aria-hidden="true" />
+            <span>{pendingMessage}</span>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+function getNavigationLabel(pathname: string) {
+  if (pathname === "/") return "ダッシュボード";
+
+  const labels: Record<string, string> = {
+    "/bots": "チャットボット",
+    "/adapters": "アダプタ",
+    "/agents": "エージェント",
+    "/mcp-servers": "MCPサーバー",
+    "/users": "ユーザー",
+    "/login": "ログイン画面",
+    "/logout": "ログアウト",
+  };
+
+  return labels[pathname] ?? "ページ";
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {

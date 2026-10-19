@@ -55,10 +55,14 @@ export async function createSession(userId: number) {
 export async function deleteSession(request: Request) {
   const token = getSessionToken(request);
   if (!token) return;
-  await db.orm.public.Session.where({ tokenHash: hashSessionToken(token) }).delete();
+  await db.orm.public.Session.where({
+    tokenHash: hashSessionToken(token),
+  }).delete();
 }
 
-export async function getSessionUser(request: Request): Promise<AuthUser | null> {
+export async function getSessionUser(
+  request: Request,
+): Promise<AuthUser | null> {
   const token = getSessionToken(request);
   if (!token) return null;
 
@@ -94,6 +98,10 @@ export async function verifyPassword(password: string, storedHash: string) {
   const [algorithm, saltHex, keyHex] = storedHash.split(":");
   if (algorithm !== "scrypt" || !saltHex || !keyHex) return false;
   const expected = Buffer.from(keyHex, "hex");
-  const actual = (await scrypt(password, Buffer.from(saltHex, "hex"), expected.length)) as Buffer;
+  const actual = (await scrypt(
+    password,
+    Buffer.from(saltHex, "hex"),
+    expected.length,
+  )) as Buffer;
   return expected.length === actual.length && timingSafeEqual(expected, actual);
 }

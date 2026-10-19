@@ -51,6 +51,7 @@ export type EntityPageDefinition = {
   title: string;
   description: string;
   icon: EntitySection;
+  protectedRecordId?: number;
   columns: { key: string; label: string }[];
   fields: EntityField[];
   records: EntityRecord[];
@@ -206,7 +207,17 @@ export function EntityPageView({ page }: { page: EntityPageDefinition }) {
                       <ActionIcon
                         variant="subtle"
                         color="gray"
-                        aria-label={`${record[page.columns[0].key]}を削除`}
+                        aria-label={
+                          record.id === page.protectedRecordId
+                            ? "自分のアカウントは削除できません"
+                            : `${record[page.columns[0].key]}を削除`
+                        }
+                        title={
+                          record.id === page.protectedRecordId
+                            ? "自分のアカウントは削除できません"
+                            : undefined
+                        }
+                        disabled={record.id === page.protectedRecordId}
                         onClick={() => {
                           setSelected(record);
                           setDialog("delete");

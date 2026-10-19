@@ -3,11 +3,7 @@ import {
   EntityPageView,
   type EntityPageDefinition,
 } from "../components/entity-page-view";
-import {
-  deleteAdapter,
-  listAdapters,
-  saveAdapter,
-} from "../.server/entities";
+import { deleteAdapter, listAdapters, saveAdapter } from "../.server/entities";
 import { requireUser } from "../.server/auth";
 import { APP_NAME } from "~/const";
 
@@ -72,14 +68,29 @@ export async function action({ request }: Route.ActionArgs) {
   const intent = String(form.get("_intent") ?? "");
   const id = Number(form.get("id"));
   if (intent === "delete")
-    return Number.isInteger(id) && await deleteAdapter(user, id)
+    return Number.isInteger(id) && (await deleteAdapter(user, id))
       ? { ok: true }
       : { ok: false, error: "アダプタが見つかりません。" };
   if (intent === "create") return saveAdapter(user, null, form);
-  if (intent === "update") return Number.isInteger(id) ? saveAdapter(user, id, form) : { ok: false, error: "アダプタが見つかりません。" };
+  if (intent === "update")
+    return Number.isInteger(id)
+      ? saveAdapter(user, id, form)
+      : { ok: false, error: "アダプタが見つかりません。" };
   return { ok: false, error: "操作を判定できませんでした。" };
 }
 
 export default function Adapters({ loaderData }: Route.ComponentProps) {
-  return <EntityPageView page={{ ...page, records: loaderData.records, fields: page.fields.map((field) => ({ ...field, options: field.key === "chatbotId" ? loaderData.botOptions : field.options })) }} />;
+  return (
+    <EntityPageView
+      page={{
+        ...page,
+        records: loaderData.records,
+        fields: page.fields.map((field) => ({
+          ...field,
+          options:
+            field.key === "chatbotId" ? loaderData.botOptions : field.options,
+        })),
+      }}
+    />
+  );
 }

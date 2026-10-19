@@ -3,11 +3,7 @@ import {
   EntityPageView,
   type EntityPageDefinition,
 } from "../components/entity-page-view";
-import {
-  deleteBot,
-  listBots,
-  saveBot,
-} from "../.server/entities";
+import { deleteBot, listBots, saveBot } from "../.server/entities";
 import { requireUser } from "../.server/auth";
 import { APP_NAME } from "~/const";
 
@@ -68,14 +64,33 @@ export async function action({ request }: Route.ActionArgs) {
   const intent = String(form.get("_intent") ?? "");
   const id = Number(form.get("id"));
   if (intent === "delete")
-    return Number.isInteger(id) && await deleteBot(user, id)
+    return Number.isInteger(id) && (await deleteBot(user, id))
       ? { ok: true }
       : { ok: false, error: "ボットが見つかりません。" };
   if (intent === "create") return saveBot(user, null, form);
-  if (intent === "update") return Number.isInteger(id) ? saveBot(user, id, form) : { ok: false, error: "ボットが見つかりません。" };
+  if (intent === "update")
+    return Number.isInteger(id)
+      ? saveBot(user, id, form)
+      : { ok: false, error: "ボットが見つかりません。" };
   return { ok: false, error: "操作を判定できませんでした。" };
 }
 
 export default function Bots({ loaderData }: Route.ComponentProps) {
-  return <EntityPageView page={{ ...page, records: loaderData.records, fields: page.fields.map((field) => ({ ...field, options: field.key === "agentId" ? loaderData.agentOptions : field.key === "adapterIds" ? loaderData.adapterOptions : field.options })) }} />;
+  return (
+    <EntityPageView
+      page={{
+        ...page,
+        records: loaderData.records,
+        fields: page.fields.map((field) => ({
+          ...field,
+          options:
+            field.key === "agentId"
+              ? loaderData.agentOptions
+              : field.key === "adapterIds"
+                ? loaderData.adapterOptions
+                : field.options,
+        })),
+      }}
+    />
+  );
 }

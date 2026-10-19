@@ -4,7 +4,9 @@ import { clearSessionCookie, deleteSession } from "../.server/auth";
 
 export async function action({ request }: Route.ActionArgs) {
   await deleteSession(request);
-  return redirect("/login", { headers: { "Set-Cookie": clearSessionCookie() } });
+  return redirect("/login", {
+    headers: { "Set-Cookie": clearSessionCookie() },
+  });
 }
 
 export function loader() {

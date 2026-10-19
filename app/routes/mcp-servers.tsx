@@ -63,11 +63,14 @@ export async function action({ request }: Route.ActionArgs) {
   const intent = String(form.get("_intent") ?? "");
   const id = Number(form.get("id"));
   if (intent === "delete")
-    return Number.isInteger(id) && await deleteMcpServer(user, id)
+    return Number.isInteger(id) && (await deleteMcpServer(user, id))
       ? { ok: true }
       : { ok: false, error: "MCPサーバーが見つかりません。" };
   if (intent === "create") return saveMcpServer(user, null, form);
-  if (intent === "update") return Number.isInteger(id) ? saveMcpServer(user, id, form) : { ok: false, error: "MCPサーバーが見つかりません。" };
+  if (intent === "update")
+    return Number.isInteger(id)
+      ? saveMcpServer(user, id, form)
+      : { ok: false, error: "MCPサーバーが見つかりません。" };
   return { ok: false, error: "操作を判定できませんでした。" };
 }
 

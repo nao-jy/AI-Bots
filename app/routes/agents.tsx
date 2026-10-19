@@ -3,11 +3,7 @@ import {
   EntityPageView,
   type EntityPageDefinition,
 } from "../components/entity-page-view";
-import {
-  deleteAgent,
-  listAgents,
-  saveAgent,
-} from "../.server/entities";
+import { deleteAgent, listAgents, saveAgent } from "../.server/entities";
 import { requireUser } from "../.server/auth";
 import { APP_NAME } from "~/const";
 
@@ -49,8 +45,18 @@ const page: Omit<EntityPageDefinition, "records"> = {
       wide: true,
       placeholder: "エージェントの役割や応答方針",
     },
-    { key: "temperature", label: "Temperature", type: "text", placeholder: "例：0.7" },
-    { key: "maxSteps", label: "最大ステップ数", type: "text", placeholder: "例：5" },
+    {
+      key: "temperature",
+      label: "Temperature",
+      type: "text",
+      placeholder: "例：0.7",
+    },
+    {
+      key: "maxSteps",
+      label: "最大ステップ数",
+      type: "text",
+      placeholder: "例：5",
+    },
   ],
 };
 
@@ -69,14 +75,31 @@ export async function action({ request }: Route.ActionArgs) {
   const intent = String(form.get("_intent") ?? "");
   const id = Number(form.get("id"));
   if (intent === "delete")
-    return Number.isInteger(id) && await deleteAgent(user, id)
+    return Number.isInteger(id) && (await deleteAgent(user, id))
       ? { ok: true }
       : { ok: false, error: "エージェントが見つかりません。" };
   if (intent === "create") return saveAgent(user, null, form);
-  if (intent === "update") return Number.isInteger(id) ? saveAgent(user, id, form) : { ok: false, error: "エージェントが見つかりません。" };
+  if (intent === "update")
+    return Number.isInteger(id)
+      ? saveAgent(user, id, form)
+      : { ok: false, error: "エージェントが見つかりません。" };
   return { ok: false, error: "操作を判定できませんでした。" };
 }
 
 export default function Agents({ loaderData }: Route.ComponentProps) {
-  return <EntityPageView page={{ ...page, records: loaderData.records, fields: page.fields.map((field) => ({ ...field, options: field.key === "mcpServerIds" ? loaderData.serverOptions : field.options })) }} />;
+  return (
+    <EntityPageView
+      page={{
+        ...page,
+        records: loaderData.records,
+        fields: page.fields.map((field) => ({
+          ...field,
+          options:
+            field.key === "mcpServerIds"
+              ? loaderData.serverOptions
+              : field.options,
+        })),
+      }}
+    />
+  );
 }

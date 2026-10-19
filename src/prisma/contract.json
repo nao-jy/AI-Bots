@@ -765,13 +765,6 @@
                   "codecId": "pg/timestamptz-string@1",
                   "kind": "scalar"
                 }
-              },
-              "username": {
-                "nullable": true,
-                "type": {
-                  "codecId": "pg/text@1",
-                  "kind": "scalar"
-                }
               }
             },
             "relations": {
@@ -840,9 +833,6 @@
                 },
                 "updatedAt": {
                   "column": "updatedAt"
-                },
-                "username": {
-                  "column": "username"
                 }
               },
               "namespaceId": "public",
@@ -1469,11 +1459,6 @@
                   "codecId": "pg/timestamptz-string@1",
                   "dataType": "pg/timestamptz",
                   "nullable": false
-                },
-                "username": {
-                  "codecId": "pg/text@1",
-                  "dataType": "pg/text",
-                  "nullable": true
                 }
               },
               "foreignKeys": [],
@@ -1488,11 +1473,6 @@
                   "columns": [
                     "email"
                   ]
-                },
-                {
-                  "columns": [
-                    "username"
-                  ]
                 }
               ]
             }
@@ -1502,7 +1482,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "220740c905a41770a900d420e1d8d5b69ada63e6da9337a8ce87a6a2d1b552b8"
+    "storageHash": "c6d69e9b1485f2f4d7eea42a46d5eee992a0c495812acd6a97163a8868f24d1d"
   },
   "execution": {
     "executionHash": "6de63e7ebb7b1bec8b52ebccf4ab8d1394f032db1326685f119a3bf70a6da6ca",

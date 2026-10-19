@@ -2,7 +2,13 @@ import { Alert, Button, PasswordInput, TextInput } from "@mantine/core";
 import { ArrowRightIcon, SparkleIcon } from "@phosphor-icons/react";
 import { data, Form, Link, redirect, useActionData } from "react-router";
 import type { Route } from "./+types/login";
-import { createSession, getSessionUser, hashPassword, sessionCookie, verifyPassword } from "../.server/auth";
+import {
+  createSession,
+  getSessionUser,
+  hashPassword,
+  sessionCookie,
+  verifyPassword,
+} from "../.server/auth";
 import { db } from "../.server/db";
 import { APP_NAME } from "~/const";
 
@@ -20,32 +26,58 @@ export async function loader({ request }: Route.LoaderArgs) {
 
 export async function action({ request }: Route.ActionArgs) {
   const form = await request.formData();
-  const email = String(form.get("email") ?? "").trim().toLowerCase();
+  const email = String(form.get("email") ?? "")
+    .trim()
+    .toLowerCase();
   const password = String(form.get("password") ?? "");
   const name = String(form.get("name") ?? "").trim();
   if (!/^\S+@\S+\.\S+$/.test(email) || !password) {
-    return data({ error: "メールアドレスとパスワードを入力してください。" }, { status: 400 });
+    return data(
+      { error: "メールアドレスとパスワードを入力してください。" },
+      { status: 400 },
+    );
   }
 
   let user = await db.orm.public.User.first({ email });
   if (!user) {
     if (await db.orm.public.User.first()) {
-      return data({ error: "メールアドレスまたはパスワードが正しくありません。" }, { status: 401 });
+      return data(
+        { error: "メールアドレスまたはパスワードが正しくありません。" },
+        { status: 401 },
+      );
     }
     if (name.length < 1 || password.length < 12) {
-      return data({ error: "初回登録では表示名と12文字以上のパスワードが必要です。" }, { status: 400 });
+      return data(
+        { error: "初回登録では表示名と12文字以上のパスワードが必要です。" },
+        { status: 400 },
+      );
     }
     try {
-      user = await db.orm.public.User.create({ email, name, passwordHash: await hashPassword(password) });
+      user = await db.orm.public.User.create({
+        email,
+        name,
+        passwordHash: await hashPassword(password),
+      });
     } catch {
-      return data({ error: "初回アカウントを作成できませんでした。もう一度お試しください。" }, { status: 400 });
+      return data(
+        {
+          error:
+            "初回アカウントを作成できませんでした。もう一度お試しください。",
+        },
+        { status: 400 },
+      );
     }
   } else if (!(await verifyPassword(password, user.passwordHash))) {
-    return data({ error: "メールアドレスまたはパスワードが正しくありません。" }, { status: 401 });
+    return data(
+      { error: "メールアドレスまたはパスワードが正しくありません。" },
+      { status: 401 },
+    );
   }
 
   const session = await createSession(user.id);
-  return redirect("/bots", { headers: { "Set-Cookie": sessionCookie(session.token, session.expiresAt) } });
+  return redirect("/bots", {
+    headers: { "Set-Cookie": sessionCookie(session.token, session.expiresAt) },
+  });
 }
 
 export default function Login({ loaderData }: Route.ComponentProps) {
@@ -59,24 +91,58 @@ export default function Login({ loaderData }: Route.ComponentProps) {
       <div className="login-decoration decor-three" />
       <div className="login-top">
         <Link to="/login" className="brand">
-          <span className="brand-mark"><SparkleIcon size={20} weight="fill" aria-hidden="true" /></span>
-          <span>{APP_NAME}<span className="brand-dot">.</span><small>AI WORKSPACE</small></span>
+          <span className="brand-mark">
+            <SparkleIcon size={20} weight="fill" aria-hidden="true" />
+          </span>
+          <span>
+            {APP_NAME}
+            <span className="brand-dot">.</span>
+            <small>AI WORKSPACE</small>
+          </span>
         </Link>
       </div>
       <div className="login-card-wrap">
         <section className="login-card">
-          <div className="login-welcome-mark"><SparkleIcon size={23} weight="fill" aria-hidden="true" /></div>
+          <div className="login-welcome-mark">
+            <SparkleIcon size={23} weight="fill" aria-hidden="true" />
+          </div>
           <div className="eyebrow">YOUR AI WORKSPACE</div>
           <h1>{setupRequired ? "最初のアカウントを作成" : "おかえりなさい"}</h1>
           <p className="login-subtitle">
-            {setupRequired ? "最初のアカウントを登録して、ワークスペースを始めましょう。" : "アカウントにログインして、ワークスペースを開きましょう。"}
+            {setupRequired
+              ? "最初のアカウントを登録して、ワークスペースを始めましょう。"
+              : "アカウントにログインして、ワークスペースを開きましょう。"}
           </p>
           <Form method="post" className="login-form">
-            {setupRequired && <TextInput name="name" label="表示名" autoComplete="name" required />}
-            <TextInput name="email" label="メールアドレス" placeholder="name@company.com" type="email" autoComplete="email" required />
-            <PasswordInput name="password" label={setupRequired ? "パスワード（12文字以上）" : "パスワード"} autoComplete={setupRequired ? "new-password" : "current-password"} minLength={setupRequired ? 12 : undefined} required />
+            {setupRequired && (
+              <TextInput
+                name="name"
+                label="表示名"
+                autoComplete="name"
+                required
+              />
+            )}
+            <TextInput
+              name="email"
+              label="メールアドレス"
+              placeholder="name@company.com"
+              type="email"
+              autoComplete="email"
+              required
+            />
+            <PasswordInput
+              name="password"
+              label={setupRequired ? "パスワード（12文字以上）" : "パスワード"}
+              autoComplete={setupRequired ? "new-password" : "current-password"}
+              minLength={setupRequired ? 12 : undefined}
+              required
+            />
             {actionData?.error && <Alert color="red">{actionData.error}</Alert>}
-            <Button type="submit" fullWidth rightSection={<ArrowRightIcon size={16} aria-hidden="true" />}>
+            <Button
+              type="submit"
+              fullWidth
+              rightSection={<ArrowRightIcon size={16} aria-hidden="true" />}
+            >
               {setupRequired ? "アカウントを作成" : "ログイン"}
             </Button>
           </Form>
