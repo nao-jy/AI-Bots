@@ -5,9 +5,9 @@ type Collection = "bots" | "adapters" | "agents" | "mcpServers" | "users";
 
 const collections: Record<Collection, EntityRecord[]> = {
   bots: [
-    { id: 1, name: "カスタマーサポート", description: "問い合わせ対応とFAQ案内", agent: "カスタマーサポート", adapters: "Slack · Web", status: "稼働中", updated: "今日" },
-    { id: 2, name: "社内ナレッジアシスタント", description: "社内ドキュメントを検索して回答", agent: "社内ナレッジアシスタント", adapters: "Microsoft Teams", status: "稼働中", updated: "今日" },
-    { id: 3, name: "議事録まとめボット", description: "会議の要点を整理して共有", agent: "カスタマーサポート", adapters: "Discord", status: "停止中", updated: "昨日" },
+    { id: 1, name: "カスタマーサポート", description: "問い合わせ対応とFAQ案内", agent: "カスタマーサポート", adapters: "サポート窓口", status: "稼働中", updated: "今日" },
+    { id: 2, name: "社内ナレッジアシスタント", description: "社内ドキュメントを検索して回答", agent: "社内ナレッジアシスタント", adapters: "社内ワークスペース", status: "稼働中", updated: "今日" },
+    { id: 3, name: "議事録まとめボット", description: "会議の要点を整理して共有", agent: "カスタマーサポート", adapters: "開発コミュニティ", status: "停止中", updated: "昨日" },
   ],
   adapters: [
     { id: 1, name: "サポート窓口", platform: "Slack", bot: "カスタマーサポート", status: "接続済み", updated: "今日" },

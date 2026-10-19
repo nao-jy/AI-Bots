@@ -6,6 +6,7 @@ import {
   Button,
   Group,
   Modal,
+  MultiSelect,
   PasswordInput,
   Select,
   Table,
@@ -32,7 +33,13 @@ export type EntityField = {
   key: string;
   label: string;
   placeholder?: string;
-  type?: "text" | "email" | "textarea" | "select" | "password";
+  type?:
+    | "text"
+    | "email"
+    | "textarea"
+    | "select"
+    | "multiselect"
+    | "password";
   options?: string[];
   wide?: boolean;
 };
@@ -290,6 +297,21 @@ export function EntityPageView({ page }: { page: EntityPageDefinition }) {
                     placeholder="選択してください"
                     data={field.options ?? []}
                     defaultValue={String(selected?.[field.key] ?? "") || null}
+                  />
+                ) : field.type === "multiselect" ? (
+                  <MultiSelect
+                    name={field.key}
+                    label={field.label}
+                    placeholder={field.placeholder ?? "選択してください"}
+                    data={field.options ?? []}
+                    defaultValue={String(selected?.[field.key] ?? "")
+                      .split(",")
+                      .map((value) => value.trim())
+                      .filter(Boolean)}
+                    hiddenInputValuesDivider=", "
+                    searchable
+                    clearable
+                    nothingFoundMessage="該当するアダプタがありません"
                   />
                 ) : field.type === "password" ? (
                   <PasswordInput

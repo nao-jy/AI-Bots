@@ -47,7 +47,13 @@ const page: Omit<EntityPageDefinition, "records"> = {
         "新しいエージェント",
       ],
     },
-    { key: "adapters", label: "接続アダプタ", placeholder: "Slack, Discord" },
+    {
+      key: "adapters",
+      label: "接続アダプタ",
+      type: "multiselect",
+      options: ["サポート窓口", "社内ワークスペース", "開発コミュニティ"],
+      placeholder: "接続するアダプタを選択",
+    },
   ],
 };
 
@@ -72,7 +78,11 @@ export async function action({ request }: Route.ActionArgs) {
     status: String(form.get("status") ?? "停止中"),
     description: String(form.get("description") ?? "").trim(),
     agent: String(form.get("agent") ?? ""),
-    adapters: String(form.get("adapters") ?? "").trim(),
+    adapters: String(form.get("adapters") ?? "")
+      .split(",")
+      .map((adapter) => adapter.trim())
+      .filter(Boolean)
+      .join(", "),
   };
   if (!values.name) return { ok: false, error: "ボット名を入力してください。" };
   if (intent === "create") return { ok: true, bot: createBot(values) };
