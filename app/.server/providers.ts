@@ -1,16 +1,32 @@
 import { db } from "./db";
 import type { AuthUser } from "./auth";
 import {
+  authHeaders,
   decryptMcpHeaders,
   encryptStringMap,
   jsonb,
   parseObject,
   parseStringMap,
+  providerBaseUrl,
   record,
-  runProviderTest,
+  requestTest,
   testFailure,
   testSuccess,
 } from "./entity-shared";
+
+async function runProviderTest(
+  providerName: string,
+  args: Record<string, unknown>,
+  headers: Record<string, string>,
+) {
+  const baseUrl = providerBaseUrl(providerName, args);
+  if (!baseUrl)
+    throw new Error(
+      "このプロバイダーの接続先が特定できません。プロバイダー引数に baseURL を設定してください。",
+    );
+  const url = `${baseUrl.replace(/\/$/, "")}/models`;
+  await requestTest(url, { headers: authHeaders(headers) });
+}
 
 export async function testProvider(user: AuthUser, values: FormData) {
   try {
@@ -126,4 +142,3 @@ export async function deleteProvider(user: AuthUser, id: number) {
   await db.orm.public.Provider.where({ id, ownerId: user.id }).delete();
   return true;
 }
-

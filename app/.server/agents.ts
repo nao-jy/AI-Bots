@@ -3,6 +3,7 @@ import type { AuthUser } from "./auth";
 import {
   authHeaders,
   decryptMcpHeaders,
+  idList,
   jsonb,
   parseObject,
   providerBaseUrl,
@@ -210,4 +211,3 @@ export async function deleteAgent(user: AuthUser, id: number) {
   await db.orm.public.AgentDefinition.where({ id }).delete();
   return true;
 }
-

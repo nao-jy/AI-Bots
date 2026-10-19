@@ -2,7 +2,8 @@ import { createCipheriv, createDecipheriv, randomBytes } from "node:crypto";
 import type { CodecTypes } from "../../src/prisma/contract.d.ts";
 import type { EntityRecord } from "../types/entities";
 
-export const jsonb = (value: unknown) => value as CodecTypes["pg/jsonb@1"]["input"];
+export const jsonb = (value: unknown) =>
+  value as CodecTypes["pg/jsonb@1"]["input"];
 
 export function timestamp(value: string) {
   const date = new Date(value);
@@ -225,18 +226,3 @@ export function providerBaseUrl(
 export function authHeaders(headers: Record<string, string>) {
   return { ...headers };
 }
-
-export async function runProviderTest(
-  providerName: string,
-  args: Record<string, unknown>,
-  headers: Record<string, string>,
-) {
-  const baseUrl = providerBaseUrl(providerName, args);
-  if (!baseUrl)
-    throw new Error(
-      "このプロバイダーの接続先が特定できません。プロバイダー引数に baseURL を設定してください。",
-    );
-  const url = `${baseUrl.replace(/\/$/, "")}/models`;
-  await requestTest(url, { headers: authHeaders(headers) });
-}
-
