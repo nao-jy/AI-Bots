@@ -9,61 +9,11 @@ import {
   requestTest,
   testFailure,
   testSuccess,
-} from "./entity-shared";
+} from "../utils";
 
 const transports: Record<string, string> = {
   "streamable-http": "Streamable HTTP",
 };
-
-export async function testMcpServer(user: AuthUser, values: FormData) {
-  try {
-    const name = String(values.get("name") ?? "").trim();
-    const endpoint = String(values.get("endpoint") ?? "").trim();
-    const transport = String(values.get("transportId") ?? "").trim();
-    if (!endpoint) return testFailure("エンドポイントを入力してください。");
-    if (transport !== "streamable-http")
-      return testFailure(
-        "このトランスポートの接続テストには対応していません。",
-      );
-    const headers = parseStringMap(values.get("headers"), "HTTPヘッダー");
-    const { body } = await requestTest(endpoint, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json, text/event-stream",
-        ...headers,
-      },
-      body: JSON.stringify({
-        jsonrpc: "2.0",
-        id: 1,
-        method: "initialize",
-        params: {
-          protocolVersion: "2025-03-26",
-          capabilities: {},
-          clientInfo: { name: "bot-manager", version: "1.0.0" },
-        },
-      }),
-    });
-    const payload = body.match(/^data:\s*(.+)$/m)?.[1] ?? body;
-    const result: unknown = JSON.parse(payload);
-    if (
-      !result ||
-      typeof result !== "object" ||
-      "error" in result ||
-      !(result as { result?: unknown }).result
-    )
-      return testFailure(
-        "MCPサーバーから有効なinitialize応答がありませんでした。",
-      );
-    return testSuccess(`${name || "MCPサーバー"}とのMCP接続に成功しました。`);
-  } catch (error) {
-    return testFailure(
-      error instanceof Error
-        ? error.message
-        : "MCPサーバーへの接続に失敗しました。",
-    );
-  }
-}
 
 export async function listMcpServers(user: AuthUser) {
   const servers = await db.orm.public.McpServer.where({ ownerId: user.id })

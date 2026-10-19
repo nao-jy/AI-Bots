@@ -7,10 +7,10 @@ import {
   deleteProvider,
   listProviders,
   saveProvider,
-  testProvider,
 } from "../.server/models/entities";
 import { requireUser } from "../.server/auth";
 import { APP_NAME } from "~/const";
+import { testProvider } from "~/.server/test";
 
 const page: Omit<EntityPageDefinition, "records"> = {
   title: "プロバイダー",

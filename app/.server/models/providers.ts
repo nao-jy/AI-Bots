@@ -1,51 +1,6 @@
 import { db } from "./db";
 import type { AuthUser } from "../auth";
-import {
-  authHeaders,
-  decryptMcpHeaders,
-  encryptStringMap,
-  jsonb,
-  parseObject,
-  parseStringMap,
-  providerBaseUrl,
-  record,
-  requestTest,
-  testFailure,
-  testSuccess,
-} from "./entity-shared";
-
-async function runProviderTest(
-  providerName: string,
-  args: Record<string, unknown>,
-  headers: Record<string, string>,
-) {
-  const baseUrl = providerBaseUrl(providerName, args);
-  if (!baseUrl)
-    throw new Error(
-      "このプロバイダーの接続先が特定できません。プロバイダー引数に baseURL を設定してください。",
-    );
-  const url = `${baseUrl.replace(/\/$/, "")}/models`;
-  await requestTest(url, { headers: authHeaders(headers) });
-}
-
-export async function testProvider(user: AuthUser, values: FormData) {
-  try {
-    const name = String(values.get("name") ?? "").trim();
-    const providerName = String(values.get("providerName") ?? "").trim();
-    if (!name || !providerName)
-      return testFailure("接続名とプロバイダーを入力してください。");
-    const args = parseObject(values.get("args"), "プロバイダー引数");
-    const headers = parseStringMap(values.get("headers"), "HTTPヘッダー");
-    await runProviderTest(providerName, args, headers);
-    return testSuccess(`${name}への接続に成功しました。`);
-  } catch (error) {
-    return testFailure(
-      error instanceof Error
-        ? error.message
-        : "プロバイダーへの接続に失敗しました。",
-    );
-  }
-}
+import { decryptMcpHeaders, encryptStringMap, jsonb, record } from "../utils";
 
 export async function listProviders(user: AuthUser) {
   const providers = await db.orm.public.Provider.where({ ownerId: user.id })
@@ -141,4 +96,12 @@ export async function deleteProvider(user: AuthUser, id: number) {
     return false;
   await db.orm.public.Provider.where({ id, ownerId: user.id }).delete();
   return true;
+}
+
+export async function getProvider(providerId: number, ownerId: number) {
+  const provider = await db.orm.public.Provider.first({
+    id: providerId,
+    ownerId: ownerId,
+  });
+  return provider;
 }

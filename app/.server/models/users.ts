@@ -1,6 +1,6 @@
 import { db } from "./db";
 import { hashPassword } from "../auth";
-import { record } from "./entity-shared";
+import { record } from "../utils";
 
 export async function listUsers() {
   const users = await db.orm.public.User.orderBy((user) =>

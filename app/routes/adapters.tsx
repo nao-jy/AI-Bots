@@ -7,10 +7,10 @@ import {
   deleteAdapter,
   listAdapters,
   saveAdapter,
-  testAdapter,
 } from "../.server/models/entities";
 import { requireUser } from "../.server/auth";
 import { APP_NAME } from "~/const";
+import { testAdapter } from "~/.server/test";
 
 const page: Omit<EntityPageDefinition, "records"> = {
   title: "アダプタ",

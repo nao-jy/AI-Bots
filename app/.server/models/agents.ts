@@ -11,51 +11,7 @@ import {
   requestTest,
   testFailure,
   testSuccess,
-} from "./entity-shared";
-
-export async function testAgent(user: AuthUser, values: FormData) {
-  try {
-    const name = String(values.get("name") ?? "").trim();
-    const providerId = Number(values.get("providerId"));
-    const modelId = String(values.get("model_id") ?? "").trim();
-    if (!Number.isInteger(providerId) || !modelId)
-      return testFailure("プロバイダーとモデルIDを入力してください。");
-    const provider = await db.orm.public.Provider.first({
-      id: providerId,
-      ownerId: user.id,
-    });
-    if (!provider) return testFailure("選択したプロバイダーが見つかりません。");
-    const args = (
-      provider.args && typeof provider.args === "object" ? provider.args : {}
-    ) as Record<string, unknown>;
-    const headers = decryptMcpHeaders(provider.headers);
-    const options = parseObject(values.get("options"), "オプション");
-    const baseUrl = providerBaseUrl(provider.providerName, args);
-    if (!baseUrl)
-      return testFailure(
-        "このプロバイダーの接続先が特定できません。プロバイダー引数に baseURL を設定してください。",
-      );
-    await requestTest(`${baseUrl.replace(/\/$/, "")}/chat/completions`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", ...authHeaders(headers) },
-      body: JSON.stringify({
-        model: modelId,
-        messages: [{ role: "user", content: "Reply with OK." }],
-        max_tokens: 8,
-        ...options,
-      }),
-    });
-    return testSuccess(
-      `${name || "エージェント"}のモデル「${modelId}」に接続できました。`,
-    );
-  } catch (error) {
-    return testFailure(
-      error instanceof Error
-        ? error.message
-        : "エージェントの接続テストに失敗しました。",
-    );
-  }
-}
+} from "../utils";
 
 export async function listAgents(user: AuthUser) {
   const agents = await db.orm.public.AgentDefinition.include(

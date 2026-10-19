@@ -7,10 +7,10 @@ import {
   deleteMcpServer,
   listMcpServers,
   saveMcpServer,
-  testMcpServer,
 } from "../.server/models/entities";
 import { requireUser } from "../.server/auth";
 import { APP_NAME } from "~/const";
+import { testMcpServer } from "~/.server/test";
 
 const page: Omit<EntityPageDefinition, "records"> = {
   title: "MCPサーバー",

@@ -1,6 +1,6 @@
 import { db } from "./db";
 import type { AuthUser } from "../auth";
-import { idList, record } from "./entity-shared";
+import { idList, record } from "../utils";
 
 export async function listBots(user: AuthUser) {
   const bots = await db.orm.public.Chatbot.where({ ownerId: user.id })
