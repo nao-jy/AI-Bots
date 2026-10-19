@@ -88,5 +88,12 @@ export async function action({ request }: Route.ActionArgs) {
 }
 
 export default function Agents({ loaderData }: Route.ComponentProps) {
-  return <EntityPageView page={{ ...page, records: loaderData.agents }} />;
+  return (
+    <EntityPageView
+      page={{
+        ...page,
+        records: loaderData.agents,
+      }}
+    />
+  );
 }

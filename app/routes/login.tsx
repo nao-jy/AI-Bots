@@ -7,6 +7,7 @@ import {
   Text,
   TextInput,
 } from "@mantine/core";
+import { ArrowRightIcon, SparkleIcon } from "@phosphor-icons/react";
 import { Link, useNavigate } from "react-router";
 import { APP_NAME } from "~/const";
 
@@ -39,7 +40,7 @@ export default function Login() {
       <div className="login-decoration decor-three" />
       <div className="login-top">
         <Link to="/" className="brand">
-          <span className="brand-mark">✳</span>
+          <span className="brand-mark"><SparkleIcon size={20} weight="fill" aria-hidden="true"/></span>
           <span>
             {APP_NAME}
             <span className="brand-dot">.</span>
@@ -49,7 +50,7 @@ export default function Login() {
       </div>
       <div className="login-card-wrap">
         <section className="login-card">
-          <div className="login-welcome-mark">✳</div>
+          <div className="login-welcome-mark"><SparkleIcon size={23} weight="fill" aria-hidden="true"/></div>
           <div className="eyebrow">YOUR AI WORKSPACE</div>
           <h1>おかえりなさい</h1>
           <p className="login-subtitle">
@@ -82,8 +83,8 @@ export default function Login() {
                 {error}
               </Text>
             )}
-            <Button type="submit" fullWidth>
-              ログイン <span>→</span>
+            <Button type="submit" fullWidth rightSection={<ArrowRightIcon size={16} aria-hidden="true" />}>
+              ログイン
             </Button>
           </form>
         </section>
