@@ -14,8 +14,7 @@ const page: Omit<EntityPageDefinition, "records"> = {
   columns: [
     { key: "name", label: "接続名" },
     { key: "platform", label: "プラットフォーム" },
-    { key: "bot", label: "接続先ボット" },
-    { key: "status", label: "ステータス" },
+    { key: "credentialConfigured", label: "認証情報" },
     { key: "updated", label: "最終更新" },
   ],
   fields: [
@@ -30,18 +29,6 @@ const page: Omit<EntityPageDefinition, "records"> = {
         { label: "Microsoft Teams", value: "teams" },
         { label: "LINE", value: "line" },
       ],
-    },
-    {
-      key: "chatbotId",
-      label: "接続先ボット",
-      type: "select",
-      options: [],
-    },
-    {
-      key: "status",
-      label: "ステータス",
-      type: "select",
-      options: ["有効", "停止中"],
     },
     {
       key: "credential",
@@ -80,17 +67,5 @@ export async function action({ request }: Route.ActionArgs) {
 }
 
 export default function Adapters({ loaderData }: Route.ComponentProps) {
-  return (
-    <EntityPageView
-      page={{
-        ...page,
-        records: loaderData.records,
-        fields: page.fields.map((field) => ({
-          ...field,
-          options:
-            field.key === "chatbotId" ? loaderData.botOptions : field.options,
-        })),
-      }}
-    />
-  );
+  return <EntityPageView page={{ ...page, records: loaderData.records }} />;
 }

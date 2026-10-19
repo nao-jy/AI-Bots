@@ -26,10 +26,10 @@ const page: Omit<EntityPageDefinition, "records"> = {
     },
     {
       key: "password",
-      label: "初期パスワード",
+      label: "パスワード",
       type: "password",
       required: true,
-      placeholder: "12文字以上（編集時は空欄のまま）",
+      placeholder: "作成時は12文字以上、編集時は変更する場合のみ入力",
     },
   ],
 };

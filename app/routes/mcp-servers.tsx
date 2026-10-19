@@ -28,11 +28,7 @@ const page: Omit<EntityPageDefinition, "records"> = {
       key: "transportId",
       label: "トランスポート",
       type: "select",
-      options: [
-        { label: "Streamable HTTP", value: "streamable-http" },
-        { label: "SSE", value: "sse" },
-        { label: "stdio", value: "stdio" },
-      ],
+      options: [{ label: "Streamable HTTP", value: "streamable-http" }],
     },
     {
       key: "endpoint",
@@ -41,9 +37,11 @@ const page: Omit<EntityPageDefinition, "records"> = {
       placeholder: "https://mcp.example.com",
     },
     {
-      key: "tools",
-      label: "提供ツール",
-      placeholder: "search_documents, get_document",
+      key: "headers",
+      label: "HTTPヘッダーJSON",
+      type: "textarea",
+      wide: true,
+      placeholder: '{"Authorization":"Bearer ..."}',
     },
   ],
 };

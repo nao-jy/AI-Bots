@@ -18,9 +18,9 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'c6d69e9b1485f2f4d7eea42a46d5eee992a0c495812acd6a97163a8868f24d1d'>;
+  StorageHashBase<'90303116f963c8685cd5d838420106241bdc2a09682e3fed66ba47656fd34d66'>;
 export type ExecutionHash =
-  ExecutionHashBase<'6de63e7ebb7b1bec8b52ebccf4ab8d1394f032db1326685f119a3bf70a6da6ca'>;
+  ExecutionHashBase<'630d99ce0f7c28f2943c7da17636b9c973be8aabb7d495a34d50f89953b2f784'>;
 export type ProfileHash =
   ProfileHashBase<'3916f444a8a17ad749191acf9e08dad97d1a327b88c2f1d45d12f240296aa8b2'>;
 
@@ -237,33 +237,27 @@ export type FieldOutputTypes = {
     readonly AgentDefinition: {
       readonly createdAt: CodecTypes['pg/timestamptz-string@1']['output'];
       readonly id: CodecTypes['pg/int4@1']['output'];
-      readonly maxSteps: CodecTypes['pg/int4@1']['output'] | null;
-      readonly model: CodecTypes['pg/text@1']['output'];
+      readonly modelDefinitionId: CodecTypes['pg/int4@1']['output'];
       readonly name: CodecTypes['pg/text@1']['output'];
-      readonly options: CodecTypes['pg/jsonb@1']['output'] | null;
-      readonly provider: CodecTypes['pg/text@1']['output'];
-      readonly systemPrompt: CodecTypes['pg/text@1']['output'] | null;
-      readonly temperature: CodecTypes['pg/float8@1']['output'] | null;
+      readonly parameters: CodecTypes['pg/jsonb@1']['output'] | null;
       readonly updatedAt: CodecTypes['pg/timestamptz-string@1']['output'];
     };
     readonly AgentMcpServer: {
       readonly agentId: CodecTypes['pg/int4@1']['output'];
-      readonly config: CodecTypes['pg/jsonb@1']['output'] | null;
       readonly createdAt: CodecTypes['pg/timestamptz-string@1']['output'];
       readonly mcpServerId: CodecTypes['pg/int4@1']['output'];
     };
     readonly ChatAdapter: {
-      readonly chatbotId: CodecTypes['pg/int4@1']['output'];
-      readonly config: CodecTypes['pg/jsonb@1']['output'] | null;
       readonly createdAt: CodecTypes['pg/timestamptz-string@1']['output'];
+      readonly envs: CodecTypes['pg/jsonb@1']['output'] | null;
       readonly id: CodecTypes['pg/int4@1']['output'];
-      readonly isEnabled: CodecTypes['pg/bool@1']['output'];
       readonly name: CodecTypes['pg/text@1']['output'];
+      readonly ownerId: CodecTypes['pg/int4@1']['output'];
       readonly platform: CodecTypes['pg/text@1']['output'];
       readonly updatedAt: CodecTypes['pg/timestamptz-string@1']['output'];
     };
     readonly Chatbot: {
-      readonly agentId: CodecTypes['pg/int4@1']['output'];
+      readonly agentId: CodecTypes['pg/int4@1']['output'] | null;
       readonly createdAt: CodecTypes['pg/timestamptz-string@1']['output'];
       readonly description: CodecTypes['pg/text@1']['output'] | null;
       readonly id: CodecTypes['pg/int4@1']['output'];
@@ -272,15 +266,29 @@ export type FieldOutputTypes = {
       readonly ownerId: CodecTypes['pg/int4@1']['output'];
       readonly updatedAt: CodecTypes['pg/timestamptz-string@1']['output'];
     };
+    readonly ChatbotAdapter: {
+      readonly adapterId: CodecTypes['pg/int4@1']['output'];
+      readonly chatbotId: CodecTypes['pg/int4@1']['output'];
+      readonly createdAt: CodecTypes['pg/timestamptz-string@1']['output'];
+    };
     readonly McpServer: {
-      readonly config: CodecTypes['pg/jsonb@1']['output'] | null;
       readonly createdAt: CodecTypes['pg/timestamptz-string@1']['output'];
       readonly description: CodecTypes['pg/text@1']['output'] | null;
       readonly endpoint: CodecTypes['pg/text@1']['output'] | null;
+      readonly headers: CodecTypes['pg/jsonb@1']['output'] | null;
       readonly id: CodecTypes['pg/int4@1']['output'];
       readonly name: CodecTypes['pg/text@1']['output'];
       readonly ownerId: CodecTypes['pg/int4@1']['output'];
       readonly transport: CodecTypes['pg/text@1']['output'];
+      readonly updatedAt: CodecTypes['pg/timestamptz-string@1']['output'];
+    };
+    readonly ModelDefinition: {
+      readonly apiKeyCiphertext: CodecTypes['pg/text@1']['output'];
+      readonly createdAt: CodecTypes['pg/timestamptz-string@1']['output'];
+      readonly id: CodecTypes['pg/int4@1']['output'];
+      readonly modelName: CodecTypes['pg/text@1']['output'];
+      readonly ownerId: CodecTypes['pg/int4@1']['output'];
+      readonly provider: CodecTypes['pg/text@1']['output'];
       readonly updatedAt: CodecTypes['pg/timestamptz-string@1']['output'];
     };
     readonly Session: {
@@ -305,33 +313,27 @@ export type FieldInputTypes = {
     readonly AgentDefinition: {
       readonly createdAt: CodecTypes['pg/timestamptz-string@1']['input'];
       readonly id: CodecTypes['pg/int4@1']['input'];
-      readonly maxSteps: CodecTypes['pg/int4@1']['input'] | null;
-      readonly model: CodecTypes['pg/text@1']['input'];
+      readonly modelDefinitionId: CodecTypes['pg/int4@1']['input'];
       readonly name: CodecTypes['pg/text@1']['input'];
-      readonly options: CodecTypes['pg/jsonb@1']['input'] | null;
-      readonly provider: CodecTypes['pg/text@1']['input'];
-      readonly systemPrompt: CodecTypes['pg/text@1']['input'] | null;
-      readonly temperature: CodecTypes['pg/float8@1']['input'] | null;
+      readonly parameters: CodecTypes['pg/jsonb@1']['input'] | null;
       readonly updatedAt: CodecTypes['pg/timestamptz-string@1']['input'];
     };
     readonly AgentMcpServer: {
       readonly agentId: CodecTypes['pg/int4@1']['input'];
-      readonly config: CodecTypes['pg/jsonb@1']['input'] | null;
       readonly createdAt: CodecTypes['pg/timestamptz-string@1']['input'];
       readonly mcpServerId: CodecTypes['pg/int4@1']['input'];
     };
     readonly ChatAdapter: {
-      readonly chatbotId: CodecTypes['pg/int4@1']['input'];
-      readonly config: CodecTypes['pg/jsonb@1']['input'] | null;
       readonly createdAt: CodecTypes['pg/timestamptz-string@1']['input'];
+      readonly envs: CodecTypes['pg/jsonb@1']['input'] | null;
       readonly id: CodecTypes['pg/int4@1']['input'];
-      readonly isEnabled: CodecTypes['pg/bool@1']['input'];
       readonly name: CodecTypes['pg/text@1']['input'];
+      readonly ownerId: CodecTypes['pg/int4@1']['input'];
       readonly platform: CodecTypes['pg/text@1']['input'];
       readonly updatedAt: CodecTypes['pg/timestamptz-string@1']['input'];
     };
     readonly Chatbot: {
-      readonly agentId: CodecTypes['pg/int4@1']['input'];
+      readonly agentId: CodecTypes['pg/int4@1']['input'] | null;
       readonly createdAt: CodecTypes['pg/timestamptz-string@1']['input'];
       readonly description: CodecTypes['pg/text@1']['input'] | null;
       readonly id: CodecTypes['pg/int4@1']['input'];
@@ -340,15 +342,29 @@ export type FieldInputTypes = {
       readonly ownerId: CodecTypes['pg/int4@1']['input'];
       readonly updatedAt: CodecTypes['pg/timestamptz-string@1']['input'];
     };
+    readonly ChatbotAdapter: {
+      readonly adapterId: CodecTypes['pg/int4@1']['input'];
+      readonly chatbotId: CodecTypes['pg/int4@1']['input'];
+      readonly createdAt: CodecTypes['pg/timestamptz-string@1']['input'];
+    };
     readonly McpServer: {
-      readonly config: CodecTypes['pg/jsonb@1']['input'] | null;
       readonly createdAt: CodecTypes['pg/timestamptz-string@1']['input'];
       readonly description: CodecTypes['pg/text@1']['input'] | null;
       readonly endpoint: CodecTypes['pg/text@1']['input'] | null;
+      readonly headers: CodecTypes['pg/jsonb@1']['input'] | null;
       readonly id: CodecTypes['pg/int4@1']['input'];
       readonly name: CodecTypes['pg/text@1']['input'];
       readonly ownerId: CodecTypes['pg/int4@1']['input'];
       readonly transport: CodecTypes['pg/text@1']['input'];
+      readonly updatedAt: CodecTypes['pg/timestamptz-string@1']['input'];
+    };
+    readonly ModelDefinition: {
+      readonly apiKeyCiphertext: CodecTypes['pg/text@1']['input'];
+      readonly createdAt: CodecTypes['pg/timestamptz-string@1']['input'];
+      readonly id: CodecTypes['pg/int4@1']['input'];
+      readonly modelName: CodecTypes['pg/text@1']['input'];
+      readonly ownerId: CodecTypes['pg/int4@1']['input'];
+      readonly provider: CodecTypes['pg/text@1']['input'];
       readonly updatedAt: CodecTypes['pg/timestamptz-string@1']['input'];
     };
     readonly Session: {
@@ -373,33 +389,27 @@ export type StorageColumnTypes = {
     readonly AgentDefinition: {
       readonly createdAt: CodecTypes['pg/timestamptz-string@1']['output'];
       readonly id: CodecTypes['pg/int4@1']['output'];
-      readonly maxSteps: CodecTypes['pg/int4@1']['output'] | null;
-      readonly model: CodecTypes['pg/text@1']['output'];
+      readonly modelDefinitionId: CodecTypes['pg/int4@1']['output'];
       readonly name: CodecTypes['pg/text@1']['output'];
-      readonly options: CodecTypes['pg/jsonb@1']['output'] | null;
-      readonly provider: CodecTypes['pg/text@1']['output'];
-      readonly systemPrompt: CodecTypes['pg/text@1']['output'] | null;
-      readonly temperature: CodecTypes['pg/float8@1']['output'] | null;
+      readonly parameters: CodecTypes['pg/jsonb@1']['output'] | null;
       readonly updatedAt: CodecTypes['pg/timestamptz-string@1']['output'];
     };
     readonly AgentMcpServer: {
       readonly agentId: CodecTypes['pg/int4@1']['output'];
-      readonly config: CodecTypes['pg/jsonb@1']['output'] | null;
       readonly createdAt: CodecTypes['pg/timestamptz-string@1']['output'];
       readonly mcpServerId: CodecTypes['pg/int4@1']['output'];
     };
     readonly ChatAdapter: {
-      readonly chatbotId: CodecTypes['pg/int4@1']['output'];
-      readonly config: CodecTypes['pg/jsonb@1']['output'] | null;
       readonly createdAt: CodecTypes['pg/timestamptz-string@1']['output'];
+      readonly envs: CodecTypes['pg/jsonb@1']['output'] | null;
       readonly id: CodecTypes['pg/int4@1']['output'];
-      readonly isEnabled: CodecTypes['pg/bool@1']['output'];
       readonly name: CodecTypes['pg/text@1']['output'];
+      readonly ownerId: CodecTypes['pg/int4@1']['output'];
       readonly platform: CodecTypes['pg/text@1']['output'];
       readonly updatedAt: CodecTypes['pg/timestamptz-string@1']['output'];
     };
     readonly Chatbot: {
-      readonly agentId: CodecTypes['pg/int4@1']['output'];
+      readonly agentId: CodecTypes['pg/int4@1']['output'] | null;
       readonly createdAt: CodecTypes['pg/timestamptz-string@1']['output'];
       readonly description: CodecTypes['pg/text@1']['output'] | null;
       readonly id: CodecTypes['pg/int4@1']['output'];
@@ -408,15 +418,29 @@ export type StorageColumnTypes = {
       readonly ownerId: CodecTypes['pg/int4@1']['output'];
       readonly updatedAt: CodecTypes['pg/timestamptz-string@1']['output'];
     };
+    readonly ChatbotAdapter: {
+      readonly adapterId: CodecTypes['pg/int4@1']['output'];
+      readonly chatbotId: CodecTypes['pg/int4@1']['output'];
+      readonly createdAt: CodecTypes['pg/timestamptz-string@1']['output'];
+    };
     readonly McpServer: {
-      readonly config: CodecTypes['pg/jsonb@1']['output'] | null;
       readonly createdAt: CodecTypes['pg/timestamptz-string@1']['output'];
       readonly description: CodecTypes['pg/text@1']['output'] | null;
       readonly endpoint: CodecTypes['pg/text@1']['output'] | null;
+      readonly headers: CodecTypes['pg/jsonb@1']['output'] | null;
       readonly id: CodecTypes['pg/int4@1']['output'];
       readonly name: CodecTypes['pg/text@1']['output'];
       readonly ownerId: CodecTypes['pg/int4@1']['output'];
       readonly transport: CodecTypes['pg/text@1']['output'];
+      readonly updatedAt: CodecTypes['pg/timestamptz-string@1']['output'];
+    };
+    readonly ModelDefinition: {
+      readonly apiKeyCiphertext: CodecTypes['pg/text@1']['output'];
+      readonly createdAt: CodecTypes['pg/timestamptz-string@1']['output'];
+      readonly id: CodecTypes['pg/int4@1']['output'];
+      readonly modelName: CodecTypes['pg/text@1']['output'];
+      readonly ownerId: CodecTypes['pg/int4@1']['output'];
+      readonly provider: CodecTypes['pg/text@1']['output'];
       readonly updatedAt: CodecTypes['pg/timestamptz-string@1']['output'];
     };
     readonly Session: {
@@ -441,33 +465,27 @@ export type StorageColumnInputTypes = {
     readonly AgentDefinition: {
       readonly createdAt: CodecTypes['pg/timestamptz-string@1']['input'];
       readonly id: CodecTypes['pg/int4@1']['input'];
-      readonly maxSteps: CodecTypes['pg/int4@1']['input'] | null;
-      readonly model: CodecTypes['pg/text@1']['input'];
+      readonly modelDefinitionId: CodecTypes['pg/int4@1']['input'];
       readonly name: CodecTypes['pg/text@1']['input'];
-      readonly options: CodecTypes['pg/jsonb@1']['input'] | null;
-      readonly provider: CodecTypes['pg/text@1']['input'];
-      readonly systemPrompt: CodecTypes['pg/text@1']['input'] | null;
-      readonly temperature: CodecTypes['pg/float8@1']['input'] | null;
+      readonly parameters: CodecTypes['pg/jsonb@1']['input'] | null;
       readonly updatedAt: CodecTypes['pg/timestamptz-string@1']['input'];
     };
     readonly AgentMcpServer: {
       readonly agentId: CodecTypes['pg/int4@1']['input'];
-      readonly config: CodecTypes['pg/jsonb@1']['input'] | null;
       readonly createdAt: CodecTypes['pg/timestamptz-string@1']['input'];
       readonly mcpServerId: CodecTypes['pg/int4@1']['input'];
     };
     readonly ChatAdapter: {
-      readonly chatbotId: CodecTypes['pg/int4@1']['input'];
-      readonly config: CodecTypes['pg/jsonb@1']['input'] | null;
       readonly createdAt: CodecTypes['pg/timestamptz-string@1']['input'];
+      readonly envs: CodecTypes['pg/jsonb@1']['input'] | null;
       readonly id: CodecTypes['pg/int4@1']['input'];
-      readonly isEnabled: CodecTypes['pg/bool@1']['input'];
       readonly name: CodecTypes['pg/text@1']['input'];
+      readonly ownerId: CodecTypes['pg/int4@1']['input'];
       readonly platform: CodecTypes['pg/text@1']['input'];
       readonly updatedAt: CodecTypes['pg/timestamptz-string@1']['input'];
     };
     readonly Chatbot: {
-      readonly agentId: CodecTypes['pg/int4@1']['input'];
+      readonly agentId: CodecTypes['pg/int4@1']['input'] | null;
       readonly createdAt: CodecTypes['pg/timestamptz-string@1']['input'];
       readonly description: CodecTypes['pg/text@1']['input'] | null;
       readonly id: CodecTypes['pg/int4@1']['input'];
@@ -476,15 +494,29 @@ export type StorageColumnInputTypes = {
       readonly ownerId: CodecTypes['pg/int4@1']['input'];
       readonly updatedAt: CodecTypes['pg/timestamptz-string@1']['input'];
     };
+    readonly ChatbotAdapter: {
+      readonly adapterId: CodecTypes['pg/int4@1']['input'];
+      readonly chatbotId: CodecTypes['pg/int4@1']['input'];
+      readonly createdAt: CodecTypes['pg/timestamptz-string@1']['input'];
+    };
     readonly McpServer: {
-      readonly config: CodecTypes['pg/jsonb@1']['input'] | null;
       readonly createdAt: CodecTypes['pg/timestamptz-string@1']['input'];
       readonly description: CodecTypes['pg/text@1']['input'] | null;
       readonly endpoint: CodecTypes['pg/text@1']['input'] | null;
+      readonly headers: CodecTypes['pg/jsonb@1']['input'] | null;
       readonly id: CodecTypes['pg/int4@1']['input'];
       readonly name: CodecTypes['pg/text@1']['input'];
       readonly ownerId: CodecTypes['pg/int4@1']['input'];
       readonly transport: CodecTypes['pg/text@1']['input'];
+      readonly updatedAt: CodecTypes['pg/timestamptz-string@1']['input'];
+    };
+    readonly ModelDefinition: {
+      readonly apiKeyCiphertext: CodecTypes['pg/text@1']['input'];
+      readonly createdAt: CodecTypes['pg/timestamptz-string@1']['input'];
+      readonly id: CodecTypes['pg/int4@1']['input'];
+      readonly modelName: CodecTypes['pg/text@1']['input'];
+      readonly ownerId: CodecTypes['pg/int4@1']['input'];
+      readonly provider: CodecTypes['pg/text@1']['input'];
       readonly updatedAt: CodecTypes['pg/timestamptz-string@1']['input'];
     };
     readonly Session: {
@@ -509,21 +541,17 @@ export namespace Models {
   export type public_AgentDefinition = {
     createdAt: CodecTypes['pg/timestamptz-string@1']['output'];
     id: CodecTypes['pg/int4@1']['output'];
-    maxSteps: CodecTypes['pg/int4@1']['output'] | null;
-    model: CodecTypes['pg/text@1']['output'];
+    modelDefinitionId: CodecTypes['pg/int4@1']['output'];
     name: CodecTypes['pg/text@1']['output'];
-    options: CodecTypes['pg/jsonb@1']['output'] | null;
-    provider: CodecTypes['pg/text@1']['output'];
-    systemPrompt: CodecTypes['pg/text@1']['output'] | null;
-    temperature: CodecTypes['pg/float8@1']['output'] | null;
+    parameters: CodecTypes['pg/jsonb@1']['output'] | null;
     updatedAt: CodecTypes['pg/timestamptz-string@1']['output'];
     chatbot: public_Chatbot | null;
     mcpServers: public_AgentMcpServer[];
-    readonly [RelationKeys]?: 'chatbot' | 'mcpServers';
+    modelDefinition: public_ModelDefinition;
+    readonly [RelationKeys]?: 'chatbot' | 'mcpServers' | 'modelDefinition';
   };
   export type public_AgentMcpServer = {
     agentId: CodecTypes['pg/int4@1']['output'];
-    config: CodecTypes['pg/jsonb@1']['output'] | null;
     createdAt: CodecTypes['pg/timestamptz-string@1']['output'];
     mcpServerId: CodecTypes['pg/int4@1']['output'];
     agent: public_AgentDefinition;
@@ -531,19 +559,19 @@ export namespace Models {
     readonly [RelationKeys]?: 'agent' | 'mcpServer';
   };
   export type public_ChatAdapter = {
-    chatbotId: CodecTypes['pg/int4@1']['output'];
-    config: CodecTypes['pg/jsonb@1']['output'] | null;
     createdAt: CodecTypes['pg/timestamptz-string@1']['output'];
+    envs: CodecTypes['pg/jsonb@1']['output'] | null;
     id: CodecTypes['pg/int4@1']['output'];
-    isEnabled: CodecTypes['pg/bool@1']['output'];
     name: CodecTypes['pg/text@1']['output'];
+    ownerId: CodecTypes['pg/int4@1']['output'];
     platform: CodecTypes['pg/text@1']['output'];
     updatedAt: CodecTypes['pg/timestamptz-string@1']['output'];
-    chatbot: public_Chatbot;
-    readonly [RelationKeys]?: 'chatbot';
+    chatbots: public_ChatbotAdapter[];
+    owner: public_User;
+    readonly [RelationKeys]?: 'chatbots' | 'owner';
   };
   export type public_Chatbot = {
-    agentId: CodecTypes['pg/int4@1']['output'];
+    agentId: CodecTypes['pg/int4@1']['output'] | null;
     createdAt: CodecTypes['pg/timestamptz-string@1']['output'];
     description: CodecTypes['pg/text@1']['output'] | null;
     id: CodecTypes['pg/int4@1']['output'];
@@ -551,22 +579,42 @@ export namespace Models {
     name: CodecTypes['pg/text@1']['output'];
     ownerId: CodecTypes['pg/int4@1']['output'];
     updatedAt: CodecTypes['pg/timestamptz-string@1']['output'];
-    adapters: public_ChatAdapter[];
-    agent: public_AgentDefinition;
+    adapters: public_ChatbotAdapter[];
+    agent: public_AgentDefinition | null;
     owner: public_User;
     readonly [RelationKeys]?: 'adapters' | 'agent' | 'owner';
   };
+  export type public_ChatbotAdapter = {
+    adapterId: CodecTypes['pg/int4@1']['output'];
+    chatbotId: CodecTypes['pg/int4@1']['output'];
+    createdAt: CodecTypes['pg/timestamptz-string@1']['output'];
+    adapter: public_ChatAdapter;
+    chatbot: public_Chatbot;
+    readonly [RelationKeys]?: 'adapter' | 'chatbot';
+  };
   export type public_McpServer = {
-    config: CodecTypes['pg/jsonb@1']['output'] | null;
     createdAt: CodecTypes['pg/timestamptz-string@1']['output'];
     description: CodecTypes['pg/text@1']['output'] | null;
     endpoint: CodecTypes['pg/text@1']['output'] | null;
+    headers: CodecTypes['pg/jsonb@1']['output'] | null;
     id: CodecTypes['pg/int4@1']['output'];
     name: CodecTypes['pg/text@1']['output'];
     ownerId: CodecTypes['pg/int4@1']['output'];
     transport: CodecTypes['pg/text@1']['output'];
     updatedAt: CodecTypes['pg/timestamptz-string@1']['output'];
     agents: public_AgentMcpServer[];
+    owner: public_User;
+    readonly [RelationKeys]?: 'agents' | 'owner';
+  };
+  export type public_ModelDefinition = {
+    apiKeyCiphertext: CodecTypes['pg/text@1']['output'];
+    createdAt: CodecTypes['pg/timestamptz-string@1']['output'];
+    id: CodecTypes['pg/int4@1']['output'];
+    modelName: CodecTypes['pg/text@1']['output'];
+    ownerId: CodecTypes['pg/int4@1']['output'];
+    provider: CodecTypes['pg/text@1']['output'];
+    updatedAt: CodecTypes['pg/timestamptz-string@1']['output'];
+    agents: public_AgentDefinition[];
     owner: public_User;
     readonly [RelationKeys]?: 'agents' | 'owner';
   };
@@ -586,10 +634,13 @@ export namespace Models {
     name: CodecTypes['pg/text@1']['output'] | null;
     passwordHash: CodecTypes['pg/text@1']['output'];
     updatedAt: CodecTypes['pg/timestamptz-string@1']['output'];
+    adapters: public_ChatAdapter[];
     chatbots: public_Chatbot[];
     mcpServers: public_McpServer[];
+    modelDefinitions: public_ModelDefinition[];
     sessions: public_Session[];
-    readonly [RelationKeys]?: 'chatbots' | 'mcpServers' | 'sessions';
+    readonly [RelationKeys]?:
+      'adapters' | 'chatbots' | 'mcpServers' | 'modelDefinitions' | 'sessions';
   };
 }
 
@@ -599,7 +650,9 @@ export declare const models: {
     AgentMcpServer: Models.public_AgentMcpServer;
     ChatAdapter: Models.public_ChatAdapter;
     Chatbot: Models.public_Chatbot;
+    ChatbotAdapter: Models.public_ChatbotAdapter;
     McpServer: Models.public_McpServer;
+    ModelDefinition: Models.public_ModelDefinition;
     Session: Models.public_Session;
     User: Models.public_User;
   };
@@ -642,15 +695,9 @@ type ContractBase = Omit<
                   };
                   readonly many: false;
                 };
-                readonly maxSteps: {
+                readonly modelDefinitionId: {
                   readonly dataType: 'pg/int4';
                   readonly codecId: 'pg/int4@1';
-                  readonly nullable: true;
-                  readonly many: false;
-                };
-                readonly model: {
-                  readonly dataType: 'pg/text';
-                  readonly codecId: 'pg/text@1';
                   readonly nullable: false;
                   readonly many: false;
                 };
@@ -660,27 +707,9 @@ type ContractBase = Omit<
                   readonly nullable: false;
                   readonly many: false;
                 };
-                readonly options: {
+                readonly parameters: {
                   readonly dataType: 'pg/jsonb';
                   readonly codecId: 'pg/jsonb@1';
-                  readonly nullable: true;
-                  readonly many: false;
-                };
-                readonly provider: {
-                  readonly dataType: 'pg/text';
-                  readonly codecId: 'pg/text@1';
-                  readonly nullable: false;
-                  readonly many: false;
-                };
-                readonly systemPrompt: {
-                  readonly dataType: 'pg/text';
-                  readonly codecId: 'pg/text@1';
-                  readonly nullable: true;
-                  readonly many: false;
-                };
-                readonly temperature: {
-                  readonly dataType: 'pg/float8';
-                  readonly codecId: 'pg/float8@1';
                   readonly nullable: true;
                   readonly many: false;
                 };
@@ -693,8 +722,28 @@ type ContractBase = Omit<
               };
               primaryKey: { readonly columns: readonly ['id'] };
               uniques: readonly [];
-              indexes: readonly [];
-              foreignKeys: readonly [];
+              indexes: readonly [
+                {
+                  readonly name: 'AgentDefinition_modelDefinitionId_idx_148da3d2';
+                  readonly prefix: 'AgentDefinition_modelDefinitionId_idx';
+                  readonly columns: readonly ['modelDefinitionId'];
+                  readonly unique: false;
+                },
+              ];
+              foreignKeys: readonly [
+                {
+                  readonly source: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'AgentDefinition';
+                    readonly columns: readonly ['modelDefinitionId'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'ModelDefinition';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+              ];
             };
             readonly AgentMcpServer: {
               columns: {
@@ -702,12 +751,6 @@ type ContractBase = Omit<
                   readonly dataType: 'pg/int4';
                   readonly codecId: 'pg/int4@1';
                   readonly nullable: false;
-                  readonly many: false;
-                };
-                readonly config: {
-                  readonly dataType: 'pg/jsonb';
-                  readonly codecId: 'pg/jsonb@1';
-                  readonly nullable: true;
                   readonly many: false;
                 };
                 readonly createdAt: {
@@ -769,23 +812,17 @@ type ContractBase = Omit<
             };
             readonly ChatAdapter: {
               columns: {
-                readonly chatbotId: {
-                  readonly dataType: 'pg/int4';
-                  readonly codecId: 'pg/int4@1';
-                  readonly nullable: false;
-                  readonly many: false;
-                };
-                readonly config: {
-                  readonly dataType: 'pg/jsonb';
-                  readonly codecId: 'pg/jsonb@1';
-                  readonly nullable: true;
-                  readonly many: false;
-                };
                 readonly createdAt: {
                   readonly dataType: 'pg/timestamptz';
                   readonly codecId: 'pg/timestamptz-string@1';
                   readonly nullable: false;
                   readonly default: { readonly kind: 'function'; readonly expression: 'now()' };
+                  readonly many: false;
+                };
+                readonly envs: {
+                  readonly dataType: 'pg/jsonb';
+                  readonly codecId: 'pg/jsonb@1';
+                  readonly nullable: true;
                   readonly many: false;
                 };
                 readonly id: {
@@ -798,19 +835,15 @@ type ContractBase = Omit<
                   };
                   readonly many: false;
                 };
-                readonly isEnabled: {
-                  readonly dataType: 'pg/bool';
-                  readonly codecId: 'pg/bool@1';
-                  readonly nullable: false;
-                  readonly default: {
-                    readonly kind: 'literal';
-                    readonly value: DefaultLiteralValue<'pg/bool@1', true>;
-                  };
-                  readonly many: false;
-                };
                 readonly name: {
                   readonly dataType: 'pg/text';
                   readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly ownerId: {
+                  readonly dataType: 'pg/int4';
+                  readonly codecId: 'pg/int4@1';
                   readonly nullable: false;
                   readonly many: false;
                 };
@@ -831,9 +864,9 @@ type ContractBase = Omit<
               uniques: readonly [];
               indexes: readonly [
                 {
-                  readonly name: 'ChatAdapter_chatbotId_idx_52db07ea';
-                  readonly prefix: 'ChatAdapter_chatbotId_idx';
-                  readonly columns: readonly ['chatbotId'];
+                  readonly name: 'ChatAdapter_ownerId_idx_e2d0c1ef';
+                  readonly prefix: 'ChatAdapter_ownerId_idx';
+                  readonly columns: readonly ['ownerId'];
                   readonly unique: false;
                 },
                 {
@@ -848,11 +881,11 @@ type ContractBase = Omit<
                   readonly source: {
                     readonly namespaceId: 'public' & NamespaceId;
                     readonly tableName: 'ChatAdapter';
-                    readonly columns: readonly ['chatbotId'];
+                    readonly columns: readonly ['ownerId'];
                   };
                   readonly target: {
                     readonly namespaceId: 'public' & NamespaceId;
-                    readonly tableName: 'Chatbot';
+                    readonly tableName: 'User';
                     readonly columns: readonly ['id'];
                   };
                 },
@@ -863,7 +896,7 @@ type ContractBase = Omit<
                 readonly agentId: {
                   readonly dataType: 'pg/int4';
                   readonly codecId: 'pg/int4@1';
-                  readonly nullable: false;
+                  readonly nullable: true;
                   readonly many: false;
                 };
                 readonly createdAt: {
@@ -955,14 +988,73 @@ type ContractBase = Omit<
                 },
               ];
             };
-            readonly McpServer: {
+            readonly ChatbotAdapter: {
               columns: {
-                readonly config: {
-                  readonly dataType: 'pg/jsonb';
-                  readonly codecId: 'pg/jsonb@1';
-                  readonly nullable: true;
+                readonly adapterId: {
+                  readonly dataType: 'pg/int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
                   readonly many: false;
                 };
+                readonly chatbotId: {
+                  readonly dataType: 'pg/int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly createdAt: {
+                  readonly dataType: 'pg/timestamptz';
+                  readonly codecId: 'pg/timestamptz-string@1';
+                  readonly nullable: false;
+                  readonly default: { readonly kind: 'function'; readonly expression: 'now()' };
+                  readonly many: false;
+                };
+              };
+              primaryKey: { readonly columns: readonly ['chatbotId', 'adapterId'] };
+              uniques: readonly [];
+              indexes: readonly [
+                {
+                  readonly name: 'ChatbotAdapter_adapterId_idx_f5208af9';
+                  readonly prefix: 'ChatbotAdapter_adapterId_idx';
+                  readonly columns: readonly ['adapterId'];
+                  readonly unique: false;
+                },
+                {
+                  readonly name: 'ChatbotAdapter_chatbotId_idx_52db07ea';
+                  readonly prefix: 'ChatbotAdapter_chatbotId_idx';
+                  readonly columns: readonly ['chatbotId'];
+                  readonly unique: false;
+                },
+              ];
+              foreignKeys: readonly [
+                {
+                  readonly source: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'ChatbotAdapter';
+                    readonly columns: readonly ['chatbotId'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'Chatbot';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+                {
+                  readonly source: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'ChatbotAdapter';
+                    readonly columns: readonly ['adapterId'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'ChatAdapter';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+              ];
+            };
+            readonly McpServer: {
+              columns: {
                 readonly createdAt: {
                   readonly dataType: 'pg/timestamptz';
                   readonly codecId: 'pg/timestamptz-string@1';
@@ -979,6 +1071,12 @@ type ContractBase = Omit<
                 readonly endpoint: {
                   readonly dataType: 'pg/text';
                   readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                  readonly many: false;
+                };
+                readonly headers: {
+                  readonly dataType: 'pg/jsonb';
+                  readonly codecId: 'pg/jsonb@1';
                   readonly nullable: true;
                   readonly many: false;
                 };
@@ -1032,6 +1130,81 @@ type ContractBase = Omit<
                   readonly source: {
                     readonly namespaceId: 'public' & NamespaceId;
                     readonly tableName: 'McpServer';
+                    readonly columns: readonly ['ownerId'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'User';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+              ];
+            };
+            readonly ModelDefinition: {
+              columns: {
+                readonly apiKeyCiphertext: {
+                  readonly dataType: 'pg/text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly createdAt: {
+                  readonly dataType: 'pg/timestamptz';
+                  readonly codecId: 'pg/timestamptz-string@1';
+                  readonly nullable: false;
+                  readonly default: { readonly kind: 'function'; readonly expression: 'now()' };
+                  readonly many: false;
+                };
+                readonly id: {
+                  readonly dataType: 'pg/int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'function';
+                    readonly expression: 'autoincrement()';
+                  };
+                  readonly many: false;
+                };
+                readonly modelName: {
+                  readonly dataType: 'pg/text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly ownerId: {
+                  readonly dataType: 'pg/int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly provider: {
+                  readonly dataType: 'pg/text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly updatedAt: {
+                  readonly dataType: 'pg/timestamptz';
+                  readonly codecId: 'pg/timestamptz-string@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+              };
+              primaryKey: { readonly columns: readonly ['id'] };
+              uniques: readonly [];
+              indexes: readonly [
+                {
+                  readonly name: 'ModelDefinition_ownerId_idx_e2d0c1ef';
+                  readonly prefix: 'ModelDefinition_ownerId_idx';
+                  readonly columns: readonly ['ownerId'];
+                  readonly unique: false;
+                },
+              ];
+              foreignKeys: readonly [
+                {
+                  readonly source: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'ModelDefinition';
                     readonly columns: readonly ['ownerId'];
                   };
                   readonly target: {
@@ -1184,7 +1357,15 @@ type ContractBase = Omit<
       readonly model: 'ChatAdapter';
     };
     readonly Chatbot: { readonly namespace: 'public' & NamespaceId; readonly model: 'Chatbot' };
+    readonly ChatbotAdapter: {
+      readonly namespace: 'public' & NamespaceId;
+      readonly model: 'ChatbotAdapter';
+    };
     readonly McpServer: { readonly namespace: 'public' & NamespaceId; readonly model: 'McpServer' };
+    readonly ModelDefinition: {
+      readonly namespace: 'public' & NamespaceId;
+      readonly model: 'ModelDefinition';
+    };
     readonly Session: { readonly namespace: 'public' & NamespaceId; readonly model: 'Session' };
     readonly User: { readonly namespace: 'public' & NamespaceId; readonly model: 'User' };
   };
@@ -1205,33 +1386,17 @@ type ContractBase = Omit<
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
               };
-              readonly maxSteps: {
-                readonly nullable: true;
-                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
-              };
-              readonly model: {
+              readonly modelDefinitionId: {
                 readonly nullable: false;
-                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
               };
               readonly name: {
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
               };
-              readonly options: {
+              readonly parameters: {
                 readonly nullable: true;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/jsonb@1' };
-              };
-              readonly provider: {
-                readonly nullable: false;
-                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
-              };
-              readonly systemPrompt: {
-                readonly nullable: true;
-                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
-              };
-              readonly temperature: {
-                readonly nullable: true;
-                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/float8@1' };
               };
               readonly updatedAt: {
                 readonly nullable: false;
@@ -1265,6 +1430,18 @@ type ContractBase = Omit<
                   readonly targetFields: readonly ['agentId'];
                 };
               };
+              readonly modelDefinition: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'ModelDefinition';
+                };
+                readonly cardinality: 'N:1';
+                readonly nullable: false;
+                readonly on: {
+                  readonly localFields: readonly ['modelDefinitionId'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
             };
             readonly storage: {
               readonly table: 'AgentDefinition';
@@ -1272,13 +1449,9 @@ type ContractBase = Omit<
               readonly fields: {
                 readonly createdAt: { readonly column: 'createdAt' };
                 readonly id: { readonly column: 'id' };
-                readonly maxSteps: { readonly column: 'maxSteps' };
-                readonly model: { readonly column: 'model' };
+                readonly modelDefinitionId: { readonly column: 'modelDefinitionId' };
                 readonly name: { readonly column: 'name' };
-                readonly options: { readonly column: 'options' };
-                readonly provider: { readonly column: 'provider' };
-                readonly systemPrompt: { readonly column: 'systemPrompt' };
-                readonly temperature: { readonly column: 'temperature' };
+                readonly parameters: { readonly column: 'parameters' };
                 readonly updatedAt: { readonly column: 'updatedAt' };
               };
             };
@@ -1288,10 +1461,6 @@ type ContractBase = Omit<
               readonly agentId: {
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
-              };
-              readonly config: {
-                readonly nullable: true;
-                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/jsonb@1' };
               };
               readonly createdAt: {
                 readonly nullable: false;
@@ -1336,7 +1505,6 @@ type ContractBase = Omit<
               readonly namespaceId: 'public';
               readonly fields: {
                 readonly agentId: { readonly column: 'agentId' };
-                readonly config: { readonly column: 'config' };
                 readonly createdAt: { readonly column: 'createdAt' };
                 readonly mcpServerId: { readonly column: 'mcpServerId' };
               };
@@ -1344,14 +1512,6 @@ type ContractBase = Omit<
           };
           readonly ChatAdapter: {
             readonly fields: {
-              readonly chatbotId: {
-                readonly nullable: false;
-                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
-              };
-              readonly config: {
-                readonly nullable: true;
-                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/jsonb@1' };
-              };
               readonly createdAt: {
                 readonly nullable: false;
                 readonly type: {
@@ -1359,17 +1519,21 @@ type ContractBase = Omit<
                   readonly codecId: 'pg/timestamptz-string@1';
                 };
               };
+              readonly envs: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/jsonb@1' };
+              };
               readonly id: {
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
               };
-              readonly isEnabled: {
-                readonly nullable: false;
-                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/bool@1' };
-              };
               readonly name: {
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly ownerId: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
               };
               readonly platform: {
                 readonly nullable: false;
@@ -1384,15 +1548,23 @@ type ContractBase = Omit<
               };
             };
             readonly relations: {
-              readonly chatbot: {
+              readonly chatbots: {
                 readonly to: {
                   readonly namespace: 'public' & NamespaceId;
-                  readonly model: 'Chatbot';
+                  readonly model: 'ChatbotAdapter';
                 };
+                readonly cardinality: '1:N';
+                readonly on: {
+                  readonly localFields: readonly ['id'];
+                  readonly targetFields: readonly ['adapterId'];
+                };
+              };
+              readonly owner: {
+                readonly to: { readonly namespace: 'public' & NamespaceId; readonly model: 'User' };
                 readonly cardinality: 'N:1';
                 readonly nullable: false;
                 readonly on: {
-                  readonly localFields: readonly ['chatbotId'];
+                  readonly localFields: readonly ['ownerId'];
                   readonly targetFields: readonly ['id'];
                 };
               };
@@ -1401,12 +1573,11 @@ type ContractBase = Omit<
               readonly table: 'ChatAdapter';
               readonly namespaceId: 'public';
               readonly fields: {
-                readonly chatbotId: { readonly column: 'chatbotId' };
-                readonly config: { readonly column: 'config' };
                 readonly createdAt: { readonly column: 'createdAt' };
+                readonly envs: { readonly column: 'envs' };
                 readonly id: { readonly column: 'id' };
-                readonly isEnabled: { readonly column: 'isEnabled' };
                 readonly name: { readonly column: 'name' };
+                readonly ownerId: { readonly column: 'ownerId' };
                 readonly platform: { readonly column: 'platform' };
                 readonly updatedAt: { readonly column: 'updatedAt' };
               };
@@ -1415,7 +1586,7 @@ type ContractBase = Omit<
           readonly Chatbot: {
             readonly fields: {
               readonly agentId: {
-                readonly nullable: false;
+                readonly nullable: true;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
               };
               readonly createdAt: {
@@ -1457,7 +1628,7 @@ type ContractBase = Omit<
               readonly adapters: {
                 readonly to: {
                   readonly namespace: 'public' & NamespaceId;
-                  readonly model: 'ChatAdapter';
+                  readonly model: 'ChatbotAdapter';
                 };
                 readonly cardinality: '1:N';
                 readonly on: {
@@ -1471,7 +1642,7 @@ type ContractBase = Omit<
                   readonly model: 'AgentDefinition';
                 };
                 readonly cardinality: 'N:1';
-                readonly nullable: false;
+                readonly nullable: true;
                 readonly on: {
                   readonly localFields: readonly ['agentId'];
                   readonly targetFields: readonly ['id'];
@@ -1502,12 +1673,62 @@ type ContractBase = Omit<
               };
             };
           };
+          readonly ChatbotAdapter: {
+            readonly fields: {
+              readonly adapterId: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+              readonly chatbotId: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+              readonly createdAt: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-string@1';
+                };
+              };
+            };
+            readonly relations: {
+              readonly adapter: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'ChatAdapter';
+                };
+                readonly cardinality: 'N:1';
+                readonly nullable: false;
+                readonly on: {
+                  readonly localFields: readonly ['adapterId'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
+              readonly chatbot: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'Chatbot';
+                };
+                readonly cardinality: 'N:1';
+                readonly nullable: false;
+                readonly on: {
+                  readonly localFields: readonly ['chatbotId'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
+            };
+            readonly storage: {
+              readonly table: 'ChatbotAdapter';
+              readonly namespaceId: 'public';
+              readonly fields: {
+                readonly adapterId: { readonly column: 'adapterId' };
+                readonly chatbotId: { readonly column: 'chatbotId' };
+                readonly createdAt: { readonly column: 'createdAt' };
+              };
+            };
+          };
           readonly McpServer: {
             readonly fields: {
-              readonly config: {
-                readonly nullable: true;
-                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/jsonb@1' };
-              };
               readonly createdAt: {
                 readonly nullable: false;
                 readonly type: {
@@ -1522,6 +1743,10 @@ type ContractBase = Omit<
               readonly endpoint: {
                 readonly nullable: true;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly headers: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/jsonb@1' };
               };
               readonly id: {
                 readonly nullable: false;
@@ -1573,14 +1798,87 @@ type ContractBase = Omit<
               readonly table: 'McpServer';
               readonly namespaceId: 'public';
               readonly fields: {
-                readonly config: { readonly column: 'config' };
                 readonly createdAt: { readonly column: 'createdAt' };
                 readonly description: { readonly column: 'description' };
                 readonly endpoint: { readonly column: 'endpoint' };
+                readonly headers: { readonly column: 'headers' };
                 readonly id: { readonly column: 'id' };
                 readonly name: { readonly column: 'name' };
                 readonly ownerId: { readonly column: 'ownerId' };
                 readonly transport: { readonly column: 'transport' };
+                readonly updatedAt: { readonly column: 'updatedAt' };
+              };
+            };
+          };
+          readonly ModelDefinition: {
+            readonly fields: {
+              readonly apiKeyCiphertext: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly createdAt: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-string@1';
+                };
+              };
+              readonly id: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+              readonly modelName: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly ownerId: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+              readonly provider: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly updatedAt: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-string@1';
+                };
+              };
+            };
+            readonly relations: {
+              readonly agents: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'AgentDefinition';
+                };
+                readonly cardinality: '1:N';
+                readonly on: {
+                  readonly localFields: readonly ['id'];
+                  readonly targetFields: readonly ['modelDefinitionId'];
+                };
+              };
+              readonly owner: {
+                readonly to: { readonly namespace: 'public' & NamespaceId; readonly model: 'User' };
+                readonly cardinality: 'N:1';
+                readonly nullable: false;
+                readonly on: {
+                  readonly localFields: readonly ['ownerId'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
+            };
+            readonly storage: {
+              readonly table: 'ModelDefinition';
+              readonly namespaceId: 'public';
+              readonly fields: {
+                readonly apiKeyCiphertext: { readonly column: 'apiKeyCiphertext' };
+                readonly createdAt: { readonly column: 'createdAt' };
+                readonly id: { readonly column: 'id' };
+                readonly modelName: { readonly column: 'modelName' };
+                readonly ownerId: { readonly column: 'ownerId' };
+                readonly provider: { readonly column: 'provider' };
                 readonly updatedAt: { readonly column: 'updatedAt' };
               };
             };
@@ -1671,6 +1969,17 @@ type ContractBase = Omit<
               };
             };
             readonly relations: {
+              readonly adapters: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'ChatAdapter';
+                };
+                readonly cardinality: '1:N';
+                readonly on: {
+                  readonly localFields: readonly ['id'];
+                  readonly targetFields: readonly ['ownerId'];
+                };
+              };
               readonly chatbots: {
                 readonly to: {
                   readonly namespace: 'public' & NamespaceId;
@@ -1686,6 +1995,17 @@ type ContractBase = Omit<
                 readonly to: {
                   readonly namespace: 'public' & NamespaceId;
                   readonly model: 'McpServer';
+                };
+                readonly cardinality: '1:N';
+                readonly on: {
+                  readonly localFields: readonly ['id'];
+                  readonly targetFields: readonly ['ownerId'];
+                };
+              };
+              readonly modelDefinitions: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'ModelDefinition';
                 };
                 readonly cardinality: '1:N';
                 readonly on: {
@@ -1786,6 +2106,15 @@ type ContractBase = Omit<
           readonly onUpdate: { readonly id: 'timestampNow'; readonly kind: 'generator' };
           readonly ref: {
             readonly entry: 'McpServer';
+            readonly field: 'updatedAt';
+            readonly namespace: 'public';
+          };
+        },
+        {
+          readonly onCreate: { readonly id: 'timestampNow'; readonly kind: 'generator' };
+          readonly onUpdate: { readonly id: 'timestampNow'; readonly kind: 'generator' };
+          readonly ref: {
+            readonly entry: 'ModelDefinition';
             readonly field: 'updatedAt';
             readonly namespace: 'public';
           };

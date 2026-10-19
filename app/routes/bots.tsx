@@ -3,13 +3,13 @@ import {
   EntityPageView,
   type EntityPageDefinition,
 } from "../components/entity-page-view";
-import { deleteBot, listBots, saveBot } from "../.server/entities";
+import { deleteBot, listBots, saveBot, setBotEnabled } from "../.server/entities";
 import { requireUser } from "../.server/auth";
 import { APP_NAME } from "~/const";
 
 const page: Omit<EntityPageDefinition, "records"> = {
   title: "チャットボット",
-  description: "チャットボットの基本情報と利用するエージェントを管理します。",
+  description: "チャットボットの基本情報、エージェント、利用するアダプタを管理します。",
   icon: "bots",
   columns: [
     { key: "name", label: "ボット名" },
@@ -20,12 +20,6 @@ const page: Omit<EntityPageDefinition, "records"> = {
   ],
   fields: [
     { key: "name", label: "ボット名", placeholder: "例：サポートアシスタント" },
-    {
-      key: "status",
-      label: "ステータス",
-      type: "select",
-      options: ["稼働中", "停止中"],
-    },
     {
       key: "description",
       label: "説明",
@@ -38,6 +32,7 @@ const page: Omit<EntityPageDefinition, "records"> = {
       label: "エージェント",
       type: "select",
       options: [],
+      placeholder: "指定しない",
     },
     {
       key: "adapterIds",
@@ -67,6 +62,12 @@ export async function action({ request }: Route.ActionArgs) {
     return Number.isInteger(id) && (await deleteBot(user, id))
       ? { ok: true }
       : { ok: false, error: "ボットが見つかりません。" };
+  if (intent === "toggle-status") {
+    const enabled = String(form.get("enabled")) === "true";
+    return Number.isInteger(id) && (await setBotEnabled(user, id, enabled))
+      ? { ok: true }
+      : { ok: false, error: "ボットが見つかりません。" };
+  }
   if (intent === "create") return saveBot(user, null, form);
   if (intent === "update")
     return Number.isInteger(id)

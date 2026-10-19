@@ -9,13 +9,12 @@ import { APP_NAME } from "~/const";
 
 const page: Omit<EntityPageDefinition, "records"> = {
   title: "エージェント",
-  description: "AIプロバイダー、モデル、システムプロンプトを設定します。",
+  description: "モデル定義、推論パラメータ、利用するMCPサーバーを設定します。",
   icon: "agents",
   columns: [
     { key: "name", label: "エージェント" },
-    { key: "provider", label: "プロバイダー" },
     { key: "model", label: "モデル" },
-    { key: "tools", label: "MCPツール" },
+    { key: "servers", label: "MCPサーバー" },
     { key: "status", label: "利用状況" },
   ],
   fields: [
@@ -25,37 +24,25 @@ const page: Omit<EntityPageDefinition, "records"> = {
       placeholder: "例：カスタマーサポート",
     },
     {
-      key: "provider",
-      label: "プロバイダー",
+      key: "modelDefinitionId",
+      label: "モデル定義",
       type: "select",
-      options: ["OpenAI", "Anthropic", "Google", "その他"],
+      options: [],
+      placeholder: "モデル定義を選択",
     },
-    { key: "model", label: "モデル", placeholder: "例：gpt-4.1" },
     {
       key: "mcpServerIds",
-      label: "MCPツール",
+      label: "MCPサーバー",
       type: "multiselect",
       options: [],
       placeholder: "利用するMCPサーバーを選択",
     },
     {
-      key: "prompt",
-      label: "システムプロンプト",
+      key: "parameters",
+      label: "パラメータJSON",
       type: "textarea",
       wide: true,
-      placeholder: "エージェントの役割や応答方針",
-    },
-    {
-      key: "temperature",
-      label: "Temperature",
-      type: "text",
-      placeholder: "例：0.7",
-    },
-    {
-      key: "maxSteps",
-      label: "最大ステップ数",
-      type: "text",
-      placeholder: "例：5",
+      placeholder: '{"temperature":0.7,"maxSteps":5}',
     },
   ],
 };
@@ -97,7 +84,9 @@ export default function Agents({ loaderData }: Route.ComponentProps) {
           options:
             field.key === "mcpServerIds"
               ? loaderData.serverOptions
-              : field.options,
+              : field.key === "modelDefinitionId"
+                ? loaderData.modelOptions
+                : field.options,
         })),
       }}
     />

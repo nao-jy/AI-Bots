@@ -1,0 +1,164 @@
+[
+  {
+    "id": "renameColumn.ChatAdapter.config",
+    "label": "Rename column \"ChatAdapter\".\"config\" to \"envs\"",
+    "operationClass": "widening",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "envs",
+        "table": "ChatAdapter"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"config\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "ChatAdapter",
+          "config"
+        ]
+      },
+      {
+        "description": "ensure column \"envs\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "ChatAdapter",
+          "envs"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "rename column \"config\" to \"envs\"",
+        "sql": "ALTER TABLE \"public\".\"ChatAdapter\" RENAME COLUMN \"config\" TO \"envs\""
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"envs\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "ChatAdapter",
+          "envs"
+        ]
+      },
+      {
+        "description": "verify column \"config\" no longer exists",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "ChatAdapter",
+          "config"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "renameColumn.McpServer.config",
+    "label": "Rename column \"McpServer\".\"config\" to \"headers\"",
+    "operationClass": "widening",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "headers",
+        "table": "McpServer"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"config\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "McpServer",
+          "config"
+        ]
+      },
+      {
+        "description": "ensure column \"headers\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "McpServer",
+          "headers"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "rename column \"config\" to \"headers\"",
+        "sql": "ALTER TABLE \"public\".\"McpServer\" RENAME COLUMN \"config\" TO \"headers\""
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"headers\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "McpServer",
+          "headers"
+        ]
+      },
+      {
+        "description": "verify column \"config\" no longer exists",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "McpServer",
+          "config"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "dropColumn.AgentMcpServer.config",
+    "label": "Drop column \"config\" from \"AgentMcpServer\"",
+    "operationClass": "destructive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "config",
+        "table": "AgentMcpServer"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"config\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "AgentMcpServer",
+          "config"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "drop column \"config\"",
+        "sql": "ALTER TABLE \"public\".\"AgentMcpServer\" DROP COLUMN \"config\""
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"config\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "AgentMcpServer",
+          "config"
+        ]
+      }
+    ]
+  }
+]

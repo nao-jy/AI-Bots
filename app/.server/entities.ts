@@ -15,8 +15,6 @@ const platforms: Record<string, string> = {
 
 const transports: Record<string, string> = {
   "streamable-http": "Streamable HTTP",
-  sse: "SSE",
-  stdio: "stdio",
 };
 
 function timestamp(value: string) {
@@ -47,26 +45,36 @@ function record(
 export async function listBots(user: AuthUser) {
   const bots = await db.orm.public.Chatbot.where({ ownerId: user.id })
     .include("agent")
-    .include("adapters")
+    .include("adapters", (links) => links.include("adapter"))
     .orderBy((bot) => bot.updatedAt.desc())
     .all();
-  const agents = await db.orm.public.AgentDefinition.include("chatbot").all();
-  const ownedBotIds = new Set(bots.map((bot) => bot.id));
-  const adapters = bots.flatMap((bot) => bot.adapters);
+  const agents = await db.orm.public.AgentDefinition.include("chatbot")
+    .include("modelDefinition")
+    .all();
+  const adapters = await db.orm.public.ChatAdapter.where({
+    ownerId: user.id,
+  }).all();
   return {
     records: bots.map((bot) =>
       record(bot.id, bot.updatedAt, {
         name: bot.name,
         description: bot.description ?? "",
-        agent: bot.agent.name,
-        agentId: bot.agentId,
-        adapterIds: bot.adapters.map((adapter) => adapter.id).join(","),
-        adapters: bot.adapters.map((adapter) => adapter.name).join("、") || "—",
+        agent: bot.agent?.name ?? "—",
+        agentId: bot.agentId ?? "",
+        adapterIds: bot.adapters.map((link) => link.adapterId).join(","),
+        adapters:
+          bot.adapters.map((link) => link.adapter.name).join("、") || "—",
         status: bot.isEnabled ? "稼働中" : "停止中",
       }),
     ),
     agentOptions: agents
-      .filter((agent) => !agent.chatbot || ownedBotIds.has(agent.chatbot.id))
+      .filter(
+        (agent) =>
+          agent.modelDefinition.ownerId === user.id &&
+          (!agent.chatbot ||
+            (agent.chatbot.ownerId === user.id &&
+              bots.some((bot) => bot.id === agent.chatbot!.id))),
+      )
       .map((agent) => ({ label: agent.name, value: String(agent.id) })),
     adapterOptions: adapters.map((adapter) => ({
       label: adapter.name,
@@ -82,36 +90,39 @@ export async function saveBot(
 ) {
   const name = String(values.get("name") ?? "").trim();
   const description = String(values.get("description") ?? "").trim();
-  const agentId = Number(values.get("agentId"));
-  const isEnabled = String(values.get("status")) === "稼働中";
+  const agentValue = String(values.get("agentId") ?? "").trim();
+  const agentId = agentValue ? Number(agentValue) : null;
   const adapterIds = idList(values.get("adapterIds")?.toString() ?? null);
-  if (!name || !Number.isInteger(agentId))
-    return { error: "ボット名とエージェントを入力してください。" };
-  const agent = await db.orm.public.AgentDefinition.first({ id: agentId });
-  if (!agent) return { error: "選択したエージェントが見つかりません。" };
-  const assignedBot = await db.orm.public.Chatbot.first({ agentId });
-  if (assignedBot && assignedBot.id !== id)
-    return { error: "選択したエージェントは別のボットで使用されています。" };
-  const ownedBots = await db.orm.public.Chatbot.where({ ownerId: user.id })
-    .include("adapters")
-    .all();
-  const allowedAdapterIds = new Set(
-    ownedBots.flatMap((bot) => bot.adapters.map((adapter) => adapter.id)),
-  );
+  if (!name) return { error: "ボット名を入力してください。" };
+  if (agentId !== null && !Number.isInteger(agentId))
+    return { error: "エージェントを選択してください。" };
+  if (agentId !== null) {
+    const agent = await db.orm.public.AgentDefinition.where({ id: agentId })
+      .include("modelDefinition")
+      .first();
+    if (!agent || agent.modelDefinition.ownerId !== user.id)
+      return { error: "選択したエージェントが見つかりません。" };
+  }
+  if (agentId !== null) {
+    const assignedBot = await db.orm.public.Chatbot.first({ agentId });
+    if (
+      assignedBot &&
+      (assignedBot.ownerId !== user.id || assignedBot.id !== id)
+    )
+      return { error: "選択したエージェントは別のボットで使用されています。" };
+  }
+  const adapters = await db.orm.public.ChatAdapter.where({
+    ownerId: user.id,
+  }).all();
+  const allowedAdapterIds = new Set(adapters.map((adapter) => adapter.id));
   if (adapterIds.some((adapterId) => !allowedAdapterIds.has(adapterId))) {
     return { error: "選択したアダプタを使用できません。" };
   }
-  if (id !== null && !ownedBots.some((bot) => bot.id === id))
-    return { error: "ボットが見つかりません。" };
   if (
     id !== null &&
-    ownedBots
-      .find((bot) => bot.id === id)!
-      .adapters.some((adapter) => !adapterIds.includes(adapter.id)) &&
-    ownedBots.length < 2
-  ) {
-    return { error: "アダプタは必ずいずれかのボットに接続してください。" };
-  }
+    !(await db.orm.public.Chatbot.first({ id, ownerId: user.id }))
+  )
+    return { error: "ボットが見つかりません。" };
 
   await db.transaction(async (tx) => {
     let botId = id;
@@ -121,7 +132,6 @@ export async function saveBot(
         description: description || null,
         agentId,
         ownerId: user.id,
-        isEnabled,
       });
       botId = created.id;
     } else {
@@ -130,26 +140,15 @@ export async function saveBot(
           name,
           description: description || null,
           agentId,
-          isEnabled,
         },
       );
     }
+    await tx.orm.public.ChatbotAdapter.where({ chatbotId: botId! }).delete();
     for (const adapterId of adapterIds) {
-      await tx.orm.public.ChatAdapter.where({ id: adapterId }).update({
+      await tx.orm.public.ChatbotAdapter.create({
         chatbotId: botId!,
+        adapterId,
       });
-    }
-    if (id !== null) {
-      const fallbackBotId = ownedBots.find((bot) => bot.id !== id)?.id;
-      if (fallbackBotId !== undefined) {
-        for (const adapter of ownedBots.find((bot) => bot.id === id)!
-          .adapters) {
-          if (!adapterIds.includes(adapter.id))
-            await tx.orm.public.ChatAdapter.where({ id: adapter.id }).update({
-              chatbotId: fallbackBotId,
-            });
-        }
-      }
     }
   });
   return { ok: true };
@@ -162,30 +161,37 @@ export async function deleteBot(user: AuthUser, id: number) {
   return true;
 }
 
+export async function setBotEnabled(
+  user: AuthUser,
+  id: number,
+  isEnabled: boolean,
+) {
+  if (!(await db.orm.public.Chatbot.first({ id, ownerId: user.id })))
+    return false;
+  await db.orm.public.Chatbot.where({ id, ownerId: user.id }).update({
+    isEnabled,
+  });
+  return true;
+}
+
 export async function listAdapters(user: AuthUser) {
-  const bots = await db.orm.public.Chatbot.where({ ownerId: user.id }).all();
-  const adapters = await db.orm.public.ChatAdapter.all();
-  const botById = new Map(bots.map((bot) => [bot.id, bot]));
+  const adapters = await db.orm.public.ChatAdapter.where({
+    ownerId: user.id,
+  }).all();
   return {
-    records: adapters
-      .filter((adapter) => botById.has(adapter.chatbotId))
-      .map((adapter) => {
-        const config = adapter.config as {
-          credentialCiphertext?: string;
-        } | null;
-        return record(adapter.id, adapter.updatedAt, {
-          name: adapter.name,
-          platform: platforms[adapter.platform] ?? adapter.platform,
-          platformId: adapter.platform,
-          bot: botById.get(adapter.chatbotId)!.name,
-          chatbotId: adapter.chatbotId,
-          status: adapter.isEnabled ? "有効" : "停止中",
-          credentialConfigured: config?.credentialCiphertext
-            ? "設定済み"
-            : "未設定",
-        });
-      }),
-    botOptions: bots.map((bot) => ({ label: bot.name, value: String(bot.id) })),
+    records: adapters.map((adapter) => {
+      const envs = adapter.envs as {
+        credentialCiphertext?: string;
+      } | null;
+      return record(adapter.id, adapter.updatedAt, {
+        name: adapter.name,
+        platform: platforms[adapter.platform] ?? adapter.platform,
+        platformId: adapter.platform,
+        credentialConfigured: envs?.credentialCiphertext
+          ? "設定済み"
+          : "未設定",
+      });
+    }),
   };
 }
 
@@ -216,39 +222,25 @@ export async function saveAdapter(
 ) {
   const name = String(values.get("name") ?? "").trim();
   const platform = String(values.get("platformId") ?? "").trim();
-  const chatbotId = Number(values.get("chatbotId"));
-  const isEnabled = String(values.get("status")) !== "停止中";
   const credential = String(values.get("credential") ?? "").trim();
-  if (!name || !platform || !Number.isInteger(chatbotId))
-    return {
-      error: "接続名、プラットフォーム、接続先ボットを入力してください。",
-    };
-  const bot = await db.orm.public.Chatbot.first({
-    id: chatbotId,
-    ownerId: user.id,
-  });
-  if (!bot) return { error: "接続先ボットが見つかりません。" };
+  if (!name || !platform)
+    return { error: "接続名とプラットフォームを入力してください。" };
   if (id !== null) {
-    const existing = await db.orm.public.ChatAdapter.first({ id });
-    const ownedBot =
-      existing &&
-      (await db.orm.public.Chatbot.first({
-        id: existing.chatbotId,
-        ownerId: user.id,
-      }));
-    if (!existing || !ownedBot) return { error: "アダプタが見つかりません。" };
+    if (!(await db.orm.public.ChatAdapter.first({ id, ownerId: user.id })))
+      return { error: "アダプタが見つかりません。" };
   }
-  let config: unknown = null;
+  let envs: unknown = null;
   if (id !== null)
-    config = (await db.orm.public.ChatAdapter.first({ id }))?.config;
-  const previousConfig = config as { credentialCiphertext?: string } | null;
+    envs = (await db.orm.public.ChatAdapter.first({ id, ownerId: user.id }))
+      ?.envs;
+  const previousEnvs = envs as { credentialCiphertext?: string } | null;
   try {
-    config = credential
+    envs = credential
       ? {
-          ...previousConfig,
+          ...previousEnvs,
           credentialCiphertext: encryptCredential(credential),
         }
-      : previousConfig;
+      : previousEnvs;
   } catch (error) {
     return {
       error:
@@ -261,33 +253,94 @@ export async function saveAdapter(
     await db.orm.public.ChatAdapter.create({
       name,
       platform,
-      chatbotId,
-      isEnabled,
-      config: jsonb(config),
+      ownerId: user.id,
+      envs: jsonb(envs),
     });
   } else {
-    await db.orm.public.ChatAdapter.where({ id }).update({
+    await db.orm.public.ChatAdapter.where({ id, ownerId: user.id }).update({
       name,
       platform,
-      chatbotId,
-      isEnabled,
-      config: jsonb(config),
+      envs: jsonb(envs),
     });
   }
   return { ok: true };
 }
 
 export async function deleteAdapter(user: AuthUser, id: number) {
-  const adapter = await db.orm.public.ChatAdapter.first({ id });
-  if (
-    !adapter ||
-    !(await db.orm.public.Chatbot.first({
-      id: adapter.chatbotId,
-      ownerId: user.id,
-    }))
-  )
+  if (!(await db.orm.public.ChatAdapter.first({ id, ownerId: user.id })))
     return false;
-  await db.orm.public.ChatAdapter.where({ id }).delete();
+  await db.orm.public.ChatAdapter.where({ id, ownerId: user.id }).delete();
+  return true;
+}
+
+export async function listModelDefinitions(user: AuthUser) {
+  const models = await db.orm.public.ModelDefinition.where({ ownerId: user.id })
+    .orderBy((model) => model.updatedAt.desc())
+    .all();
+  return {
+    records: models.map((model) =>
+      record(model.id, model.updatedAt, {
+        provider: model.provider,
+        modelName: model.modelName,
+        apiKeyConfigured: model.apiKeyCiphertext ? "設定済み" : "未設定",
+      }),
+    ),
+  };
+}
+
+export async function saveModelDefinition(
+  user: AuthUser,
+  id: number | null,
+  values: FormData,
+) {
+  const provider = String(values.get("provider") ?? "").trim();
+  const modelName = String(values.get("modelName") ?? "").trim();
+  const apiKey = String(values.get("apiKey") ?? "").trim();
+  if (!provider || !modelName)
+    return { error: "プロバイダーとモデル名を入力してください。" };
+  if (
+    id !== null &&
+    !(await db.orm.public.ModelDefinition.first({ id, ownerId: user.id }))
+  )
+    return { error: "モデル定義が見つかりません。" };
+  if (id === null && !apiKey) return { error: "APIキーを入力してください。" };
+
+  let apiKeyCiphertext: string | undefined;
+  if (apiKey) {
+    try {
+      apiKeyCiphertext = encryptCredential(apiKey);
+    } catch (error) {
+      return {
+        error:
+          error instanceof Error
+            ? error.message
+            : "APIキーを暗号化できませんでした。",
+      };
+    }
+  }
+  if (id === null) {
+    await db.orm.public.ModelDefinition.create({
+      provider,
+      modelName,
+      apiKeyCiphertext: apiKeyCiphertext!,
+      ownerId: user.id,
+    });
+  } else {
+    await db.orm.public.ModelDefinition.where({ id, ownerId: user.id }).update({
+      provider,
+      modelName,
+      ...(apiKeyCiphertext ? { apiKeyCiphertext } : {}),
+    });
+  }
+  return { ok: true };
+}
+
+export async function deleteModelDefinition(user: AuthUser, id: number) {
+  if (!(await db.orm.public.ModelDefinition.first({ id, ownerId: user.id })))
+    return false;
+  if (await db.orm.public.AgentDefinition.first({ modelDefinitionId: id }))
+    return false;
+  await db.orm.public.ModelDefinition.where({ id, ownerId: user.id }).delete();
   return true;
 }
 
@@ -297,6 +350,7 @@ export async function listAgents(user: AuthUser) {
     (links) => links.include("mcpServer"),
   )
     .include("chatbot")
+    .include("modelDefinition")
     .all();
   const ownedBots = await db.orm.public.Chatbot.where({
     ownerId: user.id,
@@ -308,21 +362,23 @@ export async function listAgents(user: AuthUser) {
   const availableServerIds = new Set(servers.map((server) => server.id));
   return {
     records: agents
-      .filter((agent) => !agent.chatbot || ownedAgentIds.has(agent.id))
+      .filter(
+        (agent) =>
+          agent.modelDefinition.ownerId === user.id &&
+          (!agent.chatbot || ownedAgentIds.has(agent.id)),
+      )
       .map((agent) => {
         const ownedLinks = agent.mcpServers.filter((link) =>
           availableServerIds.has(link.mcpServerId),
         );
         return record(agent.id, agent.updatedAt, {
           name: agent.name,
-          provider: agent.provider,
-          model: agent.model,
+          model: agent.modelDefinition.modelName,
+          provider: agent.modelDefinition.provider,
           mcpServerIds: ownedLinks.map((link) => link.mcpServerId).join(","),
-          tools:
+          servers:
             ownedLinks.map((link) => link.mcpServer.name).join("、") || "—",
-          prompt: agent.systemPrompt ?? "",
-          temperature: agent.temperature ?? "",
-          maxSteps: agent.maxSteps ?? "",
+          parameters: JSON.stringify(agent.parameters ?? {}, null, 2),
           status: agent.chatbot
             ? `ボット「${agent.chatbot.name}」で利用中`
             : "未使用",
@@ -331,6 +387,12 @@ export async function listAgents(user: AuthUser) {
     serverOptions: servers.map((server) => ({
       label: server.name,
       value: String(server.id),
+    })),
+    modelOptions: (
+      await db.orm.public.ModelDefinition.where({ ownerId: user.id }).all()
+    ).map((model) => ({
+      label: `${model.provider} / ${model.modelName}`,
+      value: String(model.id),
     })),
   };
 }
@@ -341,16 +403,31 @@ export async function saveAgent(
   values: FormData,
 ) {
   const name = String(values.get("name") ?? "").trim();
-  const provider = String(values.get("provider") ?? "").trim();
-  const model = String(values.get("model") ?? "").trim();
-  const systemPrompt = String(values.get("prompt") ?? "").trim();
-  const temperatureValue = String(values.get("temperature") ?? "").trim();
-  const maxStepsValue = String(values.get("maxSteps") ?? "").trim();
+  const modelDefinitionId = Number(values.get("modelDefinitionId"));
+  const parametersValue = String(values.get("parameters") ?? "{}").trim();
   const serverIds = idList(values.get("mcpServerIds")?.toString() ?? null);
-  if (!name || !provider || !model)
-    return {
-      error: "エージェント名、プロバイダー、モデルを入力してください。",
-    };
+  if (!name) return { error: "エージェント名を入力してください。" };
+  if (!Number.isInteger(modelDefinitionId))
+    return { error: "モデル定義を選択してください。" };
+  if (
+    !(await db.orm.public.ModelDefinition.first({
+      id: modelDefinitionId,
+      ownerId: user.id,
+    }))
+  )
+    return { error: "選択したモデル定義が見つかりません。" };
+  let parameters: unknown;
+  try {
+    parameters = JSON.parse(parametersValue || "{}");
+    if (
+      !parameters ||
+      typeof parameters !== "object" ||
+      Array.isArray(parameters)
+    )
+      return { error: "パラメータJSONにはオブジェクトを入力してください。" };
+  } catch {
+    return { error: "パラメータJSONの形式を確認してください。" };
+  }
   const servers = await db.orm.public.McpServer.where({
     ownerId: user.id,
   }).all();
@@ -360,30 +437,22 @@ export async function saveAgent(
   const allowedIds = new Set(servers.map((server) => server.id));
   if (serverIds.some((serverId) => !allowedIds.has(serverId)))
     return { error: "選択したMCPサーバーを使用できません。" };
-  if (id !== null && !(await db.orm.public.AgentDefinition.first({ id })))
-    return { error: "エージェントが見つかりません。" };
+  if (id !== null) {
+    const existing = await db.orm.public.AgentDefinition.where({ id })
+      .include("modelDefinition")
+      .first();
+    if (!existing || existing.modelDefinition.ownerId !== user.id)
+      return { error: "エージェントが見つかりません。" };
+  }
   if (id !== null) {
     const assignedBot = await db.orm.public.Chatbot.first({ agentId: id });
     if (assignedBot && !ownedBots.some((bot) => bot.id === assignedBot.id))
       return { error: "このエージェントを編集する権限がありません。" };
   }
-  const temperature = temperatureValue ? Number(temperatureValue) : null;
-  const maxSteps = maxStepsValue ? Number(maxStepsValue) : null;
-  if (
-    (temperature !== null &&
-      (!Number.isFinite(temperature) || temperature < 0 || temperature > 2)) ||
-    (maxSteps !== null && (!Number.isInteger(maxSteps) || maxSteps < 1))
-  )
-    return {
-      error: "temperatureは0〜2、maxStepsは1以上の整数で入力してください。",
-    };
   const valuesToSave = {
     name,
-    provider,
-    model,
-    systemPrompt: systemPrompt || null,
-    temperature,
-    maxSteps,
+    modelDefinitionId,
+    parameters: jsonb(parameters),
   };
   await db.transaction(async (tx) => {
     const agentId =
@@ -405,7 +474,6 @@ export async function saveAgent(
         await tx.orm.public.AgentMcpServer.create({
           agentId,
           mcpServerId: serverId,
-          config: null,
         });
     }
   });
@@ -413,8 +481,10 @@ export async function saveAgent(
 }
 
 export async function deleteAgent(user: AuthUser, id: number) {
-  const agent = await db.orm.public.AgentDefinition.first({ id });
-  if (!agent) return false;
+  const agent = await db.orm.public.AgentDefinition.where({ id })
+    .include("modelDefinition")
+    .first();
+  if (!agent || agent.modelDefinition.ownerId !== user.id) return false;
   const bot = await db.orm.public.Chatbot.first({ agentId: id });
   if (bot) return false;
   const ownServers = await db.orm.public.McpServer.where({
@@ -437,14 +507,13 @@ export async function listMcpServers(user: AuthUser) {
     .all();
   return {
     records: servers.map((server) => {
-      const config = server.config as { tools?: string[] } | null;
       return record(server.id, server.updatedAt, {
         name: server.name,
         description: server.description ?? "",
         transport: transports[server.transport] ?? server.transport,
         transportId: server.transport,
         endpoint: server.endpoint ?? "",
-        tools: config?.tools?.join(", ") ?? "",
+        headers: JSON.stringify(server.headers ?? {}, null, 2),
         status: server.endpoint ? "接続先登録済み" : "接続先未設定",
       });
     }),
@@ -460,12 +529,19 @@ export async function saveMcpServer(
   const description = String(values.get("description") ?? "").trim();
   const transport = String(values.get("transportId") ?? "").trim();
   const endpoint = String(values.get("endpoint") ?? "").trim();
-  const tools = String(values.get("tools") ?? "")
-    .split(",")
-    .map((tool) => tool.trim())
-    .filter(Boolean);
+  const headersValue = String(values.get("headers") ?? "{}").trim();
   if (!name || !transport)
     return { error: "サーバー名とトランスポートを入力してください。" };
+  let headers: unknown;
+  try {
+    headers = JSON.parse(headersValue || "{}");
+    if (!headers || typeof headers !== "object" || Array.isArray(headers))
+      return { error: "ヘッダーJSONにはオブジェクトを入力してください。" };
+    if (Object.values(headers).some((value) => typeof value !== "string"))
+      return { error: "ヘッダーの値は文字列で入力してください。" };
+  } catch {
+    return { error: "ヘッダーJSONの形式を確認してください。" };
+  }
   if (
     id !== null &&
     !(await db.orm.public.McpServer.first({ id, ownerId: user.id }))
@@ -476,7 +552,7 @@ export async function saveMcpServer(
     description: description || null,
     transport,
     endpoint: endpoint || null,
-    config: jsonb({ tools }),
+    headers: jsonb(headers),
   };
   if (id === null)
     await db.orm.public.McpServer.create({ ...saved, ownerId: user.id });
@@ -523,7 +599,13 @@ export async function saveUser(id: number | null, values: FormData) {
   } else {
     if (!(await db.orm.public.User.first({ id })))
       return { error: "ユーザーが見つかりません。" };
-    await db.orm.public.User.where({ id }).update({ name, email });
+    if (password && password.length < 12)
+      return { error: "パスワードは12文字以上で入力してください。" };
+    await db.orm.public.User.where({ id }).update({
+      name,
+      email,
+      ...(password ? { passwordHash: await hashPassword(password) } : {}),
+    });
   }
   return { ok: true };
 }

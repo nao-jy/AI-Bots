@@ -20,8 +20,16 @@
       "model": "Chatbot",
       "namespace": "public"
     },
+    "ChatbotAdapter": {
+      "model": "ChatbotAdapter",
+      "namespace": "public"
+    },
     "McpServer": {
       "model": "McpServer",
+      "namespace": "public"
+    },
+    "ModelDefinition": {
+      "model": "ModelDefinition",
       "namespace": "public"
     },
     "Session": {
@@ -53,17 +61,10 @@
                   "kind": "scalar"
                 }
               },
-              "maxSteps": {
-                "nullable": true,
-                "type": {
-                  "codecId": "pg/int4@1",
-                  "kind": "scalar"
-                }
-              },
-              "model": {
+              "modelDefinitionId": {
                 "nullable": false,
                 "type": {
-                  "codecId": "pg/text@1",
+                  "codecId": "pg/int4@1",
                   "kind": "scalar"
                 }
               },
@@ -74,31 +75,10 @@
                   "kind": "scalar"
                 }
               },
-              "options": {
+              "parameters": {
                 "nullable": true,
                 "type": {
                   "codecId": "pg/jsonb@1",
-                  "kind": "scalar"
-                }
-              },
-              "provider": {
-                "nullable": false,
-                "type": {
-                  "codecId": "pg/text@1",
-                  "kind": "scalar"
-                }
-              },
-              "systemPrompt": {
-                "nullable": true,
-                "type": {
-                  "codecId": "pg/text@1",
-                  "kind": "scalar"
-                }
-              },
-              "temperature": {
-                "nullable": true,
-                "type": {
-                  "codecId": "pg/float8@1",
                   "kind": "scalar"
                 }
               },
@@ -141,6 +121,22 @@
                   "model": "AgentMcpServer",
                   "namespace": "public"
                 }
+              },
+              "modelDefinition": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "modelDefinitionId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "ModelDefinition",
+                  "namespace": "public"
+                }
               }
             },
             "storage": {
@@ -151,26 +147,14 @@
                 "id": {
                   "column": "id"
                 },
-                "maxSteps": {
-                  "column": "maxSteps"
-                },
-                "model": {
-                  "column": "model"
+                "modelDefinitionId": {
+                  "column": "modelDefinitionId"
                 },
                 "name": {
                   "column": "name"
                 },
-                "options": {
-                  "column": "options"
-                },
-                "provider": {
-                  "column": "provider"
-                },
-                "systemPrompt": {
-                  "column": "systemPrompt"
-                },
-                "temperature": {
-                  "column": "temperature"
+                "parameters": {
+                  "column": "parameters"
                 },
                 "updatedAt": {
                   "column": "updatedAt"
@@ -186,13 +170,6 @@
                 "nullable": false,
                 "type": {
                   "codecId": "pg/int4@1",
-                  "kind": "scalar"
-                }
-              },
-              "config": {
-                "nullable": true,
-                "type": {
-                  "codecId": "pg/jsonb@1",
                   "kind": "scalar"
                 }
               },
@@ -250,9 +227,6 @@
                 "agentId": {
                   "column": "agentId"
                 },
-                "config": {
-                  "column": "config"
-                },
                 "createdAt": {
                   "column": "createdAt"
                 },
@@ -266,24 +240,17 @@
           },
           "ChatAdapter": {
             "fields": {
-              "chatbotId": {
-                "nullable": false,
-                "type": {
-                  "codecId": "pg/int4@1",
-                  "kind": "scalar"
-                }
-              },
-              "config": {
-                "nullable": true,
-                "type": {
-                  "codecId": "pg/jsonb@1",
-                  "kind": "scalar"
-                }
-              },
               "createdAt": {
                 "nullable": false,
                 "type": {
                   "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              },
+              "envs": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/jsonb@1",
                   "kind": "scalar"
                 }
               },
@@ -294,17 +261,17 @@
                   "kind": "scalar"
                 }
               },
-              "isEnabled": {
-                "nullable": false,
-                "type": {
-                  "codecId": "pg/bool@1",
-                  "kind": "scalar"
-                }
-              },
               "name": {
                 "nullable": false,
                 "type": {
                   "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "ownerId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
                   "kind": "scalar"
                 }
               },
@@ -324,42 +291,54 @@
               }
             },
             "relations": {
-              "chatbot": {
+              "chatbots": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "adapterId"
+                  ]
+                },
+                "to": {
+                  "model": "ChatbotAdapter",
+                  "namespace": "public"
+                }
+              },
+              "owner": {
                 "cardinality": "N:1",
                 "nullable": false,
                 "on": {
                   "localFields": [
-                    "chatbotId"
+                    "ownerId"
                   ],
                   "targetFields": [
                     "id"
                   ]
                 },
                 "to": {
-                  "model": "Chatbot",
+                  "model": "User",
                   "namespace": "public"
                 }
               }
             },
             "storage": {
               "fields": {
-                "chatbotId": {
-                  "column": "chatbotId"
-                },
-                "config": {
-                  "column": "config"
-                },
                 "createdAt": {
                   "column": "createdAt"
+                },
+                "envs": {
+                  "column": "envs"
                 },
                 "id": {
                   "column": "id"
                 },
-                "isEnabled": {
-                  "column": "isEnabled"
-                },
                 "name": {
                   "column": "name"
+                },
+                "ownerId": {
+                  "column": "ownerId"
                 },
                 "platform": {
                   "column": "platform"
@@ -375,7 +354,7 @@
           "Chatbot": {
             "fields": {
               "agentId": {
-                "nullable": false,
+                "nullable": true,
                 "type": {
                   "codecId": "pg/int4@1",
                   "kind": "scalar"
@@ -443,13 +422,13 @@
                   ]
                 },
                 "to": {
-                  "model": "ChatAdapter",
+                  "model": "ChatbotAdapter",
                   "namespace": "public"
                 }
               },
               "agent": {
                 "cardinality": "N:1",
-                "nullable": false,
+                "nullable": true,
                 "on": {
                   "localFields": [
                     "agentId"
@@ -511,15 +490,82 @@
               "table": "Chatbot"
             }
           },
-          "McpServer": {
+          "ChatbotAdapter": {
             "fields": {
-              "config": {
-                "nullable": true,
+              "adapterId": {
+                "nullable": false,
                 "type": {
-                  "codecId": "pg/jsonb@1",
+                  "codecId": "pg/int4@1",
                   "kind": "scalar"
                 }
               },
+              "chatbotId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "createdAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "adapter": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "adapterId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "ChatAdapter",
+                  "namespace": "public"
+                }
+              },
+              "chatbot": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "chatbotId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Chatbot",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "adapterId": {
+                  "column": "adapterId"
+                },
+                "chatbotId": {
+                  "column": "chatbotId"
+                },
+                "createdAt": {
+                  "column": "createdAt"
+                }
+              },
+              "namespaceId": "public",
+              "table": "ChatbotAdapter"
+            }
+          },
+          "McpServer": {
+            "fields": {
               "createdAt": {
                 "nullable": false,
                 "type": {
@@ -538,6 +584,13 @@
                 "nullable": true,
                 "type": {
                   "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "headers": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/jsonb@1",
                   "kind": "scalar"
                 }
               },
@@ -612,9 +665,6 @@
             },
             "storage": {
               "fields": {
-                "config": {
-                  "column": "config"
-                },
                 "createdAt": {
                   "column": "createdAt"
                 },
@@ -623,6 +673,9 @@
                 },
                 "endpoint": {
                   "column": "endpoint"
+                },
+                "headers": {
+                  "column": "headers"
                 },
                 "id": {
                   "column": "id"
@@ -642,6 +695,119 @@
               },
               "namespaceId": "public",
               "table": "McpServer"
+            }
+          },
+          "ModelDefinition": {
+            "fields": {
+              "apiKeyCiphertext": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "createdAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "modelName": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "ownerId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "provider": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "updatedAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "agents": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "modelDefinitionId"
+                  ]
+                },
+                "to": {
+                  "model": "AgentDefinition",
+                  "namespace": "public"
+                }
+              },
+              "owner": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "ownerId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "User",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "apiKeyCiphertext": {
+                  "column": "apiKeyCiphertext"
+                },
+                "createdAt": {
+                  "column": "createdAt"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "modelName": {
+                  "column": "modelName"
+                },
+                "ownerId": {
+                  "column": "ownerId"
+                },
+                "provider": {
+                  "column": "provider"
+                },
+                "updatedAt": {
+                  "column": "updatedAt"
+                }
+              },
+              "namespaceId": "public",
+              "table": "ModelDefinition"
             }
           },
           "Session": {
@@ -768,6 +934,21 @@
               }
             },
             "relations": {
+              "adapters": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "ownerId"
+                  ]
+                },
+                "to": {
+                  "model": "ChatAdapter",
+                  "namespace": "public"
+                }
+              },
               "chatbots": {
                 "cardinality": "1:N",
                 "on": {
@@ -795,6 +976,21 @@
                 },
                 "to": {
                   "model": "McpServer",
+                  "namespace": "public"
+                }
+              },
+              "modelDefinitions": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "ownerId"
+                  ]
+                },
+                "to": {
+                  "model": "ModelDefinition",
                   "namespace": "public"
                 }
               },
@@ -868,14 +1064,9 @@
                   },
                   "nullable": false
                 },
-                "maxSteps": {
+                "modelDefinitionId": {
                   "codecId": "pg/int4@1",
                   "dataType": "pg/int4",
-                  "nullable": true
-                },
-                "model": {
-                  "codecId": "pg/text@1",
-                  "dataType": "pg/text",
                   "nullable": false
                 },
                 "name": {
@@ -883,24 +1074,9 @@
                   "dataType": "pg/text",
                   "nullable": false
                 },
-                "options": {
+                "parameters": {
                   "codecId": "pg/jsonb@1",
                   "dataType": "pg/jsonb",
-                  "nullable": true
-                },
-                "provider": {
-                  "codecId": "pg/text@1",
-                  "dataType": "pg/text",
-                  "nullable": false
-                },
-                "systemPrompt": {
-                  "codecId": "pg/text@1",
-                  "dataType": "pg/text",
-                  "nullable": true
-                },
-                "temperature": {
-                  "codecId": "pg/float8@1",
-                  "dataType": "pg/float8",
                   "nullable": true
                 },
                 "updatedAt": {
@@ -909,8 +1085,38 @@
                   "nullable": false
                 }
               },
-              "foreignKeys": [],
-              "indexes": [],
+              "foreignKeys": [
+                {
+                  "index": {
+                    "name": "AgentDefinition_modelDefinitionId_idx_148da3d2"
+                  },
+                  "onDelete": "restrict",
+                  "source": {
+                    "columns": [
+                      "modelDefinitionId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "AgentDefinition"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "ModelDefinition"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "modelDefinitionId"
+                  ],
+                  "name": "AgentDefinition_modelDefinitionId_idx_148da3d2",
+                  "prefix": "AgentDefinition_modelDefinitionId_idx",
+                  "unique": false
+                }
+              ],
               "primaryKey": {
                 "columns": [
                   "id"
@@ -924,11 +1130,6 @@
                   "codecId": "pg/int4@1",
                   "dataType": "pg/int4",
                   "nullable": false
-                },
-                "config": {
-                  "codecId": "pg/jsonb@1",
-                  "dataType": "pg/jsonb",
-                  "nullable": true
                 },
                 "createdAt": {
                   "codecId": "pg/timestamptz-string@1",
@@ -1015,16 +1216,6 @@
             },
             "ChatAdapter": {
               "columns": {
-                "chatbotId": {
-                  "codecId": "pg/int4@1",
-                  "dataType": "pg/int4",
-                  "nullable": false
-                },
-                "config": {
-                  "codecId": "pg/jsonb@1",
-                  "dataType": "pg/jsonb",
-                  "nullable": true
-                },
                 "createdAt": {
                   "codecId": "pg/timestamptz-string@1",
                   "dataType": "pg/timestamptz",
@@ -1033,6 +1224,11 @@
                     "kind": "function"
                   },
                   "nullable": false
+                },
+                "envs": {
+                  "codecId": "pg/jsonb@1",
+                  "dataType": "pg/jsonb",
+                  "nullable": true
                 },
                 "id": {
                   "codecId": "pg/int4@1",
@@ -1043,18 +1239,14 @@
                   },
                   "nullable": false
                 },
-                "isEnabled": {
-                  "codecId": "pg/bool@1",
-                  "dataType": "pg/bool",
-                  "default": {
-                    "kind": "literal",
-                    "value": true
-                  },
-                  "nullable": false
-                },
                 "name": {
                   "codecId": "pg/text@1",
                   "dataType": "pg/text",
+                  "nullable": false
+                },
+                "ownerId": {
+                  "codecId": "pg/int4@1",
+                  "dataType": "pg/int4",
                   "nullable": false
                 },
                 "platform": {
@@ -1071,12 +1263,12 @@
               "foreignKeys": [
                 {
                   "index": {
-                    "name": "ChatAdapter_chatbotId_idx_52db07ea"
+                    "name": "ChatAdapter_ownerId_idx_e2d0c1ef"
                   },
                   "onDelete": "cascade",
                   "source": {
                     "columns": [
-                      "chatbotId"
+                      "ownerId"
                     ],
                     "namespaceId": "public",
                     "tableName": "ChatAdapter"
@@ -1086,17 +1278,17 @@
                       "id"
                     ],
                     "namespaceId": "public",
-                    "tableName": "Chatbot"
+                    "tableName": "User"
                   }
                 }
               ],
               "indexes": [
                 {
                   "columns": [
-                    "chatbotId"
+                    "ownerId"
                   ],
-                  "name": "ChatAdapter_chatbotId_idx_52db07ea",
-                  "prefix": "ChatAdapter_chatbotId_idx",
+                  "name": "ChatAdapter_ownerId_idx_e2d0c1ef",
+                  "prefix": "ChatAdapter_ownerId_idx",
                   "unique": false
                 },
                 {
@@ -1120,7 +1312,7 @@
                 "agentId": {
                   "codecId": "pg/int4@1",
                   "dataType": "pg/int4",
-                  "nullable": false
+                  "nullable": true
                 },
                 "createdAt": {
                   "codecId": "pg/timestamptz-string@1",
@@ -1197,6 +1389,7 @@
                       "agentId"
                     ]
                   },
+                  "onDelete": "setNull",
                   "source": {
                     "columns": [
                       "agentId"
@@ -1236,13 +1429,98 @@
                 }
               ]
             },
+            "ChatbotAdapter": {
+              "columns": {
+                "adapterId": {
+                  "codecId": "pg/int4@1",
+                  "dataType": "pg/int4",
+                  "nullable": false
+                },
+                "chatbotId": {
+                  "codecId": "pg/int4@1",
+                  "dataType": "pg/int4",
+                  "nullable": false
+                },
+                "createdAt": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "dataType": "pg/timestamptz",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [
+                {
+                  "index": {
+                    "name": "ChatbotAdapter_chatbotId_idx_52db07ea"
+                  },
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "chatbotId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "ChatbotAdapter"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Chatbot"
+                  }
+                },
+                {
+                  "index": {
+                    "name": "ChatbotAdapter_adapterId_idx_f5208af9"
+                  },
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "adapterId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "ChatbotAdapter"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "ChatAdapter"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "adapterId"
+                  ],
+                  "name": "ChatbotAdapter_adapterId_idx_f5208af9",
+                  "prefix": "ChatbotAdapter_adapterId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "chatbotId"
+                  ],
+                  "name": "ChatbotAdapter_chatbotId_idx_52db07ea",
+                  "prefix": "ChatbotAdapter_chatbotId_idx",
+                  "unique": false
+                }
+              ],
+              "primaryKey": {
+                "columns": [
+                  "chatbotId",
+                  "adapterId"
+                ]
+              },
+              "uniques": []
+            },
             "McpServer": {
               "columns": {
-                "config": {
-                  "codecId": "pg/jsonb@1",
-                  "dataType": "pg/jsonb",
-                  "nullable": true
-                },
                 "createdAt": {
                   "codecId": "pg/timestamptz-string@1",
                   "dataType": "pg/timestamptz",
@@ -1260,6 +1538,11 @@
                 "endpoint": {
                   "codecId": "pg/text@1",
                   "dataType": "pg/text",
+                  "nullable": true
+                },
+                "headers": {
+                  "codecId": "pg/jsonb@1",
+                  "dataType": "pg/jsonb",
                   "nullable": true
                 },
                 "id": {
@@ -1321,6 +1604,91 @@
                   ],
                   "name": "McpServer_ownerId_idx_e2d0c1ef",
                   "prefix": "McpServer_ownerId_idx",
+                  "unique": false
+                }
+              ],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "uniques": []
+            },
+            "ModelDefinition": {
+              "columns": {
+                "apiKeyCiphertext": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "nullable": false
+                },
+                "createdAt": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "dataType": "pg/timestamptz",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nullable": false
+                },
+                "id": {
+                  "codecId": "pg/int4@1",
+                  "dataType": "pg/int4",
+                  "default": {
+                    "expression": "autoincrement()",
+                    "kind": "function"
+                  },
+                  "nullable": false
+                },
+                "modelName": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "nullable": false
+                },
+                "ownerId": {
+                  "codecId": "pg/int4@1",
+                  "dataType": "pg/int4",
+                  "nullable": false
+                },
+                "provider": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "nullable": false
+                },
+                "updatedAt": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "dataType": "pg/timestamptz",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [
+                {
+                  "index": {
+                    "name": "ModelDefinition_ownerId_idx_e2d0c1ef"
+                  },
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "ownerId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "ModelDefinition"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "User"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "ownerId"
+                  ],
+                  "name": "ModelDefinition_ownerId_idx_e2d0c1ef",
+                  "prefix": "ModelDefinition_ownerId_idx",
                   "unique": false
                 }
               ],
@@ -1482,10 +1850,10 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "c6d69e9b1485f2f4d7eea42a46d5eee992a0c495812acd6a97163a8868f24d1d"
+    "storageHash": "90303116f963c8685cd5d838420106241bdc2a09682e3fed66ba47656fd34d66"
   },
   "execution": {
-    "executionHash": "6de63e7ebb7b1bec8b52ebccf4ab8d1394f032db1326685f119a3bf70a6da6ca",
+    "executionHash": "630d99ce0f7c28f2943c7da17636b9c973be8aabb7d495a34d50f89953b2f784",
     "mutations": {
       "defaults": [
         {
@@ -1544,6 +1912,21 @@
           },
           "ref": {
             "entry": "McpServer",
+            "field": "updatedAt",
+            "namespace": "public"
+          }
+        },
+        {
+          "onCreate": {
+            "id": "timestampNow",
+            "kind": "generator"
+          },
+          "onUpdate": {
+            "id": "timestampNow",
+            "kind": "generator"
+          },
+          "ref": {
+            "entry": "ModelDefinition",
             "field": "updatedAt",
             "namespace": "public"
           }
