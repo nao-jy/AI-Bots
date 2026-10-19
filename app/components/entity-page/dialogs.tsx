@@ -16,6 +16,7 @@ import {
 import { useFetcher } from "react-router";
 import type { EntityRecord } from "../../types/entities";
 import type { EntityDialogMode, EntityPageDefinition } from "./types";
+import { InfoIcon } from "@phosphor-icons/react";
 
 type KeyValuePair = { key: string; value: string };
 
@@ -156,10 +157,23 @@ export function EntityPageDialogs({
   nextEnabled: boolean;
   onClose: () => void;
 }) {
-  const fetcher = useFetcher<{ ok?: boolean; error?: string }>();
+  const canTest = ["adapters", "providers", "agents", "mcp"].includes(
+    page.icon,
+  );
+  const fetcher = useFetcher<{
+    ok?: boolean;
+    error?: string;
+    message?: string;
+    intent?: string;
+  }>();
 
   useEffect(() => {
-    if (fetcher.state === "idle" && fetcher.data?.ok) onClose();
+    if (
+      fetcher.state === "idle" &&
+      fetcher.data?.ok &&
+      fetcher.data.intent !== "test"
+    )
+      onClose();
   }, [fetcher.state, fetcher.data, onClose]);
 
   return (
@@ -195,9 +209,13 @@ export function EntityPageDialogs({
           <Text className="modal-intro">
             {page.description} 必要な情報を入力してください。
           </Text>
-          {fetcher.data?.error && (
-            <Alert color="red" mb="md">
-              {fetcher.data.error}
+          {(fetcher.data?.error || fetcher.data?.message) && (
+            <Alert
+              color={fetcher.data.ok ? "green" : "red"}
+              role="status"
+              icon={<InfoIcon />}
+            >
+              {fetcher.data.message ?? fetcher.data.error}
             </Alert>
           )}
           <div className="form-grid">
@@ -278,6 +296,25 @@ export function EntityPageDialogs({
             <Button variant="default" type="button" onClick={onClose}>
               キャンセル
             </Button>
+            {canTest && (
+              <Button
+                type="button"
+                variant="light"
+                disabled={fetcher.state !== "idle"}
+                onClick={(event) => {
+                  const form = event.currentTarget.form;
+                  if (!form) return;
+                  const data = new FormData(form);
+                  data.set("_intent", "test");
+                  fetcher.submit(data, { method: "post" });
+                }}
+              >
+                {fetcher.state !== "idle" &&
+                fetcher.formData?.get("_intent") === "test"
+                  ? "テスト中..."
+                  : "テスト"}
+              </Button>
+            )}
             <Button
               type="submit"
               className="primary-button"
@@ -318,7 +355,11 @@ export function EntityPageDialogs({
             <Button variant="default" type="button" onClick={onClose}>
               キャンセル
             </Button>
-            <Button type="submit" className="primary-button" disabled={fetcher.state !== "idle"}>
+            <Button
+              type="submit"
+              className="primary-button"
+              disabled={fetcher.state !== "idle"}
+            >
               {fetcher.state !== "idle" ? "変更中..." : "変更する"}
             </Button>
           </div>
@@ -334,7 +375,8 @@ export function EntityPageDialogs({
         radius="lg"
       >
         <Text className="delete-copy">
-          「{selected?.[page.columns[0].key]}」を削除します。この操作は取り消せません。
+          「{selected?.[page.columns[0].key]}
+          」を削除します。この操作は取り消せません。
         </Text>
         {fetcher.data?.error && (
           <Alert color="red" mt="md">

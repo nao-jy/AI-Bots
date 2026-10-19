@@ -3,7 +3,7 @@ import {
   EntityPageView,
   type EntityPageDefinition,
 } from "../components/entity-page-view";
-import { deleteAdapter, listAdapters, saveAdapter } from "../.server/entities";
+import { deleteAdapter, listAdapters, saveAdapter, testAdapter } from "../.server/entities";
 import { requireUser } from "../.server/auth";
 import { APP_NAME } from "~/const";
 
@@ -59,6 +59,7 @@ export async function action({ request }: Route.ActionArgs) {
   const form = await request.formData();
   const intent = String(form.get("_intent") ?? "");
   const id = Number(form.get("id"));
+  if (intent === "test") return testAdapter(user, form);
   if (intent === "delete")
     return Number.isInteger(id) && (await deleteAdapter(user, id))
       ? { ok: true }

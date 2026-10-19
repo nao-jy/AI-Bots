@@ -28,7 +28,7 @@ export function SectionIcon({
       return <PlugsConnectedIcon {...props} />;
     case "agents":
       return <BrainIcon {...props} />;
-    case "models":
+    case "providers":
       return <CpuIcon {...props} />;
     case "mcp":
       return <WrenchIcon {...props} />;

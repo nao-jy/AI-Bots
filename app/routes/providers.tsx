@@ -1,4 +1,4 @@
-import type { Route } from "./+types/models";
+import type { Route } from "./+types/providers";
 import {
   EntityPageView,
   type EntityPageDefinition,
@@ -7,6 +7,7 @@ import {
   deleteProvider,
   listProviders,
   saveProvider,
+  testProvider,
 } from "../.server/entities";
 import { requireUser } from "../.server/auth";
 import { APP_NAME } from "~/const";
@@ -14,7 +15,7 @@ import { APP_NAME } from "~/const";
 const page: Omit<EntityPageDefinition, "records"> = {
   title: "プロバイダー",
   description: "AI SDKプロバイダー接続とリクエスト設定を管理します。",
-  icon: "models",
+  icon: "providers",
   columns: [
     { key: "name", label: "接続名" },
     { key: "providerName", label: "プロバイダー" },
@@ -30,7 +31,7 @@ const page: Omit<EntityPageDefinition, "records"> = {
     {
       key: "providerName",
       label: "プロバイダー識別子",
-      placeholder: "例：openai.responses",
+      placeholder: "例：openai",
       help: {
         text: "各プロバイダーのモデル名や利用可能なオプションを確認できます。",
         linkText: "AI SDK プロバイダードキュメント",
@@ -39,17 +40,17 @@ const page: Omit<EntityPageDefinition, "records"> = {
     },
     {
       key: "args",
-      label: "プロバイダー引数 (JSON)",
-      type: "textarea",
+      label: "プロバイダー引数",
+      type: "key-value",
+      valueType: "json-scalar",
       wide: true,
-      placeholder: "{}",
     },
     {
       key: "headers",
       label: "HTTPヘッダー",
-      type: "textarea",
+      type: "key-value",
+      valueType: "string",
       wide: true,
-      placeholder: '{"Authorization":"Bearer ..."}',
     },
   ],
 };
@@ -67,11 +68,15 @@ export async function action({ request }: Route.ActionArgs) {
   const form = await request.formData();
   const intent = String(form.get("_intent") ?? "");
   const id = Number(form.get("id"));
+  if (intent === "test") return testProvider(user, form);
   if (intent === "delete") {
     const deleted = Number.isInteger(id) && (await deleteProvider(user, id));
     return deleted
       ? { ok: true }
-      : { ok: false, error: "プロバイダーが見つからないか、エージェントで使用中です。" };
+      : {
+          ok: false,
+          error: "プロバイダーが見つからないか、エージェントで使用中です。",
+        };
   }
   if (intent === "create") return saveProvider(user, null, form);
   if (intent === "update")

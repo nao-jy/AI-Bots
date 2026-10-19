@@ -5,7 +5,7 @@ export default [
     index("routes/index.tsx"),
     route("bots", "routes/bots.tsx"),
     route("adapters", "routes/adapters.tsx"),
-    route("models", "routes/models.tsx"),
+    route("providers", "routes/providers.tsx"),
     route("agents", "routes/agents.tsx"),
     route("mcp-servers", "routes/mcp-servers.tsx"),
     route("users", "routes/users.tsx"),

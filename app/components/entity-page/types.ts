@@ -19,10 +19,12 @@ export type EntityField = {
   help?: { text: string; linkText: string; href: string };
 };
 
-export type EntitySection = "bots" | "adapters" | "agents" | "models" | "mcp" | "users";
+export type EntitySection =
+  "bots" | "adapters" | "agents" | "providers" | "mcp" | "users";
 
 export type EntityColumn = { key: string; label: string };
-export type EntityDialogMode = "create" | "edit" | "delete" | "status-change" | null;
+export type EntityDialogMode =
+  "create" | "edit" | "delete" | "status-change" | null;
 
 export type EntityPageDefinition = {
   title: string;

@@ -7,6 +7,7 @@ import {
   deleteMcpServer,
   listMcpServers,
   saveMcpServer,
+  testMcpServer,
 } from "../.server/entities";
 import { requireUser } from "../.server/auth";
 import { APP_NAME } from "~/const";
@@ -60,6 +61,7 @@ export async function action({ request }: Route.ActionArgs) {
   const form = await request.formData();
   const intent = String(form.get("_intent") ?? "");
   const id = Number(form.get("id"));
+  if (intent === "test") return testMcpServer(user, form);
   if (intent === "delete")
     return Number.isInteger(id) && (await deleteMcpServer(user, id))
       ? { ok: true }
