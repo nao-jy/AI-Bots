@@ -45,9 +45,9 @@ const page: Omit<EntityPageDefinition, "records"> = {
     },
     {
       key: "options",
-      label: "モデルオプション (JSON)",
-      type: "textarea",
-      placeholder: "例：{\"temperature\":0.7}",
+      label: "モデルオプション",
+      type: "key-value",
+      valueType: "json-scalar",
       wide: true,
     },
   ],
