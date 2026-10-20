@@ -1,4 +1,5 @@
 import { type RouteConfig, index, route } from "@react-router/dev/routes";
+import { OAUTH_CALLBACK_PATH } from "./const";
 
 export default [
   route("/", "routes/workspace.tsx", [
@@ -8,7 +9,7 @@ export default [
     route("providers", "routes/providers.tsx"),
     route("oauth-clients", "routes/oauth-clients.tsx"),
     route("oauth-authentications", "routes/oauth-authentications.tsx"),
-    route("oauth/callback", "routes/oauth-callback.tsx"),
+    route(OAUTH_CALLBACK_PATH, "routes/oauth-callback.tsx"),
     route("agents", "routes/agents.tsx"),
     route("mcp-servers", "routes/mcp-servers.tsx"),
     route("users", "routes/users.tsx"),

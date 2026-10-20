@@ -1,13 +1,14 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import * as oidc from "openid-client";
 import { redirect } from "react-router";
+import { OAUTH_CALLBACK_PATH } from "../../const";
 import type { AuthUser } from "../auth";
 import { db } from "../models/db";
 import { decryptCredential, encryptCredential } from "../utils";
 
 const FLOW_COOKIE = "oauth_authorization_flow";
 const FLOW_TTL_SECONDS = 10 * 60;
-const CALLBACK_PATH = "/oauth/callback";
+const CALLBACK_PATH = `/${OAUTH_CALLBACK_PATH}`;
 
 type OAuthFlow = {
   state: string;
