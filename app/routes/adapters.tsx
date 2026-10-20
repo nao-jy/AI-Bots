@@ -36,8 +36,8 @@ const page: Omit<EntityPageDefinition, "records"> = {
       ],
     },
     {
-      key: "envs",
-      label: "環境変数",
+      key: "config",
+      label: "コンフィグ",
       type: "key-value",
       valueType: "string",
       wide: true,

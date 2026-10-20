@@ -34,12 +34,12 @@ export async function saveAdapter(
 ) {
   const name = String(values.get("name") ?? "").trim();
   const platform = String(values.get("platformId") ?? "").trim();
-  const envsValue = String(values.get("envs") ?? "{}").trim();
+  const configValue = String(values.get("config") ?? "{}").trim();
   if (!name || !platform)
     return { error: "接続名とプラットフォームを入力してください。" };
-  let envs: Record<string, string>;
+  let config: Record<string, string>;
   try {
-    const parsed: unknown = JSON.parse(envsValue || "{}");
+    const parsed: unknown = JSON.parse(configValue || "{}");
     if (
       !parsed ||
       typeof parsed !== "object" ||
@@ -47,7 +47,7 @@ export async function saveAdapter(
       Object.values(parsed).some((value) => typeof value !== "string")
     )
       return { error: "環境変数は文字列のキー・値ペアで入力してください。" };
-    envs = parsed as Record<string, string>;
+    config = parsed as Record<string, string>;
   } catch {
     return { error: "環境変数の形式を確認してください。" };
   }
@@ -55,9 +55,9 @@ export async function saveAdapter(
     if (!(await db.orm.public.ChatAdapter.first({ id, ownerId: user.id })))
       return { error: "アダプタが見つかりません。" };
   }
-  let encryptedEnvs: ReturnType<typeof encryptStringMap>;
+  let encryptedConfig: ReturnType<typeof encryptStringMap>;
   try {
-    encryptedEnvs = encryptStringMap(envs);
+    encryptedConfig = encryptStringMap(config);
   } catch (error) {
     return {
       error:
@@ -66,19 +66,19 @@ export async function saveAdapter(
           : "環境変数を暗号化できませんでした。",
     };
   }
-  const storedEnvs = jsonb(encryptedEnvs);
+  const storedEnvs = jsonb(encryptedConfig);
   if (id === null) {
     await db.orm.public.ChatAdapter.create({
       name,
       platform,
       ownerId: user.id,
-      envs: storedEnvs,
+      config: storedEnvs,
     });
   } else {
     await db.orm.public.ChatAdapter.where({ id, ownerId: user.id }).update({
       name,
       platform,
-      envs: storedEnvs,
+      config: storedEnvs,
     });
   }
   return { ok: true };

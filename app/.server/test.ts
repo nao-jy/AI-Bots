@@ -15,7 +15,7 @@ import { generateText, type JSONValue } from "ai";
 export async function testAdapter(user: AuthUser, values: FormData) {
   try {
     const platform = String(values.get("platformId") ?? "").trim();
-    const envs = parseStringMap(values.get("envs"), "環境変数");
+    const conf = parseStringMap(values.get("config"), "コンフィグ");
     const tokenByPlatform: Record<
       string,
       { key: string; url: string; auth: (token: string) => string }
@@ -43,7 +43,7 @@ export async function testAdapter(user: AuthUser, values: FormData) {
     };
     const config = tokenByPlatform[platform];
     if (!config) return testFailure("対応していないプラットフォームです。");
-    const token = envs[config.key] ?? envs.ACCESS_TOKEN ?? envs.BOT_TOKEN;
+    const token = conf[config.key] ?? conf.ACCESS_TOKEN ?? conf.BOT_TOKEN;
     if (!token)
       return testFailure(
         `環境変数「${config.key}」に認証トークンを入力してください。`,
