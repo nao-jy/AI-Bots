@@ -11,6 +11,7 @@ import {
 import { requireUser } from "../.server/auth";
 import { APP_NAME } from "~/const";
 import { testAdapter } from "~/.server/test";
+import { listAdapterNames } from "~/.server/features/chatAdapter";
 
 const page: Omit<EntityPageDefinition, "records"> = {
   title: "アダプタ",
@@ -28,12 +29,7 @@ const page: Omit<EntityPageDefinition, "records"> = {
       key: "platformId",
       label: "プラットフォーム",
       type: "select",
-      options: [
-        { label: "Slack", value: "slack" },
-        { label: "Discord", value: "discord" },
-        { label: "Microsoft Teams", value: "teams" },
-        { label: "LINE", value: "line" },
-      ],
+      options: [],
     },
     {
       key: "config",
@@ -56,7 +52,17 @@ export function meta() {
 
 export async function loader({ request }: Route.LoaderArgs) {
   const user = await requireUser(request);
-  return listAdapters(user);
+  const [adapters, adapterNames] = await Promise.all([
+    listAdapters(user),
+    Promise.resolve(listAdapterNames()),
+  ]);
+  return {
+    ...adapters,
+    adapterOptions: adapterNames.map(({ id, displayName }) => ({
+      value: id,
+      label: displayName,
+    })),
+  };
 }
 
 export async function action({ request }: Route.ActionArgs) {
@@ -78,5 +84,19 @@ export async function action({ request }: Route.ActionArgs) {
 }
 
 export default function Adapters({ loaderData }: Route.ComponentProps) {
-  return <EntityPageView page={{ ...page, records: loaderData.records }} />;
+  return (
+    <EntityPageView
+      page={{
+        ...page,
+        records: loaderData.records,
+        fields: page.fields.map((field) => ({
+          ...field,
+          options:
+            field.key === "platformId"
+              ? loaderData.adapterOptions
+              : field.options,
+        })),
+      }}
+    />
+  );
 }

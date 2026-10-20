@@ -1,13 +1,7 @@
 import { db } from "./db";
 import type { AuthUser } from "../auth";
 import { decryptAdapterEnvs, encryptStringMap, jsonb, record } from "../utils";
-
-export const platforms: Record<string, string> = {
-  slack: "Slack",
-  discord: "Discord",
-  teams: "Microsoft Teams",
-  line: "LINE",
-};
+import { toDisplayNameAdapter } from "../features/chatAdapter";
 
 export async function listAdapters(user: AuthUser) {
   const adapters = await db.orm.public.ChatAdapter.where({
@@ -18,7 +12,7 @@ export async function listAdapters(user: AuthUser) {
       const config = decryptAdapterEnvs(adapter.config);
       return record(adapter.id, adapter.updatedAt, {
         name: adapter.name,
-        platform: platforms[adapter.platform] ?? adapter.platform,
+        platform: toDisplayNameAdapter(adapter.platform) ?? adapter.platform,
         platformId: adapter.platform,
         config: JSON.stringify(config),
         configured: Object.keys(config).length ? "設定済み" : "未設定",
@@ -33,7 +27,9 @@ export async function saveAdapter(
   values: FormData,
 ) {
   const name = String(values.get("name") ?? "").trim();
-  const platform = String(values.get("platformId") ?? "").trim();
+  const platform = String(
+    values.get("platformId") ?? values.get("platform") ?? "",
+  ).trim();
   const configValue = String(values.get("config") ?? "{}").trim();
   if (!name || !platform)
     return { error: "接続名とプラットフォームを入力してください。" };

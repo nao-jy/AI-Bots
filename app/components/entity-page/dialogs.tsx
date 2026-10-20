@@ -157,9 +157,7 @@ export function EntityPageDialogs({
   nextEnabled: boolean;
   onClose: () => void;
 }) {
-  const canTest = ["adapters", "providers", "agents", "mcp"].includes(
-    page.icon,
-  );
+  const canTest = ["adapters", "agents", "mcp"].includes(page.icon);
   const fetcher = useFetcher<{
     ok?: boolean;
     error?: string;

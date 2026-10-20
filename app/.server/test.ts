@@ -1,6 +1,6 @@
 import type { AuthUser } from "./auth";
-import { getModel, listProviderNames } from "./features/provider";
-import { platforms } from "./models/adapters";
+import { getBotInfo } from "./features/chatAdapter";
+import { getModelInfo, listProviderNames } from "./features/provider";
 import { getProvider } from "./models/providers";
 import {
   decryptMcpHeaders,
@@ -14,89 +14,19 @@ import { generateText, type JSONValue } from "ai";
 
 export async function testAdapter(user: AuthUser, values: FormData) {
   try {
-    const platform = String(values.get("platformId") ?? "").trim();
+    const name = String(values.get("name") ?? "").trim();
+    const platformId = String(values.get("platformId") ?? "").trim();
     const conf = parseStringMap(values.get("config"), "コンフィグ");
-    const tokenByPlatform: Record<
-      string,
-      { key: string; url: string; auth: (token: string) => string }
-    > = {
-      slack: {
-        key: "SLACK_BOT_TOKEN",
-        url: "https://slack.com/api/auth.test",
-        auth: (token) => `Bearer ${token}`,
-      },
-      discord: {
-        key: "DISCORD_BOT_TOKEN",
-        url: "https://discord.com/api/v10/users/@me",
-        auth: (token) => `Bot ${token}`,
-      },
-      teams: {
-        key: "MICROSOFT_GRAPH_ACCESS_TOKEN",
-        url: "https://graph.microsoft.com/v1.0/me",
-        auth: (token) => `Bearer ${token}`,
-      },
-      line: {
-        key: "LINE_CHANNEL_ACCESS_TOKEN",
-        url: "https://api.line.me/v2/bot/info",
-        auth: (token) => `Bearer ${token}`,
-      },
-    };
-    const config = tokenByPlatform[platform];
-    if (!config) return testFailure("対応していないプラットフォームです。");
-    const token = conf[config.key] ?? conf.ACCESS_TOKEN ?? conf.BOT_TOKEN;
-    if (!token)
-      return testFailure(
-        `環境変数「${config.key}」に認証トークンを入力してください。`,
-      );
-    const { body } = await requestTest(config.url, {
-      headers: { Authorization: config.auth(token) },
-    });
-    if (platform === "slack") {
-      const result: unknown = JSON.parse(body);
-      if (
-        !result ||
-        typeof result !== "object" ||
-        (result as { ok?: boolean }).ok !== true
-      )
-        return testFailure(
-          `Slack認証に失敗しました: ${String((result as { error?: string })?.error ?? "不明なエラー")}`,
-        );
+    const bot = getBotInfo(platformId, name, conf);
+    if (!bot) {
+      throw new Error("bot not found");
     }
-    return testSuccess(`${platforms[platform]}への接続と認証に成功しました。`);
+    return testSuccess(`${bot.displayName}への接続と認証に成功しました。`);
   } catch (error) {
     return testFailure(
       error instanceof Error
         ? error.message
         : "アダプタへの接続に失敗しました。",
-    );
-  }
-}
-
-async function runProviderTest(
-  providerName: string,
-  args: Record<string, unknown>,
-  headers: Record<string, string>,
-) {
-  const providers = listProviderNames();
-  const found = providers.find((v) => v === providerName) !== undefined;
-  if (!found) throw new Error("このプロバイダーの接続先が特定できません。");
-}
-
-export async function testProvider(user: AuthUser, values: FormData) {
-  try {
-    const name = String(values.get("name") ?? "").trim();
-    const providerName = String(values.get("providerName") ?? "").trim();
-    if (!name || !providerName)
-      return testFailure("接続名とプロバイダーを入力してください。");
-    const args = parseObject(values.get("args"), "プロバイダー引数");
-    const headers = parseStringMap(values.get("headers"), "HTTPヘッダー");
-    await runProviderTest(providerName, args, headers);
-    return testSuccess(`${name}への接続に成功しました。`);
-  } catch (error) {
-    return testFailure(
-      error instanceof Error
-        ? error.message
-        : "プロバイダーへの接続に失敗しました。",
     );
   }
 }
@@ -165,14 +95,18 @@ export async function testAgent(user: AuthUser, values: FormData) {
     ) as Record<string, unknown>;
     const headers = decryptMcpHeaders(provider.headers);
     const options = parseObject(values.get("options"), "オプション");
-    const model = getModel(provider.providerName, args, headers, modelId);
-    if (!model) return testFailure("モデルが取得できませんでした。");
+    const modelInfo = getModelInfo(
+      provider.providerName,
+      args,
+      headers,
+      options,
+      modelId,
+    );
+    if (!modelInfo) return testFailure("モデルが取得できませんでした。");
     const result = await generateText({
-      model: model,
+      model: modelInfo.model,
       prompt: "hello",
-      providerOptions: {
-        openai: options as Record<string, JSONValue>,
-      },
+      providerOptions: modelInfo.options,
     });
     return testSuccess(
       `${name || "エージェント"}のモデル「${modelId}」に接続できました。`,
