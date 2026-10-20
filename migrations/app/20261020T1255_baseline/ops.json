@@ -1,0 +1,1468 @@
+[
+  {
+    "id": "schema.public",
+    "label": "Create schema \"public\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres"
+    },
+    "precheck": [],
+    "execute": [
+      {
+        "description": "Create schema \"public\"",
+        "sql": "CREATE SCHEMA IF NOT EXISTS \"public\"",
+        "params": []
+      }
+    ],
+    "postcheck": []
+  },
+  {
+    "id": "table.AgentDefinition",
+    "label": "Create table \"AgentDefinition\"",
+    "summary": "Creates table \"AgentDefinition\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "AgentDefinition"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"AgentDefinition\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"AgentDefinition\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"AgentDefinition\"",
+        "sql": "CREATE TABLE \"public\".\"AgentDefinition\" (\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"model_id\" text NOT NULL,\n  \"name\" text NOT NULL,\n  \"options\" jsonb,\n  \"providerId\" int4 NOT NULL,\n  \"updatedAt\" timestamptz NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"AgentDefinition\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"AgentDefinition\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.AgentMcpServer",
+    "label": "Create table \"AgentMcpServer\"",
+    "summary": "Creates table \"AgentMcpServer\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "AgentMcpServer"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"AgentMcpServer\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"AgentMcpServer\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"AgentMcpServer\"",
+        "sql": "CREATE TABLE \"public\".\"AgentMcpServer\" (\n  \"agentId\" int4 NOT NULL,\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"mcpServerId\" int4 NOT NULL,\n  PRIMARY KEY (\"agentId\", \"mcpServerId\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"AgentMcpServer\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"AgentMcpServer\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.ChatAdapter",
+    "label": "Create table \"ChatAdapter\"",
+    "summary": "Creates table \"ChatAdapter\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "ChatAdapter"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"ChatAdapter\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"ChatAdapter\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"ChatAdapter\"",
+        "sql": "CREATE TABLE \"public\".\"ChatAdapter\" (\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"envs\" jsonb,\n  \"id\" SERIAL NOT NULL,\n  \"name\" text NOT NULL,\n  \"ownerId\" int4 NOT NULL,\n  \"platform\" text NOT NULL,\n  \"updatedAt\" timestamptz NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"ChatAdapter\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"ChatAdapter\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.Chatbot",
+    "label": "Create table \"Chatbot\"",
+    "summary": "Creates table \"Chatbot\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "Chatbot"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"Chatbot\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"Chatbot\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"Chatbot\"",
+        "sql": "CREATE TABLE \"public\".\"Chatbot\" (\n  \"agentId\" int4,\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"description\" text,\n  \"id\" SERIAL NOT NULL,\n  \"isEnabled\" bool DEFAULT true NOT NULL,\n  \"name\" text NOT NULL,\n  \"ownerId\" int4 NOT NULL,\n  \"updatedAt\" timestamptz NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"Chatbot\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"Chatbot\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.ChatbotAdapter",
+    "label": "Create table \"ChatbotAdapter\"",
+    "summary": "Creates table \"ChatbotAdapter\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "ChatbotAdapter"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"ChatbotAdapter\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"ChatbotAdapter\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"ChatbotAdapter\"",
+        "sql": "CREATE TABLE \"public\".\"ChatbotAdapter\" (\n  \"adapterId\" int4 NOT NULL,\n  \"chatbotId\" int4 NOT NULL,\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  PRIMARY KEY (\"chatbotId\", \"adapterId\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"ChatbotAdapter\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"ChatbotAdapter\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.McpServer",
+    "label": "Create table \"McpServer\"",
+    "summary": "Creates table \"McpServer\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "McpServer"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"McpServer\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"McpServer\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"McpServer\"",
+        "sql": "CREATE TABLE \"public\".\"McpServer\" (\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"description\" text,\n  \"endpoint\" text,\n  \"headers\" jsonb,\n  \"id\" SERIAL NOT NULL,\n  \"name\" text NOT NULL,\n  \"ownerId\" int4 NOT NULL,\n  \"transport\" text NOT NULL,\n  \"updatedAt\" timestamptz NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"McpServer\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"McpServer\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.Provider",
+    "label": "Create table \"Provider\"",
+    "summary": "Creates table \"Provider\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "Provider"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"Provider\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"Provider\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"Provider\"",
+        "sql": "CREATE TABLE \"public\".\"Provider\" (\n  \"args\" jsonb,\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"headers\" jsonb,\n  \"id\" SERIAL NOT NULL,\n  \"name\" text NOT NULL,\n  \"ownerId\" int4 NOT NULL,\n  \"providerName\" text NOT NULL,\n  \"updatedAt\" timestamptz NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"Provider\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"Provider\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.Session",
+    "label": "Create table \"Session\"",
+    "summary": "Creates table \"Session\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "Session"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"Session\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"Session\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"Session\"",
+        "sql": "CREATE TABLE \"public\".\"Session\" (\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"expiresAt\" timestamptz NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"tokenHash\" text NOT NULL,\n  \"userId\" int4 NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"Session\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"Session\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.User",
+    "label": "Create table \"User\"",
+    "summary": "Creates table \"User\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "User"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"User\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"User\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"User\"",
+        "sql": "CREATE TABLE \"public\".\"User\" (\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"email\" text NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"name\" text,\n  \"passwordHash\" text NOT NULL,\n  \"updatedAt\" timestamptz NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"User\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"User\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.Chatbot.Chatbot_agentId_key",
+    "label": "Add unique constraint on \"Chatbot\" (agentId)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "Chatbot_agentId_key",
+        "table": "Chatbot"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"Chatbot_agentId_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "Chatbot_agentId_key",
+          "public",
+          "\"public\".\"Chatbot\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"Chatbot_agentId_key\"",
+        "sql": "ALTER TABLE \"public\".\"Chatbot\" ADD CONSTRAINT \"Chatbot_agentId_key\" UNIQUE (\"agentId\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"Chatbot_agentId_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "Chatbot_agentId_key",
+          "public",
+          "\"public\".\"Chatbot\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.Provider.Provider_ownerId_name_key",
+    "label": "Add unique constraint on \"Provider\" (ownerId, name)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "Provider_ownerId_name_key",
+        "table": "Provider"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"Provider_ownerId_name_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "Provider_ownerId_name_key",
+          "public",
+          "\"public\".\"Provider\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"Provider_ownerId_name_key\"",
+        "sql": "ALTER TABLE \"public\".\"Provider\" ADD CONSTRAINT \"Provider_ownerId_name_key\" UNIQUE (\"ownerId\", \"name\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"Provider_ownerId_name_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "Provider_ownerId_name_key",
+          "public",
+          "\"public\".\"Provider\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.Session.Session_tokenHash_key",
+    "label": "Add unique constraint on \"Session\" (tokenHash)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "Session_tokenHash_key",
+        "table": "Session"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"Session_tokenHash_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "Session_tokenHash_key",
+          "public",
+          "\"public\".\"Session\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"Session_tokenHash_key\"",
+        "sql": "ALTER TABLE \"public\".\"Session\" ADD CONSTRAINT \"Session_tokenHash_key\" UNIQUE (\"tokenHash\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"Session_tokenHash_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "Session_tokenHash_key",
+          "public",
+          "\"public\".\"Session\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.User.User_email_key",
+    "label": "Add unique constraint on \"User\" (email)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "User_email_key",
+        "table": "User"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"User_email_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "User_email_key",
+          "public",
+          "\"public\".\"User\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"User_email_key\"",
+        "sql": "ALTER TABLE \"public\".\"User\" ADD CONSTRAINT \"User_email_key\" UNIQUE (\"email\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"User_email_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "User_email_key",
+          "public",
+          "\"public\".\"User\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.AgentDefinition.AgentDefinition_providerId_idx_d1904c54",
+    "label": "Create index \"AgentDefinition_providerId_idx_d1904c54\" on \"AgentDefinition\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "AgentDefinition_providerId_idx_d1904c54",
+        "table": "AgentDefinition"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"AgentDefinition_providerId_idx_d1904c54\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"AgentDefinition_providerId_idx_d1904c54\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"AgentDefinition_providerId_idx_d1904c54\"",
+        "sql": "CREATE INDEX \"AgentDefinition_providerId_idx_d1904c54\" ON \"public\".\"AgentDefinition\" (\"providerId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"AgentDefinition_providerId_idx_d1904c54\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"AgentDefinition_providerId_idx_d1904c54\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.AgentMcpServer.AgentMcpServer_agentId_idx_8d0ba4f0",
+    "label": "Create index \"AgentMcpServer_agentId_idx_8d0ba4f0\" on \"AgentMcpServer\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "AgentMcpServer_agentId_idx_8d0ba4f0",
+        "table": "AgentMcpServer"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"AgentMcpServer_agentId_idx_8d0ba4f0\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"AgentMcpServer_agentId_idx_8d0ba4f0\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"AgentMcpServer_agentId_idx_8d0ba4f0\"",
+        "sql": "CREATE INDEX \"AgentMcpServer_agentId_idx_8d0ba4f0\" ON \"public\".\"AgentMcpServer\" (\"agentId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"AgentMcpServer_agentId_idx_8d0ba4f0\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"AgentMcpServer_agentId_idx_8d0ba4f0\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.AgentMcpServer.AgentMcpServer_mcpServerId_idx_1c0baf24",
+    "label": "Create index \"AgentMcpServer_mcpServerId_idx_1c0baf24\" on \"AgentMcpServer\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "AgentMcpServer_mcpServerId_idx_1c0baf24",
+        "table": "AgentMcpServer"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"AgentMcpServer_mcpServerId_idx_1c0baf24\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"AgentMcpServer_mcpServerId_idx_1c0baf24\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"AgentMcpServer_mcpServerId_idx_1c0baf24\"",
+        "sql": "CREATE INDEX \"AgentMcpServer_mcpServerId_idx_1c0baf24\" ON \"public\".\"AgentMcpServer\" (\"mcpServerId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"AgentMcpServer_mcpServerId_idx_1c0baf24\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"AgentMcpServer_mcpServerId_idx_1c0baf24\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.ChatAdapter.ChatAdapter_ownerId_idx_e2d0c1ef",
+    "label": "Create index \"ChatAdapter_ownerId_idx_e2d0c1ef\" on \"ChatAdapter\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "ChatAdapter_ownerId_idx_e2d0c1ef",
+        "table": "ChatAdapter"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"ChatAdapter_ownerId_idx_e2d0c1ef\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"ChatAdapter_ownerId_idx_e2d0c1ef\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"ChatAdapter_ownerId_idx_e2d0c1ef\"",
+        "sql": "CREATE INDEX \"ChatAdapter_ownerId_idx_e2d0c1ef\" ON \"public\".\"ChatAdapter\" (\"ownerId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"ChatAdapter_ownerId_idx_e2d0c1ef\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"ChatAdapter_ownerId_idx_e2d0c1ef\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.ChatAdapter.ChatAdapter_platform_idx_b8f7b2d3",
+    "label": "Create index \"ChatAdapter_platform_idx_b8f7b2d3\" on \"ChatAdapter\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "ChatAdapter_platform_idx_b8f7b2d3",
+        "table": "ChatAdapter"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"ChatAdapter_platform_idx_b8f7b2d3\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"ChatAdapter_platform_idx_b8f7b2d3\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"ChatAdapter_platform_idx_b8f7b2d3\"",
+        "sql": "CREATE INDEX \"ChatAdapter_platform_idx_b8f7b2d3\" ON \"public\".\"ChatAdapter\" (\"platform\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"ChatAdapter_platform_idx_b8f7b2d3\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"ChatAdapter_platform_idx_b8f7b2d3\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.Chatbot.Chatbot_ownerId_idx_e2d0c1ef",
+    "label": "Create index \"Chatbot_ownerId_idx_e2d0c1ef\" on \"Chatbot\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "Chatbot_ownerId_idx_e2d0c1ef",
+        "table": "Chatbot"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"Chatbot_ownerId_idx_e2d0c1ef\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"Chatbot_ownerId_idx_e2d0c1ef\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"Chatbot_ownerId_idx_e2d0c1ef\"",
+        "sql": "CREATE INDEX \"Chatbot_ownerId_idx_e2d0c1ef\" ON \"public\".\"Chatbot\" (\"ownerId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"Chatbot_ownerId_idx_e2d0c1ef\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"Chatbot_ownerId_idx_e2d0c1ef\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.ChatbotAdapter.ChatbotAdapter_adapterId_idx_f5208af9",
+    "label": "Create index \"ChatbotAdapter_adapterId_idx_f5208af9\" on \"ChatbotAdapter\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "ChatbotAdapter_adapterId_idx_f5208af9",
+        "table": "ChatbotAdapter"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"ChatbotAdapter_adapterId_idx_f5208af9\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"ChatbotAdapter_adapterId_idx_f5208af9\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"ChatbotAdapter_adapterId_idx_f5208af9\"",
+        "sql": "CREATE INDEX \"ChatbotAdapter_adapterId_idx_f5208af9\" ON \"public\".\"ChatbotAdapter\" (\"adapterId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"ChatbotAdapter_adapterId_idx_f5208af9\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"ChatbotAdapter_adapterId_idx_f5208af9\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.ChatbotAdapter.ChatbotAdapter_chatbotId_idx_52db07ea",
+    "label": "Create index \"ChatbotAdapter_chatbotId_idx_52db07ea\" on \"ChatbotAdapter\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "ChatbotAdapter_chatbotId_idx_52db07ea",
+        "table": "ChatbotAdapter"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"ChatbotAdapter_chatbotId_idx_52db07ea\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"ChatbotAdapter_chatbotId_idx_52db07ea\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"ChatbotAdapter_chatbotId_idx_52db07ea\"",
+        "sql": "CREATE INDEX \"ChatbotAdapter_chatbotId_idx_52db07ea\" ON \"public\".\"ChatbotAdapter\" (\"chatbotId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"ChatbotAdapter_chatbotId_idx_52db07ea\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"ChatbotAdapter_chatbotId_idx_52db07ea\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.McpServer.McpServer_ownerId_idx_e2d0c1ef",
+    "label": "Create index \"McpServer_ownerId_idx_e2d0c1ef\" on \"McpServer\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "McpServer_ownerId_idx_e2d0c1ef",
+        "table": "McpServer"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"McpServer_ownerId_idx_e2d0c1ef\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"McpServer_ownerId_idx_e2d0c1ef\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"McpServer_ownerId_idx_e2d0c1ef\"",
+        "sql": "CREATE INDEX \"McpServer_ownerId_idx_e2d0c1ef\" ON \"public\".\"McpServer\" (\"ownerId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"McpServer_ownerId_idx_e2d0c1ef\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"McpServer_ownerId_idx_e2d0c1ef\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.Provider.Provider_ownerId_idx_e2d0c1ef",
+    "label": "Create index \"Provider_ownerId_idx_e2d0c1ef\" on \"Provider\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "Provider_ownerId_idx_e2d0c1ef",
+        "table": "Provider"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"Provider_ownerId_idx_e2d0c1ef\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"Provider_ownerId_idx_e2d0c1ef\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"Provider_ownerId_idx_e2d0c1ef\"",
+        "sql": "CREATE INDEX \"Provider_ownerId_idx_e2d0c1ef\" ON \"public\".\"Provider\" (\"ownerId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"Provider_ownerId_idx_e2d0c1ef\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"Provider_ownerId_idx_e2d0c1ef\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.Session.Session_expiresAt_idx_6b6b8c10",
+    "label": "Create index \"Session_expiresAt_idx_6b6b8c10\" on \"Session\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "Session_expiresAt_idx_6b6b8c10",
+        "table": "Session"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"Session_expiresAt_idx_6b6b8c10\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"Session_expiresAt_idx_6b6b8c10\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"Session_expiresAt_idx_6b6b8c10\"",
+        "sql": "CREATE INDEX \"Session_expiresAt_idx_6b6b8c10\" ON \"public\".\"Session\" (\"expiresAt\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"Session_expiresAt_idx_6b6b8c10\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"Session_expiresAt_idx_6b6b8c10\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.Session.Session_userId_idx_a489d58a",
+    "label": "Create index \"Session_userId_idx_a489d58a\" on \"Session\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "Session_userId_idx_a489d58a",
+        "table": "Session"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"Session_userId_idx_a489d58a\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"Session_userId_idx_a489d58a\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"Session_userId_idx_a489d58a\"",
+        "sql": "CREATE INDEX \"Session_userId_idx_a489d58a\" ON \"public\".\"Session\" (\"userId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"Session_userId_idx_a489d58a\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"Session_userId_idx_a489d58a\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.AgentDefinition.AgentDefinition_providerId_fkey",
+    "label": "Add foreign key \"AgentDefinition_providerId_fkey\" on \"AgentDefinition\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "AgentDefinition_providerId_fkey",
+        "table": "AgentDefinition"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"AgentDefinition_providerId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "AgentDefinition_providerId_fkey",
+          "public",
+          "\"public\".\"AgentDefinition\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"AgentDefinition_providerId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"AgentDefinition\"\nADD CONSTRAINT \"AgentDefinition_providerId_fkey\"\nFOREIGN KEY (\"providerId\")\nREFERENCES \"public\".\"Provider\" (\"id\")\nON DELETE RESTRICT"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"AgentDefinition_providerId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "AgentDefinition_providerId_fkey",
+          "public",
+          "\"public\".\"AgentDefinition\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.AgentMcpServer.AgentMcpServer_agentId_fkey",
+    "label": "Add foreign key \"AgentMcpServer_agentId_fkey\" on \"AgentMcpServer\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "AgentMcpServer_agentId_fkey",
+        "table": "AgentMcpServer"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"AgentMcpServer_agentId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "AgentMcpServer_agentId_fkey",
+          "public",
+          "\"public\".\"AgentMcpServer\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"AgentMcpServer_agentId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"AgentMcpServer\"\nADD CONSTRAINT \"AgentMcpServer_agentId_fkey\"\nFOREIGN KEY (\"agentId\")\nREFERENCES \"public\".\"AgentDefinition\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"AgentMcpServer_agentId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "AgentMcpServer_agentId_fkey",
+          "public",
+          "\"public\".\"AgentMcpServer\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.AgentMcpServer.AgentMcpServer_mcpServerId_fkey",
+    "label": "Add foreign key \"AgentMcpServer_mcpServerId_fkey\" on \"AgentMcpServer\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "AgentMcpServer_mcpServerId_fkey",
+        "table": "AgentMcpServer"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"AgentMcpServer_mcpServerId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "AgentMcpServer_mcpServerId_fkey",
+          "public",
+          "\"public\".\"AgentMcpServer\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"AgentMcpServer_mcpServerId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"AgentMcpServer\"\nADD CONSTRAINT \"AgentMcpServer_mcpServerId_fkey\"\nFOREIGN KEY (\"mcpServerId\")\nREFERENCES \"public\".\"McpServer\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"AgentMcpServer_mcpServerId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "AgentMcpServer_mcpServerId_fkey",
+          "public",
+          "\"public\".\"AgentMcpServer\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.ChatAdapter.ChatAdapter_ownerId_fkey",
+    "label": "Add foreign key \"ChatAdapter_ownerId_fkey\" on \"ChatAdapter\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "ChatAdapter_ownerId_fkey",
+        "table": "ChatAdapter"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"ChatAdapter_ownerId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "ChatAdapter_ownerId_fkey",
+          "public",
+          "\"public\".\"ChatAdapter\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"ChatAdapter_ownerId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"ChatAdapter\"\nADD CONSTRAINT \"ChatAdapter_ownerId_fkey\"\nFOREIGN KEY (\"ownerId\")\nREFERENCES \"public\".\"User\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"ChatAdapter_ownerId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "ChatAdapter_ownerId_fkey",
+          "public",
+          "\"public\".\"ChatAdapter\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.Chatbot.Chatbot_ownerId_fkey",
+    "label": "Add foreign key \"Chatbot_ownerId_fkey\" on \"Chatbot\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "Chatbot_ownerId_fkey",
+        "table": "Chatbot"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"Chatbot_ownerId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "Chatbot_ownerId_fkey",
+          "public",
+          "\"public\".\"Chatbot\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"Chatbot_ownerId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"Chatbot\"\nADD CONSTRAINT \"Chatbot_ownerId_fkey\"\nFOREIGN KEY (\"ownerId\")\nREFERENCES \"public\".\"User\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"Chatbot_ownerId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "Chatbot_ownerId_fkey",
+          "public",
+          "\"public\".\"Chatbot\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.Chatbot.Chatbot_agentId_fkey",
+    "label": "Add foreign key \"Chatbot_agentId_fkey\" on \"Chatbot\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "Chatbot_agentId_fkey",
+        "table": "Chatbot"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"Chatbot_agentId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "Chatbot_agentId_fkey",
+          "public",
+          "\"public\".\"Chatbot\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"Chatbot_agentId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"Chatbot\"\nADD CONSTRAINT \"Chatbot_agentId_fkey\"\nFOREIGN KEY (\"agentId\")\nREFERENCES \"public\".\"AgentDefinition\" (\"id\")\nON DELETE SET NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"Chatbot_agentId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "Chatbot_agentId_fkey",
+          "public",
+          "\"public\".\"Chatbot\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.ChatbotAdapter.ChatbotAdapter_chatbotId_fkey",
+    "label": "Add foreign key \"ChatbotAdapter_chatbotId_fkey\" on \"ChatbotAdapter\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "ChatbotAdapter_chatbotId_fkey",
+        "table": "ChatbotAdapter"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"ChatbotAdapter_chatbotId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "ChatbotAdapter_chatbotId_fkey",
+          "public",
+          "\"public\".\"ChatbotAdapter\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"ChatbotAdapter_chatbotId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"ChatbotAdapter\"\nADD CONSTRAINT \"ChatbotAdapter_chatbotId_fkey\"\nFOREIGN KEY (\"chatbotId\")\nREFERENCES \"public\".\"Chatbot\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"ChatbotAdapter_chatbotId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "ChatbotAdapter_chatbotId_fkey",
+          "public",
+          "\"public\".\"ChatbotAdapter\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.ChatbotAdapter.ChatbotAdapter_adapterId_fkey",
+    "label": "Add foreign key \"ChatbotAdapter_adapterId_fkey\" on \"ChatbotAdapter\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "ChatbotAdapter_adapterId_fkey",
+        "table": "ChatbotAdapter"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"ChatbotAdapter_adapterId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "ChatbotAdapter_adapterId_fkey",
+          "public",
+          "\"public\".\"ChatbotAdapter\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"ChatbotAdapter_adapterId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"ChatbotAdapter\"\nADD CONSTRAINT \"ChatbotAdapter_adapterId_fkey\"\nFOREIGN KEY (\"adapterId\")\nREFERENCES \"public\".\"ChatAdapter\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"ChatbotAdapter_adapterId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "ChatbotAdapter_adapterId_fkey",
+          "public",
+          "\"public\".\"ChatbotAdapter\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.McpServer.McpServer_ownerId_fkey",
+    "label": "Add foreign key \"McpServer_ownerId_fkey\" on \"McpServer\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "McpServer_ownerId_fkey",
+        "table": "McpServer"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"McpServer_ownerId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "McpServer_ownerId_fkey",
+          "public",
+          "\"public\".\"McpServer\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"McpServer_ownerId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"McpServer\"\nADD CONSTRAINT \"McpServer_ownerId_fkey\"\nFOREIGN KEY (\"ownerId\")\nREFERENCES \"public\".\"User\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"McpServer_ownerId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "McpServer_ownerId_fkey",
+          "public",
+          "\"public\".\"McpServer\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.Provider.Provider_ownerId_fkey",
+    "label": "Add foreign key \"Provider_ownerId_fkey\" on \"Provider\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "Provider_ownerId_fkey",
+        "table": "Provider"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"Provider_ownerId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "Provider_ownerId_fkey",
+          "public",
+          "\"public\".\"Provider\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"Provider_ownerId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"Provider\"\nADD CONSTRAINT \"Provider_ownerId_fkey\"\nFOREIGN KEY (\"ownerId\")\nREFERENCES \"public\".\"User\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"Provider_ownerId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "Provider_ownerId_fkey",
+          "public",
+          "\"public\".\"Provider\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.Session.Session_userId_fkey",
+    "label": "Add foreign key \"Session_userId_fkey\" on \"Session\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "Session_userId_fkey",
+        "table": "Session"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"Session_userId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "Session_userId_fkey",
+          "public",
+          "\"public\".\"Session\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"Session_userId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"Session\"\nADD CONSTRAINT \"Session_userId_fkey\"\nFOREIGN KEY (\"userId\")\nREFERENCES \"public\".\"User\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"Session_userId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "Session_userId_fkey",
+          "public",
+          "\"public\".\"Session\""
+        ]
+      }
+    ]
+  }
+]

@@ -45,7 +45,7 @@ model ChatAdapter {
   id        Int                        @id @default(autoincrement())
   name      String
   platform  String
-  envs      Jsonb?
+  config    Jsonb?
   owner     User                       @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   ownerId   Int
   createdAt TimestamptzString          @default(now())

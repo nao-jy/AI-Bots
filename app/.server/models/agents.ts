@@ -1,17 +1,6 @@
 import { db } from "./db";
 import type { AuthUser } from "../auth";
-import {
-  authHeaders,
-  decryptMcpHeaders,
-  idList,
-  jsonb,
-  parseObject,
-  providerBaseUrl,
-  record,
-  requestTest,
-  testFailure,
-  testSuccess,
-} from "../utils";
+import { idList, jsonb, record } from "../utils";
 
 export async function listAgents(user: AuthUser) {
   const agents = await db.orm.public.AgentDefinition.include(

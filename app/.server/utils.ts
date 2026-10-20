@@ -205,24 +205,6 @@ export async function requestTest(url: string, init?: RequestInit) {
   return { response, body };
 }
 
-export function providerBaseUrl(
-  providerName: string,
-  args: Record<string, unknown>,
-) {
-  const configured = args.baseURL ?? args.baseUrl ?? args.endpoint ?? args.url;
-  if (typeof configured === "string" && configured.trim())
-    return configured.trim();
-  const defaults: Record<string, string> = {
-    openai: "https://api.openai.com/v1",
-    groq: "https://api.groq.com/openai/v1",
-    openrouter: "https://openrouter.ai/api/v1",
-    xai: "https://api.x.ai/v1",
-    togetherai: "https://api.together.xyz/v1",
-    deepseek: "https://api.deepseek.com",
-  };
-  return defaults[providerName.toLowerCase()];
-}
-
 export function authHeaders(headers: Record<string, string>) {
   return { ...headers };
 }

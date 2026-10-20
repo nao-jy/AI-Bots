@@ -18,7 +18,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'fc86a5f332489690564a0f0a256b5172e5d46aea7216ecb5c30c048fad696e48'>;
+  StorageHashBase<'407d785a112816d010ff0ecd918932dd9783a2f1b2685adb8d1a02c181a2e847'>;
 export type ExecutionHash =
   ExecutionHashBase<'8b50cbf3e7a3d7129e709e055e4a7b51f3ed103797223f4237ea9e19211cc84f'>;
 export type ProfileHash =
@@ -249,8 +249,8 @@ export type FieldOutputTypes = {
       readonly mcpServerId: CodecTypes['pg/int4@1']['output'];
     };
     readonly ChatAdapter: {
+      readonly config: CodecTypes['pg/jsonb@1']['output'] | null;
       readonly createdAt: CodecTypes['pg/timestamptz-string@1']['output'];
-      readonly envs: CodecTypes['pg/jsonb@1']['output'] | null;
       readonly id: CodecTypes['pg/int4@1']['output'];
       readonly name: CodecTypes['pg/text@1']['output'];
       readonly ownerId: CodecTypes['pg/int4@1']['output'];
@@ -327,8 +327,8 @@ export type FieldInputTypes = {
       readonly mcpServerId: CodecTypes['pg/int4@1']['input'];
     };
     readonly ChatAdapter: {
+      readonly config: CodecTypes['pg/jsonb@1']['input'] | null;
       readonly createdAt: CodecTypes['pg/timestamptz-string@1']['input'];
-      readonly envs: CodecTypes['pg/jsonb@1']['input'] | null;
       readonly id: CodecTypes['pg/int4@1']['input'];
       readonly name: CodecTypes['pg/text@1']['input'];
       readonly ownerId: CodecTypes['pg/int4@1']['input'];
@@ -405,8 +405,8 @@ export type StorageColumnTypes = {
       readonly mcpServerId: CodecTypes['pg/int4@1']['output'];
     };
     readonly ChatAdapter: {
+      readonly config: CodecTypes['pg/jsonb@1']['output'] | null;
       readonly createdAt: CodecTypes['pg/timestamptz-string@1']['output'];
-      readonly envs: CodecTypes['pg/jsonb@1']['output'] | null;
       readonly id: CodecTypes['pg/int4@1']['output'];
       readonly name: CodecTypes['pg/text@1']['output'];
       readonly ownerId: CodecTypes['pg/int4@1']['output'];
@@ -483,8 +483,8 @@ export type StorageColumnInputTypes = {
       readonly mcpServerId: CodecTypes['pg/int4@1']['input'];
     };
     readonly ChatAdapter: {
+      readonly config: CodecTypes['pg/jsonb@1']['input'] | null;
       readonly createdAt: CodecTypes['pg/timestamptz-string@1']['input'];
-      readonly envs: CodecTypes['pg/jsonb@1']['input'] | null;
       readonly id: CodecTypes['pg/int4@1']['input'];
       readonly name: CodecTypes['pg/text@1']['input'];
       readonly ownerId: CodecTypes['pg/int4@1']['input'];
@@ -568,8 +568,8 @@ export namespace Models {
     readonly [RelationKeys]?: 'agent' | 'mcpServer';
   };
   export type public_ChatAdapter = {
+    config: CodecTypes['pg/jsonb@1']['output'] | null;
     createdAt: CodecTypes['pg/timestamptz-string@1']['output'];
-    envs: CodecTypes['pg/jsonb@1']['output'] | null;
     id: CodecTypes['pg/int4@1']['output'];
     name: CodecTypes['pg/text@1']['output'];
     ownerId: CodecTypes['pg/int4@1']['output'];
@@ -827,17 +827,17 @@ type ContractBase = Omit<
             };
             readonly ChatAdapter: {
               columns: {
+                readonly config: {
+                  readonly dataType: 'pg/jsonb';
+                  readonly codecId: 'pg/jsonb@1';
+                  readonly nullable: true;
+                  readonly many: false;
+                };
                 readonly createdAt: {
                   readonly dataType: 'pg/timestamptz';
                   readonly codecId: 'pg/timestamptz-string@1';
                   readonly nullable: false;
                   readonly default: { readonly kind: 'function'; readonly expression: 'now()' };
-                  readonly many: false;
-                };
-                readonly envs: {
-                  readonly dataType: 'pg/jsonb';
-                  readonly codecId: 'pg/jsonb@1';
-                  readonly nullable: true;
                   readonly many: false;
                 };
                 readonly id: {
@@ -1535,16 +1535,16 @@ type ContractBase = Omit<
           };
           readonly ChatAdapter: {
             readonly fields: {
+              readonly config: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/jsonb@1' };
+              };
               readonly createdAt: {
                 readonly nullable: false;
                 readonly type: {
                   readonly kind: 'scalar';
                   readonly codecId: 'pg/timestamptz-string@1';
                 };
-              };
-              readonly envs: {
-                readonly nullable: true;
-                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/jsonb@1' };
               };
               readonly id: {
                 readonly nullable: false;
@@ -1596,8 +1596,8 @@ type ContractBase = Omit<
               readonly table: 'ChatAdapter';
               readonly namespaceId: 'public';
               readonly fields: {
+                readonly config: { readonly column: 'config' };
                 readonly createdAt: { readonly column: 'createdAt' };
-                readonly envs: { readonly column: 'envs' };
                 readonly id: { readonly column: 'id' };
                 readonly name: { readonly column: 'name' };
                 readonly ownerId: { readonly column: 'ownerId' };

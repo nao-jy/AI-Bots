@@ -15,13 +15,13 @@ export async function listAdapters(user: AuthUser) {
   }).all();
   return {
     records: adapters.map((adapter) => {
-      const envs = decryptAdapterEnvs(adapter.envs);
+      const config = decryptAdapterEnvs(adapter.config);
       return record(adapter.id, adapter.updatedAt, {
         name: adapter.name,
         platform: platforms[adapter.platform] ?? adapter.platform,
         platformId: adapter.platform,
-        envs: JSON.stringify(envs),
-        envsConfigured: Object.keys(envs).length ? "設定済み" : "未設定",
+        config: JSON.stringify(config),
+        configured: Object.keys(config).length ? "設定済み" : "未設定",
       });
     }),
   };

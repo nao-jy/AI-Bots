@@ -1,16 +1,16 @@
 import type { AuthUser } from "./auth";
+import { getModel, listProviderNames } from "./features/provider";
 import { platforms } from "./models/adapters";
 import { getProvider } from "./models/providers";
 import {
-  authHeaders,
   decryptMcpHeaders,
   parseObject,
   parseStringMap,
-  providerBaseUrl,
   requestTest,
   testFailure,
   testSuccess,
 } from "./utils";
+import { generateText, type JSONValue } from "ai";
 
 export async function testAdapter(user: AuthUser, values: FormData) {
   try {
@@ -77,13 +77,9 @@ async function runProviderTest(
   args: Record<string, unknown>,
   headers: Record<string, string>,
 ) {
-  const baseUrl = providerBaseUrl(providerName, args);
-  if (!baseUrl)
-    throw new Error(
-      "このプロバイダーの接続先が特定できません。プロバイダー引数に baseURL を設定してください。",
-    );
-  const url = `${baseUrl.replace(/\/$/, "")}/models`;
-  await requestTest(url, { headers: authHeaders(headers) });
+  const providers = listProviderNames();
+  const found = providers.find((v) => v === providerName) !== undefined;
+  if (!found) throw new Error("このプロバイダーの接続先が特定できません。");
 }
 
 export async function testProvider(user: AuthUser, values: FormData) {
@@ -169,20 +165,14 @@ export async function testAgent(user: AuthUser, values: FormData) {
     ) as Record<string, unknown>;
     const headers = decryptMcpHeaders(provider.headers);
     const options = parseObject(values.get("options"), "オプション");
-    const baseUrl = providerBaseUrl(provider.providerName, args);
-    if (!baseUrl)
-      return testFailure(
-        "このプロバイダーの接続先が特定できません。プロバイダー引数に baseURL を設定してください。",
-      );
-    await requestTest(`${baseUrl.replace(/\/$/, "")}/chat/completions`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", ...authHeaders(headers) },
-      body: JSON.stringify({
-        model: modelId,
-        messages: [{ role: "user", content: "Reply with OK." }],
-        max_tokens: 8,
-        ...options,
-      }),
+    const model = getModel(provider.providerName, args, headers, modelId);
+    if (!model) return testFailure("モデルが取得できませんでした。");
+    const result = await generateText({
+      model: model,
+      prompt: "hello",
+      providerOptions: {
+        openai: options as Record<string, JSONValue>,
+      },
     });
     return testSuccess(
       `${name || "エージェント"}のモデル「${modelId}」に接続できました。`,

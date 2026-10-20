@@ -250,17 +250,17 @@
           },
           "ChatAdapter": {
             "fields": {
+              "config": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/jsonb@1",
+                  "kind": "scalar"
+                }
+              },
               "createdAt": {
                 "nullable": false,
                 "type": {
                   "codecId": "pg/timestamptz-string@1",
-                  "kind": "scalar"
-                }
-              },
-              "envs": {
-                "nullable": true,
-                "type": {
-                  "codecId": "pg/jsonb@1",
                   "kind": "scalar"
                 }
               },
@@ -335,11 +335,11 @@
             },
             "storage": {
               "fields": {
+                "config": {
+                  "column": "config"
+                },
                 "createdAt": {
                   "column": "createdAt"
-                },
-                "envs": {
-                  "column": "envs"
                 },
                 "id": {
                   "column": "id"
@@ -1241,6 +1241,11 @@
             },
             "ChatAdapter": {
               "columns": {
+                "config": {
+                  "codecId": "pg/jsonb@1",
+                  "dataType": "pg/jsonb",
+                  "nullable": true
+                },
                 "createdAt": {
                   "codecId": "pg/timestamptz-string@1",
                   "dataType": "pg/timestamptz",
@@ -1249,11 +1254,6 @@
                     "kind": "function"
                   },
                   "nullable": false
-                },
-                "envs": {
-                  "codecId": "pg/jsonb@1",
-                  "dataType": "pg/jsonb",
-                  "nullable": true
                 },
                 "id": {
                   "codecId": "pg/int4@1",
@@ -1887,7 +1887,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "fc86a5f332489690564a0f0a256b5172e5d46aea7216ecb5c30c048fad696e48"
+    "storageHash": "407d785a112816d010ff0ecd918932dd9783a2f1b2685adb8d1a02c181a2e847"
   },
   "execution": {
     "executionHash": "8b50cbf3e7a3d7129e709e055e4a7b51f3ed103797223f4237ea9e19211cc84f",

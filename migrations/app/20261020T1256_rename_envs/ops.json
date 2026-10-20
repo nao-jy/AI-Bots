@@ -1,0 +1,62 @@
+[
+  {
+    "id": "renameColumn.ChatAdapter.envs",
+    "label": "Rename column \"ChatAdapter\".\"envs\" to \"config\"",
+    "operationClass": "widening",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "config",
+        "table": "ChatAdapter"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"envs\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "ChatAdapter",
+          "envs"
+        ]
+      },
+      {
+        "description": "ensure column \"config\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "ChatAdapter",
+          "config"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "rename column \"envs\" to \"config\"",
+        "sql": "ALTER TABLE \"public\".\"ChatAdapter\" RENAME COLUMN \"envs\" TO \"config\""
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"config\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "ChatAdapter",
+          "config"
+        ]
+      },
+      {
+        "description": "verify column \"envs\" no longer exists",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "ChatAdapter",
+          "envs"
+        ]
+      }
+    ]
+  }
+]
