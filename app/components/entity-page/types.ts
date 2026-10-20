@@ -15,12 +15,13 @@ export type EntityField = {
   options?: string[] | EntityOption[];
   required?: boolean;
   wide?: boolean;
+  createOnly?: boolean;
   valueType?: "string" | "json-scalar";
   help?: { text: string; linkText: string; href: string };
 };
 
 export type EntitySection =
-  "bots" | "adapters" | "agents" | "providers" | "mcp" | "users";
+  "bots" | "adapters" | "agents" | "providers" | "mcp" | "users" | "oauth";
 
 export type EntityColumn = { key: string; label: string };
 export type EntityDialogMode =
@@ -34,4 +35,8 @@ export type EntityPageDefinition = {
   columns: EntityColumn[];
   fields: EntityField[];
   records: EntityRecord[];
+  createIntent?: string;
+  createSubmitLabel?: string;
+  launchIntent?: string;
+  launchLabel?: string;
 };

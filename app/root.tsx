@@ -99,6 +99,9 @@ function getNavigationLabel(pathname: string) {
   const labels: Record<string, string> = {
     "/bots": "チャットボット",
     "/adapters": "アダプタ",
+    "/providers": "プロバイダ",
+    "/oauth-clients": "OAuthクライアント",
+    "/oauth-authentications": "OAuth認証情報",
     "/agents": "エージェント",
     "/mcp-servers": "MCPサーバー",
     "/users": "ユーザー",

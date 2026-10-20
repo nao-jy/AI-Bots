@@ -80,3 +80,6 @@ a { color: inherit; text-decoration: none; }
 @keyframes navigation-loading-spin { to { transform: rotate(360deg); } }
 @keyframes navigation-loading-appear { from { opacity: 0; } to { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .navigation-loading-backdrop { animation: none; } .navigation-loading-spinner { animation-duration: 1.8s; } }
+.oauth-notice { margin-bottom: 16px; padding: 12px 16px; border: 1px solid #eeedf2; border-radius: 9px; background: #fff; color: #625d70; font-size: 13px; }
+.oauth-notice.success { border-color: #d9eee5; background: #f1faf6; color: #23896c; }
+.oauth-notice.error { border-color: #f1d9d9; background: #fff6f6; color: #b44747; }

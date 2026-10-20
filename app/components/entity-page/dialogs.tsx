@@ -201,7 +201,7 @@ export function EntityPageDialogs({
           <input
             type="hidden"
             name="_intent"
-            value={mode === "edit" ? "update" : "create"}
+            value={mode === "edit" ? "update" : (page.createIntent ?? "create")}
           />
           {selected && <input type="hidden" name="id" value={selected.id} />}
           <Text className="modal-intro">
@@ -217,7 +217,9 @@ export function EntityPageDialogs({
             </Alert>
           )}
           <div className="form-grid">
-            {page.fields.map((field) => (
+            {page.fields
+              .filter((field) => !field.createOnly || mode === "create")
+              .map((field) => (
               <div className={field.wide ? "field-wide" : ""} key={field.key}>
                 {field.type === "textarea" ? (
                   <Textarea
@@ -288,7 +290,7 @@ export function EntityPageDialogs({
                   </Text>
                 )}
               </div>
-            ))}
+              ))}
           </div>
           <div className="modal-actions">
             <Button variant="default" type="button" onClick={onClose}>
@@ -313,6 +315,22 @@ export function EntityPageDialogs({
                   : "テスト"}
               </Button>
             )}
+            {page.launchIntent && mode === "edit" && (
+              <Button
+                type="button"
+                variant="light"
+                disabled={fetcher.state !== "idle"}
+                onClick={(event) => {
+                  const form = event.currentTarget.form;
+                  if (!form) return;
+                  const data = new FormData(form);
+                  data.set("_intent", page.launchIntent!);
+                  fetcher.submit(data, { method: "post" });
+                }}
+              >
+                {page.launchLabel ?? "認証を開始"}
+              </Button>
+            )}
             <Button
               type="submit"
               className="primary-button"
@@ -322,7 +340,7 @@ export function EntityPageDialogs({
                 ? "保存中..."
                 : mode === "edit"
                   ? "変更を保存"
-                  : "作成する"}
+                  : (page.createSubmitLabel ?? "作成する")}
             </Button>
           </div>
         </fetcher.Form>
