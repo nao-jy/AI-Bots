@@ -14,7 +14,8 @@ import { APP_NAME } from "~/const";
 
 const page: Omit<EntityPageDefinition, "records"> = {
   title: "OAuth認証情報",
-  description: "OAuthクライアントを選択して認証し、取得したトークンを保存します。",
+  description:
+    "OAuthクライアントを選択して認証し、取得したトークンを保存します。",
   icon: "oauth",
   createIntent: "authorize",
   createSubmitLabel: "OAuth認証を開始",
@@ -24,7 +25,7 @@ const page: Omit<EntityPageDefinition, "records"> = {
     { key: "name", label: "認証情報名" },
     { key: "oauthName", label: "OAuthクライアント" },
     { key: "expiresAt", label: "有効期限" },
-    { key: "refreshTokenConfigured", label: "更新トークン" },
+    { key: "refreshTokenConfigured", label: "リフレッシュトークン" },
     { key: "updated", label: "最終更新" },
   ],
   fields: [
@@ -70,8 +71,7 @@ export async function action({ request }: Route.ActionArgs) {
   if (intent === "authorize")
     return startOAuthAuthorization(user, request, form);
   if (intent === "delete")
-    return Number.isInteger(id) &&
-      (await deleteOAuthAuthentication(user, id))
+    return Number.isInteger(id) && (await deleteOAuthAuthentication(user, id))
       ? { ok: true }
       : { ok: false, error: "OAuth認証情報が見つかりません。" };
   if (intent === "update")
@@ -79,7 +79,10 @@ export async function action({ request }: Route.ActionArgs) {
       ? renameOAuthAuthentication(user, id, form)
       : { ok: false, error: "OAuth認証情報が見つかりません。" };
   if (intent === "create")
-    return { ok: false, error: "OAuth認証はOAuth認証を開始から実行してください。" };
+    return {
+      ok: false,
+      error: "OAuth認証はOAuth認証を開始から実行してください。",
+    };
   return { ok: false, error: "操作を判定できませんでした。" };
 }
 
@@ -89,7 +92,10 @@ export default function OAuthAuthentications({
   return (
     <>
       {loaderData.oauthMessage && (
-        <div className={`oauth-notice ${loaderData.oauthMessageType}`} role="status">
+        <div
+          className={`oauth-notice ${loaderData.oauthMessageType}`}
+          role="status"
+        >
           {loaderData.oauthMessage}
         </div>
       )}
