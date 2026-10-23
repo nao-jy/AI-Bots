@@ -21,7 +21,7 @@ export function meta() {
 
 export async function loader({ request }: Route.LoaderArgs) {
   if (await getSessionUser(request)) throw redirect("/bots");
-  return { setupRequired: !(await db.orm.public.User.first()) };
+  return { setupRequired: !(await db.orm.aibot.User.first()) };
 }
 
 export async function action({ request }: Route.ActionArgs) {
@@ -38,9 +38,9 @@ export async function action({ request }: Route.ActionArgs) {
     );
   }
 
-  let user = await db.orm.public.User.first({ email });
+  let user = await db.orm.aibot.User.first({ email });
   if (!user) {
-    if (await db.orm.public.User.first()) {
+    if (await db.orm.aibot.User.first()) {
       return data(
         { error: "メールアドレスまたはパスワードが正しくありません。" },
         { status: 401 },
@@ -53,7 +53,7 @@ export async function action({ request }: Route.ActionArgs) {
       );
     }
     try {
-      user = await db.orm.public.User.create({
+      user = await db.orm.aibot.User.create({
         email,
         name,
         passwordHash: await hashPassword(password),

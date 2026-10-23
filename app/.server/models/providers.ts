@@ -3,7 +3,7 @@ import type { AuthUser } from "../auth";
 import { decryptMcpHeaders, encryptStringMap, jsonb, record } from "../utils";
 
 export async function listProviders(user: AuthUser) {
-  const providers = await db.orm.public.Provider.where({ ownerId: user.id })
+  const providers = await db.orm.aibot.Provider.where({ ownerId: user.id })
     .orderBy((provider) => provider.updatedAt.desc())
     .all();
   return {
@@ -52,10 +52,10 @@ export async function saveProvider(
   }
   if (
     id !== null &&
-    !(await db.orm.public.Provider.first({ id, ownerId: user.id }))
+    !(await db.orm.aibot.Provider.first({ id, ownerId: user.id }))
   )
     return { error: "プロバイダーが見つかりません。" };
-  const duplicate = await db.orm.public.Provider.first({
+  const duplicate = await db.orm.aibot.Provider.first({
     ownerId: user.id,
     name,
   });
@@ -79,27 +79,27 @@ export async function saveProvider(
     headers: jsonb(encryptedHeaders),
   };
   if (id === null) {
-    await db.orm.public.Provider.create({
+    await db.orm.aibot.Provider.create({
       ...saved,
       ownerId: user.id,
     });
   } else {
-    await db.orm.public.Provider.where({ id, ownerId: user.id }).update(saved);
+    await db.orm.aibot.Provider.where({ id, ownerId: user.id }).update(saved);
   }
   return { ok: true };
 }
 
 export async function deleteProvider(user: AuthUser, id: number) {
-  if (!(await db.orm.public.Provider.first({ id, ownerId: user.id })))
+  if (!(await db.orm.aibot.Provider.first({ id, ownerId: user.id })))
     return false;
-  if (await db.orm.public.AgentDefinition.first({ providerId: id }))
+  if (await db.orm.aibot.AgentDefinition.first({ providerId: id }))
     return false;
-  await db.orm.public.Provider.where({ id, ownerId: user.id }).delete();
+  await db.orm.aibot.Provider.where({ id, ownerId: user.id }).delete();
   return true;
 }
 
 export async function getProvider(providerId: number, ownerId: number) {
-  const provider = await db.orm.public.Provider.first({
+  const provider = await db.orm.aibot.Provider.first({
     id: providerId,
     ownerId: ownerId,
   });

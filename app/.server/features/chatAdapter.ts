@@ -5,17 +5,53 @@ import { createGoogleChatAdapter } from "@chat-adapter/gchat";
 import { createDiscordAdapter } from "@chat-adapter/discord";
 import { createXAdapter } from "@chat-adapter/x";
 import { createLineAdapter } from "chat-adapter-line";
-import { createMemoryState } from "@chat-adapter/state-memory";
+import { createPostgresState } from "@chat-adapter/state-pg";
+import pg from "pg";
+import { STATE_SCHEMA_NAME } from "~/const";
 
 interface ChatAdapterFactory {
   adapterName: string;
   displayName: string;
   url: string;
-  getBot: (botName: string, adapterConfig: Record<string, string>) => Chat;
+  getBot: (
+    botName: string,
+    adapterConfig: Record<string, string>,
+  ) => Promise<Chat>;
+}
+
+let statePromise: ReturnType<typeof initializeState> | undefined;
+
+function initializeState() {
+  const connectionString = process.env["DATABASE_URL"];
+  if (!connectionString) {
+    throw new Error("DATABASE_URL must be set to initialize chat state");
+  }
+
+  const client = new pg.Pool({
+    connectionString,
+    options: `-c search_path=${STATE_SCHEMA_NAME}`,
+  });
+
+  return (async () => {
+    try {
+      const quotedSchemaName = `"${STATE_SCHEMA_NAME.replaceAll('"', '""')}"`;
+      await client.query(`CREATE SCHEMA IF NOT EXISTS ${quotedSchemaName}`);
+      return createPostgresState({ client });
+    } catch (error) {
+      await client.end();
+      throw error;
+    }
+  })();
 }
 
 function getState() {
-  return createMemoryState();
+  if (!statePromise) {
+    statePromise = initializeState().catch((error) => {
+      statePromise = undefined;
+      throw error;
+    });
+  }
+  return statePromise;
 }
 
 const FACTORIES: ChatAdapterFactory[] = [
@@ -23,13 +59,13 @@ const FACTORIES: ChatAdapterFactory[] = [
     adapterName: "slack",
     displayName: "Slack",
     url: "https://chat-sdk.dev/adapters/official/slack",
-    getBot: (botName, adapterConfig) => {
+    getBot: async (botName, adapterConfig) => {
       return new Chat({
         userName: botName,
         adapters: {
           slack: createSlackAdapter(adapterConfig),
         },
-        state: getState(),
+        state: await getState(),
       });
     },
   },
@@ -37,13 +73,13 @@ const FACTORIES: ChatAdapterFactory[] = [
     adapterName: "teams",
     displayName: "Microsoft Teams",
     url: "https://chat-sdk.dev/adapters/official/teams",
-    getBot: (botName, adapterConfig) => {
+    getBot: async (botName, adapterConfig) => {
       return new Chat({
         userName: botName,
         adapters: {
           slack: createTeamsAdapter(adapterConfig),
         },
-        state: getState(),
+        state: await getState(),
       });
     },
   },
@@ -51,13 +87,13 @@ const FACTORIES: ChatAdapterFactory[] = [
     adapterName: "gchat",
     displayName: "Google Chat",
     url: "https://chat-sdk.dev/adapters/official/gchat",
-    getBot: (botName, adapterConfig) => {
+    getBot: async (botName, adapterConfig) => {
       return new Chat({
         userName: botName,
         adapters: {
           slack: createGoogleChatAdapter(adapterConfig),
         },
-        state: getState(),
+        state: await getState(),
       });
     },
   },
@@ -65,13 +101,13 @@ const FACTORIES: ChatAdapterFactory[] = [
     adapterName: "discord",
     displayName: "Discord",
     url: "https://chat-sdk.dev/adapters/official/discord",
-    getBot: (botName, adapterConfig) => {
+    getBot: async (botName, adapterConfig) => {
       return new Chat({
         userName: botName,
         adapters: {
           slack: createDiscordAdapter(adapterConfig),
         },
-        state: getState(),
+        state: await getState(),
       });
     },
   },
@@ -79,13 +115,13 @@ const FACTORIES: ChatAdapterFactory[] = [
     adapterName: "x",
     displayName: "X",
     url: "https://chat-sdk.dev/adapters/official/x",
-    getBot: (botName, adapterConfig) => {
+    getBot: async (botName, adapterConfig) => {
       return new Chat({
         userName: botName,
         adapters: {
           slack: createXAdapter(adapterConfig),
         },
-        state: getState(),
+        state: await getState(),
       });
     },
   },
@@ -93,19 +129,19 @@ const FACTORIES: ChatAdapterFactory[] = [
     adapterName: "line",
     displayName: "LINE",
     url: "https://chat-sdk.dev/adapters/community/line",
-    getBot: (botName, adapterConfig) => {
+    getBot: async (botName, adapterConfig) => {
       return new Chat({
         userName: botName,
         adapters: {
           slack: createLineAdapter(adapterConfig),
         },
-        state: getState(),
+        state: await getState(),
       });
     },
   },
 ];
 
-export function getBotInfo(
+export async function getBotInfo(
   adapterName: string,
   botName: string,
   adapterConfig: Record<string, string>,
@@ -116,7 +152,7 @@ export function getBotInfo(
   if (factory) {
     return {
       displayName: factory.displayName,
-      bot: factory.getBot(botName, adapterConfig),
+      bot: await factory.getBot(botName, adapterConfig),
       url: factory.url,
     };
   }

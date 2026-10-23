@@ -17,7 +17,7 @@ export async function testAdapter(user: AuthUser, values: FormData) {
     const name = String(values.get("name") ?? "").trim();
     const platformId = String(values.get("platformId") ?? "").trim();
     const conf = parseStringMap(values.get("config"), "コンフィグ");
-    const bot = getBotInfo(platformId, name, conf);
+    const bot = await getBotInfo(platformId, name, conf);
     if (!bot) {
       throw new Error("bot not found");
     }

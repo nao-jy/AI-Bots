@@ -18,9 +18,9 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'980ed93b452f0e90f4e355e082cd9c16b50e443bce0c1c9aed4113264f71a083'>;
+  StorageHashBase<'d02fe41f71a2855e7689f6693eb943a0cca4c12da957e01de4b6e5520afffa45'>;
 export type ExecutionHash =
-  ExecutionHashBase<'3bacb2b4dcfef967be5df6584265aaf375fbf77b590cb9c47010ce979ba69849'>;
+  ExecutionHashBase<'113fa7978663939f59792dd6897b503ec408aa8f40d77a16857e15874f789fd4'>;
 export type ProfileHash =
   ProfileHashBase<'3916f444a8a17ad749191acf9e08dad97d1a327b88c2f1d45d12f240296aa8b2'>;
 
@@ -233,7 +233,7 @@ type DefaultLiteralValue<CodecId extends string, Encoded> = CodecId extends keyo
   : Encoded;
 
 export type FieldOutputTypes = {
-  readonly public: {
+  readonly aibot: {
     readonly AgentDefinition: {
       readonly createdAt: CodecTypes['pg/timestamptz-string@1']['output'];
       readonly id: CodecTypes['pg/int4@1']['output'];
@@ -336,7 +336,7 @@ export type FieldOutputTypes = {
   };
 };
 export type FieldInputTypes = {
-  readonly public: {
+  readonly aibot: {
     readonly AgentDefinition: {
       readonly createdAt: CodecTypes['pg/timestamptz-string@1']['input'];
       readonly id: CodecTypes['pg/int4@1']['input'];
@@ -439,7 +439,7 @@ export type FieldInputTypes = {
   };
 };
 export type StorageColumnTypes = {
-  readonly public: {
+  readonly aibot: {
     readonly AgentDefinition: {
       readonly createdAt: CodecTypes['pg/timestamptz-string@1']['output'];
       readonly id: CodecTypes['pg/int4@1']['output'];
@@ -540,9 +540,10 @@ export type StorageColumnTypes = {
       readonly updatedAt: CodecTypes['pg/timestamptz-string@1']['output'];
     };
   };
+  readonly public: {};
 };
 export type StorageColumnInputTypes = {
-  readonly public: {
+  readonly aibot: {
     readonly AgentDefinition: {
       readonly createdAt: CodecTypes['pg/timestamptz-string@1']['input'];
       readonly id: CodecTypes['pg/int4@1']['input'];
@@ -643,10 +644,11 @@ export type StorageColumnInputTypes = {
       readonly updatedAt: CodecTypes['pg/timestamptz-string@1']['input'];
     };
   };
+  readonly public: {};
 };
 
 export namespace Models {
-  export type public_AgentDefinition = {
+  export type aibot_AgentDefinition = {
     createdAt: CodecTypes['pg/timestamptz-string@1']['output'];
     id: CodecTypes['pg/int4@1']['output'];
     model_id: CodecTypes['pg/text@1']['output'];
@@ -654,20 +656,20 @@ export namespace Models {
     options: CodecTypes['pg/jsonb@1']['output'] | null;
     providerId: CodecTypes['pg/int4@1']['output'];
     updatedAt: CodecTypes['pg/timestamptz-string@1']['output'];
-    chatbot: public_Chatbot | null;
-    mcpServers: public_AgentMcpServer[];
-    provider: public_Provider;
+    chatbot: aibot_Chatbot | null;
+    mcpServers: aibot_AgentMcpServer[];
+    provider: aibot_Provider;
     readonly [RelationKeys]?: 'chatbot' | 'mcpServers' | 'provider';
   };
-  export type public_AgentMcpServer = {
+  export type aibot_AgentMcpServer = {
     agentId: CodecTypes['pg/int4@1']['output'];
     createdAt: CodecTypes['pg/timestamptz-string@1']['output'];
     mcpServerId: CodecTypes['pg/int4@1']['output'];
-    agent: public_AgentDefinition;
-    mcpServer: public_McpServer;
+    agent: aibot_AgentDefinition;
+    mcpServer: aibot_McpServer;
     readonly [RelationKeys]?: 'agent' | 'mcpServer';
   };
-  export type public_ChatAdapter = {
+  export type aibot_ChatAdapter = {
     config: CodecTypes['pg/jsonb@1']['output'] | null;
     createdAt: CodecTypes['pg/timestamptz-string@1']['output'];
     id: CodecTypes['pg/int4@1']['output'];
@@ -675,11 +677,11 @@ export namespace Models {
     ownerId: CodecTypes['pg/int4@1']['output'];
     platform: CodecTypes['pg/text@1']['output'];
     updatedAt: CodecTypes['pg/timestamptz-string@1']['output'];
-    chatbots: public_ChatbotAdapter[];
-    owner: public_User;
+    chatbots: aibot_ChatbotAdapter[];
+    owner: aibot_User;
     readonly [RelationKeys]?: 'chatbots' | 'owner';
   };
-  export type public_Chatbot = {
+  export type aibot_Chatbot = {
     agentId: CodecTypes['pg/int4@1']['output'] | null;
     createdAt: CodecTypes['pg/timestamptz-string@1']['output'];
     description: CodecTypes['pg/text@1']['output'] | null;
@@ -688,20 +690,20 @@ export namespace Models {
     name: CodecTypes['pg/text@1']['output'];
     ownerId: CodecTypes['pg/int4@1']['output'];
     updatedAt: CodecTypes['pg/timestamptz-string@1']['output'];
-    adapters: public_ChatbotAdapter[];
-    agent: public_AgentDefinition | null;
-    owner: public_User;
+    adapters: aibot_ChatbotAdapter[];
+    agent: aibot_AgentDefinition | null;
+    owner: aibot_User;
     readonly [RelationKeys]?: 'adapters' | 'agent' | 'owner';
   };
-  export type public_ChatbotAdapter = {
+  export type aibot_ChatbotAdapter = {
     adapterId: CodecTypes['pg/int4@1']['output'];
     chatbotId: CodecTypes['pg/int4@1']['output'];
     createdAt: CodecTypes['pg/timestamptz-string@1']['output'];
-    adapter: public_ChatAdapter;
-    chatbot: public_Chatbot;
+    adapter: aibot_ChatAdapter;
+    chatbot: aibot_Chatbot;
     readonly [RelationKeys]?: 'adapter' | 'chatbot';
   };
-  export type public_McpServer = {
+  export type aibot_McpServer = {
     createdAt: CodecTypes['pg/timestamptz-string@1']['output'];
     description: CodecTypes['pg/text@1']['output'] | null;
     endpoint: CodecTypes['pg/text@1']['output'] | null;
@@ -711,11 +713,11 @@ export namespace Models {
     ownerId: CodecTypes['pg/int4@1']['output'];
     transport: CodecTypes['pg/text@1']['output'];
     updatedAt: CodecTypes['pg/timestamptz-string@1']['output'];
-    agents: public_AgentMcpServer[];
-    owner: public_User;
+    agents: aibot_AgentMcpServer[];
+    owner: aibot_User;
     readonly [RelationKeys]?: 'agents' | 'owner';
   };
-  export type public_OAuthAuthentication = {
+  export type aibot_OAuthAuthentication = {
     accessToken: CodecTypes['pg/text@1']['output'];
     createdAt: CodecTypes['pg/timestamptz-string@1']['output'];
     expiresAt: CodecTypes['pg/timestamptz-string@1']['output'] | null;
@@ -725,11 +727,11 @@ export namespace Models {
     ownerId: CodecTypes['pg/int4@1']['output'];
     refreshToken: CodecTypes['pg/text@1']['output'] | null;
     updatedAt: CodecTypes['pg/timestamptz-string@1']['output'];
-    oauth: public_OAuthClient;
-    owner: public_User;
+    oauth: aibot_OAuthClient;
+    owner: aibot_User;
     readonly [RelationKeys]?: 'oauth' | 'owner';
   };
-  export type public_OAuthClient = {
+  export type aibot_OAuthClient = {
     authorizationEndpoint: CodecTypes['pg/text@1']['output'];
     clientId: CodecTypes['pg/text@1']['output'];
     clientSecret: CodecTypes['pg/text@1']['output'] | null;
@@ -742,11 +744,11 @@ export namespace Models {
     scopes: ReadonlyArray<CodecTypes['pg/text@1']['output']>;
     tokenEndpoint: CodecTypes['pg/text@1']['output'];
     updatedAt: CodecTypes['pg/timestamptz-string@1']['output'];
-    authentications: public_OAuthAuthentication[];
-    owner: public_User;
+    authentications: aibot_OAuthAuthentication[];
+    owner: aibot_User;
     readonly [RelationKeys]?: 'authentications' | 'owner';
   };
-  export type public_Provider = {
+  export type aibot_Provider = {
     args: CodecTypes['pg/jsonb@1']['output'] | null;
     createdAt: CodecTypes['pg/timestamptz-string@1']['output'];
     headers: CodecTypes['pg/jsonb@1']['output'] | null;
@@ -755,48 +757,48 @@ export namespace Models {
     ownerId: CodecTypes['pg/int4@1']['output'];
     providerName: CodecTypes['pg/text@1']['output'];
     updatedAt: CodecTypes['pg/timestamptz-string@1']['output'];
-    agents: public_AgentDefinition[];
-    owner: public_User;
+    agents: aibot_AgentDefinition[];
+    owner: aibot_User;
     readonly [RelationKeys]?: 'agents' | 'owner';
   };
-  export type public_Session = {
+  export type aibot_Session = {
     createdAt: CodecTypes['pg/timestamptz-string@1']['output'];
     expiresAt: CodecTypes['pg/timestamptz-string@1']['output'];
     id: CodecTypes['pg/int4@1']['output'];
     tokenHash: CodecTypes['pg/text@1']['output'];
     userId: CodecTypes['pg/int4@1']['output'];
-    user: public_User;
+    user: aibot_User;
     readonly [RelationKeys]?: 'user';
   };
-  export type public_User = {
+  export type aibot_User = {
     createdAt: CodecTypes['pg/timestamptz-string@1']['output'];
     email: CodecTypes['pg/text@1']['output'];
     id: CodecTypes['pg/int4@1']['output'];
     name: CodecTypes['pg/text@1']['output'] | null;
     passwordHash: CodecTypes['pg/text@1']['output'];
     updatedAt: CodecTypes['pg/timestamptz-string@1']['output'];
-    adapters: public_ChatAdapter[];
-    chatbots: public_Chatbot[];
-    mcpServers: public_McpServer[];
-    providers: public_Provider[];
-    sessions: public_Session[];
+    adapters: aibot_ChatAdapter[];
+    chatbots: aibot_Chatbot[];
+    mcpServers: aibot_McpServer[];
+    providers: aibot_Provider[];
+    sessions: aibot_Session[];
     readonly [RelationKeys]?: 'adapters' | 'chatbots' | 'mcpServers' | 'providers' | 'sessions';
   };
 }
 
 export declare const models: {
-  public: {
-    AgentDefinition: Models.public_AgentDefinition;
-    AgentMcpServer: Models.public_AgentMcpServer;
-    ChatAdapter: Models.public_ChatAdapter;
-    Chatbot: Models.public_Chatbot;
-    ChatbotAdapter: Models.public_ChatbotAdapter;
-    McpServer: Models.public_McpServer;
-    OAuthAuthentication: Models.public_OAuthAuthentication;
-    OAuthClient: Models.public_OAuthClient;
-    Provider: Models.public_Provider;
-    Session: Models.public_Session;
-    User: Models.public_User;
+  aibot: {
+    AgentDefinition: Models.aibot_AgentDefinition;
+    AgentMcpServer: Models.aibot_AgentMcpServer;
+    ChatAdapter: Models.aibot_ChatAdapter;
+    Chatbot: Models.aibot_Chatbot;
+    ChatbotAdapter: Models.aibot_ChatbotAdapter;
+    McpServer: Models.aibot_McpServer;
+    OAuthAuthentication: Models.aibot_OAuthAuthentication;
+    OAuthClient: Models.aibot_OAuthClient;
+    Provider: Models.aibot_Provider;
+    Session: Models.aibot_Session;
+    User: Models.aibot_User;
   };
 };
 
@@ -813,8 +815,8 @@ export type TypeMaps = TypeMapsType<
 type ContractBase = Omit<
   ContractType<{
     readonly namespaces: {
-      readonly public: {
-        readonly id: 'public';
+      readonly aibot: {
+        readonly id: 'aibot';
         readonly kind: 'postgres-schema';
         readonly entries: {
           readonly table: {
@@ -881,12 +883,12 @@ type ContractBase = Omit<
               foreignKeys: readonly [
                 {
                   readonly source: {
-                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly namespaceId: 'aibot' & NamespaceId;
                     readonly tableName: 'AgentDefinition';
                     readonly columns: readonly ['providerId'];
                   };
                   readonly target: {
-                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly namespaceId: 'aibot' & NamespaceId;
                     readonly tableName: 'Provider';
                     readonly columns: readonly ['id'];
                   };
@@ -934,24 +936,24 @@ type ContractBase = Omit<
               foreignKeys: readonly [
                 {
                   readonly source: {
-                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly namespaceId: 'aibot' & NamespaceId;
                     readonly tableName: 'AgentMcpServer';
                     readonly columns: readonly ['agentId'];
                   };
                   readonly target: {
-                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly namespaceId: 'aibot' & NamespaceId;
                     readonly tableName: 'AgentDefinition';
                     readonly columns: readonly ['id'];
                   };
                 },
                 {
                   readonly source: {
-                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly namespaceId: 'aibot' & NamespaceId;
                     readonly tableName: 'AgentMcpServer';
                     readonly columns: readonly ['mcpServerId'];
                   };
                   readonly target: {
-                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly namespaceId: 'aibot' & NamespaceId;
                     readonly tableName: 'McpServer';
                     readonly columns: readonly ['id'];
                   };
@@ -1027,12 +1029,12 @@ type ContractBase = Omit<
               foreignKeys: readonly [
                 {
                   readonly source: {
-                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly namespaceId: 'aibot' & NamespaceId;
                     readonly tableName: 'ChatAdapter';
                     readonly columns: readonly ['ownerId'];
                   };
                   readonly target: {
-                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly namespaceId: 'aibot' & NamespaceId;
                     readonly tableName: 'User';
                     readonly columns: readonly ['id'];
                   };
@@ -1112,24 +1114,24 @@ type ContractBase = Omit<
               foreignKeys: readonly [
                 {
                   readonly source: {
-                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly namespaceId: 'aibot' & NamespaceId;
                     readonly tableName: 'Chatbot';
                     readonly columns: readonly ['ownerId'];
                   };
                   readonly target: {
-                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly namespaceId: 'aibot' & NamespaceId;
                     readonly tableName: 'User';
                     readonly columns: readonly ['id'];
                   };
                 },
                 {
                   readonly source: {
-                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly namespaceId: 'aibot' & NamespaceId;
                     readonly tableName: 'Chatbot';
                     readonly columns: readonly ['agentId'];
                   };
                   readonly target: {
-                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly namespaceId: 'aibot' & NamespaceId;
                     readonly tableName: 'AgentDefinition';
                     readonly columns: readonly ['id'];
                   };
@@ -1177,24 +1179,24 @@ type ContractBase = Omit<
               foreignKeys: readonly [
                 {
                   readonly source: {
-                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly namespaceId: 'aibot' & NamespaceId;
                     readonly tableName: 'ChatbotAdapter';
                     readonly columns: readonly ['chatbotId'];
                   };
                   readonly target: {
-                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly namespaceId: 'aibot' & NamespaceId;
                     readonly tableName: 'Chatbot';
                     readonly columns: readonly ['id'];
                   };
                 },
                 {
                   readonly source: {
-                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly namespaceId: 'aibot' & NamespaceId;
                     readonly tableName: 'ChatbotAdapter';
                     readonly columns: readonly ['adapterId'];
                   };
                   readonly target: {
-                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly namespaceId: 'aibot' & NamespaceId;
                     readonly tableName: 'ChatAdapter';
                     readonly columns: readonly ['id'];
                   };
@@ -1276,12 +1278,12 @@ type ContractBase = Omit<
               foreignKeys: readonly [
                 {
                   readonly source: {
-                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly namespaceId: 'aibot' & NamespaceId;
                     readonly tableName: 'McpServer';
                     readonly columns: readonly ['ownerId'];
                   };
                   readonly target: {
-                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly namespaceId: 'aibot' & NamespaceId;
                     readonly tableName: 'User';
                     readonly columns: readonly ['id'];
                   };
@@ -1369,24 +1371,24 @@ type ContractBase = Omit<
               foreignKeys: readonly [
                 {
                   readonly source: {
-                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly namespaceId: 'aibot' & NamespaceId;
                     readonly tableName: 'OAuthAuthentication';
                     readonly columns: readonly ['ownerId'];
                   };
                   readonly target: {
-                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly namespaceId: 'aibot' & NamespaceId;
                     readonly tableName: 'User';
                     readonly columns: readonly ['id'];
                   };
                 },
                 {
                   readonly source: {
-                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly namespaceId: 'aibot' & NamespaceId;
                     readonly tableName: 'OAuthAuthentication';
                     readonly columns: readonly ['oauthId'];
                   };
                   readonly target: {
-                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly namespaceId: 'aibot' & NamespaceId;
                     readonly tableName: 'OAuthClient';
                     readonly columns: readonly ['id'];
                   };
@@ -1486,12 +1488,12 @@ type ContractBase = Omit<
               foreignKeys: readonly [
                 {
                   readonly source: {
-                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly namespaceId: 'aibot' & NamespaceId;
                     readonly tableName: 'OAuthClient';
                     readonly columns: readonly ['ownerId'];
                   };
                   readonly target: {
-                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly namespaceId: 'aibot' & NamespaceId;
                     readonly tableName: 'User';
                     readonly columns: readonly ['id'];
                   };
@@ -1567,12 +1569,12 @@ type ContractBase = Omit<
               foreignKeys: readonly [
                 {
                   readonly source: {
-                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly namespaceId: 'aibot' & NamespaceId;
                     readonly tableName: 'Provider';
                     readonly columns: readonly ['ownerId'];
                   };
                   readonly target: {
-                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly namespaceId: 'aibot' & NamespaceId;
                     readonly tableName: 'User';
                     readonly columns: readonly ['id'];
                   };
@@ -1636,12 +1638,12 @@ type ContractBase = Omit<
               foreignKeys: readonly [
                 {
                   readonly source: {
-                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly namespaceId: 'aibot' & NamespaceId;
                     readonly tableName: 'Session';
                     readonly columns: readonly ['userId'];
                   };
                   readonly target: {
-                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly namespaceId: 'aibot' & NamespaceId;
                     readonly tableName: 'User';
                     readonly columns: readonly ['id'];
                   };
@@ -1700,6 +1702,11 @@ type ContractBase = Omit<
           };
         };
       };
+      readonly public: {
+        readonly id: 'public';
+        readonly kind: 'postgres-schema';
+        readonly entries: { readonly table: {} };
+      };
     };
     readonly storageHash: StorageHash;
   }>,
@@ -1709,38 +1716,38 @@ type ContractBase = Omit<
   readonly targetFamily: 'sql';
   readonly roots: {
     readonly AgentDefinition: {
-      readonly namespace: 'public' & NamespaceId;
+      readonly namespace: 'aibot' & NamespaceId;
       readonly model: 'AgentDefinition';
     };
     readonly AgentMcpServer: {
-      readonly namespace: 'public' & NamespaceId;
+      readonly namespace: 'aibot' & NamespaceId;
       readonly model: 'AgentMcpServer';
     };
     readonly ChatAdapter: {
-      readonly namespace: 'public' & NamespaceId;
+      readonly namespace: 'aibot' & NamespaceId;
       readonly model: 'ChatAdapter';
     };
-    readonly Chatbot: { readonly namespace: 'public' & NamespaceId; readonly model: 'Chatbot' };
+    readonly Chatbot: { readonly namespace: 'aibot' & NamespaceId; readonly model: 'Chatbot' };
     readonly ChatbotAdapter: {
-      readonly namespace: 'public' & NamespaceId;
+      readonly namespace: 'aibot' & NamespaceId;
       readonly model: 'ChatbotAdapter';
     };
-    readonly McpServer: { readonly namespace: 'public' & NamespaceId; readonly model: 'McpServer' };
+    readonly McpServer: { readonly namespace: 'aibot' & NamespaceId; readonly model: 'McpServer' };
     readonly OAuthAuthentication: {
-      readonly namespace: 'public' & NamespaceId;
+      readonly namespace: 'aibot' & NamespaceId;
       readonly model: 'OAuthAuthentication';
     };
     readonly OAuthClient: {
-      readonly namespace: 'public' & NamespaceId;
+      readonly namespace: 'aibot' & NamespaceId;
       readonly model: 'OAuthClient';
     };
-    readonly Provider: { readonly namespace: 'public' & NamespaceId; readonly model: 'Provider' };
-    readonly Session: { readonly namespace: 'public' & NamespaceId; readonly model: 'Session' };
-    readonly User: { readonly namespace: 'public' & NamespaceId; readonly model: 'User' };
+    readonly Provider: { readonly namespace: 'aibot' & NamespaceId; readonly model: 'Provider' };
+    readonly Session: { readonly namespace: 'aibot' & NamespaceId; readonly model: 'Session' };
+    readonly User: { readonly namespace: 'aibot' & NamespaceId; readonly model: 'User' };
   };
   readonly domain: {
     readonly namespaces: {
-      readonly public: {
+      readonly aibot: {
         readonly models: {
           readonly AgentDefinition: {
             readonly fields: {
@@ -1782,7 +1789,7 @@ type ContractBase = Omit<
             readonly relations: {
               readonly chatbot: {
                 readonly to: {
-                  readonly namespace: 'public' & NamespaceId;
+                  readonly namespace: 'aibot' & NamespaceId;
                   readonly model: 'Chatbot';
                 };
                 readonly cardinality: '1:1';
@@ -1794,7 +1801,7 @@ type ContractBase = Omit<
               };
               readonly mcpServers: {
                 readonly to: {
-                  readonly namespace: 'public' & NamespaceId;
+                  readonly namespace: 'aibot' & NamespaceId;
                   readonly model: 'AgentMcpServer';
                 };
                 readonly cardinality: '1:N';
@@ -1805,7 +1812,7 @@ type ContractBase = Omit<
               };
               readonly provider: {
                 readonly to: {
-                  readonly namespace: 'public' & NamespaceId;
+                  readonly namespace: 'aibot' & NamespaceId;
                   readonly model: 'Provider';
                 };
                 readonly cardinality: 'N:1';
@@ -1818,7 +1825,7 @@ type ContractBase = Omit<
             };
             readonly storage: {
               readonly table: 'AgentDefinition';
-              readonly namespaceId: 'public';
+              readonly namespaceId: 'aibot';
               readonly fields: {
                 readonly createdAt: { readonly column: 'createdAt' };
                 readonly id: { readonly column: 'id' };
@@ -1851,7 +1858,7 @@ type ContractBase = Omit<
             readonly relations: {
               readonly agent: {
                 readonly to: {
-                  readonly namespace: 'public' & NamespaceId;
+                  readonly namespace: 'aibot' & NamespaceId;
                   readonly model: 'AgentDefinition';
                 };
                 readonly cardinality: 'N:1';
@@ -1863,7 +1870,7 @@ type ContractBase = Omit<
               };
               readonly mcpServer: {
                 readonly to: {
-                  readonly namespace: 'public' & NamespaceId;
+                  readonly namespace: 'aibot' & NamespaceId;
                   readonly model: 'McpServer';
                 };
                 readonly cardinality: 'N:1';
@@ -1876,7 +1883,7 @@ type ContractBase = Omit<
             };
             readonly storage: {
               readonly table: 'AgentMcpServer';
-              readonly namespaceId: 'public';
+              readonly namespaceId: 'aibot';
               readonly fields: {
                 readonly agentId: { readonly column: 'agentId' };
                 readonly createdAt: { readonly column: 'createdAt' };
@@ -1924,7 +1931,7 @@ type ContractBase = Omit<
             readonly relations: {
               readonly chatbots: {
                 readonly to: {
-                  readonly namespace: 'public' & NamespaceId;
+                  readonly namespace: 'aibot' & NamespaceId;
                   readonly model: 'ChatbotAdapter';
                 };
                 readonly cardinality: '1:N';
@@ -1934,7 +1941,7 @@ type ContractBase = Omit<
                 };
               };
               readonly owner: {
-                readonly to: { readonly namespace: 'public' & NamespaceId; readonly model: 'User' };
+                readonly to: { readonly namespace: 'aibot' & NamespaceId; readonly model: 'User' };
                 readonly cardinality: 'N:1';
                 readonly nullable: false;
                 readonly on: {
@@ -1945,7 +1952,7 @@ type ContractBase = Omit<
             };
             readonly storage: {
               readonly table: 'ChatAdapter';
-              readonly namespaceId: 'public';
+              readonly namespaceId: 'aibot';
               readonly fields: {
                 readonly config: { readonly column: 'config' };
                 readonly createdAt: { readonly column: 'createdAt' };
@@ -2001,7 +2008,7 @@ type ContractBase = Omit<
             readonly relations: {
               readonly adapters: {
                 readonly to: {
-                  readonly namespace: 'public' & NamespaceId;
+                  readonly namespace: 'aibot' & NamespaceId;
                   readonly model: 'ChatbotAdapter';
                 };
                 readonly cardinality: '1:N';
@@ -2012,7 +2019,7 @@ type ContractBase = Omit<
               };
               readonly agent: {
                 readonly to: {
-                  readonly namespace: 'public' & NamespaceId;
+                  readonly namespace: 'aibot' & NamespaceId;
                   readonly model: 'AgentDefinition';
                 };
                 readonly cardinality: 'N:1';
@@ -2023,7 +2030,7 @@ type ContractBase = Omit<
                 };
               };
               readonly owner: {
-                readonly to: { readonly namespace: 'public' & NamespaceId; readonly model: 'User' };
+                readonly to: { readonly namespace: 'aibot' & NamespaceId; readonly model: 'User' };
                 readonly cardinality: 'N:1';
                 readonly nullable: false;
                 readonly on: {
@@ -2034,7 +2041,7 @@ type ContractBase = Omit<
             };
             readonly storage: {
               readonly table: 'Chatbot';
-              readonly namespaceId: 'public';
+              readonly namespaceId: 'aibot';
               readonly fields: {
                 readonly agentId: { readonly column: 'agentId' };
                 readonly createdAt: { readonly column: 'createdAt' };
@@ -2068,7 +2075,7 @@ type ContractBase = Omit<
             readonly relations: {
               readonly adapter: {
                 readonly to: {
-                  readonly namespace: 'public' & NamespaceId;
+                  readonly namespace: 'aibot' & NamespaceId;
                   readonly model: 'ChatAdapter';
                 };
                 readonly cardinality: 'N:1';
@@ -2080,7 +2087,7 @@ type ContractBase = Omit<
               };
               readonly chatbot: {
                 readonly to: {
-                  readonly namespace: 'public' & NamespaceId;
+                  readonly namespace: 'aibot' & NamespaceId;
                   readonly model: 'Chatbot';
                 };
                 readonly cardinality: 'N:1';
@@ -2093,7 +2100,7 @@ type ContractBase = Omit<
             };
             readonly storage: {
               readonly table: 'ChatbotAdapter';
-              readonly namespaceId: 'public';
+              readonly namespaceId: 'aibot';
               readonly fields: {
                 readonly adapterId: { readonly column: 'adapterId' };
                 readonly chatbotId: { readonly column: 'chatbotId' };
@@ -2149,7 +2156,7 @@ type ContractBase = Omit<
             readonly relations: {
               readonly agents: {
                 readonly to: {
-                  readonly namespace: 'public' & NamespaceId;
+                  readonly namespace: 'aibot' & NamespaceId;
                   readonly model: 'AgentMcpServer';
                 };
                 readonly cardinality: '1:N';
@@ -2159,7 +2166,7 @@ type ContractBase = Omit<
                 };
               };
               readonly owner: {
-                readonly to: { readonly namespace: 'public' & NamespaceId; readonly model: 'User' };
+                readonly to: { readonly namespace: 'aibot' & NamespaceId; readonly model: 'User' };
                 readonly cardinality: 'N:1';
                 readonly nullable: false;
                 readonly on: {
@@ -2170,7 +2177,7 @@ type ContractBase = Omit<
             };
             readonly storage: {
               readonly table: 'McpServer';
-              readonly namespaceId: 'public';
+              readonly namespaceId: 'aibot';
               readonly fields: {
                 readonly createdAt: { readonly column: 'createdAt' };
                 readonly description: { readonly column: 'description' };
@@ -2235,7 +2242,7 @@ type ContractBase = Omit<
             readonly relations: {
               readonly oauth: {
                 readonly to: {
-                  readonly namespace: 'public' & NamespaceId;
+                  readonly namespace: 'aibot' & NamespaceId;
                   readonly model: 'OAuthClient';
                 };
                 readonly cardinality: 'N:1';
@@ -2246,7 +2253,7 @@ type ContractBase = Omit<
                 };
               };
               readonly owner: {
-                readonly to: { readonly namespace: 'public' & NamespaceId; readonly model: 'User' };
+                readonly to: { readonly namespace: 'aibot' & NamespaceId; readonly model: 'User' };
                 readonly cardinality: 'N:1';
                 readonly nullable: false;
                 readonly on: {
@@ -2257,7 +2264,7 @@ type ContractBase = Omit<
             };
             readonly storage: {
               readonly table: 'OAuthAuthentication';
-              readonly namespaceId: 'public';
+              readonly namespaceId: 'aibot';
               readonly fields: {
                 readonly accessToken: { readonly column: 'accessToken' };
                 readonly createdAt: { readonly column: 'createdAt' };
@@ -2332,7 +2339,7 @@ type ContractBase = Omit<
             readonly relations: {
               readonly authentications: {
                 readonly to: {
-                  readonly namespace: 'public' & NamespaceId;
+                  readonly namespace: 'aibot' & NamespaceId;
                   readonly model: 'OAuthAuthentication';
                 };
                 readonly cardinality: '1:N';
@@ -2342,7 +2349,7 @@ type ContractBase = Omit<
                 };
               };
               readonly owner: {
-                readonly to: { readonly namespace: 'public' & NamespaceId; readonly model: 'User' };
+                readonly to: { readonly namespace: 'aibot' & NamespaceId; readonly model: 'User' };
                 readonly cardinality: 'N:1';
                 readonly nullable: false;
                 readonly on: {
@@ -2353,7 +2360,7 @@ type ContractBase = Omit<
             };
             readonly storage: {
               readonly table: 'OAuthClient';
-              readonly namespaceId: 'public';
+              readonly namespaceId: 'aibot';
               readonly fields: {
                 readonly authorizationEndpoint: { readonly column: 'authorizationEndpoint' };
                 readonly clientId: { readonly column: 'clientId' };
@@ -2414,7 +2421,7 @@ type ContractBase = Omit<
             readonly relations: {
               readonly agents: {
                 readonly to: {
-                  readonly namespace: 'public' & NamespaceId;
+                  readonly namespace: 'aibot' & NamespaceId;
                   readonly model: 'AgentDefinition';
                 };
                 readonly cardinality: '1:N';
@@ -2424,7 +2431,7 @@ type ContractBase = Omit<
                 };
               };
               readonly owner: {
-                readonly to: { readonly namespace: 'public' & NamespaceId; readonly model: 'User' };
+                readonly to: { readonly namespace: 'aibot' & NamespaceId; readonly model: 'User' };
                 readonly cardinality: 'N:1';
                 readonly nullable: false;
                 readonly on: {
@@ -2435,7 +2442,7 @@ type ContractBase = Omit<
             };
             readonly storage: {
               readonly table: 'Provider';
-              readonly namespaceId: 'public';
+              readonly namespaceId: 'aibot';
               readonly fields: {
                 readonly args: { readonly column: 'args' };
                 readonly createdAt: { readonly column: 'createdAt' };
@@ -2479,7 +2486,7 @@ type ContractBase = Omit<
             };
             readonly relations: {
               readonly user: {
-                readonly to: { readonly namespace: 'public' & NamespaceId; readonly model: 'User' };
+                readonly to: { readonly namespace: 'aibot' & NamespaceId; readonly model: 'User' };
                 readonly cardinality: 'N:1';
                 readonly nullable: false;
                 readonly on: {
@@ -2490,7 +2497,7 @@ type ContractBase = Omit<
             };
             readonly storage: {
               readonly table: 'Session';
-              readonly namespaceId: 'public';
+              readonly namespaceId: 'aibot';
               readonly fields: {
                 readonly createdAt: { readonly column: 'createdAt' };
                 readonly expiresAt: { readonly column: 'expiresAt' };
@@ -2536,7 +2543,7 @@ type ContractBase = Omit<
             readonly relations: {
               readonly adapters: {
                 readonly to: {
-                  readonly namespace: 'public' & NamespaceId;
+                  readonly namespace: 'aibot' & NamespaceId;
                   readonly model: 'ChatAdapter';
                 };
                 readonly cardinality: '1:N';
@@ -2547,7 +2554,7 @@ type ContractBase = Omit<
               };
               readonly chatbots: {
                 readonly to: {
-                  readonly namespace: 'public' & NamespaceId;
+                  readonly namespace: 'aibot' & NamespaceId;
                   readonly model: 'Chatbot';
                 };
                 readonly cardinality: '1:N';
@@ -2558,7 +2565,7 @@ type ContractBase = Omit<
               };
               readonly mcpServers: {
                 readonly to: {
-                  readonly namespace: 'public' & NamespaceId;
+                  readonly namespace: 'aibot' & NamespaceId;
                   readonly model: 'McpServer';
                 };
                 readonly cardinality: '1:N';
@@ -2569,7 +2576,7 @@ type ContractBase = Omit<
               };
               readonly providers: {
                 readonly to: {
-                  readonly namespace: 'public' & NamespaceId;
+                  readonly namespace: 'aibot' & NamespaceId;
                   readonly model: 'Provider';
                 };
                 readonly cardinality: '1:N';
@@ -2580,7 +2587,7 @@ type ContractBase = Omit<
               };
               readonly sessions: {
                 readonly to: {
-                  readonly namespace: 'public' & NamespaceId;
+                  readonly namespace: 'aibot' & NamespaceId;
                   readonly model: 'Session';
                 };
                 readonly cardinality: '1:N';
@@ -2592,7 +2599,7 @@ type ContractBase = Omit<
             };
             readonly storage: {
               readonly table: 'User';
-              readonly namespaceId: 'public';
+              readonly namespaceId: 'aibot';
               readonly fields: {
                 readonly createdAt: { readonly column: 'createdAt' };
                 readonly email: { readonly column: 'email' };
@@ -2645,7 +2652,7 @@ type ContractBase = Omit<
           readonly ref: {
             readonly entry: 'AgentDefinition';
             readonly field: 'updatedAt';
-            readonly namespace: 'public';
+            readonly namespace: 'aibot';
           };
         },
         {
@@ -2654,7 +2661,7 @@ type ContractBase = Omit<
           readonly ref: {
             readonly entry: 'ChatAdapter';
             readonly field: 'updatedAt';
-            readonly namespace: 'public';
+            readonly namespace: 'aibot';
           };
         },
         {
@@ -2663,7 +2670,7 @@ type ContractBase = Omit<
           readonly ref: {
             readonly entry: 'Chatbot';
             readonly field: 'updatedAt';
-            readonly namespace: 'public';
+            readonly namespace: 'aibot';
           };
         },
         {
@@ -2672,7 +2679,7 @@ type ContractBase = Omit<
           readonly ref: {
             readonly entry: 'McpServer';
             readonly field: 'updatedAt';
-            readonly namespace: 'public';
+            readonly namespace: 'aibot';
           };
         },
         {
@@ -2681,7 +2688,7 @@ type ContractBase = Omit<
           readonly ref: {
             readonly entry: 'OAuthAuthentication';
             readonly field: 'updatedAt';
-            readonly namespace: 'public';
+            readonly namespace: 'aibot';
           };
         },
         {
@@ -2690,7 +2697,7 @@ type ContractBase = Omit<
           readonly ref: {
             readonly entry: 'OAuthClient';
             readonly field: 'updatedAt';
-            readonly namespace: 'public';
+            readonly namespace: 'aibot';
           };
         },
         {
@@ -2699,7 +2706,7 @@ type ContractBase = Omit<
           readonly ref: {
             readonly entry: 'Provider';
             readonly field: 'updatedAt';
-            readonly namespace: 'public';
+            readonly namespace: 'aibot';
           };
         },
         {
@@ -2708,7 +2715,7 @@ type ContractBase = Omit<
           readonly ref: {
             readonly entry: 'User';
             readonly field: 'updatedAt';
-            readonly namespace: 'public';
+            readonly namespace: 'aibot';
           };
         },
       ];

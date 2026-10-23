@@ -3,18 +3,18 @@ import type { AuthUser } from "../auth";
 import { idList, jsonb, record } from "../utils";
 
 export async function listAgents(user: AuthUser) {
-  const agents = await db.orm.public.AgentDefinition.include(
+  const agents = await db.orm.aibot.AgentDefinition.include(
     "mcpServers",
     (links) => links.include("mcpServer"),
   )
     .include("chatbot")
     .include("provider")
     .all();
-  const ownedBots = await db.orm.public.Chatbot.where({
+  const ownedBots = await db.orm.aibot.Chatbot.where({
     ownerId: user.id,
   }).all();
   const ownedAgentIds = new Set(ownedBots.map((bot) => bot.agentId));
-  const servers = await db.orm.public.McpServer.where({
+  const servers = await db.orm.aibot.McpServer.where({
     ownerId: user.id,
   }).all();
   const availableServerIds = new Set(servers.map((server) => server.id));
@@ -47,7 +47,7 @@ export async function listAgents(user: AuthUser) {
       value: String(server.id),
     })),
     providerOptions: (
-      await db.orm.public.Provider.where({ ownerId: user.id }).all()
+      await db.orm.aibot.Provider.where({ ownerId: user.id }).all()
     ).map((provider) => ({
       label: `${provider.name} (${provider.providerName})`,
       value: String(provider.id),
@@ -69,7 +69,7 @@ export async function saveAgent(
   if (!Number.isInteger(providerId) || !modelId)
     return { error: "プロバイダーとモデルIDを入力してください。" };
   if (
-    !(await db.orm.public.Provider.first({
+    !(await db.orm.aibot.Provider.first({
       id: providerId,
       ownerId: user.id,
     }))
@@ -83,24 +83,24 @@ export async function saveAgent(
   } catch {
     return { error: "オプションJSONの形式を確認してください。" };
   }
-  const servers = await db.orm.public.McpServer.where({
+  const servers = await db.orm.aibot.McpServer.where({
     ownerId: user.id,
   }).all();
-  const ownedBots = await db.orm.public.Chatbot.where({
+  const ownedBots = await db.orm.aibot.Chatbot.where({
     ownerId: user.id,
   }).all();
   const allowedIds = new Set(servers.map((server) => server.id));
   if (serverIds.some((serverId) => !allowedIds.has(serverId)))
     return { error: "選択したMCPサーバーを使用できません。" };
   if (id !== null) {
-    const existing = await db.orm.public.AgentDefinition.where({ id })
+    const existing = await db.orm.aibot.AgentDefinition.where({ id })
       .include("provider")
       .first();
     if (!existing || existing.provider.ownerId !== user.id)
       return { error: "エージェントが見つかりません。" };
   }
   if (id !== null) {
-    const assignedBot = await db.orm.public.Chatbot.first({ agentId: id });
+    const assignedBot = await db.orm.aibot.Chatbot.first({ agentId: id });
     if (assignedBot && !ownedBots.some((bot) => bot.id === assignedBot.id))
       return { error: "このエージェントを編集する権限がありません。" };
   }
@@ -137,22 +137,22 @@ export async function saveAgent(
 }
 
 export async function deleteAgent(user: AuthUser, id: number) {
-  const agent = await db.orm.public.AgentDefinition.where({ id })
+  const agent = await db.orm.aibot.AgentDefinition.where({ id })
     .include("provider")
     .first();
   if (!agent || agent.provider.ownerId !== user.id) return false;
-  const bot = await db.orm.public.Chatbot.first({ agentId: id });
+  const bot = await db.orm.aibot.Chatbot.first({ agentId: id });
   if (bot) return false;
-  const ownServers = await db.orm.public.McpServer.where({
+  const ownServers = await db.orm.aibot.McpServer.where({
     ownerId: user.id,
   }).all();
-  const links = await db.orm.public.AgentMcpServer.where({ agentId: id }).all();
+  const links = await db.orm.aibot.AgentMcpServer.where({ agentId: id }).all();
   if (
     links.some(
       (link) => !ownServers.some((server) => server.id === link.mcpServerId),
     )
   )
     return false;
-  await db.orm.public.AgentDefinition.where({ id }).delete();
+  await db.orm.aibot.AgentDefinition.where({ id }).delete();
   return true;
 }

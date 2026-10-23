@@ -27,7 +27,7 @@ Every model you define in your contract can be queried from your app. Your edito
 ```typescript
 import { db } from "./src/prisma/db";
 
-const user = await db.orm.public.User.where({
+const user = await db.orm.aibot.User.where({
   email: "alice@example.com",
 }).first();
 

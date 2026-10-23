@@ -157,7 +157,7 @@ export async function startOAuthAuthorization(
   const existing =
     authenticationId === null
       ? null
-      : await db.orm.public.OAuthAuthentication.first({
+      : await db.orm.aibot.OAuthAuthentication.first({
           id: authenticationId,
           ownerId: user.id,
         });
@@ -166,7 +166,7 @@ export async function startOAuthAuthorization(
   const oauthId = existing?.oauthId ?? selectedClientId;
   if (!Number.isInteger(oauthId))
     return { error: "OAuthクライアントを選択してください。" };
-  const oauthClient = await db.orm.public.OAuthClient.first({
+  const oauthClient = await db.orm.aibot.OAuthClient.first({
     id: oauthId,
     ownerId: user.id,
   });
@@ -234,7 +234,7 @@ export async function completeOAuthAuthorization(
     });
 
   try {
-    const oauthClient = await db.orm.public.OAuthClient.first({
+    const oauthClient = await db.orm.aibot.OAuthClient.first({
       id: flow.oauthId,
       ownerId: user.id,
     });
@@ -254,7 +254,7 @@ export async function completeOAuthAuthorization(
       );
 
     const existing = flow.authenticationId
-      ? await db.orm.public.OAuthAuthentication.first({
+      ? await db.orm.aibot.OAuthAuthentication.first({
           id: flow.authenticationId,
           ownerId: user.id,
         })
@@ -275,12 +275,12 @@ export async function completeOAuthAuthorization(
       expiresAt,
     };
     if (existing)
-      await db.orm.public.OAuthAuthentication.where({
+      await db.orm.aibot.OAuthAuthentication.where({
         id: existing.id,
         ownerId: user.id,
       }).update(saved);
     else
-      await db.orm.public.OAuthAuthentication.create({
+      await db.orm.aibot.OAuthAuthentication.create({
         ...saved,
         ownerId: user.id,
       });

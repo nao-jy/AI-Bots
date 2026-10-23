@@ -4,7 +4,7 @@ import { decryptAdapterEnvs, encryptStringMap, jsonb, record } from "../utils";
 import { toDisplayNameAdapter } from "../features/chatAdapter";
 
 export async function listAdapters(user: AuthUser) {
-  const adapters = await db.orm.public.ChatAdapter.where({
+  const adapters = await db.orm.aibot.ChatAdapter.where({
     ownerId: user.id,
   }).all();
   return {
@@ -48,7 +48,7 @@ export async function saveAdapter(
     return { error: "環境変数の形式を確認してください。" };
   }
   if (id !== null) {
-    if (!(await db.orm.public.ChatAdapter.first({ id, ownerId: user.id })))
+    if (!(await db.orm.aibot.ChatAdapter.first({ id, ownerId: user.id })))
       return { error: "アダプタが見つかりません。" };
   }
   let encryptedConfig: ReturnType<typeof encryptStringMap>;
@@ -64,14 +64,14 @@ export async function saveAdapter(
   }
   const storedEnvs = jsonb(encryptedConfig);
   if (id === null) {
-    await db.orm.public.ChatAdapter.create({
+    await db.orm.aibot.ChatAdapter.create({
       name,
       platform,
       ownerId: user.id,
       config: storedEnvs,
     });
   } else {
-    await db.orm.public.ChatAdapter.where({ id, ownerId: user.id }).update({
+    await db.orm.aibot.ChatAdapter.where({ id, ownerId: user.id }).update({
       name,
       platform,
       config: storedEnvs,
@@ -81,8 +81,8 @@ export async function saveAdapter(
 }
 
 export async function deleteAdapter(user: AuthUser, id: number) {
-  if (!(await db.orm.public.ChatAdapter.first({ id, ownerId: user.id })))
+  if (!(await db.orm.aibot.ChatAdapter.first({ id, ownerId: user.id })))
     return false;
-  await db.orm.public.ChatAdapter.where({ id, ownerId: user.id }).delete();
+  await db.orm.aibot.ChatAdapter.where({ id, ownerId: user.id }).delete();
   return true;
 }

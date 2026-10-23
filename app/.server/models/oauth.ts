@@ -12,7 +12,7 @@ function validHttpUrl(value: string) {
 }
 
 export async function listOAuthClients(user: AuthUser) {
-  const clients = await db.orm.public.OAuthClient.where({ ownerId: user.id })
+  const clients = await db.orm.aibot.OAuthClient.where({ ownerId: user.id })
     .orderBy((client) => client.updatedAt.desc())
     .all();
   return {
@@ -69,7 +69,7 @@ export async function saveOAuthClient(
   const existing =
     id === null
       ? null
-      : await db.orm.public.OAuthClient.first({ id, ownerId: user.id });
+      : await db.orm.aibot.OAuthClient.first({ id, ownerId: user.id });
   if (id !== null && !existing)
     return { error: "OAuthクライアントが見つかりません。" };
 
@@ -98,27 +98,27 @@ export async function saveOAuthClient(
     scopes,
   };
   if (id === null)
-    await db.orm.public.OAuthClient.create({ ...saved, ownerId: user.id });
+    await db.orm.aibot.OAuthClient.create({ ...saved, ownerId: user.id });
   else
-    await db.orm.public.OAuthClient.where({ id, ownerId: user.id }).update(
+    await db.orm.aibot.OAuthClient.where({ id, ownerId: user.id }).update(
       saved,
     );
   return { ok: true };
 }
 
 export async function deleteOAuthClient(user: AuthUser, id: number) {
-  if (!(await db.orm.public.OAuthClient.first({ id, ownerId: user.id })))
+  if (!(await db.orm.aibot.OAuthClient.first({ id, ownerId: user.id })))
     return false;
-  await db.orm.public.OAuthClient.where({ id, ownerId: user.id }).delete();
+  await db.orm.aibot.OAuthClient.where({ id, ownerId: user.id }).delete();
   return true;
 }
 
 export async function listOAuthAuthentications(user: AuthUser) {
   const [authentications, clients] = await Promise.all([
-    db.orm.public.OAuthAuthentication.where({ ownerId: user.id })
+    db.orm.aibot.OAuthAuthentication.where({ ownerId: user.id })
       .orderBy((authentication) => authentication.updatedAt.desc())
       .all(),
-    db.orm.public.OAuthClient.where({ ownerId: user.id }).all(),
+    db.orm.aibot.OAuthClient.where({ ownerId: user.id }).all(),
   ]);
   const clientsById = new Map(
     clients.map((client) => [client.id, client.name]),
@@ -151,11 +151,9 @@ export async function renameOAuthAuthentication(
 ) {
   const name = String(values.get("name") ?? "").trim();
   if (!name) return { error: "認証情報名を入力してください。" };
-  if (
-    !(await db.orm.public.OAuthAuthentication.first({ id, ownerId: user.id }))
-  )
+  if (!(await db.orm.aibot.OAuthAuthentication.first({ id, ownerId: user.id })))
     return { error: "OAuth認証情報が見つかりません。" };
-  await db.orm.public.OAuthAuthentication.where({
+  await db.orm.aibot.OAuthAuthentication.where({
     id,
     ownerId: user.id,
   }).update({ name });
@@ -163,11 +161,9 @@ export async function renameOAuthAuthentication(
 }
 
 export async function deleteOAuthAuthentication(user: AuthUser, id: number) {
-  if (
-    !(await db.orm.public.OAuthAuthentication.first({ id, ownerId: user.id }))
-  )
+  if (!(await db.orm.aibot.OAuthAuthentication.first({ id, ownerId: user.id })))
     return false;
-  await db.orm.public.OAuthAuthentication.where({
+  await db.orm.aibot.OAuthAuthentication.where({
     id,
     ownerId: user.id,
   }).delete();

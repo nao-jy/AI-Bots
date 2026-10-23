@@ -16,7 +16,7 @@ const transports: Record<string, string> = {
 };
 
 export async function listMcpServers(user: AuthUser) {
-  const servers = await db.orm.public.McpServer.where({ ownerId: user.id })
+  const servers = await db.orm.aibot.McpServer.where({ ownerId: user.id })
     .orderBy((server) => server.updatedAt.desc())
     .all();
   return {
@@ -59,7 +59,7 @@ export async function saveMcpServer(
   }
   if (
     id !== null &&
-    !(await db.orm.public.McpServer.first({ id, ownerId: user.id }))
+    !(await db.orm.aibot.McpServer.first({ id, ownerId: user.id }))
   )
     return { error: "MCPサーバーが見つかりません。" };
   let encryptedHeaders: ReturnType<typeof encryptStringMap>;
@@ -81,15 +81,15 @@ export async function saveMcpServer(
     headers: jsonb(encryptedHeaders),
   };
   if (id === null)
-    await db.orm.public.McpServer.create({ ...saved, ownerId: user.id });
+    await db.orm.aibot.McpServer.create({ ...saved, ownerId: user.id });
   else
-    await db.orm.public.McpServer.where({ id, ownerId: user.id }).update(saved);
+    await db.orm.aibot.McpServer.where({ id, ownerId: user.id }).update(saved);
   return { ok: true };
 }
 
 export async function deleteMcpServer(user: AuthUser, id: number) {
-  if (!(await db.orm.public.McpServer.first({ id, ownerId: user.id })))
+  if (!(await db.orm.aibot.McpServer.first({ id, ownerId: user.id })))
     return false;
-  await db.orm.public.McpServer.where({ id, ownerId: user.id }).delete();
+  await db.orm.aibot.McpServer.where({ id, ownerId: user.id }).delete();
   return true;
 }

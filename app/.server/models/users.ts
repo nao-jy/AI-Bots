@@ -3,7 +3,7 @@ import { hashPassword } from "../auth";
 import { record } from "../utils";
 
 export async function listUsers() {
-  const users = await db.orm.public.User.orderBy((user) =>
+  const users = await db.orm.aibot.User.orderBy((user) =>
     user.createdAt.asc(),
   ).all();
   return users.map((user) =>
@@ -25,17 +25,17 @@ export async function saveUser(id: number | null, values: FormData) {
   if (id === null) {
     if (password.length < 12)
       return { error: "パスワードは12文字以上で入力してください。" };
-    await db.orm.public.User.create({
+    await db.orm.aibot.User.create({
       name,
       email,
       passwordHash: await hashPassword(password),
     });
   } else {
-    if (!(await db.orm.public.User.first({ id })))
+    if (!(await db.orm.aibot.User.first({ id })))
       return { error: "ユーザーが見つかりません。" };
     if (password && password.length < 12)
       return { error: "パスワードは12文字以上で入力してください。" };
-    await db.orm.public.User.where({ id }).update({
+    await db.orm.aibot.User.where({ id }).update({
       name,
       email,
       ...(password ? { passwordHash: await hashPassword(password) } : {}),
@@ -46,7 +46,7 @@ export async function saveUser(id: number | null, values: FormData) {
 
 export async function deleteUser(id: number, currentUserId: number) {
   if (id === currentUserId) return false;
-  if (!(await db.orm.public.User.first({ id }))) return false;
-  await db.orm.public.User.where({ id }).delete();
+  if (!(await db.orm.aibot.User.first({ id }))) return false;
+  await db.orm.aibot.User.where({ id }).delete();
   return true;
 }

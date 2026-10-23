@@ -44,7 +44,7 @@ export function clearSessionCookie() {
 export async function createSession(userId: number) {
   const token = randomBytes(32).toString("base64url");
   const expiresAt = new Date(Date.now() + SESSION_TTL_MS);
-  await db.orm.public.Session.create({
+  await db.orm.aibot.Session.create({
     tokenHash: hashSessionToken(token),
     userId,
     expiresAt: expiresAt.toISOString(),
@@ -55,7 +55,7 @@ export async function createSession(userId: number) {
 export async function deleteSession(request: Request) {
   const token = getSessionToken(request);
   if (!token) return;
-  await db.orm.public.Session.where({
+  await db.orm.aibot.Session.where({
     tokenHash: hashSessionToken(token),
   }).delete();
 }
@@ -66,12 +66,12 @@ export async function getSessionUser(
   const token = getSessionToken(request);
   if (!token) return null;
 
-  const session = await db.orm.public.Session.include("user").first({
+  const session = await db.orm.aibot.Session.include("user").first({
     tokenHash: hashSessionToken(token),
   });
   if (!session) return null;
   if (Date.parse(session.expiresAt) <= Date.now()) {
-    await db.orm.public.Session.where({ id: session.id }).delete();
+    await db.orm.aibot.Session.where({ id: session.id }).delete();
     return null;
   }
 

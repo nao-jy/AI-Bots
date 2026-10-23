@@ -3,15 +3,15 @@ import type { AuthUser } from "../auth";
 import { idList, record } from "../utils";
 
 export async function listBots(user: AuthUser) {
-  const bots = await db.orm.public.Chatbot.where({ ownerId: user.id })
+  const bots = await db.orm.aibot.Chatbot.where({ ownerId: user.id })
     .include("agent")
     .include("adapters", (links) => links.include("adapter"))
     .orderBy((bot) => bot.updatedAt.desc())
     .all();
-  const agents = await db.orm.public.AgentDefinition.include("chatbot")
+  const agents = await db.orm.aibot.AgentDefinition.include("chatbot")
     .include("provider")
     .all();
-  const adapters = await db.orm.public.ChatAdapter.where({
+  const adapters = await db.orm.aibot.ChatAdapter.where({
     ownerId: user.id,
   }).all();
   return {
@@ -57,21 +57,21 @@ export async function saveBot(
   if (agentId !== null && !Number.isInteger(agentId))
     return { error: "エージェントを選択してください。" };
   if (agentId !== null) {
-    const agent = await db.orm.public.AgentDefinition.where({ id: agentId })
+    const agent = await db.orm.aibot.AgentDefinition.where({ id: agentId })
       .include("provider")
       .first();
     if (!agent || agent.provider.ownerId !== user.id)
       return { error: "選択したエージェントが見つかりません。" };
   }
   if (agentId !== null) {
-    const assignedBot = await db.orm.public.Chatbot.first({ agentId });
+    const assignedBot = await db.orm.aibot.Chatbot.first({ agentId });
     if (
       assignedBot &&
       (assignedBot.ownerId !== user.id || assignedBot.id !== id)
     )
       return { error: "選択したエージェントは別のボットで使用されています。" };
   }
-  const adapters = await db.orm.public.ChatAdapter.where({
+  const adapters = await db.orm.aibot.ChatAdapter.where({
     ownerId: user.id,
   }).all();
   const allowedAdapterIds = new Set(adapters.map((adapter) => adapter.id));
@@ -80,7 +80,7 @@ export async function saveBot(
   }
   if (
     id !== null &&
-    !(await db.orm.public.Chatbot.first({ id, ownerId: user.id }))
+    !(await db.orm.aibot.Chatbot.first({ id, ownerId: user.id }))
   )
     return { error: "ボットが見つかりません。" };
 
@@ -115,9 +115,9 @@ export async function saveBot(
 }
 
 export async function deleteBot(user: AuthUser, id: number) {
-  const bot = await db.orm.public.Chatbot.first({ id, ownerId: user.id });
+  const bot = await db.orm.aibot.Chatbot.first({ id, ownerId: user.id });
   if (!bot) return false;
-  await db.orm.public.Chatbot.where({ id, ownerId: user.id }).delete();
+  await db.orm.aibot.Chatbot.where({ id, ownerId: user.id }).delete();
   return true;
 }
 
@@ -126,9 +126,9 @@ export async function setBotEnabled(
   id: number,
   isEnabled: boolean,
 ) {
-  if (!(await db.orm.public.Chatbot.first({ id, ownerId: user.id })))
+  if (!(await db.orm.aibot.Chatbot.first({ id, ownerId: user.id })))
     return false;
-  await db.orm.public.Chatbot.where({ id, ownerId: user.id }).update({
+  await db.orm.aibot.Chatbot.where({ id, ownerId: user.id }).update({
     isEnabled,
   });
   return true;
