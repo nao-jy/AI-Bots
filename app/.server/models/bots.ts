@@ -2,7 +2,7 @@ import { db } from "./db";
 import type { AuthUser } from "../auth";
 import { generatePublicId, idList, record } from "../utils";
 
-export async function listBots(user: AuthUser) {
+export async function listBots(user: AuthUser, publicOrigin: string) {
   const bots = await db.orm.aibot.Chatbot.where({ ownerId: user.id })
     .include("agent")
     .include("adapters", (links) => links.include("adapter"))
@@ -24,6 +24,15 @@ export async function listBots(user: AuthUser) {
         adapterIds: bot.adapters.map((link) => link.adapterId).join(","),
         adapters:
           bot.adapters.map((link) => link.adapter.name).join("、") || "—",
+        webhooks: JSON.stringify(
+          bot.adapters.map((link) => ({
+            adapterName: link.adapter.name,
+            url: new URL(
+              `/api/webhooks/${bot.publicId}/${link.adapter.publicId}`,
+              publicOrigin,
+            ).toString(),
+          })),
+        ),
         status: bot.isEnabled ? "稼働中" : "停止中",
       }),
     ),

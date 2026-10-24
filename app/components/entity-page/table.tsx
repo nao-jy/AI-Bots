@@ -1,6 +1,17 @@
 import { useState } from "react";
-import { ActionIcon, Badge, Group, Switch, Table, TextInput } from "@mantine/core";
 import {
+  ActionIcon,
+  Badge,
+  CopyButton,
+  Group,
+  Switch,
+  Table,
+  TextInput,
+  Tooltip,
+} from "@mantine/core";
+import {
+  CheckIcon,
+  CopySimpleIcon,
   MagnifyingGlassIcon,
   PencilSimpleIcon,
   TrashIcon,
@@ -172,6 +183,55 @@ function EntityCell({
   value: string | number;
   onStatusChange: (enabled: boolean) => void;
 }) {
+  if (columnKey === "webhooks" && page.icon === "bots") {
+    let endpoints: { adapterName: string; url: string }[] = [];
+    try {
+      const parsed: unknown = JSON.parse(String(value ?? "[]"));
+      if (Array.isArray(parsed)) {
+        endpoints = parsed.filter(
+          (item): item is { adapterName: string; url: string } =>
+            item &&
+            typeof item === "object" &&
+            typeof item.adapterName === "string" &&
+            typeof item.url === "string",
+        );
+      }
+    } catch {
+      endpoints = [];
+    }
+
+    if (endpoints.length === 0) return <span className="table-text">—</span>;
+
+    return (
+      <div className="webhook-endpoints">
+        {endpoints.map(({ adapterName, url }) => (
+          <div className="webhook-endpoint" key={`${adapterName}-${url}`}>
+            <span className="webhook-adapter-name">{adapterName}</span>
+            <code>{url}</code>
+            <CopyButton value={url} timeout={1500}>
+              {({ copied, copy }) => (
+                <Tooltip label={copied ? "コピーしました" : "URLをコピー"}>
+                  <ActionIcon
+                    variant="subtle"
+                    color={copied ? "teal" : "gray"}
+                    aria-label={`${adapterName} の Webhook URL をコピー`}
+                    onClick={copy}
+                  >
+                    {copied ? (
+                      <CheckIcon size={15} />
+                    ) : (
+                      <CopySimpleIcon size={15} />
+                    )}
+                  </ActionIcon>
+                </Tooltip>
+              )}
+            </CopyButton>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
   if (columnKey === "status" && page.icon === "bots")
     return (
       <Group gap="xs">

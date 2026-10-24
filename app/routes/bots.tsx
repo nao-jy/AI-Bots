@@ -15,12 +15,13 @@ import { APP_NAME } from "~/const";
 const page: Omit<EntityPageDefinition, "records"> = {
   title: "チャットボット",
   description:
-    "チャットボットの基本情報、エージェント、利用するアダプタを管理します。",
+    "チャットボットの設定と接続アダプタを管理し、各アダプタの Webhook URL を確認・コピーできます。",
   icon: "bots",
   columns: [
     { key: "name", label: "ボット名" },
     { key: "agent", label: "エージェント" },
     { key: "adapters", label: "接続アダプタ" },
+    { key: "webhooks", label: "Webhook エンドポイント" },
     { key: "status", label: "ステータス" },
     { key: "updated", label: "最終更新" },
   ],
@@ -63,7 +64,10 @@ export function meta() {
 
 export async function loader({ request }: Route.LoaderArgs) {
   const user = await requireUser(request);
-  return listBots(user);
+  const publicOrigin = new URL(
+    process.env["PUBLIC_APP_URL"] || request.url,
+  ).origin;
+  return listBots(user, publicOrigin);
 }
 
 export async function action({ request }: Route.ActionArgs) {
