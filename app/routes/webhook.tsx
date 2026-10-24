@@ -1,0 +1,54 @@
+import type { Route } from "./+types/webhook";
+import { registerBotHandlers } from "../.server/features/bot";
+import { getBotInfo } from "../.server/features/chatAdapter";
+import { db } from "../.server/models/db";
+import { decryptAdapterEnvs } from "../.server/utils";
+
+export async function action({ request, params }: Route.ActionArgs) {
+  if (request.method !== "POST") {
+    return new Response("Method Not Allowed", {
+      status: 405,
+      headers: { Allow: "POST" },
+    });
+  }
+
+  const { botId, adapterId } = params;
+  if (!botId || !adapterId) {
+    return new Response("Not Found", { status: 404 });
+  }
+
+  const chatbot = await db.orm.aibot.Chatbot.where({
+    publicId: botId,
+    isEnabled: true,
+  })
+    .include("adapters", (links) => links.include("adapter"))
+    .first();
+
+  const adapter = chatbot?.adapters.find(
+    (link) => link.adapter.publicId === adapterId,
+  )?.adapter;
+  if (!chatbot || !adapter) {
+    return new Response("Not Found", { status: 404 });
+  }
+
+  const botInfo = await getBotInfo(
+    adapter.platform,
+    chatbot.name,
+    decryptAdapterEnvs(adapter.config),
+  );
+  if (!botInfo) {
+    return new Response("Unsupported adapter", { status: 404 });
+  }
+
+  registerBotHandlers(botInfo.bot, chatbot.id);
+  return botInfo.bot.webhooks[adapter.platform](request, {
+    waitUntil: (task) => {
+      void task.catch((error) => {
+        console.error(
+          `Failed to process webhook for chatbot ${chatbot.id}`,
+          error,
+        );
+      });
+    },
+  });
+}

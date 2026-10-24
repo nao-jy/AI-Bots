@@ -1,6 +1,6 @@
 import { db } from "./db";
 import type { AuthUser } from "../auth";
-import { idList, record } from "../utils";
+import { generatePublicId, idList, record } from "../utils";
 
 export async function listBots(user: AuthUser) {
   const bots = await db.orm.aibot.Chatbot.where({ ownerId: user.id })
@@ -50,6 +50,7 @@ export async function saveBot(
 ) {
   const name = String(values.get("name") ?? "").trim();
   const description = String(values.get("description") ?? "").trim();
+  const instruction = String(values.get("instruction") ?? "").trim();
   const agentValue = String(values.get("agentId") ?? "").trim();
   const agentId = agentValue ? Number(agentValue) : null;
   const adapterIds = idList(values.get("adapterIds")?.toString() ?? null);
@@ -87,25 +88,26 @@ export async function saveBot(
   await db.transaction(async (tx) => {
     let botId = id;
     if (botId === null) {
-      const created = await tx.orm.public.Chatbot.create({
+      const created = await tx.orm.aibot.Chatbot.create({
+        publicId: generatePublicId(),
         name,
         description: description || null,
+        instruction: instruction,
         agentId,
         ownerId: user.id,
       });
       botId = created.id;
     } else {
-      await tx.orm.public.Chatbot.where({ id: botId, ownerId: user.id }).update(
-        {
-          name,
-          description: description || null,
-          agentId,
-        },
-      );
+      await tx.orm.aibot.Chatbot.where({ id: botId, ownerId: user.id }).update({
+        name,
+        description: description || null,
+        instruction: instruction,
+        agentId,
+      });
     }
-    await tx.orm.public.ChatbotAdapter.where({ chatbotId: botId! }).delete();
+    await tx.orm.aibot.ChatbotAdapter.where({ chatbotId: botId! }).delete();
     for (const adapterId of adapterIds) {
-      await tx.orm.public.ChatbotAdapter.create({
+      await tx.orm.aibot.ChatbotAdapter.create({
         chatbotId: botId!,
         adapterId,
       });

@@ -28,8 +28,10 @@ namespace aibot {
 
   model Chatbot {
     id          Int                        @id @default(autoincrement())
+    publicId    String                     @unique
     name        String
     description String?
+    instruction String
     isEnabled   Boolean                    @default(true)
     owner       User                       @relation(fields: [ownerId], references: [id], onDelete: Cascade)
     ownerId     Int
@@ -44,6 +46,7 @@ namespace aibot {
 
   model ChatAdapter {
     id        Int                        @id @default(autoincrement())
+    publicId  String                     @unique
     name      String
     platform  String
     config    Jsonb?

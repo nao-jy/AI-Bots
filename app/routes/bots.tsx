@@ -31,7 +31,14 @@ const page: Omit<EntityPageDefinition, "records"> = {
       label: "説明",
       type: "textarea",
       wide: true,
-      placeholder: "ボットの役割や用途",
+      placeholder: "ボットの説明",
+    },
+    {
+      key: "instruction",
+      label: "指示プロンプト",
+      type: "textarea",
+      wide: true,
+      placeholder: "ボットAIへの指示プロンプト",
     },
     {
       key: "agentId",

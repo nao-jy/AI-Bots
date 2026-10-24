@@ -300,6 +300,13 @@
                   "kind": "scalar"
                 }
               },
+              "publicId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
               "updatedAt": {
                 "nullable": false,
                 "type": {
@@ -361,6 +368,9 @@
                 "platform": {
                   "column": "platform"
                 },
+                "publicId": {
+                  "column": "publicId"
+                },
                 "updatedAt": {
                   "column": "updatedAt"
                 }
@@ -399,6 +409,13 @@
                   "kind": "scalar"
                 }
               },
+              "instruction": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
               "isEnabled": {
                 "nullable": false,
                 "type": {
@@ -417,6 +434,13 @@
                 "nullable": false,
                 "type": {
                   "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "publicId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
                   "kind": "scalar"
                 }
               },
@@ -491,6 +515,9 @@
                 "id": {
                   "column": "id"
                 },
+                "instruction": {
+                  "column": "instruction"
+                },
                 "isEnabled": {
                   "column": "isEnabled"
                 },
@@ -499,6 +526,9 @@
                 },
                 "ownerId": {
                   "column": "ownerId"
+                },
+                "publicId": {
+                  "column": "publicId"
                 },
                 "updatedAt": {
                   "column": "updatedAt"
@@ -1587,6 +1617,11 @@
                   "dataType": "pg/text",
                   "nullable": false
                 },
+                "publicId": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "nullable": false
+                },
                 "updatedAt": {
                   "codecId": "pg/timestamptz-string@1",
                   "dataType": "pg/timestamptz",
@@ -1638,7 +1673,13 @@
                   "id"
                 ]
               },
-              "uniques": []
+              "uniques": [
+                {
+                  "columns": [
+                    "publicId"
+                  ]
+                }
+              ]
             },
             "Chatbot": {
               "columns": {
@@ -1670,6 +1711,11 @@
                   },
                   "nullable": false
                 },
+                "instruction": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "nullable": false
+                },
                 "isEnabled": {
                   "codecId": "pg/bool@1",
                   "dataType": "pg/bool",
@@ -1687,6 +1733,11 @@
                 "ownerId": {
                   "codecId": "pg/int4@1",
                   "dataType": "pg/int4",
+                  "nullable": false
+                },
+                "publicId": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
                   "nullable": false
                 },
                 "updatedAt": {
@@ -1755,6 +1806,11 @@
                 ]
               },
               "uniques": [
+                {
+                  "columns": [
+                    "publicId"
+                  ]
+                },
                 {
                   "columns": [
                     "agentId"
@@ -2445,19 +2501,19 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "d02fe41f71a2855e7689f6693eb943a0cca4c12da957e01de4b6e5520afffa45"
+    "storageHash": "ce1d94486aa9ff9d0b70d1bed56efffde97b763fc8c525ca14abc8ce91d6eda8"
   },
   "execution": {
-    "executionHash": "113fa7978663939f59792dd6897b503ec408aa8f40d77a16857e15874f789fd4",
+    "executionHash": "5c1984e92c9f7200ee5ad8e0c0de5b1b5b5329ee0cfca95a089762069a80e0dd",
     "mutations": {
       "defaults": [
         {
           "onCreate": {
-            "id": "timestampNow",
+            "id": "timestamptzStringNow",
             "kind": "generator"
           },
           "onUpdate": {
-            "id": "timestampNow",
+            "id": "timestamptzStringNow",
             "kind": "generator"
           },
           "ref": {
@@ -2468,11 +2524,11 @@
         },
         {
           "onCreate": {
-            "id": "timestampNow",
+            "id": "timestamptzStringNow",
             "kind": "generator"
           },
           "onUpdate": {
-            "id": "timestampNow",
+            "id": "timestamptzStringNow",
             "kind": "generator"
           },
           "ref": {
@@ -2483,11 +2539,11 @@
         },
         {
           "onCreate": {
-            "id": "timestampNow",
+            "id": "timestamptzStringNow",
             "kind": "generator"
           },
           "onUpdate": {
-            "id": "timestampNow",
+            "id": "timestamptzStringNow",
             "kind": "generator"
           },
           "ref": {
@@ -2498,11 +2554,11 @@
         },
         {
           "onCreate": {
-            "id": "timestampNow",
+            "id": "timestamptzStringNow",
             "kind": "generator"
           },
           "onUpdate": {
-            "id": "timestampNow",
+            "id": "timestamptzStringNow",
             "kind": "generator"
           },
           "ref": {
@@ -2513,11 +2569,11 @@
         },
         {
           "onCreate": {
-            "id": "timestampNow",
+            "id": "timestamptzStringNow",
             "kind": "generator"
           },
           "onUpdate": {
-            "id": "timestampNow",
+            "id": "timestamptzStringNow",
             "kind": "generator"
           },
           "ref": {
@@ -2528,11 +2584,11 @@
         },
         {
           "onCreate": {
-            "id": "timestampNow",
+            "id": "timestamptzStringNow",
             "kind": "generator"
           },
           "onUpdate": {
-            "id": "timestampNow",
+            "id": "timestamptzStringNow",
             "kind": "generator"
           },
           "ref": {
@@ -2543,11 +2599,11 @@
         },
         {
           "onCreate": {
-            "id": "timestampNow",
+            "id": "timestamptzStringNow",
             "kind": "generator"
           },
           "onUpdate": {
-            "id": "timestampNow",
+            "id": "timestamptzStringNow",
             "kind": "generator"
           },
           "ref": {
@@ -2558,11 +2614,11 @@
         },
         {
           "onCreate": {
-            "id": "timestampNow",
+            "id": "timestamptzStringNow",
             "kind": "generator"
           },
           "onUpdate": {
-            "id": "timestampNow",
+            "id": "timestamptzStringNow",
             "kind": "generator"
           },
           "ref": {

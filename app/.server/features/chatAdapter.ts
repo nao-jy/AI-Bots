@@ -77,7 +77,7 @@ const FACTORIES: ChatAdapterFactory[] = [
       return new Chat({
         userName: botName,
         adapters: {
-          slack: createTeamsAdapter(adapterConfig),
+          teams: createTeamsAdapter(adapterConfig),
         },
         state: await getState(),
       });
@@ -91,7 +91,7 @@ const FACTORIES: ChatAdapterFactory[] = [
       return new Chat({
         userName: botName,
         adapters: {
-          slack: createGoogleChatAdapter(adapterConfig),
+          gchat: createGoogleChatAdapter(adapterConfig),
         },
         state: await getState(),
       });
@@ -105,7 +105,7 @@ const FACTORIES: ChatAdapterFactory[] = [
       return new Chat({
         userName: botName,
         adapters: {
-          slack: createDiscordAdapter(adapterConfig),
+          discord: createDiscordAdapter(adapterConfig),
         },
         state: await getState(),
       });
@@ -119,7 +119,7 @@ const FACTORIES: ChatAdapterFactory[] = [
       return new Chat({
         userName: botName,
         adapters: {
-          slack: createXAdapter(adapterConfig),
+          x: createXAdapter(adapterConfig),
         },
         state: await getState(),
       });
@@ -133,7 +133,7 @@ const FACTORIES: ChatAdapterFactory[] = [
       return new Chat({
         userName: botName,
         adapters: {
-          slack: createLineAdapter(adapterConfig),
+          line: createLineAdapter(adapterConfig),
         },
         state: await getState(),
       });

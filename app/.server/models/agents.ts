@@ -113,21 +113,21 @@ export async function saveAgent(
   await db.transaction(async (tx) => {
     const agentId =
       id === null
-        ? (await tx.orm.public.AgentDefinition.create(valuesToSave)).id
+        ? (await tx.orm.aibot.AgentDefinition.create(valuesToSave)).id
         : id;
     if (id !== null)
-      await tx.orm.public.AgentDefinition.where({ id }).update(valuesToSave);
-    const links = await tx.orm.public.AgentMcpServer.where({ agentId }).all();
+      await tx.orm.aibot.AgentDefinition.where({ id }).update(valuesToSave);
+    const links = await tx.orm.aibot.AgentMcpServer.where({ agentId }).all();
     for (const link of links) {
       if (!serverIds.includes(link.mcpServerId))
-        await tx.orm.public.AgentMcpServer.where({
+        await tx.orm.aibot.AgentMcpServer.where({
           agentId,
           mcpServerId: link.mcpServerId,
         }).delete();
     }
     for (const serverId of serverIds) {
       if (!links.some((link) => link.mcpServerId === serverId))
-        await tx.orm.public.AgentMcpServer.create({
+        await tx.orm.aibot.AgentMcpServer.create({
           agentId,
           mcpServerId: serverId,
         });

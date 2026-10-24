@@ -1,6 +1,12 @@
 import { db } from "./db";
 import type { AuthUser } from "../auth";
-import { decryptAdapterEnvs, encryptStringMap, jsonb, record } from "../utils";
+import {
+  decryptAdapterEnvs,
+  encryptStringMap,
+  generatePublicId,
+  jsonb,
+  record,
+} from "../utils";
 import { toDisplayNameAdapter } from "../features/chatAdapter";
 
 export async function listAdapters(user: AuthUser) {
@@ -65,6 +71,7 @@ export async function saveAdapter(
   const storedEnvs = jsonb(encryptedConfig);
   if (id === null) {
     await db.orm.aibot.ChatAdapter.create({
+      publicId: generatePublicId(),
       name,
       platform,
       ownerId: user.id,

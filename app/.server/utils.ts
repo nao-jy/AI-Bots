@@ -164,3 +164,7 @@ export function parseObject(value: FormDataEntryValue | null, label: string) {
     throw new Error(`${label}にはオブジェクトを入力してください。`);
   return parsed as Record<string, unknown>;
 }
+
+export function generatePublicId() {
+  return randomBytes(16).toString("base64url");
+}
