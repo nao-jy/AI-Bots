@@ -13,43 +13,46 @@ import { requireUser } from "../.server/auth";
 import { APP_NAME } from "~/const";
 import { testMcpServer } from "~/.server/test";
 
-const page: Omit<EntityPageDefinition, "records"> = {
-  title: "MCPサーバー",
-  description: "MCPサーバーの接続先と利用可能なツール情報を管理します。",
-  icon: "mcp",
-  columns: [
-    { key: "name", label: "サーバー名" },
-    { key: "transport", label: "トランスポート" },
-    { key: "endpoint", label: "エンドポイント" },
-    { key: "status", label: "ステータス" },
-    { key: "updated", label: "最終更新" },
-  ],
-  fields: [
-    { key: "name", label: "サーバー名", placeholder: "例：社内ナレッジ" },
-    {
-      key: "transportId",
-      label: "トランスポート",
-      type: "select",
-      options: Object.entries(TRANSPORTS).map((v) => ({
-        label: v[1],
-        value: v[0],
-      })),
-    },
-    {
-      key: "endpoint",
-      label: "エンドポイント",
-      wide: true,
-      placeholder: "https://mcp.example.com/mcp",
-    },
-    {
-      key: "headers",
-      label: "HTTPヘッダー",
-      type: "key-value",
-      valueType: "string",
-      wide: true,
-    },
-  ],
-};
+function getPage(transport: Record<string, string>) {
+  const page: Omit<EntityPageDefinition, "records"> = {
+    title: "MCPサーバー",
+    description: "MCPサーバーの接続先と利用可能なツール情報を管理します。",
+    icon: "mcp",
+    columns: [
+      { key: "name", label: "サーバー名" },
+      { key: "transport", label: "トランスポート" },
+      { key: "endpoint", label: "エンドポイント" },
+      { key: "status", label: "ステータス" },
+      { key: "updated", label: "最終更新" },
+    ],
+    fields: [
+      { key: "name", label: "サーバー名", placeholder: "例：社内ナレッジ" },
+      {
+        key: "transportId",
+        label: "トランスポート",
+        type: "select",
+        options: Object.entries(transport).map((v) => ({
+          label: v[1],
+          value: v[0],
+        })),
+      },
+      {
+        key: "endpoint",
+        label: "エンドポイント",
+        wide: true,
+        placeholder: "https://mcp.example.com/mcp",
+      },
+      {
+        key: "headers",
+        label: "HTTPヘッダー",
+        type: "key-value",
+        valueType: "string",
+        wide: true,
+      },
+    ],
+  };
+  return page;
+}
 
 export function meta() {
   return [{ title: `MCPサーバー | ${APP_NAME}` }];
@@ -57,7 +60,10 @@ export function meta() {
 
 export async function loader({ request }: Route.LoaderArgs) {
   const user = await requireUser(request);
-  return listMcpServers(user);
+  return {
+    servers: await listMcpServers(user),
+    transport: TRANSPORTS,
+  };
 }
 
 export async function action({ request }: Route.ActionArgs) {
@@ -79,5 +85,13 @@ export async function action({ request }: Route.ActionArgs) {
 }
 
 export default function McpServers({ loaderData }: Route.ComponentProps) {
-  return <EntityPageView page={{ ...page, records: loaderData.records }} />;
+  const page = getPage(loaderData.transport);
+  return (
+    <EntityPageView
+      page={{
+        ...page,
+        records: loaderData.servers.records,
+      }}
+    />
+  );
 }
