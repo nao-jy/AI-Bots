@@ -1,18 +1,9 @@
 import { db } from "./db";
 import type { AuthUser } from "../auth";
-import {
-  decryptMcpHeaders,
-  encryptStringMap,
-  jsonb,
-  parseStringMap,
-  record,
-  requestTest,
-  testFailure,
-  testSuccess,
-} from "../utils";
+import { decryptMcpHeaders, encryptStringMap, jsonb, record } from "../utils";
 
-const transports: Record<string, string> = {
-  "streamable-http": "Streamable HTTP",
+export const TRANSPORTS: Record<string, string> = {
+  http: "Streamable HTTP",
 };
 
 export async function listMcpServers(user: AuthUser) {
@@ -24,7 +15,7 @@ export async function listMcpServers(user: AuthUser) {
       return record(server.id, server.updatedAt, {
         name: server.name,
         description: server.description ?? "",
-        transport: transports[server.transport] ?? server.transport,
+        transport: TRANSPORTS[server.transport] ?? server.transport,
         transportId: server.transport,
         endpoint: server.endpoint ?? "",
         headers: JSON.stringify(decryptMcpHeaders(server.headers), null, 2),

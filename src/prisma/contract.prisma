@@ -104,7 +104,7 @@ namespace aibot {
     id          Int                        @id @default(autoincrement())
     name        String
     description String?
-    // stdio, sse, streamable-http, or another transport supported by the runtime.
+    // stdio, sse, http, or another transport supported by the runtime.
     transport   String
     endpoint    String?
     headers     Jsonb?

@@ -7,6 +7,7 @@ import {
   deleteMcpServer,
   listMcpServers,
   saveMcpServer,
+  TRANSPORTS,
 } from "../.server/models/entities";
 import { requireUser } from "../.server/auth";
 import { APP_NAME } from "~/const";
@@ -29,13 +30,16 @@ const page: Omit<EntityPageDefinition, "records"> = {
       key: "transportId",
       label: "トランスポート",
       type: "select",
-      options: [{ label: "Streamable HTTP", value: "streamable-http" }],
+      options: Object.entries(TRANSPORTS).map((v) => ({
+        label: v[1],
+        value: v[0],
+      })),
     },
     {
       key: "endpoint",
       label: "エンドポイント",
       wide: true,
-      placeholder: "https://mcp.example.com",
+      placeholder: "https://mcp.example.com/mcp",
     },
     {
       key: "headers",

@@ -2,11 +2,11 @@ import type { AuthUser } from "./auth";
 import { getBotInfo } from "./features/chatAdapter";
 import { getModelInfo, listProviderNames } from "./features/provider";
 import { getProvider } from "./models/providers";
+import { createMCPClient } from "@ai-sdk/mcp";
 import {
   decryptMcpHeaders,
   parseObject,
   parseStringMap,
-  requestTest,
   testFailure,
   testSuccess,
 } from "./utils";
@@ -37,41 +37,24 @@ export async function testMcpServer(user: AuthUser, values: FormData) {
     const endpoint = String(values.get("endpoint") ?? "").trim();
     const transport = String(values.get("transportId") ?? "").trim();
     if (!endpoint) return testFailure("エンドポイントを入力してください。");
-    if (transport !== "streamable-http")
+    if (transport !== "http")
       return testFailure(
         "このトランスポートの接続テストには対応していません。",
       );
     const headers = parseStringMap(values.get("headers"), "HTTPヘッダー");
-    const { body } = await requestTest(endpoint, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json, text/event-stream",
-        ...headers,
+    const mcpClient = await createMCPClient({
+      transport: {
+        type: transport,
+        url: endpoint,
+        headers: headers,
       },
-      body: JSON.stringify({
-        jsonrpc: "2.0",
-        id: 1,
-        method: "initialize",
-        params: {
-          protocolVersion: "2025-03-26",
-          capabilities: {},
-          clientInfo: { name: "bot-manager", version: "1.0.0" },
-        },
-      }),
     });
-    const payload = body.match(/^data:\s*(.+)$/m)?.[1] ?? body;
-    const result: unknown = JSON.parse(payload);
-    if (
-      !result ||
-      typeof result !== "object" ||
-      "error" in result ||
-      !(result as { result?: unknown }).result
-    )
-      return testFailure(
-        "MCPサーバーから有効なinitialize応答がありませんでした。",
-      );
-    return testSuccess(`${name || "MCPサーバー"}とのMCP接続に成功しました。`);
+
+    const tools = await mcpClient.listTools();
+
+    return testSuccess(
+      `${name || "MCPサーバー"}とのMCP接続に成功しました。(${tools.tools.length}個のツールが利用可能)`,
+    );
   } catch (error) {
     return testFailure(
       error instanceof Error
