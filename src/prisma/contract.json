@@ -16,6 +16,10 @@
       "model": "ChatAdapter",
       "namespace": "aibot"
     },
+    "ChatBotAuthentication": {
+      "model": "ChatBotAuthentication",
+      "namespace": "aibot"
+    },
     "Chatbot": {
       "model": "Chatbot",
       "namespace": "aibot"
@@ -191,6 +195,13 @@
                   "kind": "scalar"
                 }
               },
+              "authId": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
               "createdAt": {
                 "nullable": false,
                 "type": {
@@ -223,6 +234,22 @@
                   "namespace": "aibot"
                 }
               },
+              "authentication": {
+                "cardinality": "N:1",
+                "nullable": true,
+                "on": {
+                  "localFields": [
+                    "authId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "OAuthAuthentication",
+                  "namespace": "aibot"
+                }
+              },
               "mcpServer": {
                 "cardinality": "N:1",
                 "nullable": false,
@@ -245,6 +272,9 @@
                 "agentId": {
                   "column": "agentId"
                 },
+                "authId": {
+                  "column": "authId"
+                },
                 "createdAt": {
                   "column": "createdAt"
                 },
@@ -258,6 +288,13 @@
           },
           "ChatAdapter": {
             "fields": {
+              "authId": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
               "config": {
                 "nullable": true,
                 "type": {
@@ -316,6 +353,22 @@
               }
             },
             "relations": {
+              "authentication": {
+                "cardinality": "N:1",
+                "nullable": true,
+                "on": {
+                  "localFields": [
+                    "authId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "OAuthAuthentication",
+                  "namespace": "aibot"
+                }
+              },
               "chatbots": {
                 "cardinality": "1:N",
                 "on": {
@@ -350,6 +403,9 @@
             },
             "storage": {
               "fields": {
+                "authId": {
+                  "column": "authId"
+                },
                 "config": {
                   "column": "config"
                 },
@@ -377,6 +433,80 @@
               },
               "namespaceId": "aibot",
               "table": "ChatAdapter"
+            }
+          },
+          "ChatBotAuthentication": {
+            "fields": {
+              "authId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "chatbotId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "createdAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "authentication": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "authId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "OAuthAuthentication",
+                  "namespace": "aibot"
+                }
+              },
+              "chatbot": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "chatbotId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Chatbot",
+                  "namespace": "aibot"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "authId": {
+                  "column": "authId"
+                },
+                "chatbotId": {
+                  "column": "chatbotId"
+                },
+                "createdAt": {
+                  "column": "createdAt"
+                }
+              },
+              "namespaceId": "aibot",
+              "table": "ChatBotAuthentication"
             }
           },
           "Chatbot": {
@@ -1494,6 +1624,11 @@
                   "dataType": "pg/int4",
                   "nullable": false
                 },
+                "authId": {
+                  "codecId": "pg/int4@1",
+                  "dataType": "pg/int4",
+                  "nullable": true
+                },
                 "createdAt": {
                   "codecId": "pg/timestamptz-string@1",
                   "dataType": "pg/timestamptz",
@@ -1549,6 +1684,26 @@
                     "namespaceId": "aibot",
                     "tableName": "McpServer"
                   }
+                },
+                {
+                  "index": {
+                    "name": "AgentMcpServer_authId_idx_29b6b568"
+                  },
+                  "onDelete": "setNull",
+                  "source": {
+                    "columns": [
+                      "authId"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "AgentMcpServer"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "OAuthAuthentication"
+                  }
                 }
               ],
               "indexes": [
@@ -1558,6 +1713,14 @@
                   ],
                   "name": "AgentMcpServer_agentId_idx_8d0ba4f0",
                   "prefix": "AgentMcpServer_agentId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "authId"
+                  ],
+                  "name": "AgentMcpServer_authId_idx_29b6b568",
+                  "prefix": "AgentMcpServer_authId_idx",
                   "unique": false
                 },
                 {
@@ -1579,6 +1742,11 @@
             },
             "ChatAdapter": {
               "columns": {
+                "authId": {
+                  "codecId": "pg/int4@1",
+                  "dataType": "pg/int4",
+                  "nullable": true
+                },
                 "config": {
                   "codecId": "pg/jsonb@1",
                   "dataType": "pg/jsonb",
@@ -1648,9 +1816,37 @@
                     "namespaceId": "aibot",
                     "tableName": "User"
                   }
+                },
+                {
+                  "index": {
+                    "name": "ChatAdapter_authId_idx_29b6b568"
+                  },
+                  "onDelete": "setNull",
+                  "source": {
+                    "columns": [
+                      "authId"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "ChatAdapter"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "OAuthAuthentication"
+                  }
                 }
               ],
               "indexes": [
+                {
+                  "columns": [
+                    "authId"
+                  ],
+                  "name": "ChatAdapter_authId_idx_29b6b568",
+                  "prefix": "ChatAdapter_authId_idx",
+                  "unique": false
+                },
                 {
                   "columns": [
                     "ownerId"
@@ -1680,6 +1876,96 @@
                   ]
                 }
               ]
+            },
+            "ChatBotAuthentication": {
+              "columns": {
+                "authId": {
+                  "codecId": "pg/int4@1",
+                  "dataType": "pg/int4",
+                  "nullable": false
+                },
+                "chatbotId": {
+                  "codecId": "pg/int4@1",
+                  "dataType": "pg/int4",
+                  "nullable": false
+                },
+                "createdAt": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "dataType": "pg/timestamptz",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [
+                {
+                  "index": {
+                    "name": "ChatBotAuthentication_chatbotId_idx_52db07ea"
+                  },
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "chatbotId"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "ChatBotAuthentication"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "Chatbot"
+                  }
+                },
+                {
+                  "index": {
+                    "name": "ChatBotAuthentication_authId_idx_29b6b568"
+                  },
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "authId"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "ChatBotAuthentication"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "OAuthAuthentication"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "authId"
+                  ],
+                  "name": "ChatBotAuthentication_authId_idx_29b6b568",
+                  "prefix": "ChatBotAuthentication_authId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "chatbotId"
+                  ],
+                  "name": "ChatBotAuthentication_chatbotId_idx_52db07ea",
+                  "prefix": "ChatBotAuthentication_chatbotId_idx",
+                  "unique": false
+                }
+              ],
+              "primaryKey": {
+                "columns": [
+                  "chatbotId",
+                  "authId"
+                ]
+              },
+              "uniques": []
             },
             "Chatbot": {
               "columns": {
@@ -2501,7 +2787,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "ce1d94486aa9ff9d0b70d1bed56efffde97b763fc8c525ca14abc8ce91d6eda8"
+    "storageHash": "c44b2cf0bef9d29dab20783cf9f5a3d06dacc42964cf996e81c3d7447762d54a"
   },
   "execution": {
     "executionHash": "5c1984e92c9f7200ee5ad8e0c0de5b1b5b5329ee0cfca95a089762069a80e0dd",

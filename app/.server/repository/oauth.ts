@@ -1,6 +1,9 @@
+import * as oidc from "openid-client";
 import { db } from "./db";
 import type { AuthUser } from "../auth";
-import { encryptCredential, record } from "../utils";
+import { decryptCredential, encryptCredential, record } from "../utils";
+
+const TOKEN_REFRESH_WINDOW_MS = 60_000;
 
 export async function getOwnedOAuthAuthentication(id: number, ownerId: number) {
   return db.orm.aibot.OAuthAuthentication.first({ id, ownerId });
@@ -8,6 +11,110 @@ export async function getOwnedOAuthAuthentication(id: number, ownerId: number) {
 
 export async function getOwnedOAuthClient(id: number, ownerId: number) {
   return db.orm.aibot.OAuthClient.first({ id, ownerId });
+}
+
+function refreshConfiguration(client: {
+  clientId: string;
+  clientSecret: string | null;
+  tokenEndpoint: string;
+  refreshEndpoint: string | null;
+}) {
+  const endpoint = client.refreshEndpoint ?? client.tokenEndpoint;
+  const url = new URL(endpoint);
+  if (url.protocol !== "https:" && url.protocol !== "http:")
+    throw new Error(
+      "OAuth更新エンドポイントにはHTTPまたはHTTPSを指定してください。",
+    );
+
+  const secret = client.clientSecret
+    ? decryptCredential(client.clientSecret)
+    : undefined;
+  return new oidc.Configuration(
+    {
+      issuer: url.origin,
+      token_endpoint: url.href,
+    } as oidc.ServerMetadata,
+    client.clientId,
+    secret,
+    secret ? oidc.ClientSecretPost(secret) : oidc.None(),
+  );
+}
+
+interface AdapterOAuthInfo {
+  clientId: string;
+  clientSecret: string;
+  refreshToken: string;
+}
+
+export async function getAdapterOAuthInfo(authId: number) {
+  const authentication = await db.orm.aibot.OAuthAuthentication.first({
+    id: authId,
+  });
+  if (!authentication) throw new Error("OAuth認証情報が見つかりません。");
+
+  const client = await db.orm.aibot.OAuthClient.first({
+    id: authentication.oauthId,
+    ownerId: authentication.ownerId,
+  });
+  if (!client) throw new Error("OAuthクライアントが見つかりません。");
+
+  if (client.clientSecret !== null && authentication.refreshToken !== null) {
+    const clientInfo: AdapterOAuthInfo = {
+      clientId: client.clientId,
+      clientSecret: client.clientSecret,
+      refreshToken: decryptCredential(authentication.refreshToken),
+    };
+
+    return clientInfo;
+  }
+  return null;
+}
+
+/** Return an authentication's access token, refreshing it shortly before expiry. */
+export async function getAccessToken(id: number): Promise<string> {
+  const authentication = await db.orm.aibot.OAuthAuthentication.first({ id });
+  if (!authentication) throw new Error("OAuth認証情報が見つかりません。");
+
+  const client = await db.orm.aibot.OAuthClient.first({
+    id: authentication.oauthId,
+    ownerId: authentication.ownerId,
+  });
+  if (!client) throw new Error("OAuthクライアントが見つかりません。");
+
+  const expiresAt = authentication.expiresAt
+    ? new Date(authentication.expiresAt).getTime()
+    : Number.NaN;
+  if (
+    !authentication.refreshToken ||
+    !Number.isFinite(expiresAt) ||
+    expiresAt - Date.now() >= TOKEN_REFRESH_WINDOW_MS
+  )
+    return decryptCredential(authentication.accessToken);
+
+  const tokens = await oidc.refreshTokenGrant(
+    refreshConfiguration(client),
+    decryptCredential(authentication.refreshToken),
+  );
+  if (!tokens.access_token)
+    throw new Error("OAuthサーバーからアクセストークンが返されませんでした。");
+
+  const refreshedExpiresAt =
+    typeof tokens.expires_in === "number"
+      ? new Date(Date.now() + tokens.expires_in * 1000).toISOString()
+      : null;
+  const refreshToken = tokens.refresh_token
+    ? encryptCredential(tokens.refresh_token)
+    : authentication.refreshToken;
+  await db.orm.aibot.OAuthAuthentication.where({
+    id,
+    ownerId: authentication.ownerId,
+  }).update({
+    accessToken: encryptCredential(tokens.access_token),
+    refreshToken,
+    expiresAt: refreshedExpiresAt,
+  });
+
+  return tokens.access_token;
 }
 
 export async function saveOAuthAuthentication(

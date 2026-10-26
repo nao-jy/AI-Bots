@@ -171,4 +171,15 @@ namespace aibot {
     @@index([ownerId])
     @@index([oauthId])
   }
+
+  model ChatBotAuthentication {
+    chatbot        Chatbot             @relation(fields: [chatbotId], references: [id], onDelete: Cascade)
+    chatbotId      Int
+    authentication OAuthAuthentication @relation(fields: [authId], references: [id], onDelete: Cascade)
+    authId         Int
+    createdAt      TimestamptzString   @default(now())
+
+    @@id([chatbotId, authId])
+    @@index([authId])
+  }
 }

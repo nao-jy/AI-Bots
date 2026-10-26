@@ -30,6 +30,7 @@ export async function action({ request, params }: Route.ActionArgs) {
     adapter.platform,
     chatbot.name,
     decryptAdapterEnvs(adapter.config),
+    adapter.authId,
   );
   if (!botInfo) {
     return new Response("Unsupported adapter", { status: 404 });

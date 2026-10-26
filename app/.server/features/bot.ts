@@ -5,6 +5,7 @@ import type { Chat } from "chat";
 import { decryptMcpHeaders } from "../utils";
 import { getModelInfo } from "./provider";
 import { getAvailableBot } from "../repository/bots";
+import { getMcpClient } from "./mcp";
 
 const MAX_AGENT_STEPS = 8;
 
@@ -63,19 +64,18 @@ export function registerBotHandlers(chat: Chat, botId: number) {
         if (!server.endpoint) {
           throw new Error(`MCP server "${server.name}" has no endpoint`);
         }
-        if (server.transport !== "http" && server.transport !== "sse") {
+        if (server.transport !== "http") {
           throw new Error(
             `Unsupported MCP transport "${server.transport}" for "${server.name}"`,
           );
         }
 
-        const client = await createMCPClient({
-          transport: {
-            type: server.transport,
-            url: server.endpoint,
-            headers: decryptMcpHeaders(server.headers),
-          },
-        });
+        const client = await getMcpClient(
+          server.transport,
+          server.endpoint,
+          decryptMcpHeaders(server.headers),
+          link.authId,
+        );
         mcpClients.push(client);
 
         const mcpTools = await client.tools();

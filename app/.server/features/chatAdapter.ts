@@ -8,6 +8,7 @@ import { createLineAdapter } from "chat-adapter-line";
 import { createPostgresState } from "@chat-adapter/state-pg";
 import pg from "pg";
 import { STATE_SCHEMA_NAME } from "~/const";
+import { getAdapterOAuthInfo } from "../repository/oauth";
 
 interface ChatAdapterFactory {
   adapterName: string;
@@ -16,6 +17,7 @@ interface ChatAdapterFactory {
   getBot: (
     botName: string,
     adapterConfig: Record<string, string>,
+    authId: number | null,
   ) => Promise<Chat>;
 }
 
@@ -54,16 +56,31 @@ function getState() {
   return statePromise;
 }
 
+async function getAdapterArgs(
+  config: Record<string, string>,
+  authId: number | null,
+) {
+  if (authId == null) return config;
+  const info = await getAdapterOAuthInfo(authId);
+  if (info === null) return config;
+  return {
+    ...config,
+    ...info,
+  };
+}
+
 const FACTORIES: ChatAdapterFactory[] = [
   {
     adapterName: "slack",
     displayName: "Slack",
     url: "https://chat-sdk.dev/adapters/official/slack",
-    getBot: async (botName, adapterConfig) => {
+    getBot: async (botName, adapterConfig, authId) => {
       return new Chat({
         userName: botName,
         adapters: {
-          slack: createSlackAdapter(adapterConfig),
+          slack: createSlackAdapter(
+            await getAdapterArgs(adapterConfig, authId),
+          ),
         },
         state: await getState(),
       });
@@ -73,11 +90,13 @@ const FACTORIES: ChatAdapterFactory[] = [
     adapterName: "teams",
     displayName: "Microsoft Teams",
     url: "https://chat-sdk.dev/adapters/official/teams",
-    getBot: async (botName, adapterConfig) => {
+    getBot: async (botName, adapterConfig, authId) => {
       return new Chat({
         userName: botName,
         adapters: {
-          teams: createTeamsAdapter(adapterConfig),
+          teams: createTeamsAdapter(
+            await getAdapterArgs(adapterConfig, authId),
+          ),
         },
         state: await getState(),
       });
@@ -87,11 +106,13 @@ const FACTORIES: ChatAdapterFactory[] = [
     adapterName: "gchat",
     displayName: "Google Chat",
     url: "https://chat-sdk.dev/adapters/official/gchat",
-    getBot: async (botName, adapterConfig) => {
+    getBot: async (botName, adapterConfig, authId) => {
       return new Chat({
         userName: botName,
         adapters: {
-          gchat: createGoogleChatAdapter(adapterConfig),
+          gchat: createGoogleChatAdapter(
+            await getAdapterArgs(adapterConfig, authId),
+          ),
         },
         state: await getState(),
       });
@@ -101,11 +122,13 @@ const FACTORIES: ChatAdapterFactory[] = [
     adapterName: "discord",
     displayName: "Discord",
     url: "https://chat-sdk.dev/adapters/official/discord",
-    getBot: async (botName, adapterConfig) => {
+    getBot: async (botName, adapterConfig, authId) => {
       return new Chat({
         userName: botName,
         adapters: {
-          discord: createDiscordAdapter(adapterConfig),
+          discord: createDiscordAdapter(
+            await getAdapterArgs(adapterConfig, authId),
+          ),
         },
         state: await getState(),
       });
@@ -115,11 +138,11 @@ const FACTORIES: ChatAdapterFactory[] = [
     adapterName: "x",
     displayName: "X",
     url: "https://chat-sdk.dev/adapters/official/x",
-    getBot: async (botName, adapterConfig) => {
+    getBot: async (botName, adapterConfig, authId) => {
       return new Chat({
         userName: botName,
         adapters: {
-          x: createXAdapter(adapterConfig),
+          x: createXAdapter(await getAdapterArgs(adapterConfig, authId)),
         },
         state: await getState(),
       });
@@ -129,11 +152,11 @@ const FACTORIES: ChatAdapterFactory[] = [
     adapterName: "line",
     displayName: "LINE",
     url: "https://chat-sdk.dev/adapters/community/line",
-    getBot: async (botName, adapterConfig) => {
+    getBot: async (botName, adapterConfig, authId) => {
       return new Chat({
         userName: botName,
         adapters: {
-          line: createLineAdapter(adapterConfig),
+          line: createLineAdapter(await getAdapterArgs(adapterConfig, authId)),
         },
         state: await getState(),
       });
@@ -145,6 +168,7 @@ export async function getBotInfo(
   adapterName: string,
   botName: string,
   adapterConfig: Record<string, string>,
+  authId: number | null,
 ) {
   const factory = FACTORIES.find(
     (v) => v.adapterName.toLowerCase() === adapterName.toLowerCase(),
@@ -152,7 +176,7 @@ export async function getBotInfo(
   if (factory) {
     return {
       displayName: factory.displayName,
-      bot: await factory.getBot(botName, adapterConfig),
+      bot: await factory.getBot(botName, adapterConfig, authId),
       url: factory.url,
     };
   }

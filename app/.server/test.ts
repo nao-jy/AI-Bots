@@ -1,8 +1,8 @@
 import type { AuthUser } from "./auth";
 import { getBotInfo } from "./features/chatAdapter";
+import { getMcpClient } from "./features/mcp";
 import { getModelInfo, listProviderNames } from "./features/provider";
 import { getProvider } from "./repository/providers";
-import { createMCPClient } from "@ai-sdk/mcp";
 import {
   decryptMcpHeaders,
   parseObject,
@@ -17,7 +17,9 @@ export async function testAdapter(user: AuthUser, values: FormData) {
     const name = String(values.get("name") ?? "").trim();
     const platformId = String(values.get("platformId") ?? "").trim();
     const conf = parseStringMap(values.get("config"), "コンフィグ");
-    const bot = await getBotInfo(platformId, name, conf);
+    const authId = values.get("authId")?.toString().trim();
+    const authIdNum = Number(authId);
+    const bot = await getBotInfo(platformId, name, conf, authIdNum);
     if (!bot) {
       throw new Error("bot not found");
     }
@@ -36,19 +38,23 @@ export async function testMcpServer(user: AuthUser, values: FormData) {
     const name = String(values.get("name") ?? "").trim();
     const endpoint = String(values.get("endpoint") ?? "").trim();
     const transport = String(values.get("transportId") ?? "").trim();
+    let authId = values.get("authId")?.toString().trim();
+    let authIdNum: number | null = null;
+    if (authId !== undefined) {
+      authIdNum = Number(authId);
+    }
     if (!endpoint) return testFailure("エンドポイントを入力してください。");
     if (transport !== "http")
       return testFailure(
         "このトランスポートの接続テストには対応していません。",
       );
     const headers = parseStringMap(values.get("headers"), "HTTPヘッダー");
-    const mcpClient = await createMCPClient({
-      transport: {
-        type: transport,
-        url: endpoint,
-        headers: headers,
-      },
-    });
+    const mcpClient = await getMcpClient(
+      transport,
+      endpoint,
+      headers,
+      authIdNum,
+    );
 
     const tools = await mcpClient.listTools();
 
