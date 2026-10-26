@@ -2,6 +2,30 @@ import { db } from "./db";
 import type { AuthUser } from "../auth";
 import { encryptCredential, record } from "../utils";
 
+export async function getOwnedOAuthAuthentication(id: number, ownerId: number) {
+  return db.orm.aibot.OAuthAuthentication.first({ id, ownerId });
+}
+
+export async function getOwnedOAuthClient(id: number, ownerId: number) {
+  return db.orm.aibot.OAuthClient.first({ id, ownerId });
+}
+
+export async function saveOAuthAuthentication(
+  ownerId: number,
+  id: number | null,
+  values: {
+    name: string;
+    oauthId: number;
+    accessToken: string;
+    refreshToken: string | null;
+    expiresAt: string | null;
+  },
+) {
+  if (id === null)
+    return db.orm.aibot.OAuthAuthentication.create({ ...values, ownerId });
+  return db.orm.aibot.OAuthAuthentication.where({ id, ownerId }).update(values);
+}
+
 function validHttpUrl(value: string) {
   try {
     const url = new URL(value);

@@ -7,7 +7,7 @@ import {
   deleteProvider,
   listProviders,
   saveProvider,
-} from "../.server/models/entities";
+} from "../.server/repository/entities";
 import { requireUser } from "../.server/auth";
 import { APP_NAME } from "~/const";
 import { listProviderNames } from "~/.server/features/provider";

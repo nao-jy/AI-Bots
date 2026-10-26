@@ -2,9 +2,9 @@ import { createMCPClient } from "@ai-sdk/mcp";
 import { generateText, stepCountIs, type ToolSet } from "ai";
 import { createChatTools } from "chat/ai";
 import type { Chat } from "chat";
-import { db } from "../models/db";
 import { decryptMcpHeaders } from "../utils";
 import { getModelInfo } from "./provider";
+import { getAvailableBot } from "../repository/bots";
 
 const MAX_AGENT_STEPS = 8;
 
@@ -24,16 +24,7 @@ export function registerBotHandlers(chat: Chat, botId: number) {
     let replied = false;
 
     try {
-      const chatbot = await db.orm.aibot.Chatbot.where({
-        id: botId,
-        isEnabled: true,
-      })
-        .include("agent", (agent) =>
-          agent
-            .include("provider")
-            .include("mcpServers", (links) => links.include("mcpServer")),
-        )
-        .first();
+      const chatbot = await getAvailableBot(botId);
       const agent = chatbot?.agent;
 
       if (!chatbot || !agent || agent.provider.ownerId !== chatbot.ownerId) {

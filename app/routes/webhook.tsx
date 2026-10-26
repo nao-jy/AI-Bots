@@ -1,8 +1,8 @@
 import type { Route } from "./+types/webhook";
 import { registerBotHandlers } from "../.server/features/bot";
 import { getBotInfo } from "../.server/features/chatAdapter";
-import { db } from "../.server/models/db";
 import { decryptAdapterEnvs } from "../.server/utils";
+import { getAvailableBotByPublicId } from "~/.server/repository/bots";
 
 export async function action({ request, params }: Route.ActionArgs) {
   if (request.method !== "POST") {
@@ -17,12 +17,7 @@ export async function action({ request, params }: Route.ActionArgs) {
     return new Response("Not Found", { status: 404 });
   }
 
-  const chatbot = await db.orm.aibot.Chatbot.where({
-    publicId: botId,
-    isEnabled: true,
-  })
-    .include("adapters", (links) => links.include("adapter"))
-    .first();
+  const chatbot = await getAvailableBotByPublicId(botId);
 
   const adapter = chatbot?.adapters.find(
     (link) => link.adapter.publicId === adapterId,

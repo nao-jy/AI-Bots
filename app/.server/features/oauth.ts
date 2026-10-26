@@ -3,7 +3,11 @@ import * as oidc from "openid-client";
 import { redirect } from "react-router";
 import { OAUTH_CALLBACK_PATH } from "../../const";
 import type { AuthUser } from "../auth";
-import { db } from "../models/db";
+import {
+  getOwnedOAuthAuthentication,
+  getOwnedOAuthClient,
+  saveOAuthAuthentication,
+} from "../repository/oauth";
 import { decryptCredential, encryptCredential } from "../utils";
 
 const FLOW_COOKIE = "oauth_authorization_flow";
@@ -157,19 +161,13 @@ export async function startOAuthAuthorization(
   const existing =
     authenticationId === null
       ? null
-      : await db.orm.aibot.OAuthAuthentication.first({
-          id: authenticationId,
-          ownerId: user.id,
-        });
+      : await getOwnedOAuthAuthentication(authenticationId, user.id);
   if (authenticationId !== null && !existing)
     return { error: "OAuth認証情報が見つかりません。" };
   const oauthId = existing?.oauthId ?? selectedClientId;
   if (!Number.isInteger(oauthId))
     return { error: "OAuthクライアントを選択してください。" };
-  const oauthClient = await db.orm.aibot.OAuthClient.first({
-    id: oauthId,
-    ownerId: user.id,
-  });
+  const oauthClient = await getOwnedOAuthClient(oauthId, user.id);
   if (!oauthClient)
     return { error: "選択したOAuthクライアントが見つかりません。" };
 
@@ -234,10 +232,7 @@ export async function completeOAuthAuthorization(
     });
 
   try {
-    const oauthClient = await db.orm.aibot.OAuthClient.first({
-      id: flow.oauthId,
-      ownerId: user.id,
-    });
+    const oauthClient = await getOwnedOAuthClient(flow.oauthId, user.id);
     if (!oauthClient) throw new Error("OAuthクライアントが見つかりません。");
     const config = configuration(oauthClient);
     const tokens = await oidc.authorizationCodeGrant(
@@ -254,10 +249,7 @@ export async function completeOAuthAuthorization(
       );
 
     const existing = flow.authenticationId
-      ? await db.orm.aibot.OAuthAuthentication.first({
-          id: flow.authenticationId,
-          ownerId: user.id,
-        })
+      ? await getOwnedOAuthAuthentication(flow.authenticationId, user.id)
       : null;
     if (flow.authenticationId && !existing)
       throw new Error("OAuth認証情報が見つかりません。");
@@ -274,16 +266,7 @@ export async function completeOAuthAuthorization(
         : (existing?.refreshToken ?? null),
       expiresAt,
     };
-    if (existing)
-      await db.orm.aibot.OAuthAuthentication.where({
-        id: existing.id,
-        ownerId: user.id,
-      }).update(saved);
-    else
-      await db.orm.aibot.OAuthAuthentication.create({
-        ...saved,
-        ownerId: user.id,
-      });
+    await saveOAuthAuthentication(user.id, existing?.id ?? null, saved);
     return redirect("/oauth-authentications?oauth=success", {
       headers: { "Set-Cookie": clearCookie },
     });

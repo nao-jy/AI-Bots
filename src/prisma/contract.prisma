@@ -45,17 +45,19 @@ namespace aibot {
   }
 
   model ChatAdapter {
-    id        Int                        @id @default(autoincrement())
-    publicId  String                     @unique
-    name      String
-    platform  String
-    config    Jsonb?
-    owner     User                       @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-    ownerId   Int
-    createdAt TimestamptzString          @default(now())
-    updatedAt temporal.updatedAtString()
+    id             Int                        @id @default(autoincrement())
+    publicId       String                     @unique
+    name           String
+    platform       String
+    config         Jsonb?
+    owner          User                       @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+    ownerId        Int
+    authentication OAuthAuthentication?       @relation(fields: [authId], references: [id], onDelete: SetNull)
+    authId         Int?
+    createdAt      TimestamptzString          @default(now())
+    updatedAt      temporal.updatedAtString()
 
-    chatbots  ChatbotAdapter[]
+    chatbots       ChatbotAdapter[]
 
     @@index([ownerId])
     @@index([platform])
@@ -121,11 +123,13 @@ namespace aibot {
   }
 
   model AgentMcpServer {
-    agent       AgentDefinition   @relation(fields: [agentId], references: [id], onDelete: Cascade)
-    agentId     Int
-    mcpServer   McpServer         @relation(fields: [mcpServerId], references: [id], onDelete: Cascade)
-    mcpServerId Int
-    createdAt   TimestamptzString @default(now())
+    agent          AgentDefinition      @relation(fields: [agentId], references: [id], onDelete: Cascade)
+    agentId        Int
+    mcpServer      McpServer            @relation(fields: [mcpServerId], references: [id], onDelete: Cascade)
+    mcpServerId    Int
+    authentication OAuthAuthentication? @relation(fields: [authId], references: [id], onDelete: SetNull)
+    authId         Int?
+    createdAt      TimestamptzString    @default(now())
 
     @@id([agentId, mcpServerId])
     @@index([mcpServerId])

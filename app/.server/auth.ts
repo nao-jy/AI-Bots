@@ -6,7 +6,12 @@ import {
 } from "node:crypto";
 import { promisify } from "node:util";
 import { redirect } from "react-router";
-import { db } from "./models/db";
+import {
+  deleteSessionByToken,
+  getSessionUser as getSessionUserInner,
+  deleteSessionById,
+  createSession as createSessionInner,
+} from "./repository/session";
 
 const scrypt = promisify(scryptCallback);
 const SESSION_COOKIE = "bot_manager_session";
@@ -44,20 +49,14 @@ export function clearSessionCookie() {
 export async function createSession(userId: number) {
   const token = randomBytes(32).toString("base64url");
   const expiresAt = new Date(Date.now() + SESSION_TTL_MS);
-  await db.orm.aibot.Session.create({
-    tokenHash: hashSessionToken(token),
-    userId,
-    expiresAt: expiresAt.toISOString(),
-  });
+  await createSessionInner(hashSessionToken(token), userId, expiresAt);
   return { token, expiresAt };
 }
 
 export async function deleteSession(request: Request) {
   const token = getSessionToken(request);
   if (!token) return;
-  await db.orm.aibot.Session.where({
-    tokenHash: hashSessionToken(token),
-  }).delete();
+  await deleteSessionByToken(hashSessionToken(token));
 }
 
 export async function getSessionUser(
@@ -66,12 +65,10 @@ export async function getSessionUser(
   const token = getSessionToken(request);
   if (!token) return null;
 
-  const session = await db.orm.aibot.Session.include("user").first({
-    tokenHash: hashSessionToken(token),
-  });
+  const session = await getSessionUserInner(hashSessionToken(token));
   if (!session) return null;
   if (Date.parse(session.expiresAt) <= Date.now()) {
-    await db.orm.aibot.Session.where({ id: session.id }).delete();
+    await deleteSessionById(session.id);
     return null;
   }
 

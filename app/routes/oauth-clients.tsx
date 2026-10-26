@@ -4,7 +4,7 @@ import {
   deleteOAuthClient,
   listOAuthClients,
   saveOAuthClient,
-} from "../.server/models/entities";
+} from "../.server/repository/entities";
 import {
   EntityPageView,
   type EntityPageDefinition,

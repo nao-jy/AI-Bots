@@ -2,6 +2,22 @@ import { db } from "./db";
 import { hashPassword } from "../auth";
 import { record } from "../utils";
 
+export async function hasUsers() {
+  return Boolean(await db.orm.aibot.User.first());
+}
+
+export async function findUserByEmail(email: string) {
+  return db.orm.aibot.User.first({ email });
+}
+
+export async function createUser(values: {
+  email: string;
+  name: string;
+  passwordHash: string;
+}) {
+  return db.orm.aibot.User.create(values);
+}
+
 export async function listUsers() {
   const users = await db.orm.aibot.User.orderBy((user) =>
     user.createdAt.asc(),

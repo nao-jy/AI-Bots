@@ -1,7 +1,7 @@
 import type { AuthUser } from "./auth";
 import { getBotInfo } from "./features/chatAdapter";
 import { getModelInfo, listProviderNames } from "./features/provider";
-import { getProvider } from "./models/providers";
+import { getProvider } from "./repository/providers";
 import { createMCPClient } from "@ai-sdk/mcp";
 import {
   decryptMcpHeaders,

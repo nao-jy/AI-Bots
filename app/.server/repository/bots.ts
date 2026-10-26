@@ -144,3 +144,27 @@ export async function setBotEnabled(
   });
   return true;
 }
+
+export async function getAvailableBot(botId: number) {
+  const chatbot = await db.orm.aibot.Chatbot.where({
+    id: botId,
+    isEnabled: true,
+  })
+    .include("agent", (agent) =>
+      agent
+        .include("provider")
+        .include("mcpServers", (links) => links.include("mcpServer")),
+    )
+    .first();
+  return chatbot;
+}
+
+export async function getAvailableBotByPublicId(publicId: string) {
+  const chatbot = await db.orm.aibot.Chatbot.where({
+    publicId: publicId,
+    isEnabled: true,
+  })
+    .include("adapters", (links) => links.include("adapter"))
+    .first();
+  return chatbot;
+}

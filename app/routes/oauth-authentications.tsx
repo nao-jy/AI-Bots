@@ -4,7 +4,7 @@ import {
   deleteOAuthAuthentication,
   listOAuthAuthentications,
   renameOAuthAuthentication,
-} from "../.server/models/entities";
+} from "../.server/repository/entities";
 import { startOAuthAuthorization } from "../.server/features/oauth";
 import {
   EntityPageView,

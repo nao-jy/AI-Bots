@@ -7,7 +7,7 @@ import {
   deleteAdapter,
   listAdapters,
   saveAdapter,
-} from "../.server/models/entities";
+} from "../.server/repository/entities";
 import { requireUser } from "../.server/auth";
 import { APP_NAME } from "~/const";
 import { testAdapter } from "~/.server/test";

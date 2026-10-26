@@ -8,7 +8,7 @@ import {
   listMcpServers,
   saveMcpServer,
   TRANSPORTS,
-} from "../.server/models/entities";
+} from "../.server/repository/entities";
 import { requireUser } from "../.server/auth";
 import { APP_NAME } from "~/const";
 import { testMcpServer } from "~/.server/test";

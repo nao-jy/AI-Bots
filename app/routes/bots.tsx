@@ -8,7 +8,7 @@ import {
   listBots,
   saveBot,
   setBotEnabled,
-} from "../.server/models/entities";
+} from "../.server/repository/entities";
 import { requireUser } from "../.server/auth";
 import { APP_NAME } from "~/const";
 
@@ -64,9 +64,8 @@ export function meta() {
 
 export async function loader({ request }: Route.LoaderArgs) {
   const user = await requireUser(request);
-  const publicOrigin = new URL(
-    process.env["PUBLIC_APP_URL"] || request.url,
-  ).origin;
+  const publicOrigin = new URL(process.env["PUBLIC_APP_URL"] || request.url)
+    .origin;
   return listBots(user, publicOrigin);
 }
 
