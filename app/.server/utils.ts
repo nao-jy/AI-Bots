@@ -5,6 +5,15 @@ import type { EntityRecord } from "../types/entities";
 export const jsonb = (value: unknown) =>
   value as CodecTypes["pg/jsonb@1"]["input"];
 
+export function jsonbToStringRecord(value: unknown): Record<string, string> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  return Object.fromEntries(
+    Object.entries(value).filter(
+      (entry): entry is [string, string] => typeof entry[1] === "string",
+    ),
+  );
+}
+
 export function timestamp(value: string) {
   const date = new Date(value);
   return Number.isNaN(date.valueOf()) ? value : date.toLocaleString("ja-JP");

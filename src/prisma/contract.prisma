@@ -1,4 +1,14 @@
 // use prisma-8
+enum MCPTransport {
+  http = "http"
+}
+
+enum SandboxScope {
+  turn = "turn"
+  thread = "thread"
+  all = "all"
+}
+
 namespace aibot {
   model User {
     id           Int                        @id @default(autoincrement())
@@ -109,8 +119,7 @@ namespace aibot {
     id          Int                        @id @default(autoincrement())
     name        String
     description String?
-    // stdio, sse, http, or another transport supported by the runtime.
-    transport   String
+    transport   MCPTransport
     endpoint    String?
     headers     Jsonb?
     owner       User                       @relation(fields: [ownerId], references: [id], onDelete: Cascade)
@@ -172,14 +181,45 @@ namespace aibot {
     @@index([oauthId])
   }
 
-  model ChatBotAuthentication {
-    chatbot        Chatbot             @relation(fields: [chatbotId], references: [id], onDelete: Cascade)
-    chatbotId      Int
-    authentication OAuthAuthentication @relation(fields: [authId], references: [id], onDelete: Cascade)
-    authId         Int
-    createdAt      TimestamptzString   @default(now())
+  model Sandbox {
+    id                Int               @id @default(autoincrement())
+    sandboxType       String
+    envs              Jsonb?
+    allowedDomainList String[]
+    deniedDomainList  String[]
+    sandboxScope      SandboxScope
+    owner             User              @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+    ownerId           Int
 
-    @@id([chatbotId, authId])
-    @@index([authId])
+    instances         SandboxInstance[]
+  }
+
+  model SandboxInstance {
+    instanceId String  @id
+    sandboxId  Int
+    sandbox    Sandbox @relation(fields: [sandboxId], references: [id], onDelete: Cascade)
+    chatbotId  Int
+    chatbot    Chatbot @relation(fields: [chatbotId], references: [id], onDelete: Cascade)
+    threadId   String?
+  }
+
+  model ChatBotToolSandbox {
+    chatbotId Int
+    chatbot   Chatbot @relation(fields: [chatbotId], references: [id], onDelete: Cascade)
+    sandboxId Int
+    sandBox   Sandbox @relation(fields: [sandboxId], references: [id], onDelete: Cascade)
+
+    @@id([sandboxId, chatbotId])
+    @@index([chatbotId])
+  }
+
+  model ChatBotToolSetContext {
+    toolSetName    String
+    chatbotId      Int
+    chatbot        Chatbot @relation(fields: [chatbotId], references: [id], onDelete: Cascade)
+    toolSetContext Jsonb?
+
+    @@id([toolSetName, chatbotId])
+    @@index([chatbotId])
   }
 }

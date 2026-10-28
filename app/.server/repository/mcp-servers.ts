@@ -2,9 +2,15 @@ import { db } from "./db";
 import type { AuthUser } from "../auth";
 import { decryptMcpHeaders, encryptStringMap, jsonb, record } from "../utils";
 
-export const TRANSPORTS: Record<string, string> = {
+export const TRANSPORTS = {
   http: "Streamable HTTP",
-};
+} as const;
+
+type McpTransport = keyof typeof TRANSPORTS;
+
+function isMcpTransport(value: string): value is McpTransport {
+  return Object.hasOwn(TRANSPORTS, value);
+}
 
 export async function listMcpServers(user: AuthUser) {
   const servers = await db.orm.aibot.McpServer.where({ ownerId: user.id })
@@ -37,6 +43,8 @@ export async function saveMcpServer(
   const headersValue = String(values.get("headers") ?? "{}").trim();
   if (!name || !transport)
     return { error: "サーバー名とトランスポートを入力してください。" };
+  if (!isMcpTransport(transport))
+    return { error: "対応していないトランスポートです。" };
   let headers: Record<string, string>;
   try {
     const parsed: unknown = JSON.parse(headersValue || "{}");
