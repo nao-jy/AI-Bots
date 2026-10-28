@@ -1,6 +1,5 @@
 import type { Tool } from "ai";
 import { z } from "zod";
-import { SandboxToolSet } from "./sandbox";
 
 export interface ToolSet {
   name: string;
@@ -11,7 +10,7 @@ export interface ToolSet {
   ) => Promise<Record<string, Tool>>;
 }
 
-const TOOLSETS: ToolSet[] = [SandboxToolSet];
+const TOOLSETS: ToolSet[] = [];
 
 export function listToolSetNames() {
   return TOOLSETS.map((toolSet) => toolSet.name);

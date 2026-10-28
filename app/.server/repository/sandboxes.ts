@@ -114,3 +114,40 @@ export async function getSandboxInstance(instanceId: string) {
     .first();
   return instance;
 }
+
+export async function getChatbotSandbox(chatbotId: number, ownerId: number) {
+  const links = await db.orm.aibot.ChatBotToolSandbox.where({ chatbotId })
+    .include("sandBox")
+    .all();
+  return links.find((link) => link.sandBox.ownerId === ownerId)?.sandBox ?? null;
+}
+
+export async function getReusableSandboxInstance(
+  chatbotId: number,
+  sandboxId: number,
+  sandboxScope: SandboxScope,
+  threadId: string,
+) {
+  if (sandboxScope === "turn") return null;
+
+  const instances = await db.orm.aibot.SandboxInstance.where({
+    chatbotId,
+    sandboxId,
+  }).all();
+  return sandboxScope === "thread"
+    ? (instances.find((instance) => instance.threadId === threadId) ?? null)
+    : (instances.find((instance) => instance.threadId === null) ?? null);
+}
+
+export async function createSandboxInstance(values: {
+  instanceId: string;
+  sandboxId: number;
+  chatbotId: number;
+  threadId: string | null;
+}) {
+  return db.orm.aibot.SandboxInstance.create(values);
+}
+
+export async function deleteSandboxInstance(instanceId: string) {
+  await db.orm.aibot.SandboxInstance.where({ instanceId }).delete();
+}

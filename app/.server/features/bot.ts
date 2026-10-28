@@ -2,10 +2,18 @@ import { createMCPClient } from "@ai-sdk/mcp";
 import { generateText, stepCountIs, type ToolSet } from "ai";
 import { createChatTools } from "chat/ai";
 import type { Chat } from "chat";
-import { decryptMcpHeaders } from "../utils";
+import {
+  createSandboxInstance,
+  deleteSandboxInstance,
+  getChatbotSandbox,
+  getReusableSandboxInstance,
+} from "../repository/sandboxes";
+import { decryptMcpHeaders, jsonbToStringRecord } from "../utils";
 import { getModelInfo } from "./provider";
 import { getAvailableBot } from "../repository/bots";
 import { getMcpClient } from "./mcp";
+import { getSandboxTools } from "./toolsets/sandbox";
+import { getSandbox } from "./toolsets/sandboxes";
 
 const MAX_AGENT_STEPS = 8;
 
@@ -19,9 +27,64 @@ function safeToolName(value: string) {
   return value.replace(/[^a-zA-Z0-9_-]/g, "_");
 }
 
+async function getBotSandbox(
+  chatbotId: number,
+  ownerId: number,
+  threadId: string,
+) {
+  const sandbox = await getChatbotSandbox(chatbotId, ownerId);
+  if (!sandbox) return null;
+
+  const sandboxProvider = getSandbox(sandbox.sandboxType);
+  if (!sandboxProvider) return null;
+
+  const reusableInstance = await getReusableSandboxInstance(
+    chatbotId,
+    sandbox.id,
+    sandbox.sandboxScope,
+    threadId,
+  );
+
+  if (reusableInstance) {
+    return {
+      instanceId: reusableInstance.instanceId,
+      isTurnScoped: false,
+      sandboxProvider,
+    };
+  }
+
+  const info = await sandboxProvider.getBashSandbox(
+    null,
+    jsonbToStringRecord(sandbox.envs),
+    [...sandbox.allowedDomainList],
+  );
+  if (!info.createdInstanceId) {
+    throw new Error(`failed to create sandbox for chatbot ${chatbotId}`);
+  }
+
+  try {
+    await createSandboxInstance({
+      instanceId: info.createdInstanceId,
+      sandboxId: sandbox.id,
+      chatbotId,
+      threadId: sandbox.sandboxScope === "thread" ? threadId : null,
+    });
+  } catch (error) {
+    await sandboxProvider.destroySandbox(info.createdInstanceId);
+    throw error;
+  }
+
+  return {
+    instanceId: info.createdInstanceId,
+    isTurnScoped: sandbox.sandboxScope === "turn",
+    sandboxProvider,
+  };
+}
+
 export function registerBotHandlers(chat: Chat, botId: number) {
   chat.onNewMention(async (thread, message) => {
     const mcpClients: Array<Awaited<ReturnType<typeof createMCPClient>>> = [];
+    let turnSandbox: Awaited<ReturnType<typeof getBotSandbox>> = null;
     let replied = false;
 
     try {
@@ -57,6 +120,14 @@ export function registerBotHandlers(chat: Chat, botId: number) {
           strictScope: true,
         }),
       } as ToolSet;
+
+      turnSandbox = await getBotSandbox(chatbot.id, chatbot.ownerId, thread.id);
+      if (turnSandbox) {
+        Object.assign(
+          tools,
+          await getSandboxTools(turnSandbox.instanceId, chat, thread.id),
+        );
+      }
 
       for (const link of agent.mcpServers) {
         const server = link.mcpServer;
@@ -119,6 +190,19 @@ export function registerBotHandlers(chat: Chat, botId: number) {
         }
       }
     } finally {
+      if (turnSandbox?.isTurnScoped && turnSandbox.sandboxProvider) {
+        try {
+          await turnSandbox.sandboxProvider.destroySandbox(
+            turnSandbox.instanceId,
+          );
+          await deleteSandboxInstance(turnSandbox.instanceId);
+        } catch (error) {
+          console.error(
+            `Failed to destroy turn sandbox for chatbot ${botId}`,
+            error,
+          );
+        }
+      }
       await Promise.all(
         mcpClients.map(async (client) => {
           try {
