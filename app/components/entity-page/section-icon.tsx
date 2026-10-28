@@ -6,6 +6,7 @@ import {
   UserIcon,
   WrenchIcon,
   KeyIcon,
+  HardDrivesIcon,
 } from "@phosphor-icons/react";
 import type { EntitySection } from "./types";
 
@@ -37,5 +38,7 @@ export function SectionIcon({
       return <UserIcon {...props} />;
     case "oauth":
       return <KeyIcon {...props} />;
+    case "sandboxes":
+      return <HardDrivesIcon {...props} />;
   }
 }

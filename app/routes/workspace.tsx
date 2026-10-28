@@ -18,6 +18,7 @@ const items: { path: string; id: EntitySection; label: string }[] = [
   { path: "/oauth-authentications", id: "oauth", label: "OAuth認証情報" },
   { path: "/agents", id: "agents", label: "エージェント" },
   { path: "/mcp-servers", id: "mcp", label: "MCPサーバー" },
+  { path: "/sandboxes", id: "sandboxes", label: "サンドボックス" },
   { path: "/users", id: "users", label: "ユーザー" },
 ];
 

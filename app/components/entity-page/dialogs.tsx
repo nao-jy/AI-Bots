@@ -243,7 +243,7 @@ export function EntityPageDialogs({
                     placeholder={field.placeholder ?? "選択してください"}
                     data={field.options ?? []}
                     defaultValue={String(selected?.[field.key] ?? "") || null}
-                    clearable={field.key === "agentId"}
+                    clearable={field.key === "agentId" || field.key === "authId"}
                   />
                 ) : field.type === "multiselect" ? (
                   <MultiSelect

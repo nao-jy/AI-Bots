@@ -20,7 +20,8 @@ const page: Omit<EntityPageDefinition, "records"> = {
   columns: [
     { key: "name", label: "接続名" },
     { key: "platform", label: "プラットフォーム" },
-    { key: "envsConfigured", label: "環境変数" },
+    { key: "authentication", label: "OAuth認証" },
+    { key: "configured", label: "環境変数" },
     { key: "updated", label: "最終更新" },
   ],
   fields: [
@@ -43,6 +44,7 @@ const page: Omit<EntityPageDefinition, "records"> = {
         href: "https://chat-sdk.dev/adapters",
       },
     },
+    { key: "authId", label: "OAuth認証情報", type: "select", options: [], placeholder: "使用しない" },
   ],
 };
 
@@ -94,7 +96,7 @@ export default function Adapters({ loaderData }: Route.ComponentProps) {
           options:
             field.key === "platformId"
               ? loaderData.adapterOptions
-              : field.options,
+              : field.key === "authId" ? loaderData.authOptions : field.options,
         })),
       }}
     />

@@ -11,3 +11,7 @@ export interface ToolSet {
 }
 
 const TOOLSETS: ToolSet[] = [SandboxToolSet];
+
+export function listToolSetNames() {
+  return TOOLSETS.map((toolSet) => toolSet.name);
+}

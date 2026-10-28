@@ -10,9 +10,11 @@ import {
 import { toDisplayNameAdapter } from "../features/chatAdapter";
 
 export async function listAdapters(user: AuthUser) {
-  const adapters = await db.orm.aibot.ChatAdapter.where({
-    ownerId: user.id,
-  }).all();
+  const [adapters, authentications] = await Promise.all([
+    db.orm.aibot.ChatAdapter.where({ ownerId: user.id }).all(),
+    db.orm.aibot.OAuthAuthentication.where({ ownerId: user.id }).all(),
+  ]);
+  const authNames = new Map(authentications.map((auth) => [auth.id, auth.name]));
   return {
     records: adapters.map((adapter) => {
       const config = decryptAdapterEnvs(adapter.config);
@@ -20,10 +22,13 @@ export async function listAdapters(user: AuthUser) {
         name: adapter.name,
         platform: toDisplayNameAdapter(adapter.platform) ?? adapter.platform,
         platformId: adapter.platform,
+        authId: adapter.authId === null ? "" : String(adapter.authId),
+        authentication: adapter.authId === null ? "未設定" : authNames.get(adapter.authId) ?? "不明",
         config: JSON.stringify(config),
         configured: Object.keys(config).length ? "設定済み" : "未設定",
       });
     }),
+    authOptions: authentications.map((auth) => ({ label: auth.name, value: String(auth.id) })),
   };
 }
 
@@ -37,6 +42,8 @@ export async function saveAdapter(
     values.get("platformId") ?? values.get("platform") ?? "",
   ).trim();
   const configValue = String(values.get("config") ?? "{}").trim();
+  const authValue = String(values.get("authId") ?? "").trim();
+  const authId = authValue ? Number(authValue) : null;
   if (!name || !platform)
     return { error: "接続名とプラットフォームを入力してください。" };
   let config: Record<string, string>;
@@ -57,6 +64,10 @@ export async function saveAdapter(
     if (!(await db.orm.aibot.ChatAdapter.first({ id, ownerId: user.id })))
       return { error: "アダプタが見つかりません。" };
   }
+  if (authId !== null) {
+    if (!Number.isInteger(authId) || !(await db.orm.aibot.OAuthAuthentication.first({ id: authId, ownerId: user.id })))
+      return { error: "選択したOAuth認証情報が見つかりません。" };
+  }
   let encryptedConfig: ReturnType<typeof encryptStringMap>;
   try {
     encryptedConfig = encryptStringMap(config);
@@ -76,12 +87,14 @@ export async function saveAdapter(
       platform,
       ownerId: user.id,
       config: storedEnvs,
+      authId,
     });
   } else {
     await db.orm.aibot.ChatAdapter.where({ id, ownerId: user.id }).update({
       name,
       platform,
       config: storedEnvs,
+      authId,
     });
   }
   return { ok: true };

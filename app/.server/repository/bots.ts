@@ -1,6 +1,7 @@
 import { db } from "./db";
 import type { AuthUser } from "../auth";
-import { generatePublicId, idList, record } from "../utils";
+import { generatePublicId, idList, jsonb, record } from "../utils";
+import { listToolSetNames } from "../features/toolsets";
 
 export async function listBots(user: AuthUser, publicOrigin: string) {
   const bots = await db.orm.aibot.Chatbot.where({ ownerId: user.id })
@@ -14,6 +15,11 @@ export async function listBots(user: AuthUser, publicOrigin: string) {
   const adapters = await db.orm.aibot.ChatAdapter.where({
     ownerId: user.id,
   }).all();
+  const [sandboxes, sandboxLinks, toolSetContexts] = await Promise.all([
+    db.orm.aibot.Sandbox.where({ ownerId: user.id }).all(),
+    db.orm.aibot.ChatBotToolSandbox.all(),
+    db.orm.aibot.ChatBotToolSetContext.all(),
+  ]);
   return {
     records: bots.map((bot) =>
       record(bot.id, bot.updatedAt, {
@@ -22,6 +28,10 @@ export async function listBots(user: AuthUser, publicOrigin: string) {
         agent: bot.agent?.name ?? "—",
         agentId: bot.agentId ?? "",
         adapterIds: bot.adapters.map((link) => link.adapterId).join(","),
+        sandboxIds: sandboxLinks.filter((link) => link.chatbotId === bot.id && sandboxes.some((sandbox) => sandbox.id === link.sandboxId)).map((link) => link.sandboxId).join(","),
+        sandboxes: sandboxLinks.filter((link) => link.chatbotId === bot.id).map((link) => sandboxes.find((sandbox) => sandbox.id === link.sandboxId)?.sandboxType).filter(Boolean).join("、") || "—",
+        toolSetContexts: JSON.stringify(Object.fromEntries(toolSetContexts.filter((context) => context.chatbotId === bot.id).map((context) => [context.toolSetName, context.toolSetContext ?? {}])), null, 2),
+        toolsets: toolSetContexts.filter((context) => context.chatbotId === bot.id).map((context) => context.toolSetName).join("、") || "—",
         adapters:
           bot.adapters.map((link) => link.adapter.name).join("、") || "—",
         webhooks: JSON.stringify(
@@ -49,6 +59,8 @@ export async function listBots(user: AuthUser, publicOrigin: string) {
       label: adapter.name,
       value: String(adapter.id),
     })),
+    sandboxOptions: sandboxes.map((sandbox) => ({ label: `${sandbox.sandboxType} (${sandbox.sandboxScope})`, value: String(sandbox.id) })),
+    toolSetNames: listToolSetNames(),
   };
 }
 
@@ -63,6 +75,16 @@ export async function saveBot(
   const agentValue = String(values.get("agentId") ?? "").trim();
   const agentId = agentValue ? Number(agentValue) : null;
   const adapterIds = idList(values.get("adapterIds")?.toString() ?? null);
+  const sandboxIds = idList(values.get("sandboxIds")?.toString() ?? null);
+  let toolSetContexts: Record<string, unknown>;
+  try {
+    const parsed: unknown = JSON.parse(String(values.get("toolSetContexts") ?? "{}").trim() || "{}");
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error();
+    toolSetContexts = parsed as Record<string, unknown>;
+  } catch { return { error: "ToolSet context はJSONオブジェクトで入力してください。" }; }
+  const supportedToolSetNames = listToolSetNames();
+  if (Object.keys(toolSetContexts).some((name) => !supportedToolSetNames.includes(name)))
+    return { error: `利用できないToolSet名が含まれています。利用可能: ${supportedToolSetNames.join("、") || "なし"}` };
   if (!name) return { error: "ボット名を入力してください。" };
   if (agentId !== null && !Number.isInteger(agentId))
     return { error: "エージェントを選択してください。" };
@@ -88,6 +110,13 @@ export async function saveBot(
   if (adapterIds.some((adapterId) => !allowedAdapterIds.has(adapterId))) {
     return { error: "選択したアダプタを使用できません。" };
   }
+  const ownedSandboxes = await db.orm.aibot.Sandbox.where({ ownerId: user.id }).all();
+  const allowedSandboxIds = new Set(ownedSandboxes.map((sandbox) => sandbox.id));
+  if (sandboxIds.some((sandboxId) => !allowedSandboxIds.has(sandboxId)))
+    return { error: "選択したサンドボックスを使用できません。" };
+  for (const [toolSetName, toolSetContext] of Object.entries(toolSetContexts))
+    if (!toolSetContext || typeof toolSetContext !== "object" || Array.isArray(toolSetContext))
+      return { error: `${toolSetName} ToolSet context はJSONオブジェクトで入力してください。` };
   if (
     id !== null &&
     !(await db.orm.aibot.Chatbot.first({ id, ownerId: user.id }))
@@ -121,6 +150,12 @@ export async function saveBot(
         adapterId,
       });
     }
+    await tx.orm.aibot.ChatBotToolSandbox.where({ chatbotId: botId! }).delete();
+    for (const sandboxId of sandboxIds)
+      await tx.orm.aibot.ChatBotToolSandbox.create({ chatbotId: botId!, sandboxId });
+    await tx.orm.aibot.ChatBotToolSetContext.where({ chatbotId: botId! }).delete();
+    for (const [toolSetName, toolSetContext] of Object.entries(toolSetContexts))
+      await tx.orm.aibot.ChatBotToolSetContext.create({ chatbotId: botId!, toolSetName, toolSetContext: jsonb(toolSetContext) });
   });
   return { ok: true };
 }

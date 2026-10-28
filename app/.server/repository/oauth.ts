@@ -43,6 +43,7 @@ function refreshConfiguration(client: {
 interface AdapterOAuthInfo {
   clientId: string;
   clientSecret: string;
+  accessToken: string;
   refreshToken: string;
 }
 
@@ -62,6 +63,7 @@ export async function getAdapterOAuthInfo(authId: number) {
     const clientInfo: AdapterOAuthInfo = {
       clientId: client.clientId,
       clientSecret: client.clientSecret,
+      accessToken: await getAccessToken(authId),
       refreshToken: decryptCredential(authentication.refreshToken),
     };
 
@@ -71,8 +73,10 @@ export async function getAdapterOAuthInfo(authId: number) {
 }
 
 /** Return an authentication's access token, refreshing it shortly before expiry. */
-export async function getAccessToken(id: number): Promise<string> {
-  const authentication = await db.orm.aibot.OAuthAuthentication.first({ id });
+export async function getAccessToken(authId: number): Promise<string> {
+  const authentication = await db.orm.aibot.OAuthAuthentication.first({
+    id: authId,
+  });
   if (!authentication) throw new Error("OAuth認証情報が見つかりません。");
 
   const client = await db.orm.aibot.OAuthClient.first({
@@ -106,7 +110,7 @@ export async function getAccessToken(id: number): Promise<string> {
     ? encryptCredential(tokens.refresh_token)
     : authentication.refreshToken;
   await db.orm.aibot.OAuthAuthentication.where({
-    id,
+    id: authId,
     ownerId: authentication.ownerId,
   }).update({
     accessToken: encryptCredential(tokens.access_token),

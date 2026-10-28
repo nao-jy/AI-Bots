@@ -21,6 +21,8 @@ const page: Omit<EntityPageDefinition, "records"> = {
     { key: "name", label: "ボット名" },
     { key: "agent", label: "エージェント" },
     { key: "adapters", label: "接続アダプタ" },
+    { key: "sandboxes", label: "サンドボックス" },
+    { key: "toolsets", label: "ToolSet" },
     { key: "webhooks", label: "Webhook エンドポイント" },
     { key: "status", label: "ステータス" },
     { key: "updated", label: "最終更新" },
@@ -55,6 +57,8 @@ const page: Omit<EntityPageDefinition, "records"> = {
       options: [],
       placeholder: "接続するアダプタを選択",
     },
+    { key: "sandboxIds", label: "サンドボックス", type: "multiselect", options: [], placeholder: "利用するサンドボックスを選択" },
+    { key: "toolSetContexts", label: "ToolSet context (JSON)", type: "textarea", wide: true, placeholder: '{ "sandbox": { "sandboxInstanceId": "..." } }' },
   ],
 };
 
@@ -100,12 +104,25 @@ export default function Bots({ loaderData }: Route.ComponentProps) {
         records: loaderData.records,
         fields: page.fields.map((field) => ({
           ...field,
+          ...(field.key === "toolSetContexts"
+            ? {
+                placeholder: JSON.stringify(
+                  Object.fromEntries(
+                    loaderData.toolSetNames.map((name) => [name, {}]),
+                  ),
+                  null,
+                  2,
+                ),
+              }
+            : {}),
           options:
             field.key === "agentId"
               ? loaderData.agentOptions
               : field.key === "adapterIds"
                 ? loaderData.adapterOptions
-                : field.options,
+                : field.key === "sandboxIds"
+                  ? loaderData.sandboxOptions
+                  : field.options,
         })),
       }}
     />

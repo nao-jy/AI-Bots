@@ -23,6 +23,10 @@ export interface Sandbox {
 
 const SANDBOXES: Sandbox[] = [E2B];
 
+export function listSandboxNames() {
+  return SANDBOXES.map((sandbox) => sandbox.sandboxType);
+}
+
 export function getSandbox(sandboxType: string) {
   return SANDBOXES.find((V) => V.sandboxType === sandboxType) ?? null;
 }
