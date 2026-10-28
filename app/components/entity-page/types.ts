@@ -11,7 +11,9 @@ export type EntityField = {
     | "key-value"
     | "select"
     | "multiselect"
-    | "password";
+    | "tags"
+    | "password"
+    | "toolset-contexts";
   options?: string[] | EntityOption[];
   required?: boolean;
   wide?: boolean;
@@ -39,4 +41,5 @@ export type EntityPageDefinition = {
   createSubmitLabel?: string;
   launchIntent?: string;
   launchLabel?: string;
+  toolSetSchemas?: { name: string; schema: unknown }[];
 };

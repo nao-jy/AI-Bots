@@ -58,7 +58,7 @@ const page: Omit<EntityPageDefinition, "records"> = {
       placeholder: "接続するアダプタを選択",
     },
     { key: "sandboxIds", label: "サンドボックス", type: "multiselect", options: [], placeholder: "利用するサンドボックスを選択" },
-    { key: "toolSetContexts", label: "ToolSet context (JSON)", type: "textarea", wide: true, placeholder: '{ "sandbox": { "sandboxInstanceId": "..." } }' },
+    { key: "toolSetContexts", label: "ToolSet context", type: "toolset-contexts", wide: true },
   ],
 };
 
@@ -102,19 +102,9 @@ export default function Bots({ loaderData }: Route.ComponentProps) {
       page={{
         ...page,
         records: loaderData.records,
+        toolSetSchemas: loaderData.toolSetSchemas,
         fields: page.fields.map((field) => ({
           ...field,
-          ...(field.key === "toolSetContexts"
-            ? {
-                placeholder: JSON.stringify(
-                  Object.fromEntries(
-                    loaderData.toolSetNames.map((name) => [name, {}]),
-                  ),
-                  null,
-                  2,
-                ),
-              }
-            : {}),
           options:
             field.key === "agentId"
               ? loaderData.agentOptions

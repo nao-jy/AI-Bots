@@ -8,7 +8,6 @@ export const E2B: Sandbox = {
     instanceId: string | null,
     envs: Record<string, string>,
     allowedDomains: string[],
-    deniedDomains: string[],
   ) => {
     let sandbox: E2BSandbox | null = null;
     let createdInstanceId: string | null = null;
@@ -26,7 +25,7 @@ export const E2B: Sandbox = {
 
     await sandbox.updateNetwork({
       allowOut: allowedDomains,
-      denyOut: deniedDomains,
+      denyOut: ({ allTraffic }) => [allTraffic],
     });
 
     const bashSandbox: BashSandboxExtended = {

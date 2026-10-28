@@ -11,12 +11,14 @@ import {
   Text,
   TextInput,
   Textarea,
+  TagsInput,
   Title,
 } from "@mantine/core";
 import { useFetcher } from "react-router";
 import type { EntityRecord } from "../../types/entities";
 import type { EntityDialogMode, EntityPageDefinition } from "./types";
 import { InfoIcon } from "@phosphor-icons/react";
+import { ToolSetContextEditor } from "./toolset-context-editor";
 
 type KeyValuePair = { key: string; value: string };
 
@@ -144,6 +146,44 @@ function KeyValueEditor({
   );
 }
 
+function StringListEditor({
+  name,
+  label,
+  initialValue,
+  placeholder,
+}: {
+  name: string;
+  label: string;
+  initialValue: unknown;
+  placeholder?: string;
+}) {
+  const [value, setValue] = useState<string[]>(() => {
+    if (typeof initialValue !== "string") return [];
+    try {
+      const parsed: unknown = JSON.parse(initialValue);
+      return Array.isArray(parsed)
+        ? parsed.filter((item): item is string => typeof item === "string")
+        : [];
+    } catch {
+      return [];
+    }
+  });
+
+  return (
+    <>
+      <TagsInput
+        label={label}
+        placeholder={placeholder}
+        value={value}
+        onChange={(items) => setValue(items.map((item) => item.trim()).filter(Boolean))}
+        splitChars={[","]}
+        clearable
+      />
+      <input type="hidden" name={name} value={JSON.stringify(value)} />
+    </>
+  );
+}
+
 export function EntityPageDialogs({
   page,
   mode,
@@ -221,7 +261,20 @@ export function EntityPageDialogs({
               .filter((field) => !field.createOnly || mode === "create")
               .map((field) => (
               <div className={field.wide ? "field-wide" : ""} key={field.key}>
-                {field.type === "textarea" ? (
+                {field.type === "toolset-contexts" ? (
+                  <ToolSetContextEditor
+                    name={field.key}
+                    schemas={page.toolSetSchemas ?? []}
+                    initialValue={selected?.[field.key]}
+                  />
+                ) : field.type === "tags" ? (
+                  <StringListEditor
+                    name={field.key}
+                    label={field.label}
+                    placeholder={field.placeholder}
+                    initialValue={selected?.[field.key]}
+                  />
+                ) : field.type === "textarea" ? (
                   <Textarea
                     name={field.key}
                     label={field.label}

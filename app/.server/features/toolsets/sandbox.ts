@@ -6,17 +6,27 @@ import { jsonbToStringRecord } from "~/.server/utils";
 import { getSandbox } from "./sandboxes";
 
 const Context = z.object({
-  sandboxInstanceId: z.string().readonly(),
+  sandboxInstanceId: z.string().readonly().default("[RESERVED]"),
 });
 
 function getSchema() {
-  return z.toJSONSchema(Context);
+  return z.toJSONSchema(Context, { target: "draft-07" });
 }
 
 export const SandboxToolSet: ToolSet = {
   name: "sandbox",
   getToolSetContextSchema: () => {
     return getSchema();
+  },
+  validateContext: (value) => {
+    const result = Context.safeParse(value);
+    return result.success
+      ? null
+      : result.error.issues
+          .map(
+            (issue) => `${issue.path.join(".") || "context"}: ${issue.message}`,
+          )
+          .join("、");
   },
   getTools: async (toolSetCtx: Record<string, unknown>) => {
     const schema = Context.parse(toolSetCtx);
@@ -32,7 +42,6 @@ export const SandboxToolSet: ToolSet = {
       instance.instanceId,
       jsonbToStringRecord(instance.sandbox.envs),
       [...instance.sandbox.allowedDomainList],
-      [...instance.sandbox.deniedDomainList],
     );
     const { tools } = await createBashTool({
       sandbox: info.sandbox,

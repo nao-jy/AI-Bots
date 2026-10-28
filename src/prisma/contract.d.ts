@@ -23,7 +23,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'9daf0a9f1756047aaa79b85fd331bebccc76dc9a1ae8601bb8730f5ed30f8ee1'>;
+  StorageHashBase<'244be886968632c8a5dbe12bae740a923d9e80620888ae5a1700563759667fe8'>;
 export type ExecutionHash =
   ExecutionHashBase<'5c1984e92c9f7200ee5ad8e0c0de5b1b5b5329ee0cfca95a089762069a80e0dd'>;
 export type ProfileHash =
@@ -430,7 +430,6 @@ export namespace Models {
   };
   export type aibot_Sandbox = {
     allowedDomainList: FieldOutputTypes['aibot']['Sandbox']['allowedDomainList'];
-    deniedDomainList: FieldOutputTypes['aibot']['Sandbox']['deniedDomainList'];
     envs: FieldOutputTypes['aibot']['Sandbox']['envs'];
     id: FieldOutputTypes['aibot']['Sandbox']['id'];
     ownerId: FieldOutputTypes['aibot']['Sandbox']['ownerId'];
@@ -1450,12 +1449,6 @@ type ContractBase = Omit<
             readonly Sandbox: {
               columns: {
                 readonly allowedDomainList: {
-                  readonly dataType: 'pg/text';
-                  readonly codecId: 'pg/text@1';
-                  readonly nullable: false;
-                  readonly many: { readonly elementNullable: false };
-                };
-                readonly deniedDomainList: {
                   readonly dataType: 'pg/text';
                   readonly codecId: 'pg/text@1';
                   readonly nullable: false;
@@ -2631,11 +2624,6 @@ type ContractBase = Omit<
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
                 readonly many: { readonly elementNullable: false };
               };
-              readonly deniedDomainList: {
-                readonly nullable: false;
-                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
-                readonly many: { readonly elementNullable: false };
-              };
               readonly envs: {
                 readonly nullable: true;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/jsonb@1' };
@@ -2684,7 +2672,6 @@ type ContractBase = Omit<
               readonly namespaceId: 'aibot';
               readonly fields: {
                 readonly allowedDomainList: { readonly column: 'allowedDomainList' };
-                readonly deniedDomainList: { readonly column: 'deniedDomainList' };
                 readonly envs: { readonly column: 'envs' };
                 readonly id: { readonly column: 'id' };
                 readonly ownerId: { readonly column: 'ownerId' };

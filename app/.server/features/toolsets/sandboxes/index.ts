@@ -16,7 +16,6 @@ export interface Sandbox {
     instanceId: string | null,
     envs: Record<string, string>,
     allowedDomains: string[],
-    deniedDomains: string[],
   ) => Promise<BashSandboxInfo>;
   destroySandbox: (instanceId: string) => Promise<void>;
 }

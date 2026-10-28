@@ -1376,16 +1376,6 @@
                   "kind": "scalar"
                 }
               },
-              "deniedDomainList": {
-                "many": {
-                  "elementNullable": false
-                },
-                "nullable": false,
-                "type": {
-                  "codecId": "pg/text@1",
-                  "kind": "scalar"
-                }
-              },
               "envs": {
                 "nullable": true,
                 "type": {
@@ -1465,9 +1455,6 @@
               "fields": {
                 "allowedDomainList": {
                   "column": "allowedDomainList"
-                },
-                "deniedDomainList": {
-                  "column": "deniedDomainList"
                 },
                 "envs": {
                   "column": "envs"
@@ -3005,11 +2992,6 @@
                   "prefix": "Sandbox_allowedDomainList_elem_not_null"
                 },
                 {
-                  "expression": "array_position(\"deniedDomainList\", NULL) IS NULL",
-                  "name": "Sandbox_deniedDomainList_elem_not_null_50685a8d",
-                  "prefix": "Sandbox_deniedDomainList_elem_not_null"
-                },
-                {
                   "expression": "\"sandboxScope\" IN ('turn', 'thread', 'all')",
                   "name": "Sandbox_sandboxScope_check_bf4b2308",
                   "prefix": "Sandbox_sandboxScope_check"
@@ -3017,14 +2999,6 @@
               ],
               "columns": {
                 "allowedDomainList": {
-                  "codecId": "pg/text@1",
-                  "dataType": "pg/text",
-                  "many": {
-                    "elementNullable": false
-                  },
-                  "nullable": false
-                },
-                "deniedDomainList": {
                   "codecId": "pg/text@1",
                   "dataType": "pg/text",
                   "many": {
@@ -3371,7 +3345,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "9daf0a9f1756047aaa79b85fd331bebccc76dc9a1ae8601bb8730f5ed30f8ee1"
+    "storageHash": "244be886968632c8a5dbe12bae740a923d9e80620888ae5a1700563759667fe8"
   },
   "execution": {
     "executionHash": "5c1984e92c9f7200ee5ad8e0c0de5b1b5b5329ee0cfca95a089762069a80e0dd",

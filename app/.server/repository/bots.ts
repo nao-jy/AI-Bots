@@ -1,7 +1,11 @@
 import { db } from "./db";
 import type { AuthUser } from "../auth";
 import { generatePublicId, idList, jsonb, record } from "../utils";
-import { listToolSetNames } from "../features/toolsets";
+import {
+  listToolSetNames,
+  listToolSetSchemas,
+  validateToolSetContext,
+} from "../features/toolsets";
 
 export async function listBots(user: AuthUser, publicOrigin: string) {
   const bots = await db.orm.aibot.Chatbot.where({ ownerId: user.id })
@@ -60,7 +64,7 @@ export async function listBots(user: AuthUser, publicOrigin: string) {
       value: String(adapter.id),
     })),
     sandboxOptions: sandboxes.map((sandbox) => ({ label: `${sandbox.sandboxType} (${sandbox.sandboxScope})`, value: String(sandbox.id) })),
-    toolSetNames: listToolSetNames(),
+    toolSetSchemas: listToolSetSchemas(),
   };
 }
 
@@ -117,6 +121,11 @@ export async function saveBot(
   for (const [toolSetName, toolSetContext] of Object.entries(toolSetContexts))
     if (!toolSetContext || typeof toolSetContext !== "object" || Array.isArray(toolSetContext))
       return { error: `${toolSetName} ToolSet context はJSONオブジェクトで入力してください。` };
+    else {
+      const validationError = validateToolSetContext(toolSetName, toolSetContext);
+      if (validationError)
+        return { error: `${toolSetName}: ${validationError}` };
+    }
   if (
     id !== null &&
     !(await db.orm.aibot.Chatbot.first({ id, ownerId: user.id }))

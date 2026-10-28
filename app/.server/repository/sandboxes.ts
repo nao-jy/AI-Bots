@@ -2,12 +2,7 @@ import { db } from "./db";
 import type { AuthUser } from "../auth";
 import { jsonb, record } from "../utils";
 import { listSandboxNames } from "../features/toolsets/sandboxes";
-
-export const SANDBOX_SCOPES = {
-  turn: "ターン",
-  thread: "スレッド",
-  all: "全期間",
-} as const;
+import { SANDBOX_SCOPES } from "~/const";
 type SandboxScope = keyof typeof SANDBOX_SCOPES;
 
 function isSandboxScope(value: string): value is SandboxScope {
@@ -45,7 +40,6 @@ export async function listSandboxes(user: AuthUser) {
         name: `${sandbox.sandboxType} (${SANDBOX_SCOPES[sandbox.sandboxScope]})`,
         envs: JSON.stringify(sandbox.envs ?? {}, null, 2),
         allowedDomainList: JSON.stringify(sandbox.allowedDomainList, null, 2),
-        deniedDomainList: JSON.stringify(sandbox.deniedDomainList, null, 2),
       }),
     ),
   };
@@ -64,7 +58,6 @@ export async function saveSandbox(
     return { error: "サンドボックスの適用範囲を選択してください。" };
   let envs: Record<string, string>;
   let allowedDomainList: string[];
-  let deniedDomainList: string[];
   try {
     const envValue: unknown = JSON.parse(
       String(values.get("envs") ?? "{}").trim() || "{}",
@@ -83,10 +76,6 @@ export async function saveSandbox(
       String(values.get("allowedDomainList") ?? "[]").trim(),
       "許可ドメイン",
     );
-    deniedDomainList = parseStringList(
-      String(values.get("deniedDomainList") ?? "[]").trim(),
-      "拒否ドメイン",
-    );
   } catch (error) {
     return {
       error:
@@ -103,7 +92,6 @@ export async function saveSandbox(
     sandboxScope,
     envs: jsonb(envs),
     allowedDomainList,
-    deniedDomainList,
   };
   if (id === null)
     await db.orm.aibot.Sandbox.create({ ...saved, ownerId: user.id });

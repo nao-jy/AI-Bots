@@ -186,7 +186,6 @@ namespace aibot {
     sandboxType       String
     envs              Jsonb?
     allowedDomainList String[]
-    deniedDomainList  String[]
     sandboxScope      SandboxScope
     owner             User              @relation(fields: [ownerId], references: [id], onDelete: Cascade)
     ownerId           Int
