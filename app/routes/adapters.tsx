@@ -12,7 +12,7 @@ import {
 import { requireUser } from "../.server/auth";
 import { APP_NAME } from "~/const";
 import { testAdapter } from "~/.server/test";
-import { listAdapterNames } from "~/.server/features/chatAdapter";
+import { listAdapterNames } from "~/.server/features/chat-adapter";
 
 const page: Omit<EntityPageDefinition, "records"> = {
   title: "アダプタ",
@@ -45,7 +45,13 @@ const page: Omit<EntityPageDefinition, "records"> = {
         href: "https://chat-sdk.dev/adapters",
       },
     },
-    { key: "authId", label: "OAuth認証情報", type: "select", options: [], placeholder: "使用しない" },
+    {
+      key: "authId",
+      label: "OAuth認証情報",
+      type: "select",
+      options: [],
+      placeholder: "使用しない",
+    },
   ],
 };
 
@@ -101,7 +107,9 @@ export default function Adapters({ loaderData }: Route.ComponentProps) {
           options:
             field.key === "platformId"
               ? loaderData.adapterOptions
-              : field.key === "authId" ? loaderData.authOptions : field.options,
+              : field.key === "authId"
+                ? loaderData.authOptions
+                : field.options,
         })),
       }}
     />

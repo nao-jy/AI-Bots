@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import {
+  createContext,
   isRouteErrorResponse,
   Links,
   Meta,
@@ -18,6 +19,14 @@ import {
   MantineProvider,
   mantineHtmlProps,
 } from "@mantine/core";
+import { logger } from "./.server/logger";
+import { randomUUID } from "node:crypto";
+import {
+  requestContext,
+  requestStorage,
+  type RequestContext,
+} from "./.server/request-context";
+import { getSessionUser } from "./.server/auth";
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -111,6 +120,38 @@ function getNavigationLabel(pathname: string) {
 
   return labels[pathname] ?? "ページ";
 }
+
+export const middleware: Route.MiddlewareFunction[] = [
+  async ({ request, context }, next) => {
+    const requestId = randomUUID();
+    const user = await getSessionUser(request);
+    const clientIp =
+      request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null;
+
+    const ctx: RequestContext = {
+      requestId,
+      clientIp: clientIp,
+      userId: user?.id ?? null,
+    };
+    context.set(requestContext, ctx);
+
+    return requestStorage.run(ctx, async () => {
+      logger.info("request.received", {
+        method: request.method,
+        path: new URL(request.url).pathname,
+      });
+
+      const response = await next();
+
+      logger.info("request.completed", {
+        method: request.method,
+        statusCode: response.status,
+      });
+
+      return response;
+    });
+  },
+];
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   let message = "Oops!";

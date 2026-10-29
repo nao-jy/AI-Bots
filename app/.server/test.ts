@@ -1,5 +1,5 @@
 import type { AuthUser } from "./auth";
-import { getBotInfo } from "./features/chatAdapter";
+import { getBotInfo } from "./features/chat-adapter";
 import { getMcpClient } from "./features/mcp";
 import { getModelInfo, listProviderNames } from "./features/provider";
 import { getProvider } from "./repository/providers";
@@ -10,7 +10,7 @@ import {
   testFailure,
   testSuccess,
 } from "./utils";
-import { generateText, type JSONValue } from "ai";
+import { generateText } from "ai";
 
 export async function testAdapter(user: AuthUser, values: FormData) {
   try {

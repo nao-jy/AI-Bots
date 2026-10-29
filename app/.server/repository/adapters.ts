@@ -7,14 +7,16 @@ import {
   jsonb,
   record,
 } from "../utils";
-import { toDisplayNameAdapter } from "../features/chatAdapter";
+import { toDisplayNameAdapter } from "../features/chat-adapter";
 
 export async function listAdapters(user: AuthUser) {
   const [adapters, authentications] = await Promise.all([
     db.orm.aibot.ChatAdapter.where({ ownerId: user.id }).all(),
     db.orm.aibot.OAuthAuthentication.where({ ownerId: user.id }).all(),
   ]);
-  const authNames = new Map(authentications.map((auth) => [auth.id, auth.name]));
+  const authNames = new Map(
+    authentications.map((auth) => [auth.id, auth.name]),
+  );
   return {
     records: adapters.map((adapter) => {
       const config = decryptAdapterEnvs(adapter.config);
@@ -23,12 +25,18 @@ export async function listAdapters(user: AuthUser) {
         platform: toDisplayNameAdapter(adapter.platform) ?? adapter.platform,
         platformId: adapter.platform,
         authId: adapter.authId === null ? "" : String(adapter.authId),
-        authentication: adapter.authId === null ? "未設定" : authNames.get(adapter.authId) ?? "不明",
+        authentication:
+          adapter.authId === null
+            ? "未設定"
+            : (authNames.get(adapter.authId) ?? "不明"),
         config: JSON.stringify(config),
         configured: Object.keys(config).length ? "設定済み" : "未設定",
       });
     }),
-    authOptions: authentications.map((auth) => ({ label: auth.name, value: String(auth.id) })),
+    authOptions: authentications.map((auth) => ({
+      label: auth.name,
+      value: String(auth.id),
+    })),
   };
 }
 
@@ -65,7 +73,13 @@ export async function saveAdapter(
       return { error: "アダプタが見つかりません。" };
   }
   if (authId !== null) {
-    if (!Number.isInteger(authId) || !(await db.orm.aibot.OAuthAuthentication.first({ id: authId, ownerId: user.id })))
+    if (
+      !Number.isInteger(authId) ||
+      !(await db.orm.aibot.OAuthAuthentication.first({
+        id: authId,
+        ownerId: user.id,
+      }))
+    )
       return { error: "選択したOAuth認証情報が見つかりません。" };
   }
   let encryptedConfig: ReturnType<typeof encryptStringMap>;
@@ -129,7 +143,9 @@ export async function regenerateAdapterPublicIds(user: AuthUser, id: number) {
     for (const slot of ["first", "second"] as const) {
       const publicId = publicIds.find((item) => item.slot === slot);
       if (publicId) {
-        await tx.orm.aibot.ChatAdapterPublicId.where({ id: publicId.id }).update({
+        await tx.orm.aibot.ChatAdapterPublicId.where({
+          id: publicId.id,
+        }).update({
           id: generatePublicId(),
         });
       } else {
