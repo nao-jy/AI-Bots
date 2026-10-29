@@ -52,7 +52,6 @@
   },
   "devDependencies": {
     "@chat-adapter/state-memory": "^4.43.0",
-    "@prisma/cli-engine": "^0.7.0",
     "@react-router/dev": "^8.4.0",
     "@tailwindcss/vite": "^4.2.2",
     "@types/node": "^22",
