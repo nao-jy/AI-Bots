@@ -28,7 +28,7 @@ namespace aibot {
     mcpServers   McpServer[]
     sessions     Session[]
     createdAt    TimestamptzString          @default(now())
-    updatedAt    temporal.updatedAtString()
+    updatedAt    temporal.UpdatedAtString
   }
 
   model Session {
@@ -65,7 +65,7 @@ namespace aibot {
     agentId     Int?                       @unique
     adapters    ChatbotAdapter[]
     createdAt   TimestamptzString          @default(now())
-    updatedAt   temporal.updatedAtString()
+    updatedAt   temporal.UpdatedAtString
 
     publicIds   ChatBotPublicId[]
 
@@ -92,7 +92,7 @@ namespace aibot {
     authentication OAuthAuthentication?       @relation(fields: [authId], references: [id], onDelete: SetNull)
     authId         Int?
     createdAt      TimestamptzString          @default(now())
-    updatedAt      temporal.updatedAtString()
+    updatedAt      temporal.UpdatedAtString
 
     chatbots       ChatbotAdapter[]
     publicIds      ChatAdapterPublicId[]
@@ -122,7 +122,7 @@ namespace aibot {
     ownerId      Int
     agents       AgentDefinition[]
     createdAt    TimestamptzString          @default(now())
-    updatedAt    temporal.updatedAtString()
+    updatedAt    temporal.UpdatedAtString
 
     @@index([ownerId])
     @@unique([ownerId, name])
@@ -138,7 +138,7 @@ namespace aibot {
     chatbot    Chatbot?
     mcpServers AgentMcpServer[]
     createdAt  TimestamptzString          @default(now())
-    updatedAt  temporal.updatedAtString()
+    updatedAt  temporal.UpdatedAtString
 
     @@index([providerId])
   }
@@ -154,7 +154,7 @@ namespace aibot {
     ownerId     Int
     agents      AgentMcpServer[]
     createdAt   TimestamptzString          @default(now())
-    updatedAt   temporal.updatedAtString()
+    updatedAt   temporal.UpdatedAtString
 
     @@index([ownerId])
   }
@@ -185,7 +185,7 @@ namespace aibot {
     revocationEndpoint    String?
     scopes                String[]
     createdAt             TimestamptzString          @default(now())
-    updatedAt             temporal.updatedAtString()
+    updatedAt             temporal.UpdatedAtString
 
     authentications       OAuthAuthentication[]
 
@@ -203,7 +203,7 @@ namespace aibot {
     expiresAt    TimestamptzString?
     refreshToken String?
     createdAt    TimestamptzString          @default(now())
-    updatedAt    temporal.updatedAtString()
+    updatedAt    temporal.UpdatedAtString
 
     @@index([ownerId])
     @@index([oauthId])
