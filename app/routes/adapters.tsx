@@ -6,6 +6,7 @@ import {
 import {
   deleteAdapter,
   listAdapters,
+  regenerateAdapterPublicIds,
   saveAdapter,
 } from "../.server/repository/entities";
 import { requireUser } from "../.server/auth";
@@ -72,6 +73,10 @@ export async function action({ request }: Route.ActionArgs) {
   const form = await request.formData();
   const intent = String(form.get("_intent") ?? "");
   const id = Number(form.get("id"));
+  if (intent === "regenerate-public-ids")
+    return Number.isInteger(id) && (await regenerateAdapterPublicIds(user, id))
+      ? { ok: true }
+      : { ok: false, error: "アダプタが見つかりません。" };
   if (intent === "test") return testAdapter(user, form);
   if (intent === "delete")
     return Number.isInteger(id) && (await deleteAdapter(user, id))

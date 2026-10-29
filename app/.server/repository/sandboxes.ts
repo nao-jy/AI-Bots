@@ -3,7 +3,7 @@ import type { AuthUser } from "../auth";
 import { jsonb, record } from "../utils";
 import { listSandboxNames } from "../features/toolsets/sandboxes";
 import { SANDBOX_SCOPES } from "~/const";
-type SandboxScope = keyof typeof SANDBOX_SCOPES;
+export type SandboxScope = keyof typeof SANDBOX_SCOPES;
 
 function isSandboxScope(value: string): value is SandboxScope {
   return Object.hasOwn(SANDBOX_SCOPES, value);
@@ -107,7 +107,7 @@ export async function deleteSandbox(user: AuthUser, id: number) {
 }
 
 export async function getSandboxInstance(instanceId: string) {
-  const instance = await db.orm.aibot.SandboxInstance.whereUnique({
+  const instance = await db.orm.aibot.PersistentSandboxInstance.whereUnique({
     instanceId,
   })
     .include("sandbox")
@@ -119,35 +119,67 @@ export async function getChatbotSandbox(chatbotId: number, ownerId: number) {
   const links = await db.orm.aibot.ChatBotToolSandbox.where({ chatbotId })
     .include("sandBox")
     .all();
-  return links.find((link) => link.sandBox.ownerId === ownerId)?.sandBox ?? null;
+  return (
+    links.find((link) => link.sandBox.ownerId === ownerId)?.sandBox ?? null
+  );
 }
 
-export async function getReusableSandboxInstance(
-  chatbotId: number,
+export async function getPersistentSandboxInstance(
   sandboxId: number,
   sandboxScope: SandboxScope,
-  threadId: string,
+  threadId: string | null,
+  adapterId: number | null,
+  chatbotId: number | null,
 ) {
   if (sandboxScope === "turn") return null;
 
-  const instances = await db.orm.aibot.SandboxInstance.where({
-    chatbotId,
+  const instances = await db.orm.aibot.PersistentSandboxInstance.where({
     sandboxId,
   }).all();
-  return sandboxScope === "thread"
-    ? (instances.find((instance) => instance.threadId === threadId) ?? null)
-    : (instances.find((instance) => instance.threadId === null) ?? null);
+  switch (sandboxScope) {
+    case "thread": {
+      const isValid =
+        threadId !== null && adapterId !== null && chatbotId !== null;
+      if (!isValid) throw new Error("unexpected arg pattern");
+      break;
+    }
+    case "adapter": {
+      const isValid =
+        threadId === null && adapterId !== null && chatbotId !== null;
+      if (!isValid) throw new Error("unexpected arg pattern");
+      break;
+    }
+    case "bot": {
+      const isValid =
+        threadId === null && adapterId === null && chatbotId !== null;
+      if (!isValid) throw new Error("unexpected arg pattern");
+      break;
+    }
+    case "all": {
+      const isValid =
+        threadId === null && adapterId === null && chatbotId === null;
+      if (!isValid) throw new Error("unexpected arg pattern");
+      break;
+    }
+  }
+  return instances.find(
+    (instance) =>
+      instance.threadId === threadId &&
+      instance.adapterId === adapterId &&
+      instance.chatbotId === chatbotId,
+  );
 }
 
-export async function createSandboxInstance(values: {
+export async function createPersistentSandboxInstance(values: {
   instanceId: string;
   sandboxId: number;
-  chatbotId: number;
+  chatbotId: number | null;
+  adapterId: number | null;
   threadId: string | null;
 }) {
-  return db.orm.aibot.SandboxInstance.create(values);
+  return db.orm.aibot.PersistentSandboxInstance.create(values);
 }
 
 export async function deleteSandboxInstance(instanceId: string) {
-  await db.orm.aibot.SandboxInstance.where({ instanceId }).delete();
+  await db.orm.aibot.PersistentSandboxInstance.where({ instanceId }).delete();
 }

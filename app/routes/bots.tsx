@@ -6,6 +6,7 @@ import {
 import {
   deleteBot,
   listBots,
+  regenerateBotPublicIds,
   saveBot,
   setBotEnabled,
 } from "../.server/repository/entities";
@@ -78,6 +79,10 @@ export async function action({ request }: Route.ActionArgs) {
   const form = await request.formData();
   const intent = String(form.get("_intent") ?? "");
   const id = Number(form.get("id"));
+  if (intent === "regenerate-public-ids")
+    return Number.isInteger(id) && (await regenerateBotPublicIds(user, id))
+      ? { ok: true }
+      : { ok: false, error: "ボットが見つかりません。" };
   if (intent === "delete")
     return Number.isInteger(id) && (await deleteBot(user, id))
       ? { ok: true }

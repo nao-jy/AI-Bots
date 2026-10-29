@@ -81,13 +81,21 @@ export async function saveAdapter(
   }
   const storedEnvs = jsonb(encryptedConfig);
   if (id === null) {
-    await db.orm.aibot.ChatAdapter.create({
-      publicId: generatePublicId(),
-      name,
-      platform,
-      ownerId: user.id,
-      config: storedEnvs,
-      authId,
+    await db.transaction(async (tx) => {
+      const adapter = await tx.orm.aibot.ChatAdapter.create({
+        name,
+        platform,
+        ownerId: user.id,
+        config: storedEnvs,
+        authId,
+      });
+      for (const slot of ["first", "second"] as const) {
+        await tx.orm.aibot.ChatAdapterPublicId.create({
+          id: generatePublicId(),
+          slot,
+          adapterId: adapter.id,
+        });
+      }
     });
   } else {
     await db.orm.aibot.ChatAdapter.where({ id, ownerId: user.id }).update({
@@ -105,4 +113,33 @@ export async function deleteAdapter(user: AuthUser, id: number) {
     return false;
   await db.orm.aibot.ChatAdapter.where({ id, ownerId: user.id }).delete();
   return true;
+}
+
+export async function regenerateAdapterPublicIds(user: AuthUser, id: number) {
+  return db.transaction(async (tx) => {
+    const adapter = await tx.orm.aibot.ChatAdapter.first({
+      id,
+      ownerId: user.id,
+    });
+    if (!adapter) return false;
+
+    const publicIds = await tx.orm.aibot.ChatAdapterPublicId.where({
+      adapterId: id,
+    }).all();
+    for (const slot of ["first", "second"] as const) {
+      const publicId = publicIds.find((item) => item.slot === slot);
+      if (publicId) {
+        await tx.orm.aibot.ChatAdapterPublicId.where({ id: publicId.id }).update({
+          id: generatePublicId(),
+        });
+      } else {
+        await tx.orm.aibot.ChatAdapterPublicId.create({
+          id: generatePublicId(),
+          slot,
+          adapterId: id,
+        });
+      }
+    }
+    return true;
+  });
 }

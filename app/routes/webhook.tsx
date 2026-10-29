@@ -20,7 +20,9 @@ export async function action({ request, params }: Route.ActionArgs) {
   const chatbot = await getAvailableBotByPublicId(botId);
 
   const adapter = chatbot?.adapters.find(
-    (link) => link.adapter.publicId === adapterId,
+    (link) =>
+      link.adapter?.publicIds.some((publicId) => publicId.id === adapterId) ??
+      false,
   )?.adapter;
   if (!chatbot || !adapter) {
     return new Response("Not Found", { status: 404 });
@@ -36,7 +38,7 @@ export async function action({ request, params }: Route.ActionArgs) {
     return new Response("Unsupported adapter", { status: 404 });
   }
 
-  registerBotHandlers(botInfo.bot, chatbot.id);
+  registerBotHandlers(botInfo.bot, chatbot.id, adapter.id);
   return botInfo.bot.webhooks[adapter.platform](request, {
     waitUntil: (task) => {
       void task.catch((error) => {

@@ -3,10 +3,11 @@ import { generateText, stepCountIs, type ToolSet } from "ai";
 import { createChatTools } from "chat/ai";
 import type { Chat } from "chat";
 import {
-  createSandboxInstance,
+  createPersistentSandboxInstance,
   deleteSandboxInstance,
   getChatbotSandbox,
-  getReusableSandboxInstance,
+  getPersistentSandboxInstance,
+  type SandboxScope,
 } from "../repository/sandboxes";
 import { decryptMcpHeaders, jsonbToStringRecord } from "../utils";
 import { getModelInfo } from "./provider";
@@ -27,31 +28,63 @@ function safeToolName(value: string) {
   return value.replace(/[^a-zA-Z0-9_-]/g, "_");
 }
 
-async function getBotSandbox(
+function getScopedIds(
+  scope: SandboxScope,
   chatbotId: number,
+  adapterId: number,
+  threadId: string,
+) {
+  switch (scope) {
+    case "all": {
+      return {
+        chatbotId: null,
+        adapterId: null,
+        threadId: null,
+      };
+    }
+    case "bot": {
+      return {
+        chatbotId: chatbotId,
+        adapterId: null,
+        threadId: null,
+      };
+    }
+    case "adapter": {
+      return {
+        chatbotId: chatbotId,
+        adapterId: adapterId,
+        threadId: null,
+      };
+    }
+    case "thread": {
+      return {
+        chatbotId: chatbotId,
+        adapterId: adapterId,
+        threadId: threadId,
+      };
+    }
+  }
+  return null;
+}
+
+async function getBotSandbox(
   ownerId: number,
+  chatbotId: number,
+  adapterId: number,
   threadId: string,
 ) {
   const sandbox = await getChatbotSandbox(chatbotId, ownerId);
   if (!sandbox) return null;
 
-  const sandboxProvider = getSandbox(sandbox.sandboxType);
-  if (!sandboxProvider) return null;
-
-  const reusableInstance = await getReusableSandboxInstance(
-    chatbotId,
-    sandbox.id,
+  const scopedIds = getScopedIds(
     sandbox.sandboxScope,
+    chatbotId,
+    adapterId,
     threadId,
   );
 
-  if (reusableInstance) {
-    return {
-      instanceId: reusableInstance.instanceId,
-      isTurnScoped: false,
-      sandboxProvider,
-    };
-  }
+  const sandboxProvider = getSandbox(sandbox.sandboxType);
+  if (!sandboxProvider) return null;
 
   const info = await sandboxProvider.getBashSandbox(
     null,
@@ -62,13 +95,34 @@ async function getBotSandbox(
     throw new Error(`failed to create sandbox for chatbot ${chatbotId}`);
   }
 
+  if (scopedIds !== null) {
+    const persistentInstance = await getPersistentSandboxInstance(
+      sandbox.id,
+      sandbox.sandboxScope,
+      scopedIds.threadId,
+      scopedIds.adapterId,
+      scopedIds.chatbotId,
+    );
+    if (persistentInstance) {
+      return {
+        instanceId: persistentInstance.instanceId,
+        isTurnScoped: false,
+        sandboxProvider,
+        bashSandbox: info.sandbox,
+      };
+    }
+  }
+
   try {
-    await createSandboxInstance({
-      instanceId: info.createdInstanceId,
-      sandboxId: sandbox.id,
-      chatbotId,
-      threadId: sandbox.sandboxScope === "thread" ? threadId : null,
-    });
+    if (scopedIds !== null) {
+      await createPersistentSandboxInstance({
+        instanceId: info.createdInstanceId,
+        sandboxId: sandbox.id,
+        chatbotId: scopedIds.chatbotId,
+        adapterId: scopedIds.adapterId,
+        threadId: scopedIds.threadId,
+      });
+    }
   } catch (error) {
     await sandboxProvider.destroySandbox(info.createdInstanceId);
     throw error;
@@ -78,10 +132,15 @@ async function getBotSandbox(
     instanceId: info.createdInstanceId,
     isTurnScoped: sandbox.sandboxScope === "turn",
     sandboxProvider,
+    bashSandbox: info.sandbox,
   };
 }
 
-export function registerBotHandlers(chat: Chat, botId: number) {
+export function registerBotHandlers(
+  chat: Chat,
+  botId: number,
+  adapterId: number,
+) {
   chat.onNewMention(async (thread, message) => {
     const mcpClients: Array<Awaited<ReturnType<typeof createMCPClient>>> = [];
     let turnSandbox: Awaited<ReturnType<typeof getBotSandbox>> = null;
@@ -121,11 +180,16 @@ export function registerBotHandlers(chat: Chat, botId: number) {
         }),
       } as ToolSet;
 
-      turnSandbox = await getBotSandbox(chatbot.id, chatbot.ownerId, thread.id);
+      turnSandbox = await getBotSandbox(
+        chatbot.ownerId,
+        chatbot.id,
+        adapterId,
+        thread.id,
+      );
       if (turnSandbox) {
         Object.assign(
           tools,
-          await getSandboxTools(turnSandbox.instanceId, chat, thread.id),
+          await getSandboxTools(turnSandbox.bashSandbox, chat, thread.id),
         );
       }
 

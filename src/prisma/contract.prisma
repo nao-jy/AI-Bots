@@ -6,7 +6,14 @@ enum MCPTransport {
 enum SandboxScope {
   turn = "turn"
   thread = "thread"
+  adapter = "adapter"
+  bot = "bot"
   all = "all"
+}
+
+enum PublicIdSlot {
+  first = "first"
+  second = "second"
 }
 
 namespace aibot {
@@ -36,9 +43,18 @@ namespace aibot {
     @@index([expiresAt])
   }
 
+  model ChatBotPublicId {
+    id        String            @unique
+    slot      PublicIdSlot
+    chatbotId Int
+    chatbot   Chatbot           @relation(fields: [chatbotId], references: [id], onDelete: Cascade)
+    createdAt TimestamptzString @default(now())
+
+    @@unique([chatbotId, slot])
+  }
+
   model Chatbot {
     id          Int                        @id @default(autoincrement())
-    publicId    String                     @unique
     name        String
     description String?
     instruction String
@@ -51,12 +67,23 @@ namespace aibot {
     createdAt   TimestamptzString          @default(now())
     updatedAt   temporal.updatedAtString()
 
+    publicIds   ChatBotPublicId[]
+
     @@index([ownerId])
+  }
+
+  model ChatAdapterPublicId {
+    id        String            @unique
+    slot      PublicIdSlot
+    adapterId Int
+    adapter   ChatAdapter       @relation(fields: [adapterId], references: [id], onDelete: Cascade)
+    createdAt TimestamptzString @default(now())
+
+    @@unique([adapterId, slot])
   }
 
   model ChatAdapter {
     id             Int                        @id @default(autoincrement())
-    publicId       String                     @unique
     name           String
     platform       String
     config         Jsonb?
@@ -68,6 +95,7 @@ namespace aibot {
     updatedAt      temporal.updatedAtString()
 
     chatbots       ChatbotAdapter[]
+    publicIds      ChatAdapterPublicId[]
 
     @@index([ownerId])
     @@index([platform])
@@ -182,24 +210,31 @@ namespace aibot {
   }
 
   model Sandbox {
-    id                Int               @id @default(autoincrement())
+    id                Int                         @id @default(autoincrement())
     sandboxType       String
     envs              Jsonb?
     allowedDomainList String[]
     sandboxScope      SandboxScope
-    owner             User              @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+    owner             User                        @relation(fields: [ownerId], references: [id], onDelete: Cascade)
     ownerId           Int
 
-    instances         SandboxInstance[]
+    instances         PersistentSandboxInstance[]
   }
 
-  model SandboxInstance {
-    instanceId String  @id
+  //           threadId  adapterId  chatbotId
+  // thread    not null   not null  not null 
+  // adapter       null   not null  not null 
+  // bot           null       null  not null 
+  // all           null       null      null  
+  model PersistentSandboxInstance {
+    instanceId String       @id
     sandboxId  Int
-    sandbox    Sandbox @relation(fields: [sandboxId], references: [id], onDelete: Cascade)
-    chatbotId  Int
-    chatbot    Chatbot @relation(fields: [chatbotId], references: [id], onDelete: Cascade)
+    sandbox    Sandbox      @relation(fields: [sandboxId], references: [id], onDelete: Cascade)
     threadId   String?
+    adapterId  Int?
+    adapter    ChatAdapter? @relation(fields: [adapterId], references: [id], onDelete: Cascade)
+    chatbotId  Int?
+    chatbot    Chatbot?     @relation(fields: [chatbotId], references: [id], onDelete: Cascade)
   }
 
   model ChatBotToolSandbox {

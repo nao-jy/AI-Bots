@@ -10,7 +10,10 @@ import {
 export async function listBots(user: AuthUser, publicOrigin: string) {
   const bots = await db.orm.aibot.Chatbot.where({ ownerId: user.id })
     .include("agent")
-    .include("adapters", (links) => links.include("adapter"))
+    .include("adapters", (links) =>
+      links.include("adapter", (adapter) => adapter.include("publicIds")),
+    )
+    .include("publicIds")
     .orderBy((bot) => bot.updatedAt.desc())
     .all();
   const agents = await db.orm.aibot.AgentDefinition.include("chatbot")
@@ -32,20 +35,60 @@ export async function listBots(user: AuthUser, publicOrigin: string) {
         agent: bot.agent?.name ?? "—",
         agentId: bot.agentId ?? "",
         adapterIds: bot.adapters.map((link) => link.adapterId).join(","),
-        sandboxIds: sandboxLinks.filter((link) => link.chatbotId === bot.id && sandboxes.some((sandbox) => sandbox.id === link.sandboxId)).map((link) => link.sandboxId).join(","),
-        sandboxes: sandboxLinks.filter((link) => link.chatbotId === bot.id).map((link) => sandboxes.find((sandbox) => sandbox.id === link.sandboxId)?.sandboxType).filter(Boolean).join("、") || "—",
-        toolSetContexts: JSON.stringify(Object.fromEntries(toolSetContexts.filter((context) => context.chatbotId === bot.id).map((context) => [context.toolSetName, context.toolSetContext ?? {}])), null, 2),
-        toolsets: toolSetContexts.filter((context) => context.chatbotId === bot.id).map((context) => context.toolSetName).join("、") || "—",
+        sandboxIds: sandboxLinks
+          .filter(
+            (link) =>
+              link.chatbotId === bot.id &&
+              sandboxes.some((sandbox) => sandbox.id === link.sandboxId),
+          )
+          .map((link) => link.sandboxId)
+          .join(","),
+        sandboxes:
+          sandboxLinks
+            .filter((link) => link.chatbotId === bot.id)
+            .map(
+              (link) =>
+                sandboxes.find((sandbox) => sandbox.id === link.sandboxId)
+                  ?.sandboxType,
+            )
+            .filter(Boolean)
+            .join("、") || "—",
+        toolSetContexts: JSON.stringify(
+          Object.fromEntries(
+            toolSetContexts
+              .filter((context) => context.chatbotId === bot.id)
+              .map((context) => [
+                context.toolSetName,
+                context.toolSetContext ?? {},
+              ]),
+          ),
+          null,
+          2,
+        ),
+        toolsets:
+          toolSetContexts
+            .filter((context) => context.chatbotId === bot.id)
+            .map((context) => context.toolSetName)
+            .join("、") || "—",
         adapters:
-          bot.adapters.map((link) => link.adapter.name).join("、") || "—",
+          bot.adapters
+            .map((link) => link.adapter?.name)
+            .filter((name): name is string => Boolean(name))
+            .join("、") || "—",
         webhooks: JSON.stringify(
-          bot.adapters.map((link) => ({
-            adapterName: link.adapter.name,
-            url: new URL(
-              `/api/webhooks/${bot.publicId}/${link.adapter.publicId}`,
-              publicOrigin,
-            ).toString(),
-          })),
+          bot.adapters.flatMap((link) => {
+            const adapter = link.adapter;
+            if (!adapter) return [];
+            return bot.publicIds.flatMap((botPublicId) =>
+              adapter.publicIds.map((adapterPublicId) => ({
+                adapterName: `${adapter.name} (${botPublicId.slot}/${adapterPublicId.slot})`,
+                url: new URL(
+                  `/api/webhooks/${botPublicId.id}/${adapterPublicId.id}`,
+                  publicOrigin,
+                ).toString(),
+              })),
+            );
+          }),
         ),
         status: bot.isEnabled ? "稼働中" : "停止中",
       }),
@@ -63,7 +106,10 @@ export async function listBots(user: AuthUser, publicOrigin: string) {
       label: adapter.name,
       value: String(adapter.id),
     })),
-    sandboxOptions: sandboxes.map((sandbox) => ({ label: `${sandbox.sandboxType} (${sandbox.sandboxScope})`, value: String(sandbox.id) })),
+    sandboxOptions: sandboxes.map((sandbox) => ({
+      label: `${sandbox.sandboxType} (${sandbox.sandboxScope})`,
+      value: String(sandbox.id),
+    })),
     toolSetSchemas: listToolSetSchemas(),
   };
 }
@@ -82,13 +128,24 @@ export async function saveBot(
   const sandboxIds = idList(values.get("sandboxIds")?.toString() ?? null);
   let toolSetContexts: Record<string, unknown>;
   try {
-    const parsed: unknown = JSON.parse(String(values.get("toolSetContexts") ?? "{}").trim() || "{}");
-    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error();
+    const parsed: unknown = JSON.parse(
+      String(values.get("toolSetContexts") ?? "{}").trim() || "{}",
+    );
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed))
+      throw new Error();
     toolSetContexts = parsed as Record<string, unknown>;
-  } catch { return { error: "ToolSet context はJSONオブジェクトで入力してください。" }; }
+  } catch {
+    return { error: "ToolSet context はJSONオブジェクトで入力してください。" };
+  }
   const supportedToolSetNames = listToolSetNames();
-  if (Object.keys(toolSetContexts).some((name) => !supportedToolSetNames.includes(name)))
-    return { error: `利用できないToolSet名が含まれています。利用可能: ${supportedToolSetNames.join("、") || "なし"}` };
+  if (
+    Object.keys(toolSetContexts).some(
+      (name) => !supportedToolSetNames.includes(name),
+    )
+  )
+    return {
+      error: `利用できないToolSet名が含まれています。利用可能: ${supportedToolSetNames.join("、") || "なし"}`,
+    };
   if (!name) return { error: "ボット名を入力してください。" };
   if (agentId !== null && !Number.isInteger(agentId))
     return { error: "エージェントを選択してください。" };
@@ -114,15 +171,28 @@ export async function saveBot(
   if (adapterIds.some((adapterId) => !allowedAdapterIds.has(adapterId))) {
     return { error: "選択したアダプタを使用できません。" };
   }
-  const ownedSandboxes = await db.orm.aibot.Sandbox.where({ ownerId: user.id }).all();
-  const allowedSandboxIds = new Set(ownedSandboxes.map((sandbox) => sandbox.id));
+  const ownedSandboxes = await db.orm.aibot.Sandbox.where({
+    ownerId: user.id,
+  }).all();
+  const allowedSandboxIds = new Set(
+    ownedSandboxes.map((sandbox) => sandbox.id),
+  );
   if (sandboxIds.some((sandboxId) => !allowedSandboxIds.has(sandboxId)))
     return { error: "選択したサンドボックスを使用できません。" };
   for (const [toolSetName, toolSetContext] of Object.entries(toolSetContexts))
-    if (!toolSetContext || typeof toolSetContext !== "object" || Array.isArray(toolSetContext))
-      return { error: `${toolSetName} ToolSet context はJSONオブジェクトで入力してください。` };
+    if (
+      !toolSetContext ||
+      typeof toolSetContext !== "object" ||
+      Array.isArray(toolSetContext)
+    )
+      return {
+        error: `${toolSetName} ToolSet context はJSONオブジェクトで入力してください。`,
+      };
     else {
-      const validationError = validateToolSetContext(toolSetName, toolSetContext);
+      const validationError = validateToolSetContext(
+        toolSetName,
+        toolSetContext,
+      );
       if (validationError)
         return { error: `${toolSetName}: ${validationError}` };
     }
@@ -136,7 +206,6 @@ export async function saveBot(
     let botId = id;
     if (botId === null) {
       const created = await tx.orm.aibot.Chatbot.create({
-        publicId: generatePublicId(),
         name,
         description: description || null,
         instruction: instruction,
@@ -144,6 +213,13 @@ export async function saveBot(
         ownerId: user.id,
       });
       botId = created.id;
+      for (const slot of ["first", "second"] as const) {
+        await tx.orm.aibot.ChatBotPublicId.create({
+          id: generatePublicId(),
+          slot,
+          chatbotId: botId,
+        });
+      }
     } else {
       await tx.orm.aibot.Chatbot.where({ id: botId, ownerId: user.id }).update({
         name,
@@ -161,10 +237,19 @@ export async function saveBot(
     }
     await tx.orm.aibot.ChatBotToolSandbox.where({ chatbotId: botId! }).delete();
     for (const sandboxId of sandboxIds)
-      await tx.orm.aibot.ChatBotToolSandbox.create({ chatbotId: botId!, sandboxId });
-    await tx.orm.aibot.ChatBotToolSetContext.where({ chatbotId: botId! }).delete();
+      await tx.orm.aibot.ChatBotToolSandbox.create({
+        chatbotId: botId!,
+        sandboxId,
+      });
+    await tx.orm.aibot.ChatBotToolSetContext.where({
+      chatbotId: botId!,
+    }).delete();
     for (const [toolSetName, toolSetContext] of Object.entries(toolSetContexts))
-      await tx.orm.aibot.ChatBotToolSetContext.create({ chatbotId: botId!, toolSetName, toolSetContext: jsonb(toolSetContext) });
+      await tx.orm.aibot.ChatBotToolSetContext.create({
+        chatbotId: botId!,
+        toolSetName,
+        toolSetContext: jsonb(toolSetContext),
+      });
   });
   return { ok: true };
 }
@@ -174,6 +259,32 @@ export async function deleteBot(user: AuthUser, id: number) {
   if (!bot) return false;
   await db.orm.aibot.Chatbot.where({ id, ownerId: user.id }).delete();
   return true;
+}
+
+export async function regenerateBotPublicIds(user: AuthUser, id: number) {
+  return db.transaction(async (tx) => {
+    const bot = await tx.orm.aibot.Chatbot.first({ id, ownerId: user.id });
+    if (!bot) return false;
+
+    const publicIds = await tx.orm.aibot.ChatBotPublicId.where({
+      chatbotId: id,
+    }).all();
+    for (const slot of ["first", "second"] as const) {
+      const publicId = publicIds.find((item) => item.slot === slot);
+      if (publicId) {
+        await tx.orm.aibot.ChatBotPublicId.where({ id: publicId.id }).update({
+          id: generatePublicId(),
+        });
+      } else {
+        await tx.orm.aibot.ChatBotPublicId.create({
+          id: generatePublicId(),
+          slot,
+          chatbotId: id,
+        });
+      }
+    }
+    return true;
+  });
 }
 
 export async function setBotEnabled(
@@ -204,11 +315,18 @@ export async function getAvailableBot(botId: number) {
 }
 
 export async function getAvailableBotByPublicId(publicId: string) {
+  const botPublicId = await db.orm.aibot.ChatBotPublicId.where({
+    id: publicId,
+  }).first();
+  if (!botPublicId) return null;
+
   const chatbot = await db.orm.aibot.Chatbot.where({
-    publicId: publicId,
+    id: botPublicId.chatbotId,
     isEnabled: true,
   })
-    .include("adapters", (links) => links.include("adapter"))
+    .include("adapters", (links) =>
+      links.include("adapter", (adapter) => adapter.include("publicIds")),
+    )
     .first();
   return chatbot;
 }

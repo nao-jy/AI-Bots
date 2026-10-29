@@ -15,7 +15,11 @@ export const E2B: Sandbox = {
       sandbox = await E2BSandbox.connect(instanceId);
     }
     if (sandbox === null) {
-      sandbox = await E2BSandbox.create();
+      sandbox = await E2BSandbox.create({
+        lifecycle: {
+          onTimeout: { action: "pause", mode: "filesystem" },
+        },
+      });
       createdInstanceId = sandbox.sandboxId;
     }
 

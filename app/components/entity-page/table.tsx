@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useFetcher } from "react-router";
 import {
   ActionIcon,
   Badge,
@@ -10,6 +11,7 @@ import {
   Tooltip,
 } from "@mantine/core";
 import {
+  ArrowsClockwiseIcon,
   CheckIcon,
   CopySimpleIcon,
   MagnifyingGlassIcon,
@@ -113,8 +115,12 @@ function EntityRow({
   onDelete: () => void;
   onStatusChange: (enabled: boolean) => void;
 }) {
+  const fetcher = useFetcher();
   const cannotDelete = record.id === page.protectedRecordId;
   const recordName = record[page.columns[0].key];
+  const supportsPublicIdRegeneration =
+    page.icon === "bots" || page.icon === "adapters";
+  const publicIdTarget = page.icon === "bots" ? "ボット" : "アダプタ";
 
   return (
     <Table.Tr>
@@ -144,6 +150,36 @@ function EntityRow({
       ))}
       <Table.Td>
         <Group gap={5} justify="flex-end">
+          {supportsPublicIdRegeneration && (
+            <fetcher.Form method="post">
+              <input
+                type="hidden"
+                name="_intent"
+                value="regenerate-public-ids"
+              />
+              <input type="hidden" name="id" value={record.id} />
+              <Tooltip label={`${publicIdTarget}のWebhook IDを再生成`}>
+                <ActionIcon
+                  type="submit"
+                  variant="subtle"
+                  color="gray"
+                  aria-label={`${recordName}のWebhook IDを再生成`}
+                  disabled={fetcher.state !== "idle"}
+                  onClick={(event) => {
+                    if (
+                      !window.confirm(
+                        `再生成すると、${publicIdTarget}の現在のWebhook URLは使えなくなります。続けますか？`,
+                      )
+                    ) {
+                      event.preventDefault();
+                    }
+                  }}
+                >
+                  <ArrowsClockwiseIcon size={16} aria-hidden="true" />
+                </ActionIcon>
+              </Tooltip>
+            </fetcher.Form>
+          )}
           <ActionIcon
             variant="subtle"
             color="gray"

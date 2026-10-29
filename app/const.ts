@@ -4,5 +4,7 @@ export const STATE_SCHEMA_NAME = "aibot_state";
 export const SANDBOX_SCOPES = {
   turn: "ターン",
   thread: "スレッド",
+  adapter: "チャットアダプタ",
+  bot: "チャットボット",
   all: "全期間",
 } as const;
