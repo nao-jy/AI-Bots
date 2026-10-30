@@ -15,6 +15,7 @@ import { getAvailableBot } from "../repository/bots";
 import { getMcpClient } from "./mcp";
 import { getSandboxTools } from "./toolsets/sandbox";
 import { getSandbox } from "./toolsets/sandboxes";
+import { getFileParseTools } from "./toolsets/file-parse";
 
 const MAX_AGENT_STEPS = 8;
 
@@ -140,6 +141,7 @@ export function registerBotHandlers(
   chat: Chat,
   botId: number,
   adapterId: number,
+  adapterPlatform: string,
 ) {
   chat.onNewMention(async (thread, message) => {
     const mcpClients: Array<Awaited<ReturnType<typeof createMCPClient>>> = [];
@@ -178,6 +180,7 @@ export function registerBotHandlers(
           scope: thread,
           strictScope: true,
         }),
+        ...getFileParseTools(chat, adapterPlatform),
       } as ToolSet;
 
       turnSandbox = await getBotSandbox(

@@ -1,13 +1,9 @@
 import { tool } from "ai";
 import { z } from "zod";
-import {
-  extract,
-  ExtractInputKind,
-  type ExtractionConfig,
-} from "@xberg-io/xberg";
+import { extract, ExtractInputKind } from "@xberg-io/xberg";
 import dns from "node:dns/promises";
 import net from "node:net";
-import type { Adapter, Attachment } from "chat";
+import type { Adapter, Attachment, Chat } from "chat";
 
 // SSRF
 function isPrivateIp(ip: string): boolean {
@@ -55,23 +51,17 @@ export interface AttachmentData {
 
 const MAX_PAGINATION = 5;
 
-export function getFileParseTools(
-  ocrLanguages: string[],
-  adapter: Adapter<unknown, unknown>,
-) {
-  const config: ExtractionConfig = {
-    outputFormat: "markdown",
-    ocr: {
-      language: ocrLanguages,
-    },
-  };
-
+export function getFileParseTools(chat: Chat, adapterPlatform: string) {
+  const adapter = chat.getAdapter(adapterPlatform);
   const fileParseFromUri = tool({
     description: "Webコンテンツをフェッチしてパースします",
     inputSchema: z.object({
       uri: z.string().min(1).describe("uri"),
+      ocrLanguages: z
+        .array(z.string())
+        .describe("tesseract ocr languages such as 'eng'"),
     }),
-    execute: async ({ uri }) => {
+    execute: async ({ uri, ocrLanguages }) => {
       try {
         const u = await assertPublicUrl(uri);
         const result = await extract(
@@ -79,7 +69,12 @@ export function getFileParseTools(
             kind: ExtractInputKind.Uri,
             uri: u.toString(),
           },
-          config,
+          {
+            outputFormat: "markdown",
+            ocr: {
+              language: ocrLanguages,
+            },
+          },
         );
         const doc = result.results?.[0];
         const document = {
@@ -104,9 +99,12 @@ export function getFileParseTools(
         .number()
         .min(0)
         .describe("アタッチメントのインデックス"),
+      ocrLanguages: z
+        .array(z.string())
+        .describe("tesseract ocr languages such as 'eng'"),
     }),
 
-    execute: async ({ threadId, messageId, attachmentIndex }) => {
+    execute: async ({ threadId, messageId, attachmentIndex, ocrLanguages }) => {
       try {
         let attachment: null | Attachment = null;
         const message = await adapter.fetchMessage?.(threadId, messageId);
@@ -151,7 +149,12 @@ export function getFileParseTools(
             mimeType: attachment.mimeType,
             filename: attachment.name,
           },
-          config,
+          {
+            outputFormat: "markdown",
+            ocr: {
+              language: ocrLanguages,
+            },
+          },
         );
 
         const doc = result.results?.[0];
