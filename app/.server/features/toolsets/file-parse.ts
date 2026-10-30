@@ -55,7 +55,7 @@ export interface AttachmentData {
 
 const MAX_PAGINATION = 5;
 
-export function getDocumentParseTools(
+export function getFileParseTools(
   ocrLanguages: string[],
   adapter: Adapter<unknown, unknown>,
 ) {
@@ -66,7 +66,7 @@ export function getDocumentParseTools(
     },
   };
 
-  const documentParseFromUri = tool({
+  const fileParseFromUri = tool({
     description: "Webコンテンツをフェッチしてパースします",
     inputSchema: z.object({
       uri: z.string().min(1).describe("uri"),
@@ -94,7 +94,7 @@ export function getDocumentParseTools(
     },
   });
 
-  const documentParseFromAttachment = tool({
+  const fileParseFromAttachment = tool({
     description:
       "会話に添付されたPDF、Office文書、画像などを解析し、Markdownを返します。",
     inputSchema: z.object({
@@ -177,7 +177,7 @@ export function getDocumentParseTools(
   });
 
   return {
-    fronUri: documentParseFromUri,
-    fromAttachment: documentParseFromAttachment,
+    fileParseFronUri: fileParseFromUri,
+    fileParseFromAttachment: fileParseFromAttachment,
   };
 }
