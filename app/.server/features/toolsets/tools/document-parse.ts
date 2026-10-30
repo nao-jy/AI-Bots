@@ -7,6 +7,7 @@ import {
 } from "@xberg-io/xberg";
 import dns from "node:dns/promises";
 import net from "node:net";
+import type { Adapter, Attachment } from "chat";
 
 // SSRF
 function isPrivateIp(ip: string): boolean {
@@ -52,9 +53,11 @@ export interface AttachmentData {
   data: Buffer;
 }
 
+const MAX_PAGINATION = 5;
+
 export function getDocumentParseTools(
   ocrLanguages: string[],
-  attachments: Map<string, AttachmentData>,
+  adapter: Adapter<unknown, unknown>,
 ) {
   const config: ExtractionConfig = {
     outputFormat: "markdown",
@@ -95,21 +98,58 @@ export function getDocumentParseTools(
     description:
       "会話に添付されたPDF、Office文書、画像などを解析し、Markdownを返します。",
     inputSchema: z.object({
-      attachmentId: z.string().min(1).describe("解析対象の添付ファイルID"),
+      threadId: z.string().min(1).describe("スレッドID"),
+      messageId: z.string().min(1).describe("メッセージID"),
+      attachmentIndex: z
+        .number()
+        .min(0)
+        .describe("アタッチメントのインデックス"),
     }),
 
-    execute: async ({ attachmentId }) => {
+    execute: async ({ threadId, messageId, attachmentIndex }) => {
       try {
-        const attachment = attachments.get(attachmentId);
-        if (attachment === undefined) {
+        let attachment: null | Attachment = null;
+        const message = await adapter.fetchMessage?.(threadId, messageId);
+        if (message) {
+          attachment = message.attachments.at(attachmentIndex) ?? null;
+        } else {
+          let cursor = undefined;
+          for (let i = 0; i < MAX_PAGINATION; i++) {
+            const result = await adapter.fetchMessages(threadId, {
+              cursor: cursor,
+            });
+            cursor = result.nextCursor;
+
+            const messages = result.messages;
+            for (const mes of messages) {
+              if (mes.id === messageId) {
+                attachment = mes.attachments.at(attachmentIndex) ?? null;
+                i = MAX_PAGINATION;
+                break;
+              }
+            }
+          }
+        }
+
+        if (attachment === null) {
           throw new Error("attachment not found");
         }
+        const data = await attachment.fetchData?.();
+        if (data === undefined) {
+          throw new Error("data fetch failed");
+        }
+
+        const uint8Array: Uint8Array<ArrayBufferLike> =
+          data instanceof ArrayBuffer
+            ? new Uint8Array(data)
+            : new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
+
         const result = await extract(
           {
             kind: ExtractInputKind.Bytes,
-            bytes: attachment.data,
+            bytes: uint8Array,
             mimeType: attachment.mimeType,
-            filename: attachment.filename,
+            filename: attachment.name,
           },
           config,
         );
@@ -120,7 +160,7 @@ export function getDocumentParseTools(
           throw new Error("No document was extracted");
         }
         return {
-          filename: attachment.filename,
+          filename: attachment.name,
           mimeType: doc.mimeType || attachment.mimeType,
           markdown: doc.content ?? "",
           metadata: doc.metadata,
