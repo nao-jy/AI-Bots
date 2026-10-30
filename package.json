@@ -33,6 +33,7 @@
     "@rjsf/mantine": "^6.11.0",
     "@rjsf/utils": "^6.11.0",
     "@rjsf/validator-ajv8": "^6.11.0",
+    "@xberg-io/xberg": "^1.3.10",
     "ai": "^7.0.143",
     "bash-tool": "^1.3.19",
     "chat": "^4.43.0",
