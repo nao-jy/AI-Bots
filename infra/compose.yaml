@@ -35,7 +35,7 @@ services:
       - valkey-data:/data/
   
   opensandbox-server:
-    image: opensandbox/server:release-1.1.0
+    image: opensandbox/server:release-1.2.0
     container_name: opensandbox-server
     restart: unless-stopped
 
@@ -51,7 +51,7 @@ services:
 
     environment:
       SANDBOX_CONFIG_PATH: /etc/opensandbox/config.toml
-      OPENSANDBOX_SERVER_API_KEY: opensandbox_local
+      OPENSANDBOX_SERVER_API_KEY: ${OPENSANDBOX_API_KEY:-opensandbox_local}
 
     networks:
       - opensandbox-net

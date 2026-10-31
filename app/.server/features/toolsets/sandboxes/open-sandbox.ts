@@ -9,6 +9,7 @@ function getConfig() {
   const config = new ConnectionConfig({
     domain: process.env.OPEN_SANDBOX_DOMAIN,
     apiKey: process.env.OPEN_SANDBOX_API_KEY,
+    useServerProxy: true,
   });
   return config;
 }
@@ -19,10 +20,8 @@ export const OPEN_SANDBOX: Sandbox = {
     try {
       const sandbox = await OpenSandbox.create({
         connectionConfig: getConfig(),
+        timeoutSeconds: null,
         image: "ubuntu",
-        lifecycle: {
-          onTimeout: { action: "pause", mode: "filesystem" },
-        },
       });
       await sandbox.kill();
     } catch (error) {
@@ -48,9 +47,7 @@ export const OPEN_SANDBOX: Sandbox = {
       sandbox = await OpenSandbox.create({
         connectionConfig: getConfig(),
         image: "ubuntu",
-        lifecycle: {
-          onTimeout: { action: "pause", mode: "filesystem" },
-        },
+        timeoutSeconds: null,
         networkPolicy: {
           defaultAction: "deny",
           egress: [],
