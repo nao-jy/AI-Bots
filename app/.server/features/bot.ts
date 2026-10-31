@@ -172,7 +172,7 @@ export function registerBotHandlers(
         asRecord(agent.provider.args),
         decryptMcpHeaders(agent.provider.headers),
         asRecord(agent.options),
-        agent.model_id,
+        agent.modelId,
       );
       if (!modelInfo) {
         throw new Error(

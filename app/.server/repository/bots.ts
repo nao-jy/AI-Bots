@@ -8,7 +8,10 @@ import {
 } from "../features/toolsets";
 
 export async function listBots(user: AuthUser, publicOrigin: string) {
-  const bots = await db.orm.aibot.Chatbot.where({ ownerId: user.id })
+  const bots = await db.orm.aibot.Chatbot.where({
+    ownerId: user.id,
+    isDeleted: false,
+  })
     .include("agent")
     .include("adapters", (links) =>
       links.include("adapter", (adapter) => adapter.include("publicIds")),
@@ -284,7 +287,9 @@ export async function saveBot(
 export async function deleteBot(user: AuthUser, id: number) {
   const bot = await db.orm.aibot.Chatbot.first({ id, ownerId: user.id });
   if (!bot) return false;
-  await db.orm.aibot.Chatbot.where({ id, ownerId: user.id }).delete();
+  await db.orm.aibot.Chatbot.where({ id, ownerId: user.id }).update({
+    isDeleted: true,
+  });
   return true;
 }
 

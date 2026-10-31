@@ -3,54 +3,32 @@ import type { AuthUser } from "../auth";
 import { idList, jsonb, record } from "../utils";
 
 export async function listAgents(user: AuthUser) {
-  const [agents, authentications] = await Promise.all([
-    db.orm.aibot.AgentDefinition.include("chatbot").include("provider").all(),
-    db.orm.aibot.OAuthAuthentication.where({ ownerId: user.id }).all(),
-  ]);
-  const ownedBots = await db.orm.aibot.Chatbot.where({
+  const agents = await db.orm.aibot.AgentDefinition.where({
     ownerId: user.id,
-  }).all();
-  const ownedAgentIds = new Set(ownedBots.map((bot) => bot.agentId));
-  const servers = await db.orm.aibot.McpServer.where({
-    ownerId: user.id,
-  }).all();
-  const availableServerIds = new Set(servers.map((server) => server.id));
-  const authNames = new Map(
-    authentications.map((auth) => [auth.id, auth.name]),
-  );
+    isDeleted: false,
+  })
+    .include("chatbot")
+    .include("provider")
+    .all();
   return {
-    records: agents
-      .filter(
-        (agent) =>
-          agent.provider.ownerId === user.id &&
-          (!agent.chatbot || ownedAgentIds.has(agent.id)),
-      )
-      .map((agent) => {
-        return record(agent.id, agent.updatedAt, {
-          name: agent.name,
-          model: agent.model_id,
-          model_id: agent.model_id,
-          provider: agent.provider.name,
-          providerId: agent.provider.id,
-          options: JSON.stringify(agent.options ?? {}, null, 2),
-          status: agent.chatbot
-            ? `ボット「${agent.chatbot.name}」で利用中`
-            : "未使用",
-        });
-      }),
-    serverOptions: servers.map((server) => ({
-      label: `${server.name} (#${server.id})`,
-      value: String(server.id),
-    })),
+    records: agents.map((agent) => {
+      return record(agent.id, agent.updatedAt, {
+        name: agent.name,
+        model: agent.modelId,
+        modelId: agent.modelId,
+        provider: agent.provider.name,
+        providerId: agent.provider.id,
+        options: JSON.stringify(agent.options ?? {}, null, 2),
+        status: agent.chatbot
+          ? `ボット「${agent.chatbot.name}」で利用中`
+          : "未使用",
+      });
+    }),
     providerOptions: (
       await db.orm.aibot.Provider.where({ ownerId: user.id }).all()
     ).map((provider) => ({
       label: `${provider.name} (${provider.providerName})`,
       value: String(provider.id),
-    })),
-    authOptions: authentications.map((auth) => ({
-      label: `${auth.name} (#${auth.id})`,
-      value: String(auth.id),
     })),
   };
 }
@@ -62,7 +40,7 @@ export async function saveAgent(
 ) {
   const name = String(values.get("name") ?? "").trim();
   const providerId = Number(values.get("providerId"));
-  const modelId = String(values.get("model_id") ?? "").trim();
+  const modelId = String(values.get("modelId") ?? "").trim();
   const optionsValue = String(values.get("options") ?? "{}").trim();
   const serverIds = idList(values.get("mcpServerIds")?.toString() ?? null);
   let mcpAuthIds: Record<string, number>;
@@ -143,8 +121,9 @@ export async function saveAgent(
   const valuesToSave = {
     name,
     providerId,
-    model_id: modelId,
+    modelId: modelId,
     options: jsonb(options),
+    ownerId: user.id,
   };
   await db.transaction(async (tx) => {
     const agentId =
@@ -164,6 +143,8 @@ export async function deleteAgent(user: AuthUser, id: number) {
   if (!agent || agent.provider.ownerId !== user.id) return false;
   const bot = await db.orm.aibot.Chatbot.first({ agentId: id });
   if (bot) return false;
-  await db.orm.aibot.AgentDefinition.where({ id }).delete();
+  await db.orm.aibot.AgentDefinition.where({ id }).update({
+    isDeleted: true,
+  });
   return true;
 }

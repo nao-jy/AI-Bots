@@ -68,7 +68,9 @@ namespace aibot {
     createdAt   TimestamptzString        @default(now())
     updatedAt   temporal.UpdatedAtString
 
+    isDeleted   Boolean                  @default(false)
     publicIds   ChatBotPublicId[]
+    usage       AgentUsage[]
 
     @@index([ownerId])
   }
@@ -134,13 +136,30 @@ namespace aibot {
     name       String
     provider   Provider                 @relation(fields: [providerId], references: [id], onDelete: Restrict)
     providerId Int
-    model_id   String
+    modelId    String
     options    Jsonb?
     chatbot    Chatbot?
+    owner      User                     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+    ownerId    Int
     createdAt  TimestamptzString        @default(now())
     updatedAt  temporal.UpdatedAtString
+    usage      AgentUsage[]
+    isDeleted  Boolean                  @default(false)
 
     @@index([providerId])
+  }
+
+  model AgentUsage {
+    id            Int             @id @default(autoincrement())
+    agentId       Int
+    agent         AgentDefinition @relation(fields: [agentId], references: [id], onDelete: Restrict)
+    chatbotId     Int
+    chatbot       Chatbot         @relation(fields: [chatbotId], references: [id], onDelete: Restrict)
+    inputTokens   Int
+    inputDetails  Jsonb
+    outputTokens  Int
+    outputDetails Jsonb
+    toolCalls     Jsonb
   }
 
   model McpServer {

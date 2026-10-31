@@ -77,7 +77,7 @@ export async function testAgent(user: AuthUser, values: FormData) {
   try {
     const name = String(values.get("name") ?? "").trim();
     const providerId = Number(values.get("providerId"));
-    const modelId = String(values.get("model_id") ?? "").trim();
+    const modelId = String(values.get("modelId") ?? "").trim();
     if (!Number.isInteger(providerId) || !modelId)
       return testFailure("プロバイダーとモデルIDを入力してください。");
     const provider = await getProvider(providerId, user.id);

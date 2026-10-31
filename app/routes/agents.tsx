@@ -36,7 +36,7 @@ const page: Omit<EntityPageDefinition, "records"> = {
       placeholder: "プロバイダーを選択",
     },
     {
-      key: "model_id",
+      key: "modelId",
       label: "モデルID",
       placeholder: "例：gpt-4.1",
     },
@@ -85,14 +85,6 @@ export default function Agents({ loaderData }: Route.ComponentProps) {
         records: loaderData.records,
         fields: page.fields.map((field) => ({
           ...field,
-          ...(field.key === "mcpAuthIds"
-            ? {
-                help: {
-                  ...field.help!,
-                  text: `${field.help!.text} 利用可能な認証情報: ${loaderData.authOptions.map((option) => option.label).join("、") || "なし"}`,
-                },
-              }
-            : {}),
           options:
             field.key === "providerId"
               ? loaderData.providerOptions

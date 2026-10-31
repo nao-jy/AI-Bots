@@ -8,6 +8,10 @@
       "model": "AgentDefinition",
       "namespace": "aibot"
     },
+    "AgentUsage": {
+      "model": "AgentUsage",
+      "namespace": "aibot"
+    },
     "ChatAdapter": {
       "model": "ChatAdapter",
       "namespace": "aibot"
@@ -93,7 +97,14 @@
                   "kind": "scalar"
                 }
               },
-              "model_id": {
+              "isDeleted": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/bool@1",
+                  "kind": "scalar"
+                }
+              },
+              "modelId": {
                 "nullable": false,
                 "type": {
                   "codecId": "pg/text@1",
@@ -111,6 +122,13 @@
                 "nullable": true,
                 "type": {
                   "codecId": "pg/jsonb@1",
+                  "kind": "scalar"
+                }
+              },
+              "ownerId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
                   "kind": "scalar"
                 }
               },
@@ -146,6 +164,22 @@
                   "namespace": "aibot"
                 }
               },
+              "owner": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "ownerId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "User",
+                  "namespace": "aibot"
+                }
+              },
               "provider": {
                 "cardinality": "N:1",
                 "nullable": false,
@@ -161,6 +195,21 @@
                   "model": "Provider",
                   "namespace": "aibot"
                 }
+              },
+              "usage": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "agentId"
+                  ]
+                },
+                "to": {
+                  "model": "AgentUsage",
+                  "namespace": "aibot"
+                }
               }
             },
             "storage": {
@@ -171,14 +220,20 @@
                 "id": {
                   "column": "id"
                 },
-                "model_id": {
-                  "column": "model_id"
+                "isDeleted": {
+                  "column": "isDeleted"
+                },
+                "modelId": {
+                  "column": "modelId"
                 },
                 "name": {
                   "column": "name"
                 },
                 "options": {
                   "column": "options"
+                },
+                "ownerId": {
+                  "column": "ownerId"
                 },
                 "providerId": {
                   "column": "providerId"
@@ -189,6 +244,130 @@
               },
               "namespaceId": "aibot",
               "table": "AgentDefinition"
+            }
+          },
+          "AgentUsage": {
+            "fields": {
+              "agentId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "chatbotId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "inputDetails": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/jsonb@1",
+                  "kind": "scalar"
+                }
+              },
+              "inputTokens": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "outputDetails": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/jsonb@1",
+                  "kind": "scalar"
+                }
+              },
+              "outputTokens": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "toolCalls": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/jsonb@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "agent": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "agentId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "AgentDefinition",
+                  "namespace": "aibot"
+                }
+              },
+              "chatbot": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "chatbotId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Chatbot",
+                  "namespace": "aibot"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "agentId": {
+                  "column": "agentId"
+                },
+                "chatbotId": {
+                  "column": "chatbotId"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "inputDetails": {
+                  "column": "inputDetails"
+                },
+                "inputTokens": {
+                  "column": "inputTokens"
+                },
+                "outputDetails": {
+                  "column": "outputDetails"
+                },
+                "outputTokens": {
+                  "column": "outputTokens"
+                },
+                "toolCalls": {
+                  "column": "toolCalls"
+                }
+              },
+              "namespaceId": "aibot",
+              "table": "AgentUsage"
             }
           },
           "ChatAdapter": {
@@ -752,6 +931,13 @@
                   "kind": "scalar"
                 }
               },
+              "isDeleted": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/bool@1",
+                  "kind": "scalar"
+                }
+              },
               "isEnabled": {
                 "nullable": false,
                 "type": {
@@ -858,6 +1044,21 @@
                   "model": "ChatBotPublicId",
                   "namespace": "aibot"
                 }
+              },
+              "usage": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "chatbotId"
+                  ]
+                },
+                "to": {
+                  "model": "AgentUsage",
+                  "namespace": "aibot"
+                }
               }
             },
             "storage": {
@@ -876,6 +1077,9 @@
                 },
                 "instruction": {
                   "column": "instruction"
+                },
+                "isDeleted": {
+                  "column": "isDeleted"
                 },
                 "isEnabled": {
                   "column": "isEnabled"
@@ -2068,7 +2272,16 @@
                   },
                   "nullable": false
                 },
-                "model_id": {
+                "isDeleted": {
+                  "codecId": "pg/bool@1",
+                  "dataType": "pg/bool",
+                  "default": {
+                    "kind": "literal",
+                    "value": false
+                  },
+                  "nullable": false
+                },
+                "modelId": {
                   "codecId": "pg/text@1",
                   "dataType": "pg/text",
                   "nullable": false
@@ -2082,6 +2295,11 @@
                   "codecId": "pg/jsonb@1",
                   "dataType": "pg/jsonb",
                   "nullable": true
+                },
+                "ownerId": {
+                  "codecId": "pg/int4@1",
+                  "dataType": "pg/int4",
+                  "nullable": false
                 },
                 "providerId": {
                   "codecId": "pg/int4@1",
@@ -2114,15 +2332,157 @@
                     "namespaceId": "aibot",
                     "tableName": "Provider"
                   }
+                },
+                {
+                  "index": {
+                    "name": "AgentDefinition_ownerId_idx_e2d0c1ef"
+                  },
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "ownerId"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "AgentDefinition"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "User"
+                  }
                 }
               ],
               "indexes": [
+                {
+                  "columns": [
+                    "ownerId"
+                  ],
+                  "name": "AgentDefinition_ownerId_idx_e2d0c1ef",
+                  "prefix": "AgentDefinition_ownerId_idx",
+                  "unique": false
+                },
                 {
                   "columns": [
                     "providerId"
                   ],
                   "name": "AgentDefinition_providerId_idx_d1904c54",
                   "prefix": "AgentDefinition_providerId_idx",
+                  "unique": false
+                }
+              ],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "uniques": []
+            },
+            "AgentUsage": {
+              "columns": {
+                "agentId": {
+                  "codecId": "pg/int4@1",
+                  "dataType": "pg/int4",
+                  "nullable": false
+                },
+                "chatbotId": {
+                  "codecId": "pg/int4@1",
+                  "dataType": "pg/int4",
+                  "nullable": false
+                },
+                "id": {
+                  "codecId": "pg/int4@1",
+                  "dataType": "pg/int4",
+                  "default": {
+                    "expression": "autoincrement()",
+                    "kind": "function"
+                  },
+                  "nullable": false
+                },
+                "inputDetails": {
+                  "codecId": "pg/jsonb@1",
+                  "dataType": "pg/jsonb",
+                  "nullable": false
+                },
+                "inputTokens": {
+                  "codecId": "pg/int4@1",
+                  "dataType": "pg/int4",
+                  "nullable": false
+                },
+                "outputDetails": {
+                  "codecId": "pg/jsonb@1",
+                  "dataType": "pg/jsonb",
+                  "nullable": false
+                },
+                "outputTokens": {
+                  "codecId": "pg/int4@1",
+                  "dataType": "pg/int4",
+                  "nullable": false
+                },
+                "toolCalls": {
+                  "codecId": "pg/jsonb@1",
+                  "dataType": "pg/jsonb",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [
+                {
+                  "index": {
+                    "name": "AgentUsage_agentId_idx_8d0ba4f0"
+                  },
+                  "onDelete": "restrict",
+                  "source": {
+                    "columns": [
+                      "agentId"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "AgentUsage"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "AgentDefinition"
+                  }
+                },
+                {
+                  "index": {
+                    "name": "AgentUsage_chatbotId_idx_52db07ea"
+                  },
+                  "onDelete": "restrict",
+                  "source": {
+                    "columns": [
+                      "chatbotId"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "AgentUsage"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "Chatbot"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "agentId"
+                  ],
+                  "name": "AgentUsage_agentId_idx_8d0ba4f0",
+                  "prefix": "AgentUsage_agentId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "chatbotId"
+                  ],
+                  "name": "AgentUsage_chatbotId_idx_52db07ea",
+                  "prefix": "AgentUsage_chatbotId_idx",
                   "unique": false
                 }
               ],
@@ -2726,6 +3086,15 @@
                 "instruction": {
                   "codecId": "pg/text@1",
                   "dataType": "pg/text",
+                  "nullable": false
+                },
+                "isDeleted": {
+                  "codecId": "pg/bool@1",
+                  "dataType": "pg/bool",
+                  "default": {
+                    "kind": "literal",
+                    "value": false
+                  },
                   "nullable": false
                 },
                 "isEnabled": {
@@ -3766,7 +4135,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "d33ed5e403750cd662cdedd445fd5fbe56c7ad9e736fab9c700250d51fcda8b0"
+    "storageHash": "2980bdc5e7363309feb5a9a0b6f8016c8b668eb985342f47584544771e6e3f24"
   },
   "execution": {
     "executionHash": "5c1984e92c9f7200ee5ad8e0c0de5b1b5b5329ee0cfca95a089762069a80e0dd",
