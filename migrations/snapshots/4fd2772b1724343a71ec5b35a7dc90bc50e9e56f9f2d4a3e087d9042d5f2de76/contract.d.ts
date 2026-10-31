@@ -23,7 +23,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'2980bdc5e7363309feb5a9a0b6f8016c8b668eb985342f47584544771e6e3f24'>;
+  StorageHashBase<'4fd2772b1724343a71ec5b35a7dc90bc50e9e56f9f2d4a3e087d9042d5f2de76'>;
 export type ExecutionHash =
   ExecutionHashBase<'5c1984e92c9f7200ee5ad8e0c0de5b1b5b5329ee0cfca95a089762069a80e0dd'>;
 export type ProfileHash =
@@ -362,7 +362,7 @@ export namespace Models {
     inputTokens: FieldOutputTypes['aibot']['AgentUsage']['inputTokens'];
     outputDetails: FieldOutputTypes['aibot']['AgentUsage']['outputDetails'];
     outputTokens: FieldOutputTypes['aibot']['AgentUsage']['outputTokens'];
-    toolCalls: FieldOutputTypes['aibot']['AgentUsage']['toolCalls'];
+    toolHistory: FieldOutputTypes['aibot']['AgentUsage']['toolHistory'];
     agent: aibot_AgentDefinition;
     chatbot: aibot_Chatbot;
     readonly [RelationKeys]?: 'agent' | 'chatbot';
@@ -754,7 +754,7 @@ type ContractBase = Omit<
                   readonly nullable: false;
                   readonly many: false;
                 };
-                readonly toolCalls: {
+                readonly toolHistory: {
                   readonly dataType: 'pg/jsonb';
                   readonly codecId: 'pg/jsonb@1';
                   readonly nullable: false;
@@ -2282,7 +2282,7 @@ type ContractBase = Omit<
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
               };
-              readonly toolCalls: {
+              readonly toolHistory: {
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/jsonb@1' };
               };
@@ -2324,7 +2324,7 @@ type ContractBase = Omit<
                 readonly inputTokens: { readonly column: 'inputTokens' };
                 readonly outputDetails: { readonly column: 'outputDetails' };
                 readonly outputTokens: { readonly column: 'outputTokens' };
-                readonly toolCalls: { readonly column: 'toolCalls' };
+                readonly toolHistory: { readonly column: 'toolHistory' };
               };
             };
           };

@@ -159,7 +159,10 @@ namespace aibot {
     inputDetails  Jsonb
     outputTokens  Int
     outputDetails Jsonb
-    toolCalls     Jsonb
+    toolHistory   Jsonb
+
+    @@index([agentId])
+    @@index([chatbotId])
   }
 
   model McpServer {

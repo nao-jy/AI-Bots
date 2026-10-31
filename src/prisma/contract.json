@@ -297,7 +297,7 @@
                   "kind": "scalar"
                 }
               },
-              "toolCalls": {
+              "toolHistory": {
                 "nullable": false,
                 "type": {
                   "codecId": "pg/jsonb@1",
@@ -362,8 +362,8 @@
                 "outputTokens": {
                   "column": "outputTokens"
                 },
-                "toolCalls": {
-                  "column": "toolCalls"
+                "toolHistory": {
+                  "column": "toolHistory"
                 }
               },
               "namespaceId": "aibot",
@@ -2420,7 +2420,7 @@
                   "dataType": "pg/int4",
                   "nullable": false
                 },
-                "toolCalls": {
+                "toolHistory": {
                   "codecId": "pg/jsonb@1",
                   "dataType": "pg/jsonb",
                   "nullable": false
@@ -4135,7 +4135,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "2980bdc5e7363309feb5a9a0b6f8016c8b668eb985342f47584544771e6e3f24"
+    "storageHash": "4fd2772b1724343a71ec5b35a7dc90bc50e9e56f9f2d4a3e087d9042d5f2de76"
   },
   "execution": {
     "executionHash": "5c1984e92c9f7200ee5ad8e0c0de5b1b5b5329ee0cfca95a089762069a80e0dd",

@@ -1,6 +1,12 @@
 import { db } from "./db";
 import type { AuthUser } from "../auth";
 import { idList, jsonb, record } from "../utils";
+import type {
+  LanguageModelUsage,
+  ToolSet,
+  TypedToolCall,
+  TypedToolResult,
+} from "ai";
 
 export async function listAgents(user: AuthUser) {
   const agents = await db.orm.aibot.AgentDefinition.where({
@@ -147,4 +153,34 @@ export async function deleteAgent(user: AuthUser, id: number) {
     isDeleted: true,
   });
   return true;
+}
+
+export async function insertUsage(
+  chatbotId: number,
+  agentId: number,
+  usage: LanguageModelUsage,
+  toolResults: Array<TypedToolResult<ToolSet>>,
+) {
+  await db.orm.aibot.AgentUsage.create({
+    chatbotId: chatbotId,
+    agentId: agentId,
+    inputTokens: usage.inputTokens ?? 0,
+    inputDetails: jsonb({
+      noCacheTokens: usage.inputTokenDetails.noCacheTokens ?? null,
+      cacheReadTokens: usage.inputTokenDetails.cacheReadTokens ?? null,
+      cacheWriteTokens: usage.inputTokenDetails.cacheWriteTokens ?? null,
+    }),
+    outputTokens: usage.outputTokens ?? 0,
+    outputDetails: jsonb({
+      textTokens: usage.outputTokenDetails.textTokens ?? null,
+      reasoningTokens: usage.outputTokenDetails.reasoningTokens ?? null,
+    }),
+    toolHistory: jsonb(
+      toolResults.map((v) => ({
+        toolName: v.toolName,
+        input: v.input,
+        output: v.output,
+      })),
+    ),
+  });
 }

@@ -17,6 +17,7 @@ import { getSandboxTools } from "./toolsets/sandbox";
 import { getSandbox } from "./toolsets/sandboxes";
 import { getFileParseTools } from "./toolsets/file-parse";
 import { logger } from "../logger";
+import { insertUsage } from "../repository/agents";
 
 const MAX_AGENT_STEPS = 8;
 
@@ -247,6 +248,8 @@ export function registerBotHandlers(
           }
         },
       });
+
+      await insertUsage(chatbot.id, agent.id, result.usage, result.toolResults);
 
       if (!replied && result.text.trim()) {
         await thread.post(result.text);
