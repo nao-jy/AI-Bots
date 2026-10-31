@@ -3,6 +3,7 @@ import { registerBotHandlers } from "../.server/features/bot";
 import { getBotInfo } from "../.server/features/chat-adapter";
 import { decryptAdapterEnvs } from "../.server/utils";
 import { getAvailableBotByPublicId } from "~/.server/repository/bots";
+import { logger } from "~/.server/logger";
 
 export async function action({ request, params }: Route.ActionArgs) {
   if (request.method !== "POST") {
@@ -42,7 +43,7 @@ export async function action({ request, params }: Route.ActionArgs) {
   return botInfo.bot.webhooks[adapter.platform](request, {
     waitUntil: (task) => {
       void task.catch((error) => {
-        console.error(
+        logger.error(
           `Failed to process webhook for chatbot ${chatbot.id}`,
           error,
         );

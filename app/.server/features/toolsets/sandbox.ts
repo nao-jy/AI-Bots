@@ -4,6 +4,16 @@ import { tool } from "ai";
 import { z } from "zod";
 import { type BashSandboxExtended } from "./sandboxes";
 
+async function toBuffer(source: AsyncIterable<Uint8Array>): Promise<Buffer> {
+  const chunks: Buffer[] = [];
+
+  for await (const chunk of source) {
+    chunks.push(Buffer.from(chunk.buffer, chunk.byteOffset, chunk.byteLength));
+  }
+
+  return Buffer.concat(chunks);
+}
+
 export async function getSandboxTools(
   bashSandbox: BashSandboxExtended,
   chat: Chat,
@@ -22,8 +32,8 @@ export async function getSandboxTools(
         path: z.string().describe("Path of the file inside the sandbox."),
       }),
       execute: async ({ path }) => {
-        const stream = await bashSandbox.readFileBinaryStream(path);
-        const data = await new Response(stream).arrayBuffer();
+        const stream = bashSandbox.readFileBinaryStream(path);
+        const data = await toBuffer(stream);
         const filename = path.split("/").filter(Boolean).at(-1) ?? path;
 
         await chat.thread(threadId).post({

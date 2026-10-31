@@ -76,7 +76,6 @@ function KeyValueEditor({
   valueType?: "string" | "json-scalar";
 }) {
   const [pairs, setPairs] = useState(() => parsePairs(initialValue));
-  console.log(pairs);
   return (
     <div>
       <Text size="sm" fw={500} mb={6}>

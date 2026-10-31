@@ -16,6 +16,7 @@ import { getMcpClient } from "./mcp";
 import { getSandboxTools } from "./toolsets/sandbox";
 import { getSandbox } from "./toolsets/sandboxes";
 import { getFileParseTools } from "./toolsets/file-parse";
+import { logger } from "../logger";
 
 const MAX_AGENT_STEPS = 8;
 
@@ -248,12 +249,12 @@ export function registerBotHandlers(
         replied = true;
       }
     } catch (error) {
-      console.error(`Failed to handle mention for chatbot ${botId}`, error);
+      logger.error(`Failed to handle mention for chatbot ${botId}`, error);
       if (!replied) {
         try {
           await thread.post("すみません。現在、回答を作成できませんでした。");
         } catch (replyError) {
-          console.error(
+          logger.error(
             `Failed to post mention error for chatbot ${botId}`,
             replyError,
           );
@@ -267,7 +268,7 @@ export function registerBotHandlers(
           );
           await deleteSandboxInstance(turnSandbox.instanceId);
         } catch (error) {
-          console.error(
+          logger.error(
             `Failed to destroy turn sandbox for chatbot ${botId}`,
             error,
           );
@@ -278,7 +279,7 @@ export function registerBotHandlers(
           try {
             await client.close();
           } catch (error) {
-            console.error(
+            logger.error(
               `Failed to close MCP client for chatbot ${botId}`,
               error,
             );
@@ -287,6 +288,12 @@ export function registerBotHandlers(
       );
     }
   };
-  chat.onDirectMessage(process);
-  chat.onNewMention(process);
+  chat.onDirectMessage(async (thread, message) => {
+    logger.info("[ON_DIRECT_MESSAGE]");
+    return await process(thread, message);
+  });
+  chat.onNewMention(async (thread, message) => {
+    logger.info("[ON_NEW_MENTION]");
+    return await process(thread, message);
+  });
 }

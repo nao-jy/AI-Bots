@@ -1,0 +1,24 @@
+[server]
+host = "0.0.0.0"
+port = 3000
+
+[log]
+level = "INFO"
+
+[runtime]
+type = "docker"
+execd_image = "opensandbox/execd:v1.1.0"
+
+[proxy]
+resolve_internal = false
+
+[docker]
+network_mode = "bridge"
+host_ip = "host.docker.internal"
+port_range_min = 40000
+port_range_max = 60000
+no_new_privileges = true
+pids_limit = 4096
+
+[ingress]
+mode = "direct"

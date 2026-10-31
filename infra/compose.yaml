@@ -14,17 +14,6 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
-
-  edvabe:
-    image: ghcr.io/contember/edvabe:main
-    ports:
-      - "3000:3000"
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - edvabe-data:/data
-    environment:
-      EDVABE_STATE_DIR: /data
-      EDVABE_CACHE_DIR: /data/cache
   
   searxng-core:
     container_name: searxng-core
@@ -44,9 +33,34 @@ services:
     restart: always
     volumes:
       - valkey-data:/data/
+  
+  opensandbox-server:
+    image: opensandbox/server:release-1.1.0
+    container_name: opensandbox-server
+    restart: unless-stopped
+
+    ports:
+      - "127.0.0.1:3000:3000"
+
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./sandbox.toml:/etc/opensandbox/config.toml:ro
+
+    environment:
+      SANDBOX_CONFIG_PATH: /etc/opensandbox/config.toml
+      OPENSANDBOX_SERVER_API_KEY: opensandbox_local
+
+    networks:
+      - opensandbox-net
 
 volumes:
   postgres-data:
-  edvabe-data:
   core-data:
   valkey-data:
+
+networks:
+  opensandbox-net:
+    driver: bridge

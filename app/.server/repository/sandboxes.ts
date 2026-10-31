@@ -13,7 +13,7 @@ export async function listSandboxes(user: AuthUser) {
   const sandboxes = await db.orm.aibot.Sandbox.where({
     ownerId: user.id,
   }).all();
-  const sandboxNames = listSandboxNames();
+  const sandboxNames = await listSandboxNames();
   return {
     sandboxTypeOptions: sandboxNames.map((name) => ({
       label: name,
@@ -40,7 +40,7 @@ export async function saveSandbox(
 ) {
   const sandboxType = String(values.get("sandboxType") ?? "").trim();
   const sandboxScope = String(values.get("sandboxScope") ?? "").trim();
-  if (!listSandboxNames().includes(sandboxType))
+  if (!(await listSandboxNames()).includes(sandboxType))
     return { error: "サポートされていないサンドボックスタイプです。" };
   if (!isSandboxScope(sandboxScope))
     return { error: "サンドボックスの適用範囲を選択してください。" };

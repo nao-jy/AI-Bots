@@ -1,9 +1,33 @@
+import { logger } from "~/.server/logger";
 import { type BashSandboxExtended, type Sandbox } from ".";
 import { Sandbox as E2BSandbox } from "e2b";
 
-export const E2B: Sandbox = {
-  sandboxType: "e2b",
+async function* toAsyncIterable(
+  streamPromise: Promise<ReadableStream<Uint8Array>>,
+): AsyncGenerator<Uint8Array> {
+  const stream = await streamPromise;
 
+  for await (const chunk of stream) {
+    yield chunk;
+  }
+}
+
+export const E2B: Sandbox = {
+  sandboxType: "E2B",
+  isAvailable: async () => {
+    try {
+      const sandbox = await E2BSandbox.create({
+        lifecycle: {
+          onTimeout: { action: "pause", mode: "filesystem" },
+        },
+      });
+      await E2BSandbox.kill(sandbox.sandboxId);
+    } catch (error) {
+      logger.error(error);
+      return false;
+    }
+    return true;
+  },
   getBashSandbox: async (
     instanceId: string | null,
     envs: Record<string, string>,
@@ -40,8 +64,9 @@ export const E2B: Sandbox = {
       async readFile(path) {
         return await sandbox.files.read(path);
       },
-      async readFileBinaryStream(path) {
-        return await sandbox.files.read(path, { format: "stream" });
+      readFileBinaryStream(path) {
+        const stream = sandbox.files.read(path, { format: "stream" });
+        return toAsyncIterable(stream);
       },
       async writeFiles(files) {
         if (files.length === 0) return;

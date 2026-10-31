@@ -107,12 +107,17 @@ const FACTORIES: ChatAdapterFactory[] = [
     displayName: "Google Chat",
     url: "https://chat-sdk.dev/adapters/official/gchat",
     getBot: async (botName, adapterConfig, authId) => {
+      const rawArgs = await getAdapterArgs(adapterConfig, authId);
+      const args = {
+        ...rawArgs,
+        ...(rawArgs.credentials
+          ? { credentials: JSON.parse(rawArgs.credentials) }
+          : {}),
+      };
       return new Chat({
         userName: botName,
         adapters: {
-          gchat: createGoogleChatAdapter(
-            await getAdapterArgs(adapterConfig, authId),
-          ),
+          gchat: createGoogleChatAdapter(args),
         },
         state: await getState(),
       });
