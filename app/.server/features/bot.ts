@@ -1,7 +1,7 @@
 import { createMCPClient } from "@ai-sdk/mcp";
 import { generateText, stepCountIs, type ToolSet } from "ai";
 import { createChatTools } from "chat/ai";
-import type { Chat } from "chat";
+import type { Chat, Message, Thread } from "chat";
 import {
   createPersistentSandboxInstance,
   deleteSandboxInstance,
@@ -143,7 +143,10 @@ export function registerBotHandlers(
   adapterId: number,
   adapterPlatform: string,
 ) {
-  chat.onNewMention(async (thread, message) => {
+  const process = async (
+    thread: Thread<Record<string, unknown>, unknown>,
+    message: Message<unknown>,
+  ) => {
     const mcpClients: Array<Awaited<ReturnType<typeof createMCPClient>>> = [];
     let turnSandbox: Awaited<ReturnType<typeof getBotSandbox>> = null;
     let replied = false;
@@ -283,5 +286,7 @@ export function registerBotHandlers(
         }),
       );
     }
-  });
+  };
+  chat.onDirectMessage(process);
+  chat.onNewMention(process);
 }

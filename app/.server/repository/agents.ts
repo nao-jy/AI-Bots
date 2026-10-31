@@ -3,13 +3,15 @@ import type { AuthUser } from "../auth";
 import { idList, jsonb, record } from "../utils";
 
 export async function listAgents(user: AuthUser) {
-  const [agents, authentications] = await Promise.all([db.orm.aibot.AgentDefinition.include(
-    "mcpServers",
-    (links) => links.include("mcpServer"),
-  )
-    .include("chatbot")
-    .include("provider")
-    .all(), db.orm.aibot.OAuthAuthentication.where({ ownerId: user.id }).all()]);
+  const [agents, authentications] = await Promise.all([
+    db.orm.aibot.AgentDefinition.include("mcpServers", (links) =>
+      links.include("mcpServer"),
+    )
+      .include("chatbot")
+      .include("provider")
+      .all(),
+    db.orm.aibot.OAuthAuthentication.where({ ownerId: user.id }).all(),
+  ]);
   const ownedBots = await db.orm.aibot.Chatbot.where({
     ownerId: user.id,
   }).all();
@@ -18,7 +20,9 @@ export async function listAgents(user: AuthUser) {
     ownerId: user.id,
   }).all();
   const availableServerIds = new Set(servers.map((server) => server.id));
-  const authNames = new Map(authentications.map((auth) => [auth.id, auth.name]));
+  const authNames = new Map(
+    authentications.map((auth) => [auth.id, auth.name]),
+  );
   return {
     records: agents
       .filter(
@@ -33,10 +37,25 @@ export async function listAgents(user: AuthUser) {
         return record(agent.id, agent.updatedAt, {
           name: agent.name,
           model: agent.model_id,
+          model_id: agent.model_id,
           provider: agent.provider.name,
+          providerId: agent.provider.id,
           mcpServerIds: ownedLinks.map((link) => link.mcpServerId).join(","),
-          mcpAuthIds: JSON.stringify(Object.fromEntries(ownedLinks.filter((link) => link.authId !== null).map((link) => [String(link.mcpServerId), String(link.authId)]))),
-          mcpAuthentications: ownedLinks.filter((link) => link.authId !== null).map((link) => `${link.mcpServer.name}: ${authNames.get(link.authId!) ?? "不明"}`).join("、") || "未設定",
+          mcpAuthIds: JSON.stringify(
+            Object.fromEntries(
+              ownedLinks
+                .filter((link) => link.authId !== null)
+                .map((link) => [String(link.mcpServerId), String(link.authId)]),
+            ),
+          ),
+          mcpAuthentications:
+            ownedLinks
+              .filter((link) => link.authId !== null)
+              .map(
+                (link) =>
+                  `${link.mcpServer.name}: ${authNames.get(link.authId!) ?? "不明"}`,
+              )
+              .join("、") || "未設定",
           servers:
             ownedLinks.map((link) => link.mcpServer.name).join("、") || "—",
           options: JSON.stringify(agent.options ?? {}, null, 2),
@@ -55,7 +74,10 @@ export async function listAgents(user: AuthUser) {
       label: `${provider.name} (${provider.providerName})`,
       value: String(provider.id),
     })),
-    authOptions: authentications.map((auth) => ({ label: `${auth.name} (#${auth.id})`, value: String(auth.id) })),
+    authOptions: authentications.map((auth) => ({
+      label: `${auth.name} (#${auth.id})`,
+      value: String(auth.id),
+    })),
   };
 }
 
@@ -71,14 +93,26 @@ export async function saveAgent(
   const serverIds = idList(values.get("mcpServerIds")?.toString() ?? null);
   let mcpAuthIds: Record<string, number>;
   try {
-    const parsed: unknown = JSON.parse(String(values.get("mcpAuthIds") ?? "{}"));
-    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error();
-    mcpAuthIds = Object.fromEntries(Object.entries(parsed).map(([serverId, authId]) => {
-      const key = Number(serverId); const value = Number(authId);
-      if (!Number.isInteger(key) || !Number.isInteger(value)) throw new Error();
-      return [String(key), value];
-    }));
-  } catch { return { error: "MCP OAuth認証の設定はサーバーIDと認証IDのJSONオブジェクトで入力してください。" }; }
+    const parsed: unknown = JSON.parse(
+      String(values.get("mcpAuthIds") ?? "{}"),
+    );
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed))
+      throw new Error();
+    mcpAuthIds = Object.fromEntries(
+      Object.entries(parsed).map(([serverId, authId]) => {
+        const key = Number(serverId);
+        const value = Number(authId);
+        if (!Number.isInteger(key) || !Number.isInteger(value))
+          throw new Error();
+        return [String(key), value];
+      }),
+    );
+  } catch {
+    return {
+      error:
+        "MCP OAuth認証の設定はサーバーIDと認証IDのJSONオブジェクトで入力してください。",
+    };
+  }
   if (!name) return { error: "エージェント名を入力してください。" };
   if (!Number.isInteger(providerId) || !modelId)
     return { error: "プロバイダーとモデルIDを入力してください。" };
@@ -106,10 +140,20 @@ export async function saveAgent(
   const allowedIds = new Set(servers.map((server) => server.id));
   if (serverIds.some((serverId) => !allowedIds.has(serverId)))
     return { error: "選択したMCPサーバーを使用できません。" };
-  const authentications = await db.orm.aibot.OAuthAuthentication.where({ ownerId: user.id }).all();
+  const authentications = await db.orm.aibot.OAuthAuthentication.where({
+    ownerId: user.id,
+  }).all();
   const allowedAuthIds = new Set(authentications.map((auth) => auth.id));
-  if (Object.values(mcpAuthIds).some((authId) => !allowedAuthIds.has(authId)) || Object.keys(mcpAuthIds).some((serverId) => !serverIds.includes(Number(serverId))))
-    return { error: "MCP OAuth認証には選択済みサーバーと自分の認証情報を指定してください。" };
+  if (
+    Object.values(mcpAuthIds).some((authId) => !allowedAuthIds.has(authId)) ||
+    Object.keys(mcpAuthIds).some(
+      (serverId) => !serverIds.includes(Number(serverId)),
+    )
+  )
+    return {
+      error:
+        "MCP OAuth認証には選択済みサーバーと自分の認証情報を指定してください。",
+    };
   if (id !== null) {
     const existing = await db.orm.aibot.AgentDefinition.where({ id })
       .include("provider")
@@ -153,7 +197,10 @@ export async function saveAgent(
           authId,
         });
       else if (existingLink.authId !== authId)
-        await tx.orm.aibot.AgentMcpServer.where({ agentId, mcpServerId: serverId }).update({ authId });
+        await tx.orm.aibot.AgentMcpServer.where({
+          agentId,
+          mcpServerId: serverId,
+        }).update({ authId });
     }
   });
   return { ok: true };

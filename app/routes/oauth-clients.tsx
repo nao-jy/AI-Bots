@@ -14,7 +14,7 @@ import { APP_NAME } from "~/const";
 const page: Omit<EntityPageDefinition, "records"> = {
   title: "OAuthクライアント",
   description: "OAuth認可サーバーのクライアント設定を管理します。",
-  icon: "oauth",
+  icon: "oauth_clients",
   columns: [
     { key: "name", label: "クライアント名" },
     { key: "clientId", label: "クライアントID" },

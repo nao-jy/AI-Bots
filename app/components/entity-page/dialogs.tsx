@@ -76,6 +76,7 @@ function KeyValueEditor({
   valueType?: "string" | "json-scalar";
 }) {
   const [pairs, setPairs] = useState(() => parsePairs(initialValue));
+  console.log(pairs);
   return (
     <div>
       <Text size="sm" fw={500} mb={6}>
@@ -92,30 +93,28 @@ function KeyValueEditor({
             aria-label={`${label}のキー ${index + 1}`}
             placeholder="キー"
             value={pair.key}
-            onChange={(event) =>
+            onChange={(event) => {
+              const value = event.currentTarget.value;
               setPairs((current) =>
                 current.map((item, itemIndex) =>
-                  itemIndex === index
-                    ? { ...item, key: event.currentTarget.value }
-                    : item,
+                  itemIndex === index ? { ...item, key: value } : item,
                 ),
-              )
-            }
+              );
+            }}
             style={{ flex: 1 }}
           />
           <TextInput
             aria-label={`${label}の値 ${index + 1}`}
             placeholder="値"
             value={pair.value}
-            onChange={(event) =>
+            onChange={(event) => {
+              const value = event.currentTarget.value;
               setPairs((current) =>
                 current.map((item, itemIndex) =>
-                  itemIndex === index
-                    ? { ...item, value: event.currentTarget.value }
-                    : item,
+                  itemIndex === index ? { ...item, value: value } : item,
                 ),
-              )
-            }
+              );
+            }}
             style={{ flex: 1 }}
           />
           <Button
@@ -315,7 +314,7 @@ export function EntityPageDialogs({
                       hiddenInputValuesDivider=", "
                       searchable
                       clearable
-                      nothingFoundMessage="該当するアダプタがありません"
+                      nothingFoundMessage="該当するオプションがありません"
                     />
                   ) : field.type === "password" ? (
                     <PasswordInput

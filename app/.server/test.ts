@@ -18,7 +18,10 @@ export async function testAdapter(user: AuthUser, values: FormData) {
     const platformId = String(values.get("platformId") ?? "").trim();
     const conf = parseStringMap(values.get("config"), "コンフィグ");
     const authId = values.get("authId")?.toString().trim();
-    const authIdNum = Number(authId);
+    let authIdNum: number | null = null;
+    if (authId !== undefined && authId.length !== 0) {
+      authIdNum = Number(authId);
+    }
     const bot = await getBotInfo(platformId, name, conf, authIdNum);
     if (!bot) {
       throw new Error("bot not found");
@@ -40,7 +43,7 @@ export async function testMcpServer(user: AuthUser, values: FormData) {
     const transport = String(values.get("transportId") ?? "").trim();
     let authId = values.get("authId")?.toString().trim();
     let authIdNum: number | null = null;
-    if (authId !== undefined) {
+    if (authId !== undefined && authId.length !== 0) {
       authIdNum = Number(authId);
     }
     if (!endpoint) return testFailure("エンドポイントを入力してください。");

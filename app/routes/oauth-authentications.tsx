@@ -16,7 +16,7 @@ const page: Omit<EntityPageDefinition, "records"> = {
   title: "OAuth認証情報",
   description:
     "OAuthクライアントを選択して認証し、取得したトークンを保存します。",
-  icon: "oauth",
+  icon: "oauth_authentications",
   createIntent: "authorize",
   createSubmitLabel: "OAuth認証を開始",
   launchIntent: "authorize",

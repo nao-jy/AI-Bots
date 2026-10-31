@@ -60,7 +60,7 @@ async function getAdapterArgs(
   config: Record<string, string>,
   authId: number | null,
 ) {
-  if (authId == null) return config;
+  if (authId === null) return config;
   const info = await getAdapterOAuthInfo(authId);
   if (info === null) return config;
   return {

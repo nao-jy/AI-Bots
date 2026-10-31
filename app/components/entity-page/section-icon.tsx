@@ -36,7 +36,9 @@ export function SectionIcon({
       return <WrenchIcon {...props} />;
     case "users":
       return <UserIcon {...props} />;
-    case "oauth":
+    case "oauth_clients":
+      return <KeyIcon {...props} />;
+    case "oauth_authentications":
       return <KeyIcon {...props} />;
     case "sandboxes":
       return <HardDrivesIcon {...props} />;

@@ -23,7 +23,15 @@ export type EntityField = {
 };
 
 export type EntitySection =
-  "bots" | "adapters" | "agents" | "providers" | "mcp" | "users" | "oauth" | "sandboxes";
+  | "bots"
+  | "adapters"
+  | "agents"
+  | "providers"
+  | "mcp"
+  | "users"
+  | "oauth_clients"
+  | "oauth_authentications"
+  | "sandboxes";
 
 export type EntityColumn = { key: string; label: string };
 export type EntityDialogMode =
