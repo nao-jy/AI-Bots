@@ -35,7 +35,8 @@ export async function listBots(user: AuthUser, publicOrigin: string) {
         agent: bot.agent?.name ?? "—",
         agentId: bot.agentId ?? "",
         adapterIds: bot.adapters.map((link) => link.adapterId).join(","),
-        sandboxIds: sandboxLinks
+        instruction: bot.instruction,
+        sandboxId: sandboxLinks
           .filter(
             (link) =>
               link.chatbotId === bot.id &&
@@ -125,7 +126,8 @@ export async function saveBot(
   const agentValue = String(values.get("agentId") ?? "").trim();
   const agentId = agentValue ? Number(agentValue) : null;
   const adapterIds = idList(values.get("adapterIds")?.toString() ?? null);
-  const sandboxIds = idList(values.get("sandboxIds")?.toString() ?? null);
+  const sandboxIdRaw = values.get("sandboxId")?.toString() ?? null;
+  const sandboxId = sandboxIdRaw !== null ? Number(sandboxIdRaw) : null;
   let toolSetContexts: Record<string, unknown>;
   try {
     const parsed: unknown = JSON.parse(
@@ -177,7 +179,7 @@ export async function saveBot(
   const allowedSandboxIds = new Set(
     ownedSandboxes.map((sandbox) => sandbox.id),
   );
-  if (sandboxIds.some((sandboxId) => !allowedSandboxIds.has(sandboxId)))
+  if (sandboxId !== null && !allowedSandboxIds.has(sandboxId))
     return { error: "選択したサンドボックスを使用できません。" };
   for (const [toolSetName, toolSetContext] of Object.entries(toolSetContexts))
     if (
@@ -236,11 +238,12 @@ export async function saveBot(
       });
     }
     await tx.orm.aibot.ChatBotToolSandbox.where({ chatbotId: botId! }).delete();
-    for (const sandboxId of sandboxIds)
+    if (sandboxId !== null) {
       await tx.orm.aibot.ChatBotToolSandbox.create({
         chatbotId: botId!,
         sandboxId,
       });
+    }
     await tx.orm.aibot.ChatBotToolSetContext.where({
       chatbotId: botId!,
     }).delete();

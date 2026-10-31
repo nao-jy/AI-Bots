@@ -61,15 +61,17 @@ export const OPEN_SANDBOX: Sandbox = {
     }
 
     const current = await sandbox.getEgressPolicy();
-    if (current.egress !== undefined) {
+    if (current.egress !== undefined && current.egress.length > 0) {
       const targets = current.egress
         .map((rule) => rule.target)
         .filter((t) => t !== undefined);
       await sandbox.deleteEgressRules(targets);
     }
-    await sandbox.patchEgressRules(
-      allowedDomains.map((target) => ({ action: "allow" as const, target })),
-    );
+    if (allowedDomains.length > 0) {
+      await sandbox.patchEgressRules(
+        allowedDomains.map((target) => ({ action: "allow" as const, target })),
+      );
+    }
 
     const bashSandbox: BashSandboxExtended = {
       async executeCommand(command) {
