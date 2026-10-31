@@ -12,13 +12,15 @@ import {
 } from "@mantine/core";
 import {
   ArrowsClockwiseIcon,
+  CaretDownIcon,
+  CaretRightIcon,
   CheckIcon,
   CopySimpleIcon,
   MagnifyingGlassIcon,
   PencilSimpleIcon,
   TrashIcon,
 } from "@phosphor-icons/react";
-import type { EntityRecord } from "../../types/entities";
+import type { EntityRecord, PublicIdSlot } from "../../types/entities";
 import type { EntityPageDefinition } from "./types";
 import { SectionIcon } from "./section-icon";
 
@@ -120,90 +122,223 @@ function EntityRow({
   const recordName = record[page.columns[0].key];
   const supportsPublicIdRegeneration =
     page.icon === "bots" || page.icon === "adapters";
-  const publicIdTarget = page.icon === "bots" ? "ボット" : "アダプタ";
+  const [expanded, setExpanded] = useState(false);
+  const publicIds = parsePublicIds(record.publicIds);
+  const webhookEndpoints =
+    page.icon === "bots" ? parseWebhookEndpoints(record.webhooks) : [];
 
   return (
-    <Table.Tr>
-      <Table.Td>
-        <div className="entity-name-cell">
-          <span className={`entity-symbol ${page.icon}`}>
-            <SectionIcon section={page.icon} size={17} />
-          </span>
-          <div>
-            <strong>{recordName ?? "名称未設定"}</strong>
-            {(page.icon === "bots" || page.icon === "mcp") && (
-              <small>{record.description ?? record.endpoint ?? ""}</small>
+    <>
+      <Table.Tr>
+        <Table.Td>
+          <div className="entity-name-cell">
+            {supportsPublicIdRegeneration && (
+              <ActionIcon
+                variant="subtle"
+                color="gray"
+                aria-label={`${recordName}のパブリックIDを${expanded ? "閉じる" : "表示"}`}
+                aria-expanded={expanded}
+                onClick={() => setExpanded((current) => !current)}
+              >
+                {expanded ? (
+                  <CaretDownIcon size={16} aria-hidden="true" />
+                ) : (
+                  <CaretRightIcon size={16} aria-hidden="true" />
+                )}
+              </ActionIcon>
             )}
+            <span className={`entity-symbol ${page.icon}`}>
+              <SectionIcon section={page.icon} size={17} />
+            </span>
+            <div>
+              <strong>{recordName ?? "名称未設定"}</strong>
+              {(page.icon === "bots" || page.icon === "mcp") && (
+                <small>{record.description ?? record.endpoint ?? ""}</small>
+              )}
+            </div>
           </div>
-        </div>
-      </Table.Td>
-      {page.columns.slice(1).map((column) => (
-        <Table.Td key={column.key}>
-          <EntityCell
-            page={page}
-            record={record}
-            columnKey={column.key}
-            value={record[column.key]}
-            onStatusChange={onStatusChange}
-          />
         </Table.Td>
-      ))}
-      <Table.Td>
-        <Group gap={5} justify="flex-end">
-          {supportsPublicIdRegeneration && (
-            <fetcher.Form method="post">
-              <input
-                type="hidden"
-                name="_intent"
-                value="regenerate-public-ids"
-              />
-              <input type="hidden" name="id" value={record.id} />
-              <Tooltip label={`${publicIdTarget}のWebhook IDを再生成`}>
-                <ActionIcon
-                  type="submit"
-                  variant="subtle"
-                  color="gray"
-                  aria-label={`${recordName}のWebhook IDを再生成`}
-                  disabled={fetcher.state !== "idle"}
-                  onClick={(event) => {
-                    if (
-                      !window.confirm(
-                        `再生成すると、${publicIdTarget}の現在のWebhook URLは使えなくなります。続けますか？`,
-                      )
-                    ) {
-                      event.preventDefault();
-                    }
-                  }}
-                >
-                  <ArrowsClockwiseIcon size={16} aria-hidden="true" />
-                </ActionIcon>
-              </Tooltip>
-            </fetcher.Form>
-          )}
-          <ActionIcon
-            variant="subtle"
-            color="gray"
-            aria-label={`${recordName}を編集`}
-            onClick={onEdit}
-          >
-            <PencilSimpleIcon size={16} aria-hidden="true" />
-          </ActionIcon>
-          <ActionIcon
-            variant="subtle"
-            color="gray"
-            aria-label={
-              cannotDelete ? "自分のアカウントは削除できません" : `${recordName}を削除`
-            }
-            title={cannotDelete ? "自分のアカウントは削除できません" : undefined}
-            disabled={cannotDelete}
-            onClick={onDelete}
-          >
-            <TrashIcon size={16} aria-hidden="true" />
-          </ActionIcon>
-        </Group>
-      </Table.Td>
-    </Table.Tr>
+        {page.columns.slice(1).map((column) => (
+          <Table.Td key={column.key}>
+            <EntityCell
+              page={page}
+              record={record}
+              columnKey={column.key}
+              value={record[column.key]}
+              onStatusChange={onStatusChange}
+            />
+          </Table.Td>
+        ))}
+        <Table.Td>
+          <Group gap={5} justify="flex-end">
+            <ActionIcon
+              variant="subtle"
+              color="gray"
+              aria-label={`${recordName}を編集`}
+              onClick={onEdit}
+            >
+              <PencilSimpleIcon size={16} aria-hidden="true" />
+            </ActionIcon>
+            <ActionIcon
+              variant="subtle"
+              color="gray"
+              aria-label={
+                cannotDelete ? "自分のアカウントは削除できません" : `${recordName}を削除`
+              }
+              title={cannotDelete ? "自分のアカウントは削除できません" : undefined}
+              disabled={cannotDelete}
+              onClick={onDelete}
+            >
+              <TrashIcon size={16} aria-hidden="true" />
+            </ActionIcon>
+          </Group>
+        </Table.Td>
+      </Table.Tr>
+      {supportsPublicIdRegeneration && expanded && (
+        <Table.Tr className="entity-details-row">
+          <Table.Td colSpan={page.columns.length + 1}>
+            <div className="entity-details">
+              <strong className="entity-details-title">パブリックID</strong>
+              <div className="public-id-grid">
+                {(["first", "second"] as const).map((slot, index) => {
+                  const publicId = publicIds.find((item) => item.slot === slot)?.id;
+                  return (
+                    <div className="public-id-card" key={slot}>
+                      <div className="public-id-label">{index + 1}つ目</div>
+                      <div className="public-id-value">
+                        <code>{publicId ?? "未発行"}</code>
+                        {publicId && (
+                          <CopyButton value={publicId} timeout={1500}>
+                            {({ copied, copy }) => (
+                              <Tooltip label={copied ? "コピーしました" : "IDをコピー"}>
+                                <ActionIcon
+                                  variant="subtle"
+                                  color={copied ? "teal" : "gray"}
+                                  aria-label={`${index + 1}つ目のパブリックIDをコピー`}
+                                  onClick={copy}
+                                >
+                                  {copied ? (
+                                    <CheckIcon size={15} />
+                                  ) : (
+                                    <CopySimpleIcon size={15} />
+                                  )}
+                                </ActionIcon>
+                              </Tooltip>
+                            )}
+                          </CopyButton>
+                        )}
+                      </div>
+                      <fetcher.Form method="post">
+                        <input
+                          type="hidden"
+                          name="_intent"
+                          value="regenerate-public-ids"
+                        />
+                        <input type="hidden" name="id" value={record.id} />
+                        <input type="hidden" name="slot" value={slot} />
+                        <button
+                          className="public-id-regenerate"
+                          type="submit"
+                          disabled={fetcher.state !== "idle"}
+                          onClick={(event) => {
+                            if (
+                              !window.confirm(
+                                `${index + 1}つ目のパブリックIDを再生成すると、このIDを使うWebhook URLは使えなくなります。続けますか？`,
+                              )
+                            ) {
+                              event.preventDefault();
+                            }
+                          }}
+                        >
+                          <ArrowsClockwiseIcon size={15} aria-hidden="true" />
+                          {index + 1}つ目を再生成
+                        </button>
+                      </fetcher.Form>
+                    </div>
+                  );
+                })}
+              </div>
+              {fetcher.data?.error && (
+                <span className="public-id-error" role="alert">
+                  {fetcher.data.error}
+                </span>
+              )}
+              {page.icon === "bots" && (
+                <div className="webhook-details">
+                  <strong className="entity-details-title">Webhook URL</strong>
+                  {webhookEndpoints.length > 0 ? (
+                    <div className="webhook-endpoints">
+                      {webhookEndpoints.map(({ adapterName, url }) => (
+                        <div
+                          className="webhook-endpoint"
+                          key={`${adapterName}-${url}`}
+                        >
+                          <span className="webhook-adapter-name">{adapterName}</span>
+                          <code>{url}</code>
+                          <CopyButton value={url} timeout={1500}>
+                            {({ copied, copy }) => (
+                              <Tooltip label={copied ? "コピーしました" : "URLをコピー"}>
+                                <ActionIcon
+                                  variant="subtle"
+                                  color={copied ? "teal" : "gray"}
+                                  aria-label={`${adapterName} の Webhook URL をコピー`}
+                                  onClick={copy}
+                                >
+                                  {copied ? (
+                                    <CheckIcon size={15} />
+                                  ) : (
+                                    <CopySimpleIcon size={15} />
+                                  )}
+                                </ActionIcon>
+                              </Tooltip>
+                            )}
+                          </CopyButton>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <span className="table-text">Webhook URLはありません</span>
+                  )}
+                </div>
+              )}
+            </div>
+          </Table.Td>
+        </Table.Tr>
+      )}
+    </>
   );
+}
+
+function parsePublicIds(value: string | number | undefined) {
+  try {
+    const parsed: unknown = JSON.parse(String(value ?? "[]"));
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(
+      (item): item is { slot: PublicIdSlot; id: string } =>
+        item &&
+        typeof item === "object" &&
+        (item.slot === "first" || item.slot === "second") &&
+        typeof item.id === "string",
+    );
+  } catch {
+    return [];
+  }
+}
+
+function parseWebhookEndpoints(value: string | number | undefined) {
+  try {
+    const parsed: unknown = JSON.parse(String(value ?? "[]"));
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(
+      (item): item is { adapterName: string; url: string } =>
+        item &&
+        typeof item === "object" &&
+        typeof item.adapterName === "string" &&
+        typeof item.url === "string",
+    );
+  } catch {
+    return [];
+  }
 }
 
 function EntityCell({
@@ -220,52 +355,9 @@ function EntityCell({
   onStatusChange: (enabled: boolean) => void;
 }) {
   if (columnKey === "webhooks" && page.icon === "bots") {
-    let endpoints: { adapterName: string; url: string }[] = [];
-    try {
-      const parsed: unknown = JSON.parse(String(value ?? "[]"));
-      if (Array.isArray(parsed)) {
-        endpoints = parsed.filter(
-          (item): item is { adapterName: string; url: string } =>
-            item &&
-            typeof item === "object" &&
-            typeof item.adapterName === "string" &&
-            typeof item.url === "string",
-        );
-      }
-    } catch {
-      endpoints = [];
-    }
-
+    const endpoints = parseWebhookEndpoints(value);
     if (endpoints.length === 0) return <span className="table-text">—</span>;
-
-    return (
-      <div className="webhook-endpoints">
-        {endpoints.map(({ adapterName, url }) => (
-          <div className="webhook-endpoint" key={`${adapterName}-${url}`}>
-            <span className="webhook-adapter-name">{adapterName}</span>
-            <code>{url}</code>
-            <CopyButton value={url} timeout={1500}>
-              {({ copied, copy }) => (
-                <Tooltip label={copied ? "コピーしました" : "URLをコピー"}>
-                  <ActionIcon
-                    variant="subtle"
-                    color={copied ? "teal" : "gray"}
-                    aria-label={`${adapterName} の Webhook URL をコピー`}
-                    onClick={copy}
-                  >
-                    {copied ? (
-                      <CheckIcon size={15} />
-                    ) : (
-                      <CopySimpleIcon size={15} />
-                    )}
-                  </ActionIcon>
-                </Tooltip>
-              )}
-            </CopyButton>
-          </div>
-        ))}
-      </div>
-    );
+    return <span className="table-text">{endpoints.length} 件（展開）</span>;
   }
 
   if (columnKey === "status" && page.icon === "bots")

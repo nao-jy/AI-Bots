@@ -4,3 +4,4 @@ export type EntityRecord = { id: number; updated: string } & Record<
 >;
 
 export type EntityOption = { label: string; value: string };
+export type PublicIdSlot = "first" | "second";

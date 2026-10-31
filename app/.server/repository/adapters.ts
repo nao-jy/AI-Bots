@@ -1,5 +1,6 @@
 import { db } from "./db";
 import type { AuthUser } from "../auth";
+import type { PublicIdSlot } from "../../types/entities";
 import {
   decryptAdapterEnvs,
   encryptStringMap,
@@ -11,7 +12,9 @@ import { toDisplayNameAdapter } from "../features/chat-adapter";
 
 export async function listAdapters(user: AuthUser) {
   const [adapters, authentications] = await Promise.all([
-    db.orm.aibot.ChatAdapter.where({ ownerId: user.id }).all(),
+    db.orm.aibot.ChatAdapter.where({ ownerId: user.id })
+      .include("publicIds")
+      .all(),
     db.orm.aibot.OAuthAuthentication.where({ ownerId: user.id }).all(),
   ]);
   const authNames = new Map(
@@ -31,6 +34,9 @@ export async function listAdapters(user: AuthUser) {
             : (authNames.get(adapter.authId) ?? "不明"),
         config: JSON.stringify(config),
         configured: Object.keys(config).length ? "設定済み" : "未設定",
+        publicIds: JSON.stringify(
+          adapter.publicIds.map(({ slot, id }) => ({ slot, id })),
+        ),
       });
     }),
     authOptions: authentications.map((auth) => ({
@@ -129,7 +135,11 @@ export async function deleteAdapter(user: AuthUser, id: number) {
   return true;
 }
 
-export async function regenerateAdapterPublicIds(user: AuthUser, id: number) {
+export async function regenerateAdapterPublicIds(
+  user: AuthUser,
+  id: number,
+  slot: PublicIdSlot,
+) {
   return db.transaction(async (tx) => {
     const adapter = await tx.orm.aibot.ChatAdapter.first({
       id,
@@ -140,21 +150,19 @@ export async function regenerateAdapterPublicIds(user: AuthUser, id: number) {
     const publicIds = await tx.orm.aibot.ChatAdapterPublicId.where({
       adapterId: id,
     }).all();
-    for (const slot of ["first", "second"] as const) {
-      const publicId = publicIds.find((item) => item.slot === slot);
-      if (publicId) {
-        await tx.orm.aibot.ChatAdapterPublicId.where({
-          id: publicId.id,
-        }).update({
-          id: generatePublicId(),
-        });
-      } else {
-        await tx.orm.aibot.ChatAdapterPublicId.create({
-          id: generatePublicId(),
-          slot,
-          adapterId: id,
-        });
-      }
+    const publicId = publicIds.find((item) => item.slot === slot);
+    if (publicId) {
+      await tx.orm.aibot.ChatAdapterPublicId.where({
+        id: publicId.id,
+      }).update({
+        id: generatePublicId(),
+      });
+    } else {
+      await tx.orm.aibot.ChatAdapterPublicId.create({
+        id: generatePublicId(),
+        slot,
+        adapterId: id,
+      });
     }
     return true;
   });

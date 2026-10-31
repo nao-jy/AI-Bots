@@ -1,5 +1,6 @@
 import { db } from "./db";
 import type { AuthUser } from "../auth";
+import type { PublicIdSlot } from "../../types/entities";
 import { generatePublicId, idList, jsonb, record } from "../utils";
 import {
   listToolSetNames,
@@ -73,6 +74,9 @@ export async function listBots(user: AuthUser, publicOrigin: string) {
           ),
           null,
           2,
+        ),
+        publicIds: JSON.stringify(
+          bot.publicIds.map(({ slot, id }) => ({ slot, id })),
         ),
         toolsets:
           toolSetContexts
@@ -293,7 +297,11 @@ export async function deleteBot(user: AuthUser, id: number) {
   return true;
 }
 
-export async function regenerateBotPublicIds(user: AuthUser, id: number) {
+export async function regenerateBotPublicIds(
+  user: AuthUser,
+  id: number,
+  slot: PublicIdSlot,
+) {
   return db.transaction(async (tx) => {
     const bot = await tx.orm.aibot.Chatbot.first({ id, ownerId: user.id });
     if (!bot) return false;
@@ -301,19 +309,17 @@ export async function regenerateBotPublicIds(user: AuthUser, id: number) {
     const publicIds = await tx.orm.aibot.ChatBotPublicId.where({
       chatbotId: id,
     }).all();
-    for (const slot of ["first", "second"] as const) {
-      const publicId = publicIds.find((item) => item.slot === slot);
-      if (publicId) {
-        await tx.orm.aibot.ChatBotPublicId.where({ id: publicId.id }).update({
-          id: generatePublicId(),
-        });
-      } else {
-        await tx.orm.aibot.ChatBotPublicId.create({
-          id: generatePublicId(),
-          slot,
-          chatbotId: id,
-        });
-      }
+    const publicId = publicIds.find((item) => item.slot === slot);
+    if (publicId) {
+      await tx.orm.aibot.ChatBotPublicId.where({ id: publicId.id }).update({
+        id: generatePublicId(),
+      });
+    } else {
+      await tx.orm.aibot.ChatBotPublicId.create({
+        id: generatePublicId(),
+        slot,
+        chatbotId: id,
+      });
     }
     return true;
   });
