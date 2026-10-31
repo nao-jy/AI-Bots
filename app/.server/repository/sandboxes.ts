@@ -1,24 +1,12 @@
 import { db } from "./db";
 import type { AuthUser } from "../auth";
-import { jsonb, record } from "../utils";
+import { jsonb, parseStringList, record } from "../utils";
 import { listSandboxNames } from "../features/toolsets/sandboxes";
 import { SANDBOX_SCOPES } from "~/const";
 export type SandboxScope = keyof typeof SANDBOX_SCOPES;
 
 function isSandboxScope(value: string): value is SandboxScope {
   return Object.hasOwn(SANDBOX_SCOPES, value);
-}
-
-function parseStringList(value: string, label: string) {
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(value || "[]");
-  } catch {
-    throw new Error(`${label}はJSON配列で入力してください。`);
-  }
-  if (!Array.isArray(parsed) || parsed.some((item) => typeof item !== "string"))
-    throw new Error(`${label}は文字列のJSON配列で入力してください。`);
-  return [...new Set(parsed.map((item) => item.trim()).filter(Boolean))];
 }
 
 export async function listSandboxes(user: AuthUser) {
@@ -38,8 +26,8 @@ export async function listSandboxes(user: AuthUser) {
         sandboxScope: sandbox.sandboxScope,
         scope: SANDBOX_SCOPES[sandbox.sandboxScope],
         name: `${sandbox.sandboxType} (${SANDBOX_SCOPES[sandbox.sandboxScope]})`,
-        envs: JSON.stringify(sandbox.envs ?? {}, null, 2),
-        allowedDomainList: JSON.stringify(sandbox.allowedDomainList, null, 2),
+        envs: JSON.stringify(sandbox.envs ?? {}),
+        allowedDomainList: JSON.stringify(sandbox.allowedDomainList),
       }),
     ),
   };

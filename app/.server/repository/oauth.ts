@@ -1,7 +1,12 @@
 import * as oidc from "openid-client";
 import { db } from "./db";
 import type { AuthUser } from "../auth";
-import { decryptCredential, encryptCredential, record } from "../utils";
+import {
+  decryptCredential,
+  encryptCredential,
+  parseStringList,
+  record,
+} from "../utils";
 
 const TOKEN_REFRESH_WINDOW_MS = 60_000;
 
@@ -157,7 +162,9 @@ export async function listOAuthClients(user: AuthUser) {
         clientId: client.clientId,
         authorizationEndpoint: client.authorizationEndpoint,
         tokenEndpoint: client.tokenEndpoint,
-        scopes: client.scopes.join(", "),
+        refreshEndpoint: client.refreshEndpoint ?? "",
+        revocationEndpoint: client.revocationEndpoint ?? "",
+        scopes: JSON.stringify(client.scopes),
         secretConfigured: client.clientSecret ? "設定済み" : "未設定",
       }),
     ),
@@ -180,10 +187,10 @@ export async function saveOAuthClient(
   const revocationEndpoint = String(
     values.get("revocationEndpoint") ?? "",
   ).trim();
-  const scopes = String(values.get("scopes") ?? "")
-    .split(/[\s,]+/)
-    .map((scope) => scope.trim())
-    .filter(Boolean);
+  const scopes = parseStringList(
+    String(values.get("scopes") ?? "[]").trim(),
+    "スコープ",
+  );
 
   if (!name || !clientId || !authorizationEndpoint || !tokenEndpoint)
     return {

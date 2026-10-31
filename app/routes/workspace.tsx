@@ -14,11 +14,11 @@ const items: { path: string; id: EntitySection; label: string }[] = [
   { path: "/bots", id: "bots", label: "チャットボット" },
   { path: "/adapters", id: "adapters", label: "アダプタ" },
   { path: "/providers", id: "providers", label: "プロバイダ" },
+  { path: "/agents", id: "agents", label: "エージェント" },
+  { path: "/sandboxes", id: "sandboxes", label: "サンドボックス" },
+  { path: "/mcp-servers", id: "mcp", label: "MCPサーバー" },
   { path: "/oauth-clients", id: "oauth", label: "OAuthクライアント" },
   { path: "/oauth-authentications", id: "oauth", label: "OAuth認証情報" },
-  { path: "/agents", id: "agents", label: "エージェント" },
-  { path: "/mcp-servers", id: "mcp", label: "MCPサーバー" },
-  { path: "/sandboxes", id: "sandboxes", label: "サンドボックス" },
   { path: "/users", id: "users", label: "ユーザー" },
 ];
 

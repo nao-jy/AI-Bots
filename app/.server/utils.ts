@@ -177,3 +177,15 @@ export function parseObject(value: FormDataEntryValue | null, label: string) {
 export function generatePublicId() {
   return randomBytes(16).toString("base64url");
 }
+
+export function parseStringList(value: string, label: string) {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(value || "[]");
+  } catch {
+    throw new Error(`${label}はJSON配列で入力してください。`);
+  }
+  if (!Array.isArray(parsed) || parsed.some((item) => typeof item !== "string"))
+    throw new Error(`${label}は文字列のJSON配列で入力してください。`);
+  return [...new Set(parsed.map((item) => item.trim()).filter(Boolean))];
+}

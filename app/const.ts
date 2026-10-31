@@ -6,5 +6,5 @@ export const SANDBOX_SCOPES = {
   thread: "スレッド",
   adapter: "チャットアダプタ",
   bot: "チャットボット",
-  all: "全期間",
+  all: "全体で共有",
 } as const;

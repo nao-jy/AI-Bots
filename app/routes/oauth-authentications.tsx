@@ -68,8 +68,7 @@ export async function action({ request }: Route.ActionArgs) {
   const form = await request.formData();
   const intent = String(form.get("_intent") ?? "");
   const id = Number(form.get("id"));
-  if (intent === "authorize")
-    return startOAuthAuthorization(user, request, form);
+  if (intent === "authorize") return startOAuthAuthorization(user, form);
   if (intent === "delete")
     return Number.isInteger(id) && (await deleteOAuthAuthentication(user, id))
       ? { ok: true }

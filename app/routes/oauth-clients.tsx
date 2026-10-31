@@ -60,11 +60,7 @@ const page: Omit<EntityPageDefinition, "records"> = {
       key: "scopes",
       label: "スコープ",
       placeholder: "openid profile email",
-      help: {
-        text: "複数のスコープは空白またはカンマで区切ります。",
-        linkText: "OAuth 2.0 スコープ",
-        href: "https://oauth.net/2/scope/",
-      },
+      type: "tags",
       wide: true,
     },
   ],

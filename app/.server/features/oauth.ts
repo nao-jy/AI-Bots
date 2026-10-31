@@ -146,11 +146,7 @@ function configuration(client: {
   );
 }
 
-export async function startOAuthAuthorization(
-  user: AuthUser,
-  request: Request,
-  form: FormData,
-) {
+export async function startOAuthAuthorization(user: AuthUser, form: FormData) {
   const name = String(form.get("name") ?? "").trim();
   const idValue = String(form.get("id") ?? "").trim();
   const authenticationId = idValue ? Number(idValue) : null;

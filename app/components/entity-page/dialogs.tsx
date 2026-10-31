@@ -175,7 +175,9 @@ function StringListEditor({
         label={label}
         placeholder={placeholder}
         value={value}
-        onChange={(items) => setValue(items.map((item) => item.trim()).filter(Boolean))}
+        onChange={(items) =>
+          setValue(items.map((item) => item.trim()).filter(Boolean))
+        }
         splitChars={[","]}
         clearable
       />
@@ -260,89 +262,91 @@ export function EntityPageDialogs({
             {page.fields
               .filter((field) => !field.createOnly || mode === "create")
               .map((field) => (
-              <div className={field.wide ? "field-wide" : ""} key={field.key}>
-                {field.type === "toolset-contexts" ? (
-                  <ToolSetContextEditor
-                    name={field.key}
-                    schemas={page.toolSetSchemas ?? []}
-                    initialValue={selected?.[field.key]}
-                  />
-                ) : field.type === "tags" ? (
-                  <StringListEditor
-                    name={field.key}
-                    label={field.label}
-                    placeholder={field.placeholder}
-                    initialValue={selected?.[field.key]}
-                  />
-                ) : field.type === "textarea" ? (
-                  <Textarea
-                    name={field.key}
-                    label={field.label}
-                    placeholder={field.placeholder}
-                    minRows={3}
-                    defaultValue={String(selected?.[field.key] ?? "")}
-                  />
-                ) : field.type === "key-value" ? (
-                  <KeyValueEditor
-                    name={field.key}
-                    label={field.label}
-                    initialValue={selected?.[field.key]}
-                    valueType={field.valueType}
-                  />
-                ) : field.type === "select" ? (
-                  <Select
-                    name={field.key}
-                    label={field.label}
-                    placeholder={field.placeholder ?? "選択してください"}
-                    data={field.options ?? []}
-                    defaultValue={String(selected?.[field.key] ?? "") || null}
-                    clearable={field.key === "agentId" || field.key === "authId"}
-                  />
-                ) : field.type === "multiselect" ? (
-                  <MultiSelect
-                    name={field.key}
-                    label={field.label}
-                    placeholder={field.placeholder ?? "選択してください"}
-                    data={field.options ?? []}
-                    defaultValue={String(selected?.[field.key] ?? "")
-                      .split(",")
-                      .map((value) => value.trim())
-                      .filter(Boolean)}
-                    hiddenInputValuesDivider=", "
-                    searchable
-                    clearable
-                    nothingFoundMessage="該当するアダプタがありません"
-                  />
-                ) : field.type === "password" ? (
-                  <PasswordInput
-                    name={field.key}
-                    label={field.label}
-                    placeholder={field.placeholder}
-                    autoComplete="new-password"
-                    required={field.required && mode === "create"}
-                  />
-                ) : (
-                  <TextInput
-                    name={field.key}
-                    type={field.type === "email" ? "email" : "text"}
-                    label={field.label}
-                    placeholder={field.placeholder}
-                    defaultValue={String(selected?.[field.key] ?? "")}
-                  />
-                )}
-                {field.help && (
-                  <Text size="xs" c="dimmed" mt={6}>
-                    {field.help.text}{" "}
-                    <Anchor
-                      href={field.help.href}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      {field.help.linkText}
-                    </Anchor>
-                  </Text>
-                )}
-              </div>
+                <div className={field.wide ? "field-wide" : ""} key={field.key}>
+                  {field.type === "toolset-contexts" ? (
+                    <ToolSetContextEditor
+                      name={field.key}
+                      schemas={page.toolSetSchemas ?? []}
+                      initialValue={selected?.[field.key]}
+                    />
+                  ) : field.type === "tags" ? (
+                    <StringListEditor
+                      name={field.key}
+                      label={field.label}
+                      placeholder={field.placeholder}
+                      initialValue={selected?.[field.key]}
+                    />
+                  ) : field.type === "textarea" ? (
+                    <Textarea
+                      name={field.key}
+                      label={field.label}
+                      placeholder={field.placeholder}
+                      minRows={3}
+                      defaultValue={String(selected?.[field.key] ?? "")}
+                    />
+                  ) : field.type === "key-value" ? (
+                    <KeyValueEditor
+                      name={field.key}
+                      label={field.label}
+                      initialValue={selected?.[field.key]}
+                      valueType={field.valueType}
+                    />
+                  ) : field.type === "select" ? (
+                    <Select
+                      name={field.key}
+                      label={field.label}
+                      placeholder={field.placeholder ?? "選択してください"}
+                      data={field.options ?? []}
+                      defaultValue={String(selected?.[field.key] ?? "") || null}
+                      clearable={
+                        field.key === "agentId" || field.key === "authId"
+                      }
+                    />
+                  ) : field.type === "multiselect" ? (
+                    <MultiSelect
+                      name={field.key}
+                      label={field.label}
+                      placeholder={field.placeholder ?? "選択してください"}
+                      data={field.options ?? []}
+                      defaultValue={String(selected?.[field.key] ?? "")
+                        .split(",")
+                        .map((value) => value.trim())
+                        .filter(Boolean)}
+                      hiddenInputValuesDivider=", "
+                      searchable
+                      clearable
+                      nothingFoundMessage="該当するアダプタがありません"
+                    />
+                  ) : field.type === "password" ? (
+                    <PasswordInput
+                      name={field.key}
+                      label={field.label}
+                      placeholder={field.placeholder}
+                      autoComplete="new-password"
+                      required={field.required && mode === "create"}
+                    />
+                  ) : (
+                    <TextInput
+                      name={field.key}
+                      type={field.type === "email" ? "email" : "text"}
+                      label={field.label}
+                      placeholder={field.placeholder}
+                      defaultValue={String(selected?.[field.key] ?? "")}
+                    />
+                  )}
+                  {field.help && (
+                    <Text size="xs" c="dimmed" mt={6}>
+                      {field.help.text}{" "}
+                      <Anchor
+                        href={field.help.href}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        {field.help.linkText}
+                      </Anchor>
+                    </Text>
+                  )}
+                </div>
               ))}
           </div>
           <div className="modal-actions">
