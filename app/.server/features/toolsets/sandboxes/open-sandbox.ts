@@ -53,6 +53,7 @@ export const OPEN_SANDBOX: Sandbox = {
           egress: [],
         },
       });
+      logger.info("instance created", { instanceId: sandbox.id });
       createdInstanceId = sandbox.id;
     }
 

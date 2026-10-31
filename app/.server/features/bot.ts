@@ -88,15 +88,6 @@ async function getBotSandbox(
   const sandboxProvider = getSandbox(sandbox.sandboxType);
   if (!sandboxProvider) return null;
 
-  const info = await sandboxProvider.getBashSandbox(
-    null,
-    jsonbToStringRecord(sandbox.envs),
-    [...sandbox.allowedDomainList],
-  );
-  if (!info.createdInstanceId) {
-    throw new Error(`failed to create sandbox for chatbot ${chatbotId}`);
-  }
-
   if (scopedIds !== null) {
     const persistentInstance = await getPersistentSandboxInstance(
       sandbox.id,
@@ -106,6 +97,11 @@ async function getBotSandbox(
       scopedIds.chatbotId,
     );
     if (persistentInstance) {
+      const info = await sandboxProvider.getBashSandbox(
+        persistentInstance.instanceId,
+        jsonbToStringRecord(sandbox.envs),
+        [...sandbox.allowedDomainList],
+      );
       return {
         instanceId: persistentInstance.instanceId,
         isTurnScoped: false,
@@ -113,6 +109,14 @@ async function getBotSandbox(
         bashSandbox: info.sandbox,
       };
     }
+  }
+  const info = await sandboxProvider.getBashSandbox(
+    null,
+    jsonbToStringRecord(sandbox.envs),
+    [...sandbox.allowedDomainList],
+  );
+  if (!info.createdInstanceId) {
+    throw new Error(`failed to create sandbox for chatbot ${chatbotId}`);
   }
 
   try {
