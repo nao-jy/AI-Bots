@@ -204,7 +204,7 @@ export function registerBotHandlers(
         );
       }
 
-      for (const link of agent.mcpServers) {
+      for (const link of chatbot.mcpServers) {
         const server = link.mcpServer;
         if (server.ownerId !== chatbot.ownerId) continue;
         if (!server.endpoint) {

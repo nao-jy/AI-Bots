@@ -14,13 +14,11 @@ import { testAgent } from "~/.server/test";
 
 const page: Omit<EntityPageDefinition, "records"> = {
   title: "エージェント",
-  description:
-    "利用するプロバイダー、モデルID、オプション、MCPサーバーを設定します。",
+  description: "利用するプロバイダー、モデルID、オプションを設定します。",
   icon: "agents",
   columns: [
     { key: "name", label: "エージェント" },
     { key: "model", label: "モデル" },
-    { key: "servers", label: "MCPサーバー" },
     { key: "mcpAuthentications", label: "MCP OAuth認証" },
     { key: "status", label: "利用状況" },
   ],
@@ -41,21 +39,6 @@ const page: Omit<EntityPageDefinition, "records"> = {
       key: "model_id",
       label: "モデルID",
       placeholder: "例：gpt-4.1",
-    },
-    {
-      key: "mcpServerIds",
-      label: "MCPサーバー",
-      type: "multiselect",
-      options: [],
-      placeholder: "利用するMCPサーバーを選択",
-    },
-    {
-      key: "mcpAuthIds",
-      label: "MCPごとのOAuth認証 (JSON)",
-      type: "key-value",
-      valueType: "json-scalar",
-      wide: true,
-      help: { text: "キーにMCPサーバーID、値にOAuth認証IDを入力します。ID一覧はこのページの利用可能なMCPサーバーとOAuth認証情報です。", linkText: "OAuth認証情報を管理", href: "/oauth-authentications" },
     },
     {
       key: "options",
@@ -102,13 +85,18 @@ export default function Agents({ loaderData }: Route.ComponentProps) {
         records: loaderData.records,
         fields: page.fields.map((field) => ({
           ...field,
-          ...(field.key === "mcpAuthIds" ? { help: { ...field.help!, text: `${field.help!.text} 利用可能な認証情報: ${loaderData.authOptions.map((option) => option.label).join("、") || "なし"}` } } : {}),
+          ...(field.key === "mcpAuthIds"
+            ? {
+                help: {
+                  ...field.help!,
+                  text: `${field.help!.text} 利用可能な認証情報: ${loaderData.authOptions.map((option) => option.label).join("、") || "なし"}`,
+                },
+              }
+            : {}),
           options:
-            field.key === "mcpServerIds"
-              ? loaderData.serverOptions
-              : field.key === "providerId"
-                ? loaderData.providerOptions
-                : field.options,
+            field.key === "providerId"
+              ? loaderData.providerOptions
+              : field.options,
         })),
       }}
     />

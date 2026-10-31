@@ -4,12 +4,7 @@ import { idList, jsonb, record } from "../utils";
 
 export async function listAgents(user: AuthUser) {
   const [agents, authentications] = await Promise.all([
-    db.orm.aibot.AgentDefinition.include("mcpServers", (links) =>
-      links.include("mcpServer"),
-    )
-      .include("chatbot")
-      .include("provider")
-      .all(),
+    db.orm.aibot.AgentDefinition.include("chatbot").include("provider").all(),
     db.orm.aibot.OAuthAuthentication.where({ ownerId: user.id }).all(),
   ]);
   const ownedBots = await db.orm.aibot.Chatbot.where({
@@ -31,33 +26,12 @@ export async function listAgents(user: AuthUser) {
           (!agent.chatbot || ownedAgentIds.has(agent.id)),
       )
       .map((agent) => {
-        const ownedLinks = agent.mcpServers.filter((link) =>
-          availableServerIds.has(link.mcpServerId),
-        );
         return record(agent.id, agent.updatedAt, {
           name: agent.name,
           model: agent.model_id,
           model_id: agent.model_id,
           provider: agent.provider.name,
           providerId: agent.provider.id,
-          mcpServerIds: ownedLinks.map((link) => link.mcpServerId).join(","),
-          mcpAuthIds: JSON.stringify(
-            Object.fromEntries(
-              ownedLinks
-                .filter((link) => link.authId !== null)
-                .map((link) => [String(link.mcpServerId), String(link.authId)]),
-            ),
-          ),
-          mcpAuthentications:
-            ownedLinks
-              .filter((link) => link.authId !== null)
-              .map(
-                (link) =>
-                  `${link.mcpServer.name}: ${authNames.get(link.authId!) ?? "不明"}`,
-              )
-              .join("、") || "未設定",
-          servers:
-            ownedLinks.map((link) => link.mcpServer.name).join("、") || "—",
           options: JSON.stringify(agent.options ?? {}, null, 2),
           status: agent.chatbot
             ? `ボット「${agent.chatbot.name}」で利用中`
@@ -179,29 +153,6 @@ export async function saveAgent(
         : id;
     if (id !== null)
       await tx.orm.aibot.AgentDefinition.where({ id }).update(valuesToSave);
-    const links = await tx.orm.aibot.AgentMcpServer.where({ agentId }).all();
-    for (const link of links) {
-      if (!serverIds.includes(link.mcpServerId))
-        await tx.orm.aibot.AgentMcpServer.where({
-          agentId,
-          mcpServerId: link.mcpServerId,
-        }).delete();
-    }
-    for (const serverId of serverIds) {
-      const authId = mcpAuthIds[String(serverId)] ?? null;
-      const existingLink = links.find((link) => link.mcpServerId === serverId);
-      if (!existingLink)
-        await tx.orm.aibot.AgentMcpServer.create({
-          agentId,
-          mcpServerId: serverId,
-          authId,
-        });
-      else if (existingLink.authId !== authId)
-        await tx.orm.aibot.AgentMcpServer.where({
-          agentId,
-          mcpServerId: serverId,
-        }).update({ authId });
-    }
   });
   return { ok: true };
 }
@@ -213,16 +164,6 @@ export async function deleteAgent(user: AuthUser, id: number) {
   if (!agent || agent.provider.ownerId !== user.id) return false;
   const bot = await db.orm.aibot.Chatbot.first({ agentId: id });
   if (bot) return false;
-  const ownServers = await db.orm.aibot.McpServer.where({
-    ownerId: user.id,
-  }).all();
-  const links = await db.orm.aibot.AgentMcpServer.where({ agentId: id }).all();
-  if (
-    links.some(
-      (link) => !ownServers.some((server) => server.id === link.mcpServerId),
-    )
-  )
-    return false;
   await db.orm.aibot.AgentDefinition.where({ id }).delete();
   return true;
 }

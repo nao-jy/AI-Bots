@@ -25,7 +25,7 @@ export async function listSandboxes(user: AuthUser) {
         type: sandbox.sandboxType,
         sandboxScope: sandbox.sandboxScope,
         scope: SANDBOX_SCOPES[sandbox.sandboxScope],
-        name: `${sandbox.sandboxType} (${SANDBOX_SCOPES[sandbox.sandboxScope]})`,
+        name: sandbox.name,
         envs: JSON.stringify(sandbox.envs ?? {}),
         allowedDomainList: JSON.stringify(sandbox.allowedDomainList),
       }),
@@ -40,6 +40,7 @@ export async function saveSandbox(
 ) {
   const sandboxType = String(values.get("sandboxType") ?? "").trim();
   const sandboxScope = String(values.get("sandboxScope") ?? "").trim();
+  const sandboxName = String(values.get("sandboxName") ?? "").trim();
   if (!(await listSandboxNames()).includes(sandboxType))
     return { error: "サポートされていないサンドボックスタイプです。" };
   if (!isSandboxScope(sandboxScope))
@@ -80,6 +81,7 @@ export async function saveSandbox(
     sandboxScope,
     envs: jsonb(envs),
     allowedDomainList,
+    name: sandboxName,
   };
   if (id === null)
     await db.orm.aibot.Sandbox.create({ ...saved, ownerId: user.id });

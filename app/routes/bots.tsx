@@ -59,6 +59,13 @@ const page: Omit<EntityPageDefinition, "records"> = {
       placeholder: "接続するアダプタを選択",
     },
     {
+      key: "mcpServerIds",
+      label: "MCPサーバー",
+      type: "multiselect",
+      options: [],
+      placeholder: "接続するMCPサーバーを選択",
+    },
+    {
       key: "sandboxId",
       label: "サンドボックス",
       type: "select",
@@ -128,7 +135,9 @@ export default function Bots({ loaderData }: Route.ComponentProps) {
                 ? loaderData.adapterOptions
                 : field.key === "sandboxId"
                   ? loaderData.sandboxOptions
-                  : field.options,
+                  : field.key === "mcpServerIds"
+                    ? loaderData.mcpServerOptions
+                    : field.options,
         })),
       }}
     />

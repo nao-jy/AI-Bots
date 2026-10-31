@@ -23,6 +23,7 @@ const page: Omit<EntityPageDefinition, "records"> = {
     { key: "allowedDomainList", label: "許可ドメイン" },
   ],
   fields: [
+    { key: "sandboxName", label: "名前", type: "text" },
     { key: "sandboxType", label: "タイプ", type: "select", options: [] },
     {
       key: "sandboxScope",

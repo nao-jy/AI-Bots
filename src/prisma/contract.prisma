@@ -18,8 +18,8 @@ enum PublicIdSlot {
 
 namespace aibot {
   model User {
-    id           Int                        @id @default(autoincrement())
-    email        String                     @unique
+    id           Int                      @id @default(autoincrement())
+    email        String                   @unique
     passwordHash String
     name         String?
     chatbots     Chatbot[]
@@ -27,7 +27,7 @@ namespace aibot {
     adapters     ChatAdapter[]
     mcpServers   McpServer[]
     sessions     Session[]
-    createdAt    TimestamptzString          @default(now())
+    createdAt    TimestamptzString        @default(now())
     updatedAt    temporal.UpdatedAtString
   }
 
@@ -54,17 +54,18 @@ namespace aibot {
   }
 
   model Chatbot {
-    id          Int                        @id @default(autoincrement())
+    id          Int                      @id @default(autoincrement())
     name        String
     description String?
     instruction String
-    isEnabled   Boolean                    @default(true)
-    owner       User                       @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+    isEnabled   Boolean                  @default(true)
+    owner       User                     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
     ownerId     Int
-    agent       AgentDefinition?           @relation(fields: [agentId], references: [id], onDelete: SetNull)
-    agentId     Int?                       @unique
+    agent       AgentDefinition?         @relation(fields: [agentId], references: [id], onDelete: SetNull)
+    agentId     Int?                     @unique
     adapters    ChatbotAdapter[]
-    createdAt   TimestamptzString          @default(now())
+    mcpServers  ChatBotMcpServer[]
+    createdAt   TimestamptzString        @default(now())
     updatedAt   temporal.UpdatedAtString
 
     publicIds   ChatBotPublicId[]
@@ -83,15 +84,15 @@ namespace aibot {
   }
 
   model ChatAdapter {
-    id             Int                        @id @default(autoincrement())
+    id             Int                      @id @default(autoincrement())
     name           String
     platform       String
     config         Jsonb?
-    owner          User                       @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+    owner          User                     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
     ownerId        Int
-    authentication OAuthAuthentication?       @relation(fields: [authId], references: [id], onDelete: SetNull)
+    authentication OAuthAuthentication?     @relation(fields: [authId], references: [id], onDelete: SetNull)
     authId         Int?
-    createdAt      TimestamptzString          @default(now())
+    createdAt      TimestamptzString        @default(now())
     updatedAt      temporal.UpdatedAtString
 
     chatbots       ChatbotAdapter[]
@@ -113,15 +114,15 @@ namespace aibot {
   }
 
   model Provider {
-    id           Int                        @id @default(autoincrement())
+    id           Int                      @id @default(autoincrement())
     name         String
     providerName String
     args         Jsonb?
     headers      Jsonb?
-    owner        User                       @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+    owner        User                     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
     ownerId      Int
     agents       AgentDefinition[]
-    createdAt    TimestamptzString          @default(now())
+    createdAt    TimestamptzString        @default(now())
     updatedAt    temporal.UpdatedAtString
 
     @@index([ownerId])
@@ -129,52 +130,51 @@ namespace aibot {
   }
 
   model AgentDefinition {
-    id         Int                        @id @default(autoincrement())
+    id         Int                      @id @default(autoincrement())
     name       String
-    provider   Provider                   @relation(fields: [providerId], references: [id], onDelete: Restrict)
+    provider   Provider                 @relation(fields: [providerId], references: [id], onDelete: Restrict)
     providerId Int
     model_id   String
     options    Jsonb?
     chatbot    Chatbot?
-    mcpServers AgentMcpServer[]
-    createdAt  TimestamptzString          @default(now())
+    createdAt  TimestamptzString        @default(now())
     updatedAt  temporal.UpdatedAtString
 
     @@index([providerId])
   }
 
   model McpServer {
-    id          Int                        @id @default(autoincrement())
+    id          Int                      @id @default(autoincrement())
     name        String
     description String?
     transport   MCPTransport
     endpoint    String?
     headers     Jsonb?
-    owner       User                       @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+    owner       User                     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
     ownerId     Int
-    agents      AgentMcpServer[]
-    createdAt   TimestamptzString          @default(now())
+    bots        ChatBotMcpServer[]
+    createdAt   TimestamptzString        @default(now())
     updatedAt   temporal.UpdatedAtString
 
     @@index([ownerId])
   }
 
-  model AgentMcpServer {
-    agent          AgentDefinition      @relation(fields: [agentId], references: [id], onDelete: Cascade)
-    agentId        Int
+  model ChatBotMcpServer {
+    chatbot        Chatbot              @relation(fields: [chatbotId], references: [id], onDelete: Cascade)
+    chatbotId      Int
     mcpServer      McpServer            @relation(fields: [mcpServerId], references: [id], onDelete: Cascade)
     mcpServerId    Int
     authentication OAuthAuthentication? @relation(fields: [authId], references: [id], onDelete: SetNull)
     authId         Int?
     createdAt      TimestamptzString    @default(now())
 
-    @@id([agentId, mcpServerId])
+    @@id([chatbotId, mcpServerId])
     @@index([mcpServerId])
   }
 
   model OAuthClient {
-    id                    Int                        @id @default(autoincrement())
-    owner                 User                       @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+    id                    Int                      @id @default(autoincrement())
+    owner                 User                     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
     ownerId               Int
     name                  String
     clientId              String
@@ -184,7 +184,7 @@ namespace aibot {
     refreshEndpoint       String?
     revocationEndpoint    String?
     scopes                String[]
-    createdAt             TimestamptzString          @default(now())
+    createdAt             TimestamptzString        @default(now())
     updatedAt             temporal.UpdatedAtString
 
     authentications       OAuthAuthentication[]
@@ -193,16 +193,16 @@ namespace aibot {
   }
 
   model OAuthAuthentication {
-    id           Int                        @id @default(autoincrement())
-    owner        User                       @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+    id           Int                      @id @default(autoincrement())
+    owner        User                     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
     ownerId      Int
-    oauth        OAuthClient                @relation(fields: [oauthId], references: [id], onDelete: Cascade)
+    oauth        OAuthClient              @relation(fields: [oauthId], references: [id], onDelete: Cascade)
     oauthId      Int
     name         String
     accessToken  String
     expiresAt    TimestamptzString?
     refreshToken String?
-    createdAt    TimestamptzString          @default(now())
+    createdAt    TimestamptzString        @default(now())
     updatedAt    temporal.UpdatedAtString
 
     @@index([ownerId])
@@ -212,6 +212,7 @@ namespace aibot {
   model Sandbox {
     id                Int                         @id @default(autoincrement())
     sandboxType       String
+    name              String
     envs              Jsonb?
     allowedDomainList String[]
     sandboxScope      SandboxScope

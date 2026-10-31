@@ -8,16 +8,16 @@
       "model": "AgentDefinition",
       "namespace": "aibot"
     },
-    "AgentMcpServer": {
-      "model": "AgentMcpServer",
-      "namespace": "aibot"
-    },
     "ChatAdapter": {
       "model": "ChatAdapter",
       "namespace": "aibot"
     },
     "ChatAdapterPublicId": {
       "model": "ChatAdapterPublicId",
+      "namespace": "aibot"
+    },
+    "ChatBotMcpServer": {
+      "model": "ChatBotMcpServer",
       "namespace": "aibot"
     },
     "ChatBotPublicId": {
@@ -146,21 +146,6 @@
                   "namespace": "aibot"
                 }
               },
-              "mcpServers": {
-                "cardinality": "1:N",
-                "on": {
-                  "localFields": [
-                    "id"
-                  ],
-                  "targetFields": [
-                    "agentId"
-                  ]
-                },
-                "to": {
-                  "model": "AgentMcpServer",
-                  "namespace": "aibot"
-                }
-              },
               "provider": {
                 "cardinality": "N:1",
                 "nullable": false,
@@ -204,106 +189,6 @@
               },
               "namespaceId": "aibot",
               "table": "AgentDefinition"
-            }
-          },
-          "AgentMcpServer": {
-            "fields": {
-              "agentId": {
-                "nullable": false,
-                "type": {
-                  "codecId": "pg/int4@1",
-                  "kind": "scalar"
-                }
-              },
-              "authId": {
-                "nullable": true,
-                "type": {
-                  "codecId": "pg/int4@1",
-                  "kind": "scalar"
-                }
-              },
-              "createdAt": {
-                "nullable": false,
-                "type": {
-                  "codecId": "pg/timestamptz-string@1",
-                  "kind": "scalar"
-                }
-              },
-              "mcpServerId": {
-                "nullable": false,
-                "type": {
-                  "codecId": "pg/int4@1",
-                  "kind": "scalar"
-                }
-              }
-            },
-            "relations": {
-              "agent": {
-                "cardinality": "N:1",
-                "nullable": false,
-                "on": {
-                  "localFields": [
-                    "agentId"
-                  ],
-                  "targetFields": [
-                    "id"
-                  ]
-                },
-                "to": {
-                  "model": "AgentDefinition",
-                  "namespace": "aibot"
-                }
-              },
-              "authentication": {
-                "cardinality": "N:1",
-                "nullable": true,
-                "on": {
-                  "localFields": [
-                    "authId"
-                  ],
-                  "targetFields": [
-                    "id"
-                  ]
-                },
-                "to": {
-                  "model": "OAuthAuthentication",
-                  "namespace": "aibot"
-                }
-              },
-              "mcpServer": {
-                "cardinality": "N:1",
-                "nullable": false,
-                "on": {
-                  "localFields": [
-                    "mcpServerId"
-                  ],
-                  "targetFields": [
-                    "id"
-                  ]
-                },
-                "to": {
-                  "model": "McpServer",
-                  "namespace": "aibot"
-                }
-              }
-            },
-            "storage": {
-              "fields": {
-                "agentId": {
-                  "column": "agentId"
-                },
-                "authId": {
-                  "column": "authId"
-                },
-                "createdAt": {
-                  "column": "createdAt"
-                },
-                "mcpServerId": {
-                  "column": "mcpServerId"
-                }
-              },
-              "namespaceId": "aibot",
-              "table": "AgentMcpServer"
             }
           },
           "ChatAdapter": {
@@ -532,6 +417,106 @@
               },
               "namespaceId": "aibot",
               "table": "ChatAdapterPublicId"
+            }
+          },
+          "ChatBotMcpServer": {
+            "fields": {
+              "authId": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "chatbotId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "createdAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              },
+              "mcpServerId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "authentication": {
+                "cardinality": "N:1",
+                "nullable": true,
+                "on": {
+                  "localFields": [
+                    "authId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "OAuthAuthentication",
+                  "namespace": "aibot"
+                }
+              },
+              "chatbot": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "chatbotId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Chatbot",
+                  "namespace": "aibot"
+                }
+              },
+              "mcpServer": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "mcpServerId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "McpServer",
+                  "namespace": "aibot"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "authId": {
+                  "column": "authId"
+                },
+                "chatbotId": {
+                  "column": "chatbotId"
+                },
+                "createdAt": {
+                  "column": "createdAt"
+                },
+                "mcpServerId": {
+                  "column": "mcpServerId"
+                }
+              },
+              "namespaceId": "aibot",
+              "table": "ChatBotMcpServer"
             }
           },
           "ChatBotPublicId": {
@@ -828,6 +813,21 @@
                   "namespace": "aibot"
                 }
               },
+              "mcpServers": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "chatbotId"
+                  ]
+                },
+                "to": {
+                  "model": "ChatBotMcpServer",
+                  "namespace": "aibot"
+                }
+              },
               "owner": {
                 "cardinality": "N:1",
                 "nullable": false,
@@ -1041,7 +1041,7 @@
               }
             },
             "relations": {
-              "agents": {
+              "bots": {
                 "cardinality": "1:N",
                 "on": {
                   "localFields": [
@@ -1052,7 +1052,7 @@
                   ]
                 },
                 "to": {
-                  "model": "AgentMcpServer",
+                  "model": "ChatBotMcpServer",
                   "namespace": "aibot"
                 }
               },
@@ -1666,6 +1666,13 @@
                   "kind": "scalar"
                 }
               },
+              "name": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
               "ownerId": {
                 "nullable": false,
                 "type": {
@@ -1737,6 +1744,9 @@
                 },
                 "id": {
                   "column": "id"
+                },
+                "name": {
+                  "column": "name"
                 },
                 "ownerId": {
                   "column": "ownerId"
@@ -2123,129 +2133,6 @@
               },
               "uniques": []
             },
-            "AgentMcpServer": {
-              "columns": {
-                "agentId": {
-                  "codecId": "pg/int4@1",
-                  "dataType": "pg/int4",
-                  "nullable": false
-                },
-                "authId": {
-                  "codecId": "pg/int4@1",
-                  "dataType": "pg/int4",
-                  "nullable": true
-                },
-                "createdAt": {
-                  "codecId": "pg/timestamptz-string@1",
-                  "dataType": "pg/timestamptz",
-                  "default": {
-                    "expression": "now()",
-                    "kind": "function"
-                  },
-                  "nullable": false
-                },
-                "mcpServerId": {
-                  "codecId": "pg/int4@1",
-                  "dataType": "pg/int4",
-                  "nullable": false
-                }
-              },
-              "foreignKeys": [
-                {
-                  "index": {
-                    "name": "AgentMcpServer_agentId_idx_8d0ba4f0"
-                  },
-                  "onDelete": "cascade",
-                  "source": {
-                    "columns": [
-                      "agentId"
-                    ],
-                    "namespaceId": "aibot",
-                    "tableName": "AgentMcpServer"
-                  },
-                  "target": {
-                    "columns": [
-                      "id"
-                    ],
-                    "namespaceId": "aibot",
-                    "tableName": "AgentDefinition"
-                  }
-                },
-                {
-                  "index": {
-                    "name": "AgentMcpServer_mcpServerId_idx_1c0baf24"
-                  },
-                  "onDelete": "cascade",
-                  "source": {
-                    "columns": [
-                      "mcpServerId"
-                    ],
-                    "namespaceId": "aibot",
-                    "tableName": "AgentMcpServer"
-                  },
-                  "target": {
-                    "columns": [
-                      "id"
-                    ],
-                    "namespaceId": "aibot",
-                    "tableName": "McpServer"
-                  }
-                },
-                {
-                  "index": {
-                    "name": "AgentMcpServer_authId_idx_29b6b568"
-                  },
-                  "onDelete": "setNull",
-                  "source": {
-                    "columns": [
-                      "authId"
-                    ],
-                    "namespaceId": "aibot",
-                    "tableName": "AgentMcpServer"
-                  },
-                  "target": {
-                    "columns": [
-                      "id"
-                    ],
-                    "namespaceId": "aibot",
-                    "tableName": "OAuthAuthentication"
-                  }
-                }
-              ],
-              "indexes": [
-                {
-                  "columns": [
-                    "agentId"
-                  ],
-                  "name": "AgentMcpServer_agentId_idx_8d0ba4f0",
-                  "prefix": "AgentMcpServer_agentId_idx",
-                  "unique": false
-                },
-                {
-                  "columns": [
-                    "authId"
-                  ],
-                  "name": "AgentMcpServer_authId_idx_29b6b568",
-                  "prefix": "AgentMcpServer_authId_idx",
-                  "unique": false
-                },
-                {
-                  "columns": [
-                    "mcpServerId"
-                  ],
-                  "name": "AgentMcpServer_mcpServerId_idx_1c0baf24",
-                  "prefix": "AgentMcpServer_mcpServerId_idx",
-                  "unique": false
-                }
-              ],
-              "primaryKey": {
-                "columns": [
-                  "agentId",
-                  "mcpServerId"
-                ]
-              },
-              "uniques": []
-            },
             "ChatAdapter": {
               "columns": {
                 "authId": {
@@ -2457,6 +2344,129 @@
                   ]
                 }
               ]
+            },
+            "ChatBotMcpServer": {
+              "columns": {
+                "authId": {
+                  "codecId": "pg/int4@1",
+                  "dataType": "pg/int4",
+                  "nullable": true
+                },
+                "chatbotId": {
+                  "codecId": "pg/int4@1",
+                  "dataType": "pg/int4",
+                  "nullable": false
+                },
+                "createdAt": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "dataType": "pg/timestamptz",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nullable": false
+                },
+                "mcpServerId": {
+                  "codecId": "pg/int4@1",
+                  "dataType": "pg/int4",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [
+                {
+                  "index": {
+                    "name": "ChatBotMcpServer_chatbotId_idx_52db07ea"
+                  },
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "chatbotId"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "ChatBotMcpServer"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "Chatbot"
+                  }
+                },
+                {
+                  "index": {
+                    "name": "ChatBotMcpServer_mcpServerId_idx_1c0baf24"
+                  },
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "mcpServerId"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "ChatBotMcpServer"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "McpServer"
+                  }
+                },
+                {
+                  "index": {
+                    "name": "ChatBotMcpServer_authId_idx_29b6b568"
+                  },
+                  "onDelete": "setNull",
+                  "source": {
+                    "columns": [
+                      "authId"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "ChatBotMcpServer"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "OAuthAuthentication"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "authId"
+                  ],
+                  "name": "ChatBotMcpServer_authId_idx_29b6b568",
+                  "prefix": "ChatBotMcpServer_authId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "chatbotId"
+                  ],
+                  "name": "ChatBotMcpServer_chatbotId_idx_52db07ea",
+                  "prefix": "ChatBotMcpServer_chatbotId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "mcpServerId"
+                  ],
+                  "name": "ChatBotMcpServer_mcpServerId_idx_1c0baf24",
+                  "prefix": "ChatBotMcpServer_mcpServerId_idx",
+                  "unique": false
+                }
+              ],
+              "primaryKey": {
+                "columns": [
+                  "chatbotId",
+                  "mcpServerId"
+                ]
+              },
+              "uniques": []
             },
             "ChatBotPublicId": {
               "checks": [
@@ -3507,6 +3517,11 @@
                   },
                   "nullable": false
                 },
+                "name": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "nullable": false
+                },
                 "ownerId": {
                   "codecId": "pg/int4@1",
                   "dataType": "pg/int4",
@@ -3751,7 +3766,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "4a4b60c78ba4e992b1169cbd4d93b3c404ce479b8898534ec665fa9302b666ba"
+    "storageHash": "d33ed5e403750cd662cdedd445fd5fbe56c7ad9e736fab9c700250d51fcda8b0"
   },
   "execution": {
     "executionHash": "5c1984e92c9f7200ee5ad8e0c0de5b1b5b5329ee0cfca95a089762069a80e0dd",

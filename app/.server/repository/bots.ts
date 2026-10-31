@@ -13,6 +13,7 @@ export async function listBots(user: AuthUser, publicOrigin: string) {
     .include("adapters", (links) =>
       links.include("adapter", (adapter) => adapter.include("publicIds")),
     )
+    .include("mcpServers", (links) => links.include("mcpServer"))
     .include("publicIds")
     .orderBy((bot) => bot.updatedAt.desc())
     .all();
@@ -20,6 +21,9 @@ export async function listBots(user: AuthUser, publicOrigin: string) {
     .include("provider")
     .all();
   const adapters = await db.orm.aibot.ChatAdapter.where({
+    ownerId: user.id,
+  }).all();
+  const mcpServers = await db.orm.aibot.McpServer.where({
     ownerId: user.id,
   }).all();
   const [sandboxes, sandboxLinks, toolSetContexts] = await Promise.all([
@@ -35,6 +39,7 @@ export async function listBots(user: AuthUser, publicOrigin: string) {
         agent: bot.agent?.name ?? "—",
         agentId: bot.agentId ?? "",
         adapterIds: bot.adapters.map((link) => link.adapterId).join(","),
+        mcpServerIds: bot.mcpServers.map((link) => link.mcpServerId).join(","),
         instruction: bot.instruction,
         sandboxId: sandboxLinks
           .filter(
@@ -107,6 +112,10 @@ export async function listBots(user: AuthUser, publicOrigin: string) {
       label: adapter.name,
       value: String(adapter.id),
     })),
+    mcpServerOptions: mcpServers.map((mcpServer) => ({
+      label: mcpServer.name,
+      value: String(mcpServer.id),
+    })),
     sandboxOptions: sandboxes.map((sandbox) => ({
       label: `${sandbox.sandboxType} (${sandbox.sandboxScope})`,
       value: String(sandbox.id),
@@ -126,6 +135,7 @@ export async function saveBot(
   const agentValue = String(values.get("agentId") ?? "").trim();
   const agentId = agentValue ? Number(agentValue) : null;
   const adapterIds = idList(values.get("adapterIds")?.toString() ?? null);
+  const mcpServerIds = idList(values.get("mcpServerIds")?.toString() ?? null);
   const sandboxIdRaw = values.get("sandboxId")?.toString() ?? null;
   const sandboxId = sandboxIdRaw !== null ? Number(sandboxIdRaw) : null;
   let toolSetContexts: Record<string, unknown>;
@@ -172,6 +182,13 @@ export async function saveBot(
   const allowedAdapterIds = new Set(adapters.map((adapter) => adapter.id));
   if (adapterIds.some((adapterId) => !allowedAdapterIds.has(adapterId))) {
     return { error: "選択したアダプタを使用できません。" };
+  }
+  const mcpServers = await db.orm.aibot.McpServer.where({
+    ownerId: user.id,
+  }).all();
+  const allowedMcpServerIds = new Set(mcpServers.map((data) => data.id));
+  if (mcpServerIds.some((id) => !allowedMcpServerIds.has(id))) {
+    return { error: "選択したMCPサーバーを使用できません。" };
   }
   const ownedSandboxes = await db.orm.aibot.Sandbox.where({
     ownerId: user.id,
@@ -235,6 +252,13 @@ export async function saveBot(
       await tx.orm.aibot.ChatbotAdapter.create({
         chatbotId: botId!,
         adapterId,
+      });
+    }
+    await tx.orm.aibot.ChatBotMcpServer.where({ chatbotId: botId! }).delete();
+    for (const mcpServerId of mcpServerIds) {
+      await tx.orm.aibot.ChatBotMcpServer.create({
+        chatbotId: botId!,
+        mcpServerId,
       });
     }
     await tx.orm.aibot.ChatBotToolSandbox.where({ chatbotId: botId! }).delete();
@@ -308,11 +332,8 @@ export async function getAvailableBot(botId: number) {
     id: botId,
     isEnabled: true,
   })
-    .include("agent", (agent) =>
-      agent
-        .include("provider")
-        .include("mcpServers", (links) => links.include("mcpServer")),
-    )
+    .include("agent", (agent) => agent.include("provider"))
+    .include("mcpServers", (server) => server.include("mcpServer"))
     .first();
   return chatbot;
 }
