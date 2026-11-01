@@ -1,9 +1,5 @@
 import { logger } from "~/.server/logger";
-import {
-  type BashSandboxExtended,
-  type Sandbox,
-  type TerminalSize,
-} from ".";
+import { type BashSandboxExtended, type Sandbox, type TerminalSize } from ".";
 import {
   ConnectionConfig,
   Sandbox as OpenSandbox,
@@ -65,13 +61,9 @@ export const OPEN_SANDBOX: Sandbox = {
       baseUrl,
       apiKey: connection.apiKey,
       headers: connection.headers,
-      fetch: createRedirectSafeFetch(
-        baseUrl,
-        connection.fetch,
-        {
-          overallTimeoutMs: connection.requestTimeoutSeconds * 1_000,
-        },
-      ),
+      fetch: createRedirectSafeFetch(baseUrl, connection.fetch, {
+        overallTimeoutMs: connection.requestTimeoutSeconds * 1_000,
+      }),
     });
     const path = { sandboxId: instanceId };
     const current = await lifecycle.GET(
@@ -86,13 +78,10 @@ export const OPEN_SANDBOX: Sandbox = {
     if (!previousPolicy)
       throw new Error("現在のネットワークポリシーを取得できませんでした。");
 
-    const opened = await lifecycle.PUT(
-      "/sandboxes/{sandboxId}/networkpolicy",
-      {
-        params: { path },
-        body: { defaultAction: "allow", egress: [] },
-      },
-    );
+    const opened = await lifecycle.PUT("/sandboxes/{sandboxId}/networkpolicy", {
+      params: { path },
+      body: { defaultAction: "allow", egress: [] },
+    });
     if (opened.error || !opened.response.ok)
       throw new Error(
         `シェル用のネットワークポリシーを設定できませんでした (HTTP ${opened.response.status})`,
@@ -136,13 +125,9 @@ export const OPEN_SANDBOX: Sandbox = {
       baseUrl,
       apiKey: connection.apiKey,
       headers: connection.headers,
-      fetch: createRedirectSafeFetch(
-        baseUrl,
-        connection.fetch,
-        {
-          overallTimeoutMs: connection.requestTimeoutSeconds * 1_000,
-        },
-      ),
+      fetch: createRedirectSafeFetch(baseUrl, connection.fetch, {
+        overallTimeoutMs: connection.requestTimeoutSeconds * 1_000,
+      }),
     });
     const path = { sandboxId: instanceId };
     const current = await lifecycle.GET(
@@ -154,13 +139,10 @@ export const OPEN_SANDBOX: Sandbox = {
         `ネットワークポリシーを取得できませんでした (HTTP ${current.response.status})`,
       );
     const previousPolicy = current.data.policy;
-    const opened = await lifecycle.PUT(
-      "/sandboxes/{sandboxId}/networkpolicy",
-      {
-        params: { path },
-        body: { defaultAction: "allow", egress: [] },
-      },
-    );
+    const opened = await lifecycle.PUT("/sandboxes/{sandboxId}/networkpolicy", {
+      params: { path },
+      body: { defaultAction: "allow", egress: [] },
+    });
     if (opened.error || !opened.response.ok)
       throw new Error(
         `シェル用のネットワークポリシーを設定できませんでした (HTTP ${opened.response.status})`,
@@ -268,11 +250,16 @@ export const OPEN_SANDBOX: Sandbox = {
               onExit(message.exit_code);
             }
           } catch (error) {
-            logger.warn("Invalid OpenSandbox PTY message", { error, instanceId });
+            logger.warn("Invalid OpenSandbox PTY message", {
+              error,
+              instanceId,
+            });
           }
           return;
         }
-        const frame = Buffer.isBuffer(data) ? data : Buffer.from(data as ArrayBuffer);
+        const frame = Buffer.isBuffer(data)
+          ? data
+          : Buffer.from(data as ArrayBuffer);
         if (frame[0] === 0x01) onData(frame.subarray(1));
       });
       activeSocket.send(JSON.stringify({ type: "resize", ...size }));
@@ -288,9 +275,7 @@ export const OPEN_SANDBOX: Sandbox = {
         resize: async (nextSize: TerminalSize) => {
           if (activeSocket.readyState !== WebSocket.OPEN)
             throw new Error("PTY接続が閉じています。");
-          activeSocket.send(
-            JSON.stringify({ type: "resize", ...nextSize }),
-          );
+          activeSocket.send(JSON.stringify({ type: "resize", ...nextSize }));
         },
         close: async () => {
           if (closed) return;
@@ -349,7 +334,7 @@ export const OPEN_SANDBOX: Sandbox = {
     if (sandbox === null) {
       sandbox = await OpenSandbox.create({
         connectionConfig: getConfig(),
-        image: "ubuntu",
+        image: "ubuntu/python",
         timeoutSeconds: null,
         networkPolicy: {
           defaultAction: "deny",
