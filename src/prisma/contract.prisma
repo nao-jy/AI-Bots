@@ -22,7 +22,7 @@ namespace aibot {
     email        String                   @unique
     passwordHash String
     name         String?
-    chatbots     Chatbot[]
+    chatbots     ChatBot[]
     providers    Provider[]
     adapters     ChatAdapter[]
     mcpServers   McpServer[]
@@ -47,13 +47,13 @@ namespace aibot {
     id        String            @unique
     slot      PublicIdSlot
     chatbotId Int
-    chatbot   Chatbot           @relation(fields: [chatbotId], references: [id], onDelete: Cascade)
+    chatbot   ChatBot           @relation(fields: [chatbotId], references: [id], onDelete: Cascade)
     createdAt TimestamptzString @default(now())
 
     @@unique([chatbotId, slot])
   }
 
-  model Chatbot {
+  model ChatBot {
     id               Int                      @id @default(autoincrement())
     name             String
     description      String?
@@ -65,7 +65,7 @@ namespace aibot {
     ownerId          Int
     agent            AgentDefinition?         @relation(fields: [agentId], references: [id], onDelete: SetNull)
     agentId          Int?                     @unique
-    adapters         ChatbotAdapter[]
+    adapters         ChatBotAdapter[]
     mcpServers       ChatBotMcpServer[]
     createdAt        TimestamptzString        @default(now())
     updatedAt        temporal.UpdatedAtString
@@ -99,21 +99,23 @@ namespace aibot {
     createdAt      TimestamptzString        @default(now())
     updatedAt      temporal.UpdatedAtString
 
-    chatbots       ChatbotAdapter[]
+    chatbots       ChatBotAdapter[]
     publicIds      ChatAdapterPublicId[]
 
     @@index([ownerId])
     @@index([platform])
   }
 
-  model ChatbotAdapter {
-    chatbot   Chatbot           @relation(fields: [chatbotId], references: [id], onDelete: Cascade)
+  model ChatBotAdapter {
+    id        Int               @id @default(autoincrement())
+    chatbot   ChatBot           @relation(fields: [chatbotId], references: [id], onDelete: Cascade)
     chatbotId Int
     adapter   ChatAdapter       @relation(fields: [adapterId], references: [id], onDelete: Cascade)
     adapterId Int
     createdAt TimestamptzString @default(now())
 
-    @@id([chatbotId, adapterId])
+    schedules ChatTarget[]
+
     @@index([adapterId])
   }
 
@@ -140,7 +142,7 @@ namespace aibot {
     providerId Int
     modelId    String
     options    Jsonb?
-    chatbot    Chatbot?
+    chatbot    ChatBot?
     owner      User                     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
     ownerId    Int
     createdAt  TimestamptzString        @default(now())
@@ -156,7 +158,7 @@ namespace aibot {
     agentId       Int
     agent         AgentDefinition @relation(fields: [agentId], references: [id], onDelete: Restrict)
     chatbotId     Int
-    chatbot       Chatbot         @relation(fields: [chatbotId], references: [id], onDelete: Restrict)
+    chatbot       ChatBot         @relation(fields: [chatbotId], references: [id], onDelete: Restrict)
     inputTokens   Int
     inputDetails  Jsonb
     outputTokens  Int
@@ -184,7 +186,7 @@ namespace aibot {
   }
 
   model ChatBotMcpServer {
-    chatbot        Chatbot              @relation(fields: [chatbotId], references: [id], onDelete: Cascade)
+    chatbot        ChatBot              @relation(fields: [chatbotId], references: [id], onDelete: Cascade)
     chatbotId      Int
     mcpServer      McpServer            @relation(fields: [mcpServerId], references: [id], onDelete: Cascade)
     mcpServerId    Int
@@ -260,12 +262,12 @@ namespace aibot {
     adapterId  Int?
     adapter    ChatAdapter? @relation(fields: [adapterId], references: [id], onDelete: Cascade)
     chatbotId  Int?
-    chatbot    Chatbot?     @relation(fields: [chatbotId], references: [id], onDelete: Cascade)
+    chatbot    ChatBot?     @relation(fields: [chatbotId], references: [id], onDelete: Cascade)
   }
 
   model ChatBotToolSandbox {
     chatbotId Int
-    chatbot   Chatbot @relation(fields: [chatbotId], references: [id], onDelete: Cascade)
+    chatbot   ChatBot @relation(fields: [chatbotId], references: [id], onDelete: Cascade)
     sandboxId Int
     sandBox   Sandbox @relation(fields: [sandboxId], references: [id], onDelete: Cascade)
 
@@ -276,10 +278,32 @@ namespace aibot {
   model ChatBotToolSetContext {
     toolSetName    String
     chatbotId      Int
-    chatbot        Chatbot @relation(fields: [chatbotId], references: [id], onDelete: Cascade)
+    chatbot        ChatBot @relation(fields: [chatbotId], references: [id], onDelete: Cascade)
     toolSetContext Jsonb?
 
     @@id([toolSetName, chatbotId])
     @@index([chatbotId])
+  }
+
+  model ChatBotSchedule {
+    id          Int               @id @default(autoincrement())
+    prompt      String
+    cronParam   String
+    owner       User              @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+    ownerId     Int
+    createdAt   TimestamptzString @default(now())
+
+    chatTargets ChatTarget[]
+  }
+
+  model ChatTarget {
+    id               Int             @id @default(autoincrement())
+    chatbotAdapterId Int
+    chatbotAdapter   ChatBotAdapter  @relation(fields: [chatbotAdapterId], references: [id], onDelete: Cascade)
+    threadId         String
+    scheduleId       Int
+    schedule         ChatBotSchedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+
+    @@unique([chatbotAdapterId, threadId, scheduleId])
   }
 }

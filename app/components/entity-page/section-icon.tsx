@@ -7,6 +7,7 @@ import {
   WrenchIcon,
   KeyIcon,
   HardDrivesIcon,
+  ClockIcon,
 } from "@phosphor-icons/react";
 import type { EntitySection } from "./types";
 
@@ -42,5 +43,7 @@ export function SectionIcon({
       return <KeyIcon {...props} />;
     case "sandboxes":
       return <HardDrivesIcon {...props} />;
+    case "schedules":
+      return <ClockIcon {...props} />;
   }
 }

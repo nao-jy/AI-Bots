@@ -92,7 +92,7 @@ export async function saveAgent(
   const servers = await db.orm.aibot.McpServer.where({
     ownerId: user.id,
   }).all();
-  const ownedBots = await db.orm.aibot.Chatbot.where({
+  const ownedBots = await db.orm.aibot.ChatBot.where({
     ownerId: user.id,
   }).all();
   const allowedIds = new Set(servers.map((server) => server.id));
@@ -120,7 +120,7 @@ export async function saveAgent(
       return { error: "エージェントが見つかりません。" };
   }
   if (id !== null) {
-    const assignedBot = await db.orm.aibot.Chatbot.first({ agentId: id });
+    const assignedBot = await db.orm.aibot.ChatBot.first({ agentId: id });
     if (assignedBot && !ownedBots.some((bot) => bot.id === assignedBot.id))
       return { error: "このエージェントを編集する権限がありません。" };
   }
@@ -147,7 +147,7 @@ export async function deleteAgent(user: AuthUser, id: number) {
     .include("provider")
     .first();
   if (!agent || agent.provider.ownerId !== user.id) return false;
-  const bot = await db.orm.aibot.Chatbot.first({ agentId: id });
+  const bot = await db.orm.aibot.ChatBot.first({ agentId: id });
   if (bot) return false;
   await db.orm.aibot.AgentDefinition.where({ id }).update({
     isDeleted: true,

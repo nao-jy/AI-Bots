@@ -23,9 +23,9 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'44f13c69a2bd124a060db3ee31e3ccf1bb57d1d944d76a34b706f9fc6cbd5eaa'>;
+  StorageHashBase<'ccfb285f1fa466ed858af790291d4ecf0de837d2f5b463bb2981536dc8a53991'>;
 export type ExecutionHash =
-  ExecutionHashBase<'5c1984e92c9f7200ee5ad8e0c0de5b1b5b5329ee0cfca95a089762069a80e0dd'>;
+  ExecutionHashBase<'2edef0a9e649f7d4fec54fb6e1236cb304696ca7f4e909082a496d8d33430a90'>;
 export type ProfileHash =
   ProfileHashBase<'3916f444a8a17ad749191acf9e08dad97d1a327b88c2f1d45d12f240296aa8b2'>;
 
@@ -348,7 +348,7 @@ export namespace Models {
     ownerId: FieldOutputTypes['aibot']['AgentDefinition']['ownerId'];
     providerId: FieldOutputTypes['aibot']['AgentDefinition']['providerId'];
     updatedAt: FieldOutputTypes['aibot']['AgentDefinition']['updatedAt'];
-    chatbot: aibot_Chatbot | null;
+    chatbot: aibot_ChatBot | null;
     owner: aibot_User;
     provider: aibot_Provider;
     usage: aibot_AgentUsage[];
@@ -364,7 +364,7 @@ export namespace Models {
     outputTokens: FieldOutputTypes['aibot']['AgentUsage']['outputTokens'];
     toolHistory: FieldOutputTypes['aibot']['AgentUsage']['toolHistory'];
     agent: aibot_AgentDefinition;
-    chatbot: aibot_Chatbot;
+    chatbot: aibot_ChatBot;
     readonly [RelationKeys]?: 'agent' | 'chatbot';
   };
   export type aibot_ChatAdapter = {
@@ -377,7 +377,7 @@ export namespace Models {
     platform: FieldOutputTypes['aibot']['ChatAdapter']['platform'];
     updatedAt: FieldOutputTypes['aibot']['ChatAdapter']['updatedAt'];
     authentication: aibot_OAuthAuthentication | null;
-    chatbots: aibot_ChatbotAdapter[];
+    chatbots: aibot_ChatBotAdapter[];
     owner: aibot_User;
     publicIds: aibot_ChatAdapterPublicId[];
     readonly [RelationKeys]?: 'authentication' | 'chatbots' | 'owner' | 'publicIds';
@@ -390,13 +390,44 @@ export namespace Models {
     adapter: aibot_ChatAdapter;
     readonly [RelationKeys]?: 'adapter';
   };
+  export type aibot_ChatBot = {
+    agentId: FieldOutputTypes['aibot']['ChatBot']['agentId'];
+    createdAt: FieldOutputTypes['aibot']['ChatBot']['createdAt'];
+    description: FieldOutputTypes['aibot']['ChatBot']['description'];
+    id: FieldOutputTypes['aibot']['ChatBot']['id'];
+    instruction: FieldOutputTypes['aibot']['ChatBot']['instruction'];
+    isDeleted: FieldOutputTypes['aibot']['ChatBot']['isDeleted'];
+    isEnabled: FieldOutputTypes['aibot']['ChatBot']['isEnabled'];
+    lookbackMessages: FieldOutputTypes['aibot']['ChatBot']['lookbackMessages'];
+    name: FieldOutputTypes['aibot']['ChatBot']['name'];
+    onFailedMessage: FieldOutputTypes['aibot']['ChatBot']['onFailedMessage'];
+    ownerId: FieldOutputTypes['aibot']['ChatBot']['ownerId'];
+    updatedAt: FieldOutputTypes['aibot']['ChatBot']['updatedAt'];
+    adapters: aibot_ChatBotAdapter[];
+    agent: aibot_AgentDefinition | null;
+    mcpServers: aibot_ChatBotMcpServer[];
+    owner: aibot_User;
+    publicIds: aibot_ChatBotPublicId[];
+    usage: aibot_AgentUsage[];
+    readonly [RelationKeys]?: 'adapters' | 'agent' | 'mcpServers' | 'owner' | 'publicIds' | 'usage';
+  };
+  export type aibot_ChatBotAdapter = {
+    adapterId: FieldOutputTypes['aibot']['ChatBotAdapter']['adapterId'];
+    chatbotId: FieldOutputTypes['aibot']['ChatBotAdapter']['chatbotId'];
+    createdAt: FieldOutputTypes['aibot']['ChatBotAdapter']['createdAt'];
+    id: FieldOutputTypes['aibot']['ChatBotAdapter']['id'];
+    adapter: aibot_ChatAdapter;
+    chatbot: aibot_ChatBot;
+    schedules: aibot_ChatTarget[];
+    readonly [RelationKeys]?: 'adapter' | 'chatbot' | 'schedules';
+  };
   export type aibot_ChatBotMcpServer = {
     authId: FieldOutputTypes['aibot']['ChatBotMcpServer']['authId'];
     chatbotId: FieldOutputTypes['aibot']['ChatBotMcpServer']['chatbotId'];
     createdAt: FieldOutputTypes['aibot']['ChatBotMcpServer']['createdAt'];
     mcpServerId: FieldOutputTypes['aibot']['ChatBotMcpServer']['mcpServerId'];
     authentication: aibot_OAuthAuthentication | null;
-    chatbot: aibot_Chatbot;
+    chatbot: aibot_ChatBot;
     mcpServer: aibot_McpServer;
     readonly [RelationKeys]?: 'authentication' | 'chatbot' | 'mcpServer';
   };
@@ -405,13 +436,23 @@ export namespace Models {
     createdAt: FieldOutputTypes['aibot']['ChatBotPublicId']['createdAt'];
     id: FieldOutputTypes['aibot']['ChatBotPublicId']['id'];
     slot: FieldOutputTypes['aibot']['ChatBotPublicId']['slot'];
-    chatbot: aibot_Chatbot;
+    chatbot: aibot_ChatBot;
     readonly [RelationKeys]?: 'chatbot';
+  };
+  export type aibot_ChatBotSchedule = {
+    createdAt: FieldOutputTypes['aibot']['ChatBotSchedule']['createdAt'];
+    cronParam: FieldOutputTypes['aibot']['ChatBotSchedule']['cronParam'];
+    id: FieldOutputTypes['aibot']['ChatBotSchedule']['id'];
+    ownerId: FieldOutputTypes['aibot']['ChatBotSchedule']['ownerId'];
+    prompt: FieldOutputTypes['aibot']['ChatBotSchedule']['prompt'];
+    chatTargets: aibot_ChatTarget[];
+    owner: aibot_User;
+    readonly [RelationKeys]?: 'chatTargets' | 'owner';
   };
   export type aibot_ChatBotToolSandbox = {
     chatbotId: FieldOutputTypes['aibot']['ChatBotToolSandbox']['chatbotId'];
     sandboxId: FieldOutputTypes['aibot']['ChatBotToolSandbox']['sandboxId'];
-    chatbot: aibot_Chatbot;
+    chatbot: aibot_ChatBot;
     sandBox: aibot_Sandbox;
     readonly [RelationKeys]?: 'chatbot' | 'sandBox';
   };
@@ -419,37 +460,17 @@ export namespace Models {
     chatbotId: FieldOutputTypes['aibot']['ChatBotToolSetContext']['chatbotId'];
     toolSetContext: FieldOutputTypes['aibot']['ChatBotToolSetContext']['toolSetContext'];
     toolSetName: FieldOutputTypes['aibot']['ChatBotToolSetContext']['toolSetName'];
-    chatbot: aibot_Chatbot;
+    chatbot: aibot_ChatBot;
     readonly [RelationKeys]?: 'chatbot';
   };
-  export type aibot_Chatbot = {
-    agentId: FieldOutputTypes['aibot']['Chatbot']['agentId'];
-    createdAt: FieldOutputTypes['aibot']['Chatbot']['createdAt'];
-    description: FieldOutputTypes['aibot']['Chatbot']['description'];
-    id: FieldOutputTypes['aibot']['Chatbot']['id'];
-    instruction: FieldOutputTypes['aibot']['Chatbot']['instruction'];
-    isDeleted: FieldOutputTypes['aibot']['Chatbot']['isDeleted'];
-    isEnabled: FieldOutputTypes['aibot']['Chatbot']['isEnabled'];
-    lookbackMessages: FieldOutputTypes['aibot']['Chatbot']['lookbackMessages'];
-    name: FieldOutputTypes['aibot']['Chatbot']['name'];
-    onFailedMessage: FieldOutputTypes['aibot']['Chatbot']['onFailedMessage'];
-    ownerId: FieldOutputTypes['aibot']['Chatbot']['ownerId'];
-    updatedAt: FieldOutputTypes['aibot']['Chatbot']['updatedAt'];
-    adapters: aibot_ChatbotAdapter[];
-    agent: aibot_AgentDefinition | null;
-    mcpServers: aibot_ChatBotMcpServer[];
-    owner: aibot_User;
-    publicIds: aibot_ChatBotPublicId[];
-    usage: aibot_AgentUsage[];
-    readonly [RelationKeys]?: 'adapters' | 'agent' | 'mcpServers' | 'owner' | 'publicIds' | 'usage';
-  };
-  export type aibot_ChatbotAdapter = {
-    adapterId: FieldOutputTypes['aibot']['ChatbotAdapter']['adapterId'];
-    chatbotId: FieldOutputTypes['aibot']['ChatbotAdapter']['chatbotId'];
-    createdAt: FieldOutputTypes['aibot']['ChatbotAdapter']['createdAt'];
-    adapter: aibot_ChatAdapter;
-    chatbot: aibot_Chatbot;
-    readonly [RelationKeys]?: 'adapter' | 'chatbot';
+  export type aibot_ChatTarget = {
+    chatbotAdapterId: FieldOutputTypes['aibot']['ChatTarget']['chatbotAdapterId'];
+    id: FieldOutputTypes['aibot']['ChatTarget']['id'];
+    scheduleId: FieldOutputTypes['aibot']['ChatTarget']['scheduleId'];
+    threadId: FieldOutputTypes['aibot']['ChatTarget']['threadId'];
+    chatbotAdapter: aibot_ChatBotAdapter;
+    schedule: aibot_ChatBotSchedule;
+    readonly [RelationKeys]?: 'chatbotAdapter' | 'schedule';
   };
   export type aibot_McpServer = {
     createdAt: FieldOutputTypes['aibot']['McpServer']['createdAt'];
@@ -503,7 +524,7 @@ export namespace Models {
     sandboxId: FieldOutputTypes['aibot']['PersistentSandboxInstance']['sandboxId'];
     threadId: FieldOutputTypes['aibot']['PersistentSandboxInstance']['threadId'];
     adapter: aibot_ChatAdapter | null;
-    chatbot: aibot_Chatbot | null;
+    chatbot: aibot_ChatBot | null;
     sandbox: aibot_Sandbox;
     readonly [RelationKeys]?: 'adapter' | 'chatbot' | 'sandbox';
   };
@@ -550,7 +571,7 @@ export namespace Models {
     passwordHash: FieldOutputTypes['aibot']['User']['passwordHash'];
     updatedAt: FieldOutputTypes['aibot']['User']['updatedAt'];
     adapters: aibot_ChatAdapter[];
-    chatbots: aibot_Chatbot[];
+    chatbots: aibot_ChatBot[];
     mcpServers: aibot_McpServer[];
     providers: aibot_Provider[];
     sessions: aibot_Session[];
@@ -564,12 +585,14 @@ export declare const models: {
     AgentUsage: Models.aibot_AgentUsage;
     ChatAdapter: Models.aibot_ChatAdapter;
     ChatAdapterPublicId: Models.aibot_ChatAdapterPublicId;
+    ChatBot: Models.aibot_ChatBot;
+    ChatBotAdapter: Models.aibot_ChatBotAdapter;
     ChatBotMcpServer: Models.aibot_ChatBotMcpServer;
     ChatBotPublicId: Models.aibot_ChatBotPublicId;
+    ChatBotSchedule: Models.aibot_ChatBotSchedule;
     ChatBotToolSandbox: Models.aibot_ChatBotToolSandbox;
     ChatBotToolSetContext: Models.aibot_ChatBotToolSetContext;
-    Chatbot: Models.aibot_Chatbot;
-    ChatbotAdapter: Models.aibot_ChatbotAdapter;
+    ChatTarget: Models.aibot_ChatTarget;
     McpServer: Models.aibot_McpServer;
     OAuthAuthentication: Models.aibot_OAuthAuthentication;
     OAuthClient: Models.aibot_OAuthClient;
@@ -801,7 +824,7 @@ type ContractBase = Omit<
                   };
                   readonly target: {
                     readonly namespaceId: 'aibot' & NamespaceId;
-                    readonly tableName: 'Chatbot';
+                    readonly tableName: 'ChatBot';
                     readonly columns: readonly ['id'];
                   };
                 },
@@ -967,7 +990,7 @@ type ContractBase = Omit<
                 },
               ];
             };
-            readonly Chatbot: {
+            readonly ChatBot: {
               columns: {
                 readonly agentId: {
                   readonly dataType: 'pg/int4';
@@ -1059,8 +1082,8 @@ type ContractBase = Omit<
               uniques: readonly [{ readonly columns: readonly ['agentId'] }];
               indexes: readonly [
                 {
-                  readonly name: 'Chatbot_ownerId_idx_e2d0c1ef';
-                  readonly prefix: 'Chatbot_ownerId_idx';
+                  readonly name: 'ChatBot_ownerId_idx_e2d0c1ef';
+                  readonly prefix: 'ChatBot_ownerId_idx';
                   readonly columns: readonly ['ownerId'];
                   readonly unique: false;
                 },
@@ -1069,7 +1092,7 @@ type ContractBase = Omit<
                 {
                   readonly source: {
                     readonly namespaceId: 'aibot' & NamespaceId;
-                    readonly tableName: 'Chatbot';
+                    readonly tableName: 'ChatBot';
                     readonly columns: readonly ['ownerId'];
                   };
                   readonly target: {
@@ -1081,7 +1104,7 @@ type ContractBase = Omit<
                 {
                   readonly source: {
                     readonly namespaceId: 'aibot' & NamespaceId;
-                    readonly tableName: 'Chatbot';
+                    readonly tableName: 'ChatBot';
                     readonly columns: readonly ['agentId'];
                   };
                   readonly target: {
@@ -1092,7 +1115,7 @@ type ContractBase = Omit<
                 },
               ];
             };
-            readonly ChatbotAdapter: {
+            readonly ChatBotAdapter: {
               columns: {
                 readonly adapterId: {
                   readonly dataType: 'pg/int4';
@@ -1113,19 +1136,29 @@ type ContractBase = Omit<
                   readonly default: { readonly kind: 'function'; readonly expression: 'now()' };
                   readonly many: false;
                 };
+                readonly id: {
+                  readonly dataType: 'pg/int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'function';
+                    readonly expression: 'autoincrement()';
+                  };
+                  readonly many: false;
+                };
               };
-              primaryKey: { readonly columns: readonly ['chatbotId', 'adapterId'] };
+              primaryKey: { readonly columns: readonly ['id'] };
               uniques: readonly [];
               indexes: readonly [
                 {
-                  readonly name: 'ChatbotAdapter_adapterId_idx_f5208af9';
-                  readonly prefix: 'ChatbotAdapter_adapterId_idx';
+                  readonly name: 'ChatBotAdapter_adapterId_idx_f5208af9';
+                  readonly prefix: 'ChatBotAdapter_adapterId_idx';
                   readonly columns: readonly ['adapterId'];
                   readonly unique: false;
                 },
                 {
-                  readonly name: 'ChatbotAdapter_chatbotId_idx_52db07ea';
-                  readonly prefix: 'ChatbotAdapter_chatbotId_idx';
+                  readonly name: 'ChatBotAdapter_chatbotId_idx_52db07ea';
+                  readonly prefix: 'ChatBotAdapter_chatbotId_idx';
                   readonly columns: readonly ['chatbotId'];
                   readonly unique: false;
                 },
@@ -1134,19 +1167,19 @@ type ContractBase = Omit<
                 {
                   readonly source: {
                     readonly namespaceId: 'aibot' & NamespaceId;
-                    readonly tableName: 'ChatbotAdapter';
+                    readonly tableName: 'ChatBotAdapter';
                     readonly columns: readonly ['chatbotId'];
                   };
                   readonly target: {
                     readonly namespaceId: 'aibot' & NamespaceId;
-                    readonly tableName: 'Chatbot';
+                    readonly tableName: 'ChatBot';
                     readonly columns: readonly ['id'];
                   };
                 },
                 {
                   readonly source: {
                     readonly namespaceId: 'aibot' & NamespaceId;
-                    readonly tableName: 'ChatbotAdapter';
+                    readonly tableName: 'ChatBotAdapter';
                     readonly columns: readonly ['adapterId'];
                   };
                   readonly target: {
@@ -1216,7 +1249,7 @@ type ContractBase = Omit<
                   };
                   readonly target: {
                     readonly namespaceId: 'aibot' & NamespaceId;
-                    readonly tableName: 'Chatbot';
+                    readonly tableName: 'ChatBot';
                     readonly columns: readonly ['id'];
                   };
                 },
@@ -1295,7 +1328,70 @@ type ContractBase = Omit<
                   };
                   readonly target: {
                     readonly namespaceId: 'aibot' & NamespaceId;
-                    readonly tableName: 'Chatbot';
+                    readonly tableName: 'ChatBot';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+              ];
+            };
+            readonly ChatBotSchedule: {
+              columns: {
+                readonly createdAt: {
+                  readonly dataType: 'pg/timestamptz';
+                  readonly codecId: 'pg/timestamptz-string@1';
+                  readonly nullable: false;
+                  readonly default: { readonly kind: 'function'; readonly expression: 'now()' };
+                  readonly many: false;
+                };
+                readonly cronParam: {
+                  readonly dataType: 'pg/text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly id: {
+                  readonly dataType: 'pg/int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'function';
+                    readonly expression: 'autoincrement()';
+                  };
+                  readonly many: false;
+                };
+                readonly ownerId: {
+                  readonly dataType: 'pg/int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly prompt: {
+                  readonly dataType: 'pg/text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+              };
+              primaryKey: { readonly columns: readonly ['id'] };
+              uniques: readonly [];
+              indexes: readonly [
+                {
+                  readonly name: 'ChatBotSchedule_ownerId_idx_e2d0c1ef';
+                  readonly prefix: 'ChatBotSchedule_ownerId_idx';
+                  readonly columns: readonly ['ownerId'];
+                  readonly unique: false;
+                },
+              ];
+              foreignKeys: readonly [
+                {
+                  readonly source: {
+                    readonly namespaceId: 'aibot' & NamespaceId;
+                    readonly tableName: 'ChatBotSchedule';
+                    readonly columns: readonly ['ownerId'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'aibot' & NamespaceId;
+                    readonly tableName: 'User';
                     readonly columns: readonly ['id'];
                   };
                 },
@@ -1341,7 +1437,7 @@ type ContractBase = Omit<
                   };
                   readonly target: {
                     readonly namespaceId: 'aibot' & NamespaceId;
-                    readonly tableName: 'Chatbot';
+                    readonly tableName: 'ChatBot';
                     readonly columns: readonly ['id'];
                   };
                 },
@@ -1399,7 +1495,83 @@ type ContractBase = Omit<
                   };
                   readonly target: {
                     readonly namespaceId: 'aibot' & NamespaceId;
-                    readonly tableName: 'Chatbot';
+                    readonly tableName: 'ChatBot';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+              ];
+            };
+            readonly ChatTarget: {
+              columns: {
+                readonly chatbotAdapterId: {
+                  readonly dataType: 'pg/int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly id: {
+                  readonly dataType: 'pg/int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'function';
+                    readonly expression: 'autoincrement()';
+                  };
+                  readonly many: false;
+                };
+                readonly scheduleId: {
+                  readonly dataType: 'pg/int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly threadId: {
+                  readonly dataType: 'pg/text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+              };
+              primaryKey: { readonly columns: readonly ['id'] };
+              uniques: readonly [
+                { readonly columns: readonly ['chatbotAdapterId', 'threadId', 'scheduleId'] },
+              ];
+              indexes: readonly [
+                {
+                  readonly name: 'ChatTarget_chatbotAdapterId_idx_d49b51ac';
+                  readonly prefix: 'ChatTarget_chatbotAdapterId_idx';
+                  readonly columns: readonly ['chatbotAdapterId'];
+                  readonly unique: false;
+                },
+                {
+                  readonly name: 'ChatTarget_scheduleId_idx_5a3bfbcb';
+                  readonly prefix: 'ChatTarget_scheduleId_idx';
+                  readonly columns: readonly ['scheduleId'];
+                  readonly unique: false;
+                },
+              ];
+              foreignKeys: readonly [
+                {
+                  readonly source: {
+                    readonly namespaceId: 'aibot' & NamespaceId;
+                    readonly tableName: 'ChatTarget';
+                    readonly columns: readonly ['chatbotAdapterId'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'aibot' & NamespaceId;
+                    readonly tableName: 'ChatBotAdapter';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+                {
+                  readonly source: {
+                    readonly namespaceId: 'aibot' & NamespaceId;
+                    readonly tableName: 'ChatTarget';
+                    readonly columns: readonly ['scheduleId'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'aibot' & NamespaceId;
+                    readonly tableName: 'ChatBotSchedule';
                     readonly columns: readonly ['id'];
                   };
                 },
@@ -1790,7 +1962,7 @@ type ContractBase = Omit<
                   };
                   readonly target: {
                     readonly namespaceId: 'aibot' & NamespaceId;
-                    readonly tableName: 'Chatbot';
+                    readonly tableName: 'ChatBot';
                     readonly columns: readonly ['id'];
                   };
                 },
@@ -2127,6 +2299,11 @@ type ContractBase = Omit<
       readonly namespace: 'aibot' & NamespaceId;
       readonly model: 'ChatAdapterPublicId';
     };
+    readonly ChatBot: { readonly namespace: 'aibot' & NamespaceId; readonly model: 'ChatBot' };
+    readonly ChatBotAdapter: {
+      readonly namespace: 'aibot' & NamespaceId;
+      readonly model: 'ChatBotAdapter';
+    };
     readonly ChatBotMcpServer: {
       readonly namespace: 'aibot' & NamespaceId;
       readonly model: 'ChatBotMcpServer';
@@ -2134,6 +2311,10 @@ type ContractBase = Omit<
     readonly ChatBotPublicId: {
       readonly namespace: 'aibot' & NamespaceId;
       readonly model: 'ChatBotPublicId';
+    };
+    readonly ChatBotSchedule: {
+      readonly namespace: 'aibot' & NamespaceId;
+      readonly model: 'ChatBotSchedule';
     };
     readonly ChatBotToolSandbox: {
       readonly namespace: 'aibot' & NamespaceId;
@@ -2143,10 +2324,9 @@ type ContractBase = Omit<
       readonly namespace: 'aibot' & NamespaceId;
       readonly model: 'ChatBotToolSetContext';
     };
-    readonly Chatbot: { readonly namespace: 'aibot' & NamespaceId; readonly model: 'Chatbot' };
-    readonly ChatbotAdapter: {
+    readonly ChatTarget: {
       readonly namespace: 'aibot' & NamespaceId;
-      readonly model: 'ChatbotAdapter';
+      readonly model: 'ChatTarget';
     };
     readonly McpServer: { readonly namespace: 'aibot' & NamespaceId; readonly model: 'McpServer' };
     readonly OAuthAuthentication: {
@@ -2219,7 +2399,7 @@ type ContractBase = Omit<
               readonly chatbot: {
                 readonly to: {
                   readonly namespace: 'aibot' & NamespaceId;
-                  readonly model: 'Chatbot';
+                  readonly model: 'ChatBot';
                 };
                 readonly cardinality: '1:1';
                 readonly nullable: true;
@@ -2328,7 +2508,7 @@ type ContractBase = Omit<
               readonly chatbot: {
                 readonly to: {
                   readonly namespace: 'aibot' & NamespaceId;
-                  readonly model: 'Chatbot';
+                  readonly model: 'ChatBot';
                 };
                 readonly cardinality: 'N:1';
                 readonly nullable: false;
@@ -2410,7 +2590,7 @@ type ContractBase = Omit<
               readonly chatbots: {
                 readonly to: {
                   readonly namespace: 'aibot' & NamespaceId;
-                  readonly model: 'ChatbotAdapter';
+                  readonly model: 'ChatBotAdapter';
                 };
                 readonly cardinality: '1:N';
                 readonly on: {
@@ -2501,7 +2681,7 @@ type ContractBase = Omit<
               };
             };
           };
-          readonly Chatbot: {
+          readonly ChatBot: {
             readonly fields: {
               readonly agentId: {
                 readonly nullable: true;
@@ -2562,7 +2742,7 @@ type ContractBase = Omit<
               readonly adapters: {
                 readonly to: {
                   readonly namespace: 'aibot' & NamespaceId;
-                  readonly model: 'ChatbotAdapter';
+                  readonly model: 'ChatBotAdapter';
                 };
                 readonly cardinality: '1:N';
                 readonly on: {
@@ -2626,7 +2806,7 @@ type ContractBase = Omit<
               };
             };
             readonly storage: {
-              readonly table: 'Chatbot';
+              readonly table: 'ChatBot';
               readonly namespaceId: 'aibot';
               readonly fields: {
                 readonly agentId: { readonly column: 'agentId' };
@@ -2644,7 +2824,7 @@ type ContractBase = Omit<
               };
             };
           };
-          readonly ChatbotAdapter: {
+          readonly ChatBotAdapter: {
             readonly fields: {
               readonly adapterId: {
                 readonly nullable: false;
@@ -2660,6 +2840,10 @@ type ContractBase = Omit<
                   readonly kind: 'scalar';
                   readonly codecId: 'pg/timestamptz-string@1';
                 };
+              };
+              readonly id: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
               };
             };
             readonly relations: {
@@ -2678,7 +2862,7 @@ type ContractBase = Omit<
               readonly chatbot: {
                 readonly to: {
                   readonly namespace: 'aibot' & NamespaceId;
-                  readonly model: 'Chatbot';
+                  readonly model: 'ChatBot';
                 };
                 readonly cardinality: 'N:1';
                 readonly nullable: false;
@@ -2687,14 +2871,26 @@ type ContractBase = Omit<
                   readonly targetFields: readonly ['id'];
                 };
               };
+              readonly schedules: {
+                readonly to: {
+                  readonly namespace: 'aibot' & NamespaceId;
+                  readonly model: 'ChatTarget';
+                };
+                readonly cardinality: '1:N';
+                readonly on: {
+                  readonly localFields: readonly ['id'];
+                  readonly targetFields: readonly ['chatbotAdapterId'];
+                };
+              };
             };
             readonly storage: {
-              readonly table: 'ChatbotAdapter';
+              readonly table: 'ChatBotAdapter';
               readonly namespaceId: 'aibot';
               readonly fields: {
                 readonly adapterId: { readonly column: 'adapterId' };
                 readonly chatbotId: { readonly column: 'chatbotId' };
                 readonly createdAt: { readonly column: 'createdAt' };
+                readonly id: { readonly column: 'id' };
               };
             };
           };
@@ -2736,7 +2932,7 @@ type ContractBase = Omit<
               readonly chatbot: {
                 readonly to: {
                   readonly namespace: 'aibot' & NamespaceId;
-                  readonly model: 'Chatbot';
+                  readonly model: 'ChatBot';
                 };
                 readonly cardinality: 'N:1';
                 readonly nullable: false;
@@ -2795,7 +2991,7 @@ type ContractBase = Omit<
               readonly chatbot: {
                 readonly to: {
                   readonly namespace: 'aibot' & NamespaceId;
-                  readonly model: 'Chatbot';
+                  readonly model: 'ChatBot';
                 };
                 readonly cardinality: 'N:1';
                 readonly nullable: false;
@@ -2816,6 +3012,66 @@ type ContractBase = Omit<
               };
             };
           };
+          readonly ChatBotSchedule: {
+            readonly fields: {
+              readonly createdAt: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-string@1';
+                };
+              };
+              readonly cronParam: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly id: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+              readonly ownerId: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+              readonly prompt: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+            };
+            readonly relations: {
+              readonly chatTargets: {
+                readonly to: {
+                  readonly namespace: 'aibot' & NamespaceId;
+                  readonly model: 'ChatTarget';
+                };
+                readonly cardinality: '1:N';
+                readonly on: {
+                  readonly localFields: readonly ['id'];
+                  readonly targetFields: readonly ['scheduleId'];
+                };
+              };
+              readonly owner: {
+                readonly to: { readonly namespace: 'aibot' & NamespaceId; readonly model: 'User' };
+                readonly cardinality: 'N:1';
+                readonly nullable: false;
+                readonly on: {
+                  readonly localFields: readonly ['ownerId'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
+            };
+            readonly storage: {
+              readonly table: 'ChatBotSchedule';
+              readonly namespaceId: 'aibot';
+              readonly fields: {
+                readonly createdAt: { readonly column: 'createdAt' };
+                readonly cronParam: { readonly column: 'cronParam' };
+                readonly id: { readonly column: 'id' };
+                readonly ownerId: { readonly column: 'ownerId' };
+                readonly prompt: { readonly column: 'prompt' };
+              };
+            };
+          };
           readonly ChatBotToolSandbox: {
             readonly fields: {
               readonly chatbotId: {
@@ -2831,7 +3087,7 @@ type ContractBase = Omit<
               readonly chatbot: {
                 readonly to: {
                   readonly namespace: 'aibot' & NamespaceId;
-                  readonly model: 'Chatbot';
+                  readonly model: 'ChatBot';
                 };
                 readonly cardinality: 'N:1';
                 readonly nullable: false;
@@ -2881,7 +3137,7 @@ type ContractBase = Omit<
               readonly chatbot: {
                 readonly to: {
                   readonly namespace: 'aibot' & NamespaceId;
-                  readonly model: 'Chatbot';
+                  readonly model: 'ChatBot';
                 };
                 readonly cardinality: 'N:1';
                 readonly nullable: false;
@@ -2898,6 +3154,62 @@ type ContractBase = Omit<
                 readonly chatbotId: { readonly column: 'chatbotId' };
                 readonly toolSetContext: { readonly column: 'toolSetContext' };
                 readonly toolSetName: { readonly column: 'toolSetName' };
+              };
+            };
+          };
+          readonly ChatTarget: {
+            readonly fields: {
+              readonly chatbotAdapterId: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+              readonly id: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+              readonly scheduleId: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+              readonly threadId: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+            };
+            readonly relations: {
+              readonly chatbotAdapter: {
+                readonly to: {
+                  readonly namespace: 'aibot' & NamespaceId;
+                  readonly model: 'ChatBotAdapter';
+                };
+                readonly cardinality: 'N:1';
+                readonly nullable: false;
+                readonly on: {
+                  readonly localFields: readonly ['chatbotAdapterId'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
+              readonly schedule: {
+                readonly to: {
+                  readonly namespace: 'aibot' & NamespaceId;
+                  readonly model: 'ChatBotSchedule';
+                };
+                readonly cardinality: 'N:1';
+                readonly nullable: false;
+                readonly on: {
+                  readonly localFields: readonly ['scheduleId'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
+            };
+            readonly storage: {
+              readonly table: 'ChatTarget';
+              readonly namespaceId: 'aibot';
+              readonly fields: {
+                readonly chatbotAdapterId: { readonly column: 'chatbotAdapterId' };
+                readonly id: { readonly column: 'id' };
+                readonly scheduleId: { readonly column: 'scheduleId' };
+                readonly threadId: { readonly column: 'threadId' };
               };
             };
           };
@@ -3209,7 +3521,7 @@ type ContractBase = Omit<
               readonly chatbot: {
                 readonly to: {
                   readonly namespace: 'aibot' & NamespaceId;
-                  readonly model: 'Chatbot';
+                  readonly model: 'ChatBot';
                 };
                 readonly cardinality: 'N:1';
                 readonly nullable: true;
@@ -3495,7 +3807,7 @@ type ContractBase = Omit<
               readonly chatbots: {
                 readonly to: {
                   readonly namespace: 'aibot' & NamespaceId;
-                  readonly model: 'Chatbot';
+                  readonly model: 'ChatBot';
                 };
                 readonly cardinality: '1:N';
                 readonly on: {
@@ -3648,7 +3960,7 @@ type ContractBase = Omit<
           readonly onCreate: { readonly id: 'timestamptzStringNow'; readonly kind: 'generator' };
           readonly onUpdate: { readonly id: 'timestamptzStringNow'; readonly kind: 'generator' };
           readonly ref: {
-            readonly entry: 'Chatbot';
+            readonly entry: 'ChatBot';
             readonly field: 'updatedAt';
             readonly namespace: 'aibot';
           };

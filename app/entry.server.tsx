@@ -1,0 +1,73 @@
+import { PassThrough } from "node:stream";
+import { createReadableStreamFromReadable } from "@react-router/node";
+import { isbot } from "isbot";
+import { renderToPipeableStream } from "react-dom/server";
+import { ServerRouter } from "react-router";
+import type { EntryContext } from "react-router";
+import { logger } from "./.server/logger";
+import { startCronScheduler } from "./.server/scheduler";
+
+export const streamTimeout = 5_000;
+
+void startCronScheduler().catch((error: unknown) => {
+  logger.error("Failed to load scheduled jobs during server startup", error);
+});
+
+export default function handleRequest(
+  request: Request,
+  responseStatusCode: number,
+  responseHeaders: Headers,
+  routerContext: EntryContext,
+) {
+  if (request.method.toUpperCase() === "HEAD") {
+    return new Response(null, {
+      status: responseStatusCode,
+      headers: responseHeaders,
+    });
+  }
+
+  return new Promise<Response>((resolve, reject) => {
+    let shellRendered = false;
+    const userAgent = request.headers.get("user-agent");
+    const readyEvent =
+      (userAgent && isbot(userAgent)) || routerContext.isSpaMode
+        ? "onAllReady"
+        : "onShellReady";
+    let timeout: ReturnType<typeof setTimeout> | undefined = setTimeout(
+      () => abort(),
+      streamTimeout + 1_000,
+    );
+
+    const { pipe, abort } = renderToPipeableStream(
+      <ServerRouter context={routerContext} url={request.url} />,
+      {
+        [readyEvent]() {
+          shellRendered = true;
+          const body = new PassThrough({
+            final(callback) {
+              if (timeout) clearTimeout(timeout);
+              timeout = undefined;
+              callback();
+            },
+          });
+          responseHeaders.set("Content-Type", "text/html");
+          pipe(body);
+          resolve(
+            new Response(createReadableStreamFromReadable(body), {
+              headers: responseHeaders,
+              status: responseStatusCode,
+            }),
+          );
+        },
+        onShellError(error: unknown) {
+          if (timeout) clearTimeout(timeout);
+          reject(error);
+        },
+        onError(error: unknown) {
+          responseStatusCode = 500;
+          if (shellRendered) logger.error("Server rendering failed", error);
+        },
+      },
+    );
+  });
+}

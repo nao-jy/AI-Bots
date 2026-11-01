@@ -9,7 +9,7 @@ import {
 } from "../features/toolsets";
 
 export async function listBots(user: AuthUser, publicOrigin: string) {
-  const bots = await db.orm.aibot.Chatbot.where({
+  const bots = await db.orm.aibot.ChatBot.where({
     ownerId: user.id,
     isDeleted: false,
   })
@@ -227,7 +227,7 @@ export async function saveBot(
       return { error: "選択したエージェントが見つかりません。" };
   }
   if (agentId !== null) {
-    const assignedBot = await db.orm.aibot.Chatbot.first({ agentId });
+    const assignedBot = await db.orm.aibot.ChatBot.first({ agentId });
     if (
       assignedBot &&
       (assignedBot.ownerId !== user.id || assignedBot.id !== id)
@@ -293,14 +293,14 @@ export async function saveBot(
     }
   if (
     id !== null &&
-    !(await db.orm.aibot.Chatbot.first({ id, ownerId: user.id }))
+    !(await db.orm.aibot.ChatBot.first({ id, ownerId: user.id }))
   )
     return { error: "ボットが見つかりません。" };
 
   await db.transaction(async (tx) => {
     let botId = id;
     if (botId === null) {
-      const created = await tx.orm.aibot.Chatbot.create({
+      const created = await tx.orm.aibot.ChatBot.create({
         name,
         description: description || null,
         instruction: instruction,
@@ -318,7 +318,7 @@ export async function saveBot(
         });
       }
     } else {
-      await tx.orm.aibot.Chatbot.where({ id: botId, ownerId: user.id }).update({
+      await tx.orm.aibot.ChatBot.where({ id: botId, ownerId: user.id }).update({
         name,
         description: description || null,
         instruction: instruction,
@@ -327,9 +327,9 @@ export async function saveBot(
         agentId,
       });
     }
-    await tx.orm.aibot.ChatbotAdapter.where({ chatbotId: botId! }).delete();
+    await tx.orm.aibot.ChatBotAdapter.where({ chatbotId: botId! }).delete();
     for (const adapterId of adapterIds) {
-      await tx.orm.aibot.ChatbotAdapter.create({
+      await tx.orm.aibot.ChatBotAdapter.create({
         chatbotId: botId!,
         adapterId,
       });
@@ -363,9 +363,9 @@ export async function saveBot(
 }
 
 export async function deleteBot(user: AuthUser, id: number) {
-  const bot = await db.orm.aibot.Chatbot.first({ id, ownerId: user.id });
+  const bot = await db.orm.aibot.ChatBot.first({ id, ownerId: user.id });
   if (!bot) return false;
-  await db.orm.aibot.Chatbot.where({ id, ownerId: user.id }).update({
+  await db.orm.aibot.ChatBot.where({ id, ownerId: user.id }).update({
     isDeleted: true,
   });
   return true;
@@ -377,7 +377,7 @@ export async function regenerateBotPublicIds(
   slot: PublicIdSlot,
 ) {
   return db.transaction(async (tx) => {
-    const bot = await tx.orm.aibot.Chatbot.first({ id, ownerId: user.id });
+    const bot = await tx.orm.aibot.ChatBot.first({ id, ownerId: user.id });
     if (!bot) return false;
 
     const publicIds = await tx.orm.aibot.ChatBotPublicId.where({
@@ -404,16 +404,16 @@ export async function setBotEnabled(
   id: number,
   isEnabled: boolean,
 ) {
-  if (!(await db.orm.aibot.Chatbot.first({ id, ownerId: user.id })))
+  if (!(await db.orm.aibot.ChatBot.first({ id, ownerId: user.id })))
     return false;
-  await db.orm.aibot.Chatbot.where({ id, ownerId: user.id }).update({
+  await db.orm.aibot.ChatBot.where({ id, ownerId: user.id }).update({
     isEnabled,
   });
   return true;
 }
 
 export async function getAvailableBot(botId: number) {
-  const chatbot = await db.orm.aibot.Chatbot.where({
+  const chatbot = await db.orm.aibot.ChatBot.where({
     id: botId,
     isEnabled: true,
   })
@@ -429,7 +429,7 @@ export async function getAvailableBotByPublicId(publicId: string) {
   }).first();
   if (!botPublicId) return null;
 
-  const chatbot = await db.orm.aibot.Chatbot.where({
+  const chatbot = await db.orm.aibot.ChatBot.where({
     id: botPublicId.chatbotId,
     isEnabled: true,
   })

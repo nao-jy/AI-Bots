@@ -27,6 +27,7 @@ import {
   type RequestContext,
 } from "./.server/request-context";
 import { getSessionUser } from "./.server/auth";
+import { startCronScheduler } from "./.server/scheduler";
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -113,6 +114,7 @@ function getNavigationLabel(pathname: string) {
     "/oauth-authentications": "OAuth認証情報",
     "/agents": "エージェント",
     "/mcp-servers": "MCPサーバー",
+    "/schedules": "スケジュール",
     "/users": "ユーザー",
     "/login": "ログイン画面",
     "/logout": "ログアウト",
@@ -123,6 +125,7 @@ function getNavigationLabel(pathname: string) {
 
 export const middleware: Route.MiddlewareFunction[] = [
   async ({ request, context }, next) => {
+    await startCronScheduler();
     const requestId = randomUUID();
     const user = await getSessionUser(request);
     const clientIp =

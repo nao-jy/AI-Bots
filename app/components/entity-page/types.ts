@@ -33,7 +33,8 @@ export type EntitySection =
   | "users"
   | "oauth_clients"
   | "oauth_authentications"
-  | "sandboxes";
+  | "sandboxes"
+  | "schedules";
 
 export type EntityColumn = {
   key: string;

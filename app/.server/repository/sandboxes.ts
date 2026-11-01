@@ -275,7 +275,7 @@ export async function getSandboxInstance(instanceId: string) {
   return instance;
 }
 
-export async function getChatbotSandbox(chatbotId: number, ownerId: number) {
+export async function getChatBotSandbox(chatbotId: number, ownerId: number) {
   const links = await db.orm.aibot.ChatBotToolSandbox.where({ chatbotId })
     .include("sandBox")
     .all();

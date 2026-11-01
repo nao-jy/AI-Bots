@@ -1,10 +1,11 @@
 import { createMCPClient } from "@ai-sdk/mcp";
 import { generateText, stepCountIs, type ToolSet } from "ai";
 import { createChatTools, toAiMessages } from "chat/ai";
-import type { Chat, Message, Thread } from "chat";
+import { Message, parseMarkdown, type Chat, type Thread } from "chat";
+import { randomUUID } from "node:crypto";
 import {
   createPersistentSandboxInstance,
-  getChatbotSandbox,
+  getChatBotSandbox,
   getPersistentSandboxInstance,
   type SandboxScope,
 } from "../repository/sandboxes";
@@ -76,7 +77,7 @@ async function getBotSandbox(
   adapterId: number,
   threadId: string,
 ) {
-  const sandbox = await getChatbotSandbox(chatbotId, ownerId);
+  const sandbox = await getChatBotSandbox(chatbotId, ownerId);
   if (!sandbox) return null;
 
   const scopedIds = getScopedIds(
@@ -145,180 +146,224 @@ async function getBotSandbox(
   };
 }
 
+async function processBotMessage(
+  chat: Chat,
+  botId: number,
+  adapterId: number,
+  adapterPlatform: string,
+  thread: Thread<Record<string, unknown>, unknown>,
+  message: Message<unknown>,
+) {
+  const mcpClients: Array<Awaited<ReturnType<typeof createMCPClient>>> = [];
+  let turnSandbox: Awaited<ReturnType<typeof getBotSandbox>> = null;
+  let replied = false;
+  let onFailedMessage = "Sorry, we could not generate an answer.";
+  try {
+    const chatbot = await getAvailableBot(botId);
+    const agent = chatbot?.agent;
+
+    if (!chatbot || !agent || agent.provider.ownerId !== chatbot.ownerId) {
+      await thread.post("Service Unavailable");
+      return;
+    }
+    onFailedMessage = chatbot.onFailedMessage;
+
+    const modelInfo = getModelInfo(
+      agent.provider.providerName,
+      asRecord(agent.provider.args),
+      decryptMcpHeaders(agent.provider.headers),
+      asRecord(agent.options),
+      agent.modelId,
+    );
+    if (!modelInfo) {
+      throw new Error(
+        `Unsupported model provider: ${agent.provider.providerName}`,
+      );
+    }
+
+    const tools = {
+      ...createChatTools({
+        chat,
+        preset: "messenger",
+        requireApproval: false,
+        scope: thread,
+        strictScope: true,
+      }),
+      ...getFileParseTools(chat, adapterPlatform, thread.id),
+      searchWeb: SearXNGWebSearch,
+    } as ToolSet;
+
+    turnSandbox = await getBotSandbox(
+      chatbot.ownerId,
+      chatbot.id,
+      adapterId,
+      thread.id,
+    );
+    if (turnSandbox) {
+      Object.assign(
+        tools,
+        await getSandboxTools(turnSandbox.bashSandbox, chat, thread.id),
+      );
+    }
+
+    for (const link of chatbot.mcpServers) {
+      const server = link.mcpServer;
+      if (server.ownerId !== chatbot.ownerId) continue;
+      if (!server.endpoint) {
+        throw new Error(`MCP server "${server.name}" has no endpoint`);
+      }
+      if (server.transport !== "http") {
+        throw new Error(
+          `Unsupported MCP transport "${server.transport}" for "${server.name}"`,
+        );
+      }
+
+      const client = await getMcpClient(
+        server.transport,
+        server.endpoint,
+        decryptMcpHeaders(server.headers),
+        link.authId,
+      );
+      mcpClients.push(client);
+
+      const mcpTools = await client.tools();
+      for (const [name, tool] of Object.entries(mcpTools)) {
+        tools[`mcp_${server.id}_${safeToolName(name)}`] = tool;
+      }
+    }
+
+    const currentDateTime = new Date().toISOString();
+    let history: Message<unknown>[] = [];
+    if (chatbot.lookbackMessages > 0) {
+      try {
+        const recentMessages = await thread.adapter.fetchMessages(thread.id, {
+          limit: chatbot.lookbackMessages + 1,
+        });
+        history = recentMessages.messages
+          .filter((historicalMessage) => historicalMessage.id !== message.id)
+          .slice(-chatbot.lookbackMessages);
+      } catch (error) {
+        logger.warn(
+          `Failed to fetch message history for chatbot ${botId}`,
+          error,
+        );
+      }
+    }
+    const result = await generateText({
+      model: modelInfo.model,
+      providerOptions: modelInfo.options,
+      system: chatbot.instruction,
+      prompt: [
+        ...(await toAiMessages([...history, message])),
+        {
+          role: "user",
+          content: `[実行時補足情報]\n現在のスレッドID: ${thread.id}\n現在日時 (UTC, ISO 8601): ${currentDateTime}`,
+        },
+      ],
+      tools,
+      stopWhen: stepCountIs(MAX_AGENT_STEPS),
+      onStepFinish: ({ toolResults }) => {
+        if (
+          toolResults.some(
+            (toolResult) => toolResult.toolName === "postMessage",
+          )
+        ) {
+          replied = true;
+        }
+      },
+    });
+
+    await insertUsage(chatbot.id, agent.id, result.usage, result.toolResults);
+
+    if (!replied && result.text.trim()) {
+      await thread.post(result.text);
+      replied = true;
+    }
+  } catch (error) {
+    logger.error(`Failed to handle mention for chatbot ${botId}`, error);
+    if (!replied) {
+      try {
+        await thread.post(onFailedMessage);
+      } catch (replyError) {
+        logger.error(
+          `Failed to post mention error for chatbot ${botId}`,
+          replyError,
+        );
+      }
+    }
+  } finally {
+    if (turnSandbox?.isTurnScoped && turnSandbox.sandboxProvider) {
+      try {
+        await turnSandbox.sandboxProvider.destroySandbox(
+          turnSandbox.instanceId,
+        );
+      } catch (error) {
+        logger.error(
+          `Failed to destroy turn sandbox for chatbot ${botId}`,
+          error,
+        );
+      }
+    }
+    await Promise.all(
+      mcpClients.map(async (client) => {
+        try {
+          await client.close();
+        } catch (error) {
+          logger.error(
+            `Failed to close MCP client for chatbot ${botId}`,
+            error,
+          );
+        }
+      }),
+    );
+  }
+}
+
+export async function runScheduledPrompt(
+  chat: Chat,
+  botId: number,
+  adapterId: number,
+  adapterPlatform: string,
+  threadId: string,
+  prompt: string,
+) {
+  const message = new Message({
+    id: `scheduled-${randomUUID()}`,
+    threadId,
+    text: prompt,
+    formatted: parseMarkdown(prompt),
+    raw: { scheduled: true },
+    author: {
+      userId: "scheduled-task",
+      userName: "schedule",
+      fullName: "スケジュール",
+      isBot: false,
+      isMe: false,
+    },
+    metadata: { dateSent: new Date(), edited: false },
+    attachments: [],
+  });
+  await processBotMessage(
+    chat,
+    botId,
+    adapterId,
+    adapterPlatform,
+    chat.thread(threadId),
+    message,
+  );
+}
+
 export function registerBotHandlers(
   chat: Chat,
   botId: number,
   adapterId: number,
   adapterPlatform: string,
 ) {
-  const process = async (
+  const process = (
     thread: Thread<Record<string, unknown>, unknown>,
     message: Message<unknown>,
-  ) => {
-    const mcpClients: Array<Awaited<ReturnType<typeof createMCPClient>>> = [];
-    let turnSandbox: Awaited<ReturnType<typeof getBotSandbox>> = null;
-    let replied = false;
-    let onFailedMessage = "Sorry, we could not generate an answer.";
-    try {
-      const chatbot = await getAvailableBot(botId);
-      const agent = chatbot?.agent;
+  ) => processBotMessage(chat, botId, adapterId, adapterPlatform, thread, message);
 
-      if (!chatbot || !agent || agent.provider.ownerId !== chatbot.ownerId) {
-        await thread.post("Service Unavailable");
-        return;
-      }
-      onFailedMessage = chatbot.onFailedMessage;
-
-      const modelInfo = getModelInfo(
-        agent.provider.providerName,
-        asRecord(agent.provider.args),
-        decryptMcpHeaders(agent.provider.headers),
-        asRecord(agent.options),
-        agent.modelId,
-      );
-      if (!modelInfo) {
-        throw new Error(
-          `Unsupported model provider: ${agent.provider.providerName}`,
-        );
-      }
-
-      const tools = {
-        ...createChatTools({
-          chat,
-          preset: "messenger",
-          requireApproval: false,
-          scope: thread,
-          strictScope: true,
-        }),
-        ...getFileParseTools(chat, adapterPlatform, thread.id),
-        searchWeb: SearXNGWebSearch,
-      } as ToolSet;
-
-      turnSandbox = await getBotSandbox(
-        chatbot.ownerId,
-        chatbot.id,
-        adapterId,
-        thread.id,
-      );
-      if (turnSandbox) {
-        Object.assign(
-          tools,
-          await getSandboxTools(turnSandbox.bashSandbox, chat, thread.id),
-        );
-      }
-
-      for (const link of chatbot.mcpServers) {
-        const server = link.mcpServer;
-        if (server.ownerId !== chatbot.ownerId) continue;
-        if (!server.endpoint) {
-          throw new Error(`MCP server "${server.name}" has no endpoint`);
-        }
-        if (server.transport !== "http") {
-          throw new Error(
-            `Unsupported MCP transport "${server.transport}" for "${server.name}"`,
-          );
-        }
-
-        const client = await getMcpClient(
-          server.transport,
-          server.endpoint,
-          decryptMcpHeaders(server.headers),
-          link.authId,
-        );
-        mcpClients.push(client);
-
-        const mcpTools = await client.tools();
-        for (const [name, tool] of Object.entries(mcpTools)) {
-          tools[`mcp_${server.id}_${safeToolName(name)}`] = tool;
-        }
-      }
-
-      const currentDateTime = new Date().toISOString();
-      let history: Message<unknown>[] = [];
-      if (chatbot.lookbackMessages > 0) {
-        try {
-          const recentMessages = await thread.adapter.fetchMessages(thread.id, {
-            limit: chatbot.lookbackMessages + 1,
-          });
-          history = recentMessages.messages
-            .filter((historicalMessage) => historicalMessage.id !== message.id)
-            .slice(-chatbot.lookbackMessages);
-        } catch (error) {
-          logger.warn(
-            `Failed to fetch message history for chatbot ${botId}`,
-            error,
-          );
-        }
-      }
-      const result = await generateText({
-        model: modelInfo.model,
-        providerOptions: modelInfo.options,
-        system: chatbot.instruction,
-        prompt: [
-          ...(await toAiMessages([...history, message])),
-          {
-            role: "user",
-            content: `[実行時補足情報]\n現在のスレッドID: ${thread.id}\n現在日時 (UTC, ISO 8601): ${currentDateTime}`,
-          },
-        ],
-        tools,
-        stopWhen: stepCountIs(MAX_AGENT_STEPS),
-        onStepFinish: ({ toolResults }) => {
-          if (
-            toolResults.some(
-              (toolResult) => toolResult.toolName === "postMessage",
-            )
-          ) {
-            replied = true;
-          }
-        },
-      });
-
-      await insertUsage(chatbot.id, agent.id, result.usage, result.toolResults);
-
-      if (!replied && result.text.trim()) {
-        await thread.post(result.text);
-        replied = true;
-      }
-    } catch (error) {
-      logger.error(`Failed to handle mention for chatbot ${botId}`, error);
-      if (!replied) {
-        try {
-          await thread.post(onFailedMessage);
-        } catch (replyError) {
-          logger.error(
-            `Failed to post mention error for chatbot ${botId}`,
-            replyError,
-          );
-        }
-      }
-    } finally {
-      if (turnSandbox?.isTurnScoped && turnSandbox.sandboxProvider) {
-        try {
-          await turnSandbox.sandboxProvider.destroySandbox(
-            turnSandbox.instanceId,
-          );
-        } catch (error) {
-          logger.error(
-            `Failed to destroy turn sandbox for chatbot ${botId}`,
-            error,
-          );
-        }
-      }
-      await Promise.all(
-        mcpClients.map(async (client) => {
-          try {
-            await client.close();
-          } catch (error) {
-            logger.error(
-              `Failed to close MCP client for chatbot ${botId}`,
-              error,
-            );
-          }
-        }),
-      );
-    }
-  };
   chat.onDirectMessage(async (thread, message) => {
     logger.info("[ON_DIRECT_MESSAGE]");
     return await process(thread, message);

@@ -13,6 +13,7 @@ export default [
     route("agents", "routes/agents.tsx"),
     route("mcp-servers", "routes/mcp-servers.tsx"),
     route("sandboxes", "routes/sandboxes.tsx"),
+    route("schedules", "routes/schedules.tsx"),
     route("users", "routes/users.tsx"),
   ]),
   route("login", "routes/login.tsx"),
