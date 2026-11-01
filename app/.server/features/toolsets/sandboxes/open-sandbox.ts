@@ -334,7 +334,7 @@ export const OPEN_SANDBOX: Sandbox = {
     if (sandbox === null) {
       sandbox = await OpenSandbox.create({
         connectionConfig: getConfig(),
-        image: "ubuntu/python",
+        image: "python:3.12",
         timeoutSeconds: null,
         networkPolicy: {
           defaultAction: "deny",
