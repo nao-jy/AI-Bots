@@ -4,6 +4,7 @@ export type EntityField = {
   key: string;
   label: string;
   placeholder?: string;
+  defaultValue?: string;
   type?:
     | "text"
     | "email"
@@ -15,7 +16,9 @@ export type EntityField = {
     | "mcp-servers"
     | "tags"
     | "password"
-    | "toolset-contexts";
+    | "toolset-contexts"
+    | "cron"
+    | "schedule-targets";
   options?: string[] | EntityOption[];
   required?: boolean;
   wide?: boolean;

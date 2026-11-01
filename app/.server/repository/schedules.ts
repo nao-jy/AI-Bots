@@ -1,6 +1,7 @@
 import cron from "node-cron";
 import { db } from "./db";
 import type { AuthUser } from "../auth";
+import { record } from "../utils";
 
 export type ScheduleTargetInput = {
   chatbotAdapterId: number;
@@ -53,11 +54,8 @@ export async function listSchedules(user: AuthUser) {
       .all(),
   ]);
   return {
-    records: schedules.map((schedule) => ({
-      id: schedule.id,
-      prompt: schedule.prompt,
-      cronParam: schedule.cronParam,
-      targets: schedule.chatTargets.flatMap((target) => {
+    records: schedules.map((schedule) => {
+      const targets = schedule.chatTargets.flatMap((target) => {
         const link = target.chatbotAdapter;
         if (
           !link ||
@@ -72,8 +70,23 @@ export async function listSchedules(user: AuthUser) {
             label: `${link.chatbot.name} / ${link.adapter.name}`,
           },
         ];
-      }),
-    })),
+      });
+      return record(schedule.id, schedule.createdAt, {
+        name: schedule.name,
+        prompt: schedule.prompt,
+        cronParam: schedule.cronParam,
+        timezone: schedule.timezone,
+        targets: targets
+          .map(({ label, threadId }) => `${label} / ${threadId}`)
+          .join(", "),
+        targetsJson: JSON.stringify(
+          targets.map(({ chatbotAdapterId, threadId }) => ({
+            chatbotAdapterId,
+            threadId,
+          })),
+        ),
+      });
+    }),
     targetOptions: chatbotAdapters
       .filter(
         (link) =>
@@ -103,18 +116,32 @@ export async function listSchedulePatterns() {
   return db.orm.aibot.ChatBotSchedule.all();
 }
 
+function isValidTimezone(timezone: string) {
+  try {
+    new Intl.DateTimeFormat("en", { timeZone: timezone });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export async function saveSchedule(
   user: AuthUser,
   id: number | null,
   values: FormData,
 ) {
+  const name = String(values.get("name") ?? "").trim();
   const prompt = String(values.get("prompt") ?? "").trim();
   const cronParam = String(values.get("cronParam") ?? "").trim();
+  const timezone = String(values.get("timezone") ?? "").trim();
   const targets = parseTargets(values.get("targets"));
 
+  if (!name) return { error: "スケジュール名を入力してください。" };
   if (!prompt) return { error: "プロンプトを入力してください。" };
   if (!cronParam || !cron.validate(cronParam))
     return { error: "Cron式を正しく入力してください。" };
+  if (!timezone || !isValidTimezone(timezone))
+    return { error: "有効なタイムゾーンを選択してください。" };
   if (!targets || targets.length === 0)
     return { error: "送信先とスレッドIDを1件以上指定してください。" };
 
@@ -149,8 +176,10 @@ export async function saveSchedule(
     let scheduleId = id;
     if (scheduleId === null) {
       const schedule = await tx.orm.aibot.ChatBotSchedule.create({
+        name,
         prompt,
         cronParam,
+        timezone,
         ownerId: user.id,
       });
       scheduleId = schedule.id;
@@ -158,7 +187,7 @@ export async function saveSchedule(
       await tx.orm.aibot.ChatBotSchedule.where({
         id: scheduleId,
         ownerId: user.id,
-      }).update({ prompt, cronParam });
+      }).update({ name, prompt, cronParam, timezone });
       await tx.orm.aibot.ChatTarget.where({ scheduleId }).delete();
     }
 

@@ -8,17 +8,23 @@ import { getBotInfo } from "./features/chat-adapter";
 import { decryptAdapterEnvs } from "./utils";
 import { logger } from "./logger";
 
-const jobs = new Map<number, { cronParam: string; task: ScheduledTask }>();
+const jobs = new Map<
+  number,
+  { cronParam: string; timezone: string; task: ScheduledTask }
+>();
 let refreshQueue = Promise.resolve();
 let startupPromise: Promise<void> | undefined;
 
 async function refreshJobs() {
   const schedules = await listSchedulePatterns();
   const desired = new Map(
-    schedules.map((schedule) => [schedule.id, schedule.cronParam]),
+    schedules.map((schedule) => [
+      schedule.id,
+      { cronParam: schedule.cronParam, timezone: schedule.timezone },
+    ]),
   );
 
-  for (const [id, cronParam] of desired) {
+  for (const [id, { cronParam, timezone }] of desired) {
     if (!cron.validate(cronParam)) {
       logger.error(`Invalid Cron expression for schedule ${id}: ${cronParam}`);
       const previous = jobs.get(id);
@@ -30,7 +36,8 @@ async function refreshJobs() {
     }
 
     const previous = jobs.get(id);
-    if (previous?.cronParam === cronParam) continue;
+    if (previous?.cronParam === cronParam && previous.timezone === timezone)
+      continue;
     if (previous) await previous.task.destroy();
 
     const task = cron.schedule(
@@ -38,9 +45,9 @@ async function refreshJobs() {
       async () => {
         await executeSchedule(id);
       },
-      { name: `chatbot-schedule-${id}`, noOverlap: true },
+      { name: `chatbot-schedule-${id}`, noOverlap: true, timezone },
     );
-    jobs.set(id, { cronParam, task });
+    jobs.set(id, { cronParam, timezone, task });
   }
 
   for (const [id, job] of jobs) {

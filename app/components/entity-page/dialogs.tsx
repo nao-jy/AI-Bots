@@ -20,6 +20,8 @@ import type { EntityDialogMode, EntityPageDefinition } from "./types";
 import { InfoIcon } from "@phosphor-icons/react";
 import { ToolSetContextEditor } from "./toolset-context-editor";
 import { McpServerEditor } from "./mcp-server-editor";
+import { CronScheduleEditor } from "./cron-schedule-editor";
+import { ScheduleTargetsEditor } from "./schedule-targets-editor";
 
 type KeyValuePair = { key: string; value: string };
 
@@ -210,6 +212,7 @@ export function EntityPageDialogs({
     if (
       fetcher.state === "idle" &&
       fetcher.data?.ok &&
+      !fetcher.data.message &&
       fetcher.data.intent !== "test"
     )
       onClose();
@@ -250,7 +253,13 @@ export function EntityPageDialogs({
           </Text>
           {(fetcher.data?.error || fetcher.data?.message) && (
             <Alert
-              color={fetcher.data.ok ? "green" : "red"}
+              color={
+                fetcher.data.ok
+                  ? fetcher.data.message
+                    ? "yellow"
+                    : "green"
+                  : "red"
+              }
               role="status"
               icon={<InfoIcon />}
             >
@@ -266,6 +275,19 @@ export function EntityPageDialogs({
                     <ToolSetContextEditor
                       name={field.key}
                       schemas={page.toolSetSchemas ?? []}
+                      initialValue={selected?.[field.key]}
+                    />
+                  ) : field.type === "cron" ? (
+                    <CronScheduleEditor
+                      name={field.key}
+                      label={field.label}
+                      initialValue={selected?.[field.key]}
+                    />
+                  ) : field.type === "schedule-targets" ? (
+                    <ScheduleTargetsEditor
+                      name="targets"
+                      label={field.label}
+                      options={field.options ?? []}
                       initialValue={selected?.[field.key]}
                     />
                   ) : field.type === "mcp-servers" ? (
@@ -293,6 +315,7 @@ export function EntityPageDialogs({
                       placeholder={field.placeholder}
                       minRows={3}
                       defaultValue={String(selected?.[field.key] ?? "")}
+                      required={field.required}
                     />
                   ) : field.type === "key-value" ? (
                     <KeyValueEditor
@@ -307,7 +330,12 @@ export function EntityPageDialogs({
                       label={field.label}
                       placeholder={field.placeholder ?? "選択してください"}
                       data={field.options ?? []}
-                      defaultValue={String(selected?.[field.key] ?? "") || null}
+                      defaultValue={
+                        String(
+                          selected?.[field.key] ?? field.defaultValue ?? "",
+                        ) || null
+                      }
+                      required={field.required}
                       clearable={
                         field.key === "agentId" || field.key === "authId"
                       }
@@ -318,6 +346,7 @@ export function EntityPageDialogs({
                       label={field.label}
                       placeholder={field.placeholder ?? "選択してください"}
                       data={field.options ?? []}
+                      required={field.required}
                       defaultValue={String(selected?.[field.key] ?? "")
                         .split(",")
                         .map((value) => value.trim())
@@ -346,6 +375,7 @@ export function EntityPageDialogs({
                       label={field.label}
                       placeholder={field.placeholder}
                       defaultValue={String(selected?.[field.key] ?? "")}
+                      required={field.required}
                     />
                   )}
                   {field.help && (

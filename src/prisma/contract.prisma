@@ -287,8 +287,10 @@ namespace aibot {
 
   model ChatBotSchedule {
     id          Int               @id @default(autoincrement())
+    name        String
     prompt      String
     cronParam   String
+    timezone    String
     owner       User              @relation(fields: [ownerId], references: [id], onDelete: Cascade)
     ownerId     Int
     createdAt   TimestamptzString @default(now())

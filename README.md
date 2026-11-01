@@ -47,9 +47,9 @@ npm run build
 The authenticated workspace includes a **スケジュール** page for creating,
 editing, and deleting Cron-based prompts. Each schedule can target one or more
 bot/adapter threads. Cron expressions accept five fields or six fields with
-seconds, and run in the server's timezone. Existing schedules are loaded from
-the database when the server starts; changes made in the UI are synchronized to
-the running scheduler immediately.
+seconds. Each schedule uses its selected IANA timezone. Existing schedules are
+loaded from the database when the server starts; changes made in the UI are
+synchronized to the running scheduler immediately.
 
 ## Deployment
 

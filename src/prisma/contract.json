@@ -1126,6 +1126,13 @@
                   "kind": "scalar"
                 }
               },
+              "name": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
               "ownerId": {
                 "nullable": false,
                 "type": {
@@ -1134,6 +1141,13 @@
                 }
               },
               "prompt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "timezone": {
                 "nullable": false,
                 "type": {
                   "codecId": "pg/text@1",
@@ -1185,11 +1199,17 @@
                 "id": {
                   "column": "id"
                 },
+                "name": {
+                  "column": "name"
+                },
                 "ownerId": {
                   "column": "ownerId"
                 },
                 "prompt": {
                   "column": "prompt"
+                },
+                "timezone": {
+                  "column": "timezone"
                 }
               },
               "namespaceId": "aibot",
@@ -3426,12 +3446,22 @@
                   },
                   "nullable": false
                 },
+                "name": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "nullable": false
+                },
                 "ownerId": {
                   "codecId": "pg/int4@1",
                   "dataType": "pg/int4",
                   "nullable": false
                 },
                 "prompt": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "nullable": false
+                },
+                "timezone": {
                   "codecId": "pg/text@1",
                   "dataType": "pg/text",
                   "nullable": false
@@ -4590,7 +4620,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "ccfb285f1fa466ed858af790291d4ecf0de837d2f5b463bb2981536dc8a53991"
+    "storageHash": "19f36f9987d180efa636e1d4448499c1e68583f7ef7122fd7a093a427f62e60c"
   },
   "execution": {
     "executionHash": "2edef0a9e649f7d4fec54fb6e1236cb304696ca7f4e909082a496d8d33430a90",

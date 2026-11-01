@@ -23,7 +23,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'ccfb285f1fa466ed858af790291d4ecf0de837d2f5b463bb2981536dc8a53991'>;
+  StorageHashBase<'19f36f9987d180efa636e1d4448499c1e68583f7ef7122fd7a093a427f62e60c'>;
 export type ExecutionHash =
   ExecutionHashBase<'2edef0a9e649f7d4fec54fb6e1236cb304696ca7f4e909082a496d8d33430a90'>;
 export type ProfileHash =
@@ -443,8 +443,10 @@ export namespace Models {
     createdAt: FieldOutputTypes['aibot']['ChatBotSchedule']['createdAt'];
     cronParam: FieldOutputTypes['aibot']['ChatBotSchedule']['cronParam'];
     id: FieldOutputTypes['aibot']['ChatBotSchedule']['id'];
+    name: FieldOutputTypes['aibot']['ChatBotSchedule']['name'];
     ownerId: FieldOutputTypes['aibot']['ChatBotSchedule']['ownerId'];
     prompt: FieldOutputTypes['aibot']['ChatBotSchedule']['prompt'];
+    timezone: FieldOutputTypes['aibot']['ChatBotSchedule']['timezone'];
     chatTargets: aibot_ChatTarget[];
     owner: aibot_User;
     readonly [RelationKeys]?: 'chatTargets' | 'owner';
@@ -1359,6 +1361,12 @@ type ContractBase = Omit<
                   };
                   readonly many: false;
                 };
+                readonly name: {
+                  readonly dataType: 'pg/text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
                 readonly ownerId: {
                   readonly dataType: 'pg/int4';
                   readonly codecId: 'pg/int4@1';
@@ -1366,6 +1374,12 @@ type ContractBase = Omit<
                   readonly many: false;
                 };
                 readonly prompt: {
+                  readonly dataType: 'pg/text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly timezone: {
                   readonly dataType: 'pg/text';
                   readonly codecId: 'pg/text@1';
                   readonly nullable: false;
@@ -3029,11 +3043,19 @@ type ContractBase = Omit<
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
               };
+              readonly name: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
               readonly ownerId: {
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
               };
               readonly prompt: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly timezone: {
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
               };
@@ -3067,8 +3089,10 @@ type ContractBase = Omit<
                 readonly createdAt: { readonly column: 'createdAt' };
                 readonly cronParam: { readonly column: 'cronParam' };
                 readonly id: { readonly column: 'id' };
+                readonly name: { readonly column: 'name' };
                 readonly ownerId: { readonly column: 'ownerId' };
                 readonly prompt: { readonly column: 'prompt' };
+                readonly timezone: { readonly column: 'timezone' };
               };
             };
           };
