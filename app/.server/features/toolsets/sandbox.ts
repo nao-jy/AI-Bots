@@ -21,6 +21,7 @@ export async function getSandboxTools(
 ) {
   const { tools } = await createBashTool({
     sandbox: bashSandbox,
+    destination: ".",
   });
 
   return {
