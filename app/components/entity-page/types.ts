@@ -12,6 +12,7 @@ export type EntityField = {
     | "key-value"
     | "select"
     | "multiselect"
+    | "mcp-servers"
     | "tags"
     | "password"
     | "toolset-contexts";
@@ -58,6 +59,7 @@ export type EntityPageDefinition = {
   tableFeatures?: EntityTableFeatures;
   fields: EntityField[];
   records: EntityRecord[];
+  mcpAuthenticationOptions?: EntityOption[];
   createIntent?: string;
   createSubmitLabel?: string;
   launchIntent?: string;

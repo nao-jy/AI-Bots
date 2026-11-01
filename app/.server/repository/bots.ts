@@ -30,11 +30,13 @@ export async function listBots(user: AuthUser, publicOrigin: string) {
   const mcpServers = await db.orm.aibot.McpServer.where({
     ownerId: user.id,
   }).all();
-  const [sandboxes, sandboxLinks, toolSetContexts] = await Promise.all([
-    db.orm.aibot.Sandbox.where({ ownerId: user.id }).all(),
-    db.orm.aibot.ChatBotToolSandbox.all(),
-    db.orm.aibot.ChatBotToolSetContext.all(),
-  ]);
+  const [sandboxes, sandboxLinks, toolSetContexts, authentications] =
+    await Promise.all([
+      db.orm.aibot.Sandbox.where({ ownerId: user.id }).all(),
+      db.orm.aibot.ChatBotToolSandbox.all(),
+      db.orm.aibot.ChatBotToolSetContext.all(),
+      db.orm.aibot.OAuthAuthentication.where({ ownerId: user.id }).all(),
+    ]);
   return {
     records: bots.map((bot) =>
       record(bot.id, bot.updatedAt, {
@@ -44,6 +46,15 @@ export async function listBots(user: AuthUser, publicOrigin: string) {
         agentId: bot.agentId ?? "",
         adapterIds: bot.adapters.map((link) => link.adapterId).join(","),
         mcpServerIds: bot.mcpServers.map((link) => link.mcpServerId).join(","),
+        mcpAuthIds: JSON.stringify(
+          Object.fromEntries(
+            bot.mcpServers.flatMap((link) =>
+              link.authId === null
+                ? []
+                : [[String(link.mcpServerId), String(link.authId)]],
+            ),
+          ),
+        ),
         instruction: bot.instruction,
         lookbackMessages: bot.lookbackMessages,
         onFailedMessage: bot.onFailedMessage,
@@ -125,6 +136,10 @@ export async function listBots(user: AuthUser, publicOrigin: string) {
       label: mcpServer.name,
       value: String(mcpServer.id),
     })),
+    mcpAuthenticationOptions: authentications.map((authentication) => ({
+      label: authentication.name,
+      value: String(authentication.id),
+    })),
     sandboxOptions: sandboxes.map((sandbox) => ({
       label: `${sandbox.sandboxType} (${sandbox.sandboxScope})`,
       value: String(sandbox.id),
@@ -149,6 +164,36 @@ export async function saveBot(
   const agentId = agentValue ? Number(agentValue) : null;
   const adapterIds = idList(values.get("adapterIds")?.toString() ?? null);
   const mcpServerIds = idList(values.get("mcpServerIds")?.toString() ?? null);
+  let mcpAuthIds: Record<string, number>;
+  try {
+    const parsed: unknown = JSON.parse(
+      String(values.get("mcpAuthIds") ?? "{}"),
+    );
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed))
+      throw new Error();
+    mcpAuthIds = Object.fromEntries(
+      Object.entries(parsed).map(([serverId, authId]) => {
+        const key = Number(serverId);
+        const value =
+          typeof authId === "number"
+            ? authId
+            : typeof authId === "string" && /^\d+$/.test(authId)
+              ? Number(authId)
+              : NaN;
+        if (
+          !/^\d+$/.test(serverId) ||
+          !Number.isInteger(key) ||
+          key < 1 ||
+          !Number.isInteger(value) ||
+          value < 1
+        )
+          throw new Error();
+        return [String(key), value];
+      }),
+    );
+  } catch {
+    return { error: "MCP OAuth認証の設定形式を確認してください。" };
+  }
   const sandboxIdRaw = values.get("sandboxId")?.toString() ?? null;
   const sandboxId = sandboxIdRaw !== null ? Number(sandboxIdRaw) : null;
   let toolSetContexts: Record<string, unknown>;
@@ -203,6 +248,24 @@ export async function saveBot(
   if (mcpServerIds.some((id) => !allowedMcpServerIds.has(id))) {
     return { error: "選択したMCPサーバーを使用できません。" };
   }
+  const authentications = await db.orm.aibot.OAuthAuthentication.where({
+    ownerId: user.id,
+  }).all();
+  const allowedAuthenticationIds = new Set(
+    authentications.map((authentication) => authentication.id),
+  );
+  if (
+    Object.values(mcpAuthIds).some(
+      (authId) => !allowedAuthenticationIds.has(authId),
+    ) ||
+    Object.keys(mcpAuthIds).some(
+      (serverId) => !mcpServerIds.includes(Number(serverId)),
+    )
+  )
+    return {
+      error:
+        "MCP OAuth認証には選択済みサーバーと自分の認証情報を指定してください。",
+    };
   const ownedSandboxes = await db.orm.aibot.Sandbox.where({
     ownerId: user.id,
   }).all();
@@ -276,6 +339,7 @@ export async function saveBot(
       await tx.orm.aibot.ChatBotMcpServer.create({
         chatbotId: botId!,
         mcpServerId,
+        authId: mcpAuthIds[String(mcpServerId)] ?? null,
       });
     }
     await tx.orm.aibot.ChatBotToolSandbox.where({ chatbotId: botId! }).delete();

@@ -19,6 +19,7 @@ import type { EntityRecord } from "../../types/entities";
 import type { EntityDialogMode, EntityPageDefinition } from "./types";
 import { InfoIcon } from "@phosphor-icons/react";
 import { ToolSetContextEditor } from "./toolset-context-editor";
+import { McpServerEditor } from "./mcp-server-editor";
 
 type KeyValuePair = { key: string; value: string };
 
@@ -266,6 +267,17 @@ export function EntityPageDialogs({
                       name={field.key}
                       schemas={page.toolSetSchemas ?? []}
                       initialValue={selected?.[field.key]}
+                    />
+                  ) : field.type === "mcp-servers" ? (
+                    <McpServerEditor
+                      label={field.label}
+                      serverOptions={field.options ?? []}
+                      authenticationOptions={
+                        page.mcpAuthenticationOptions ?? []
+                      }
+                      initialServerIds={selected?.mcpServerIds}
+                      initialAuthenticationIds={selected?.mcpAuthIds}
+                      placeholder={field.placeholder}
                     />
                   ) : field.type === "tags" ? (
                     <StringListEditor

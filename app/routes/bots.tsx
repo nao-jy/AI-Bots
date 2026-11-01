@@ -83,9 +83,10 @@ const page: Omit<EntityPageDefinition, "records"> = {
     {
       key: "mcpServerIds",
       label: "MCPサーバー",
-      type: "multiselect",
+      type: "mcp-servers",
       options: [],
       placeholder: "接続するMCPサーバーを選択",
+      wide: true,
     },
     {
       key: "sandboxId",
@@ -153,6 +154,7 @@ export default function Bots({ loaderData }: Route.ComponentProps) {
         ...page,
         records: loaderData.records,
         toolSetSchemas: loaderData.toolSetSchemas,
+        mcpAuthenticationOptions: loaderData.mcpAuthenticationOptions,
         fields: page.fields.map((field) => ({
           ...field,
           options:
