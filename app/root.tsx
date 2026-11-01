@@ -30,6 +30,7 @@ import { getSessionUser } from "./.server/auth";
 import { startCronScheduler } from "./.server/scheduler";
 
 export const links: Route.LinksFunction = () => [
+  { rel: "icon", type: "image/png", href: "/favicon.png" },
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
   {
     rel: "preconnect",

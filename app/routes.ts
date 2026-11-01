@@ -2,7 +2,7 @@ import { type RouteConfig, index, route } from "@react-router/dev/routes";
 import { OAUTH_CALLBACK_PATH } from "./const";
 
 export default [
-  route("/", "routes/workspace.tsx", [
+  route("/", "routes/layout.tsx", [
     index("routes/index.tsx"),
     route("bots", "routes/bots.tsx"),
     route("adapters", "routes/adapters.tsx"),

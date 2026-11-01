@@ -41,7 +41,9 @@ a { color: inherit; text-decoration: none; }
 /* Mantine AppShell workspace layout */
 .workspace-shell { min-height: 100vh; background: #f8f8fb; }
 .workspace-shell .workspace-navbar { height: 100%; padding: 25px 15px 14px; border: 0; border-right: 1px solid #ececf1; background: #fff; align-items: stretch; }
-.workspace-shell .workspace-navbar .brand { margin: 0 0 27px 10px; }
+.workspace-shell .workspace-navbar .brand { width: 100%; margin: 0 0 27px; }
+.workspace-shell .workspace-navbar .brand-mark { width: 100%; height: auto; aspect-ratio: 3 / 1; border-radius: 0; background: transparent; box-shadow: none; }
+.workspace-shell .workspace-navbar .brand-mark img { display: block; width: 100%; height: 100%; object-fit: contain; }
 .workspace-shell .workspace-navbar .brand>span:last-child,
 .workspace-shell .workspace-navbar .nav-item>span:not(.nav-icon),
 .workspace-shell .workspace-navbar .profile-meta,
@@ -56,7 +58,7 @@ a { color: inherit; text-decoration: none; }
 .page-content { width: 100%; }
 @media (max-width: 48em) {
   .workspace-shell .workspace-navbar { height: 100%; padding: 20px 15px 14px; align-items: stretch; }
-  .workspace-shell .workspace-navbar .brand { margin: 0 0 24px 10px; }
+  .workspace-shell .workspace-navbar .brand { margin: 0 0 24px; }
   .workspace-shell .workspace-navbar .brand>span:last-child,
   .workspace-shell .workspace-navbar .nav-item>span:not(.nav-icon),
   .workspace-shell .workspace-navbar .profile-meta,

@@ -1,8 +1,8 @@
 import { AppShell, Avatar, Burger } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
-import { DotsThreeIcon, SignOutIcon, SparkleIcon } from "@phosphor-icons/react";
+import { DotsThreeIcon, SignOutIcon } from "@phosphor-icons/react";
 import { Form, Link, NavLink, Outlet, useLocation } from "react-router";
-import type { Route } from "./+types/workspace";
+import type { Route } from "./+types/layout";
 import { requireUser } from "../.server/auth";
 import { APP_NAME } from "~/const";
 import {
@@ -53,12 +53,7 @@ export default function Workspace({ loaderData }: Route.ComponentProps) {
       <AppShell.Navbar className="workspace-navbar">
         <Link to="/bots" className="brand" onClick={closeMobileNav}>
           <span className="brand-mark">
-            <SparkleIcon size={20} weight="fill" aria-hidden="true" />
-          </span>
-          <span>
-            {APP_NAME}
-            <span className="brand-dot">.</span>
-            <small>AI WORKSPACE</small>
+            <img src="/logo.png" alt={APP_NAME} />
           </span>
         </Link>
 
