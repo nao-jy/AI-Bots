@@ -945,6 +945,13 @@
                   "kind": "scalar"
                 }
               },
+              "lookbackMessages": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
               "name": {
                 "nullable": false,
                 "type": {
@@ -1090,6 +1097,9 @@
                 },
                 "isEnabled": {
                   "column": "isEnabled"
+                },
+                "lookbackMessages": {
+                  "column": "lookbackMessages"
                 },
                 "name": {
                   "column": "name"
@@ -3129,6 +3139,11 @@
                   },
                   "nullable": false
                 },
+                "lookbackMessages": {
+                  "codecId": "pg/int4@1",
+                  "dataType": "pg/int4",
+                  "nullable": false
+                },
                 "name": {
                   "codecId": "pg/text@1",
                   "dataType": "pg/text",
@@ -4180,7 +4195,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "02659c08474c66b7621bcccc9c2973775026b33d7568800104f29e5c95ece8b1"
+    "storageHash": "44f13c69a2bd124a060db3ee31e3ccf1bb57d1d944d76a34b706f9fc6cbd5eaa"
   },
   "execution": {
     "executionHash": "5c1984e92c9f7200ee5ad8e0c0de5b1b5b5329ee0cfca95a089762069a80e0dd",

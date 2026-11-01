@@ -326,7 +326,11 @@ export function EntityPageDialogs({
                   ) : (
                     <TextInput
                       name={field.key}
-                      type={field.type === "email" ? "email" : "text"}
+                      type={
+                        field.type === "email" || field.type === "number"
+                          ? field.type
+                          : "text"
+                      }
                       label={field.label}
                       placeholder={field.placeholder}
                       defaultValue={String(selected?.[field.key] ?? "")}

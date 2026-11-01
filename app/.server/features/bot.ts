@@ -1,6 +1,6 @@
 import { createMCPClient } from "@ai-sdk/mcp";
 import { generateText, stepCountIs, type ToolSet } from "ai";
-import { createChatTools } from "chat/ai";
+import { createChatTools, toAiMessages } from "chat/ai";
 import type { Chat, Message, Thread } from "chat";
 import {
   createPersistentSandboxInstance,
@@ -234,11 +234,23 @@ export function registerBotHandlers(
       }
 
       const currentDateTime = new Date().toISOString();
+      const recentMessages =
+        chatbot.lookbackMessages > 0
+          ? await thread.adapter.fetchMessages(thread.id, {
+              limit: chatbot.lookbackMessages + 1,
+            })
+          : { messages: [] };
+      const history = await toAiMessages(
+        recentMessages.messages
+          .filter((historicalMessage) => historicalMessage.id !== message.id)
+          .slice(-chatbot.lookbackMessages),
+      );
       const result = await generateText({
         model: modelInfo.model,
         providerOptions: modelInfo.options,
         system: chatbot.instruction,
         prompt: [
+          ...history,
           {
             role: "user",
             content: message.text,

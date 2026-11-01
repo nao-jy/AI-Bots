@@ -3,12 +3,37 @@ import { type BashSandboxExtended, type Sandbox, type TerminalSize } from ".";
 import {
   ConnectionConfig,
   Sandbox as OpenSandbox,
+  type NetworkPolicy,
 } from "@alibaba-group/opensandbox";
 import WebSocket, { type RawData } from "ws";
 import {
   createLifecycleClient,
   createRedirectSafeFetch,
 } from "@alibaba-group/opensandbox/internal";
+
+async function replaceNetworkPolicy(
+  sandbox: OpenSandbox,
+  policy: NetworkPolicy,
+) {
+  const connection = sandbox.connectionConfig;
+  const baseUrl = connection.getBaseUrl();
+  const lifecycle = createLifecycleClient({
+    baseUrl,
+    apiKey: connection.apiKey,
+    headers: connection.headers,
+    fetch: createRedirectSafeFetch(baseUrl, connection.fetch, {
+      overallTimeoutMs: connection.requestTimeoutSeconds * 1_000,
+    }),
+  });
+  const result = await lifecycle.PUT("/sandboxes/{sandboxId}/networkpolicy", {
+    params: { path: { sandboxId: sandbox.id } },
+    body: policy,
+  });
+  if (result.error || !result.response.ok)
+    throw new Error(
+      `ネットワークポリシーを設定できませんでした (HTTP ${result.response.status})`,
+    );
+}
 
 async function withOpenNetwork<T>(
   sandbox: OpenSandbox,
@@ -371,21 +396,13 @@ export const OPEN_SANDBOX: Sandbox = {
         });
       }
 
-      const current = await sandbox.getEgressPolicy();
-      if (current.egress !== undefined && current.egress.length > 0) {
-        const targets = current.egress
-          .map((rule) => rule.target)
-          .filter((t) => t !== undefined);
-        await sandbox.deleteEgressRules(targets);
-      }
-      if (allowedDomains.length > 0) {
-        await sandbox.patchEgressRules(
-          allowedDomains.map((target) => ({
-            action: "allow" as const,
-            target,
-          })),
-        );
-      }
+      await replaceNetworkPolicy(sandbox, {
+        defaultAction: "deny",
+        egress: allowedDomains.map((target) => ({
+          action: "allow" as const,
+          target,
+        })),
+      });
     } catch (error) {
       if (createdInstanceId) {
         try {

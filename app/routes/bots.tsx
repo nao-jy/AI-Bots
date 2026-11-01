@@ -61,6 +61,12 @@ const page: Omit<EntityPageDefinition, "records"> = {
       placeholder: "Sorry, failed to generate answer.",
     },
     {
+      key: "lookbackMessages",
+      label: "見返すメッセージ数",
+      type: "number",
+      placeholder: "0",
+    },
+    {
       key: "agentId",
       label: "エージェント",
       type: "select",

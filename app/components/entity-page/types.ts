@@ -7,6 +7,7 @@ export type EntityField = {
   type?:
     | "text"
     | "email"
+    | "number"
     | "textarea"
     | "key-value"
     | "select"

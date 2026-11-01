@@ -23,7 +23,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'02659c08474c66b7621bcccc9c2973775026b33d7568800104f29e5c95ece8b1'>;
+  StorageHashBase<'44f13c69a2bd124a060db3ee31e3ccf1bb57d1d944d76a34b706f9fc6cbd5eaa'>;
 export type ExecutionHash =
   ExecutionHashBase<'5c1984e92c9f7200ee5ad8e0c0de5b1b5b5329ee0cfca95a089762069a80e0dd'>;
 export type ProfileHash =
@@ -430,6 +430,7 @@ export namespace Models {
     instruction: FieldOutputTypes['aibot']['Chatbot']['instruction'];
     isDeleted: FieldOutputTypes['aibot']['Chatbot']['isDeleted'];
     isEnabled: FieldOutputTypes['aibot']['Chatbot']['isEnabled'];
+    lookbackMessages: FieldOutputTypes['aibot']['Chatbot']['lookbackMessages'];
     name: FieldOutputTypes['aibot']['Chatbot']['name'];
     onFailedMessage: FieldOutputTypes['aibot']['Chatbot']['onFailedMessage'];
     ownerId: FieldOutputTypes['aibot']['Chatbot']['ownerId'];
@@ -1021,6 +1022,12 @@ type ContractBase = Omit<
                     readonly kind: 'literal';
                     readonly value: DefaultLiteralValue<'pg/bool@1', true>;
                   };
+                  readonly many: false;
+                };
+                readonly lookbackMessages: {
+                  readonly dataType: 'pg/int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
                   readonly many: false;
                 };
                 readonly name: {
@@ -2527,6 +2534,10 @@ type ContractBase = Omit<
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/bool@1' };
               };
+              readonly lookbackMessages: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
               readonly name: {
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
@@ -2625,6 +2636,7 @@ type ContractBase = Omit<
                 readonly instruction: { readonly column: 'instruction' };
                 readonly isDeleted: { readonly column: 'isDeleted' };
                 readonly isEnabled: { readonly column: 'isEnabled' };
+                readonly lookbackMessages: { readonly column: 'lookbackMessages' };
                 readonly name: { readonly column: 'name' };
                 readonly onFailedMessage: { readonly column: 'onFailedMessage' };
                 readonly ownerId: { readonly column: 'ownerId' };
