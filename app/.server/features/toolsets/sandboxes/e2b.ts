@@ -1,4 +1,3 @@
-import { logger } from "~/.server/logger";
 import { type BashSandboxExtended, type Sandbox } from ".";
 import { Sandbox as E2BSandbox } from "e2b";
 
@@ -6,27 +5,39 @@ async function* toAsyncIterable(
   streamPromise: Promise<ReadableStream<Uint8Array>>,
 ): AsyncGenerator<Uint8Array> {
   const stream = await streamPromise;
-
-  for await (const chunk of stream) {
-    yield chunk;
+  const reader = stream.getReader();
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) return;
+      yield value;
+    }
+  } finally {
+    reader.releaseLock();
   }
 }
 
 export const E2B: Sandbox = {
   sandboxType: "E2B",
   isAvailable: async () => {
+    return Boolean(process.env.E2B_API_KEY);
+  },
+  executeCommandWithOpenNetwork: async (
+    instanceId,
+    envs,
+    allowedDomains,
+    command,
+  ) => {
+    const sandbox = await E2BSandbox.connect(instanceId);
+    await sandbox.updateNetwork({ allowInternetAccess: true });
     try {
-      const sandbox = await E2BSandbox.create({
-        lifecycle: {
-          onTimeout: { action: "pause", mode: "filesystem" },
-        },
+      return await sandbox.commands.run(command, { envs });
+    } finally {
+      await sandbox.updateNetwork({
+        allowOut: allowedDomains,
+        denyOut: ({ allTraffic }) => [allTraffic],
       });
-      await E2BSandbox.kill(sandbox.sandboxId);
-    } catch (error) {
-      logger.error(error);
-      return false;
     }
-    return true;
   },
   getBashSandbox: async (
     instanceId: string | null,

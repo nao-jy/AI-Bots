@@ -1,8 +1,10 @@
 import type { Route } from "./+types/sandboxes";
+import type { ShouldRevalidateFunctionArgs } from "react-router";
 import { requireUser } from "../.server/auth";
 import {
   deleteSandbox,
   listSandboxes,
+  runPersistentSandboxCommand,
   saveSandbox,
 } from "../.server/repository/entities";
 import {
@@ -64,6 +66,13 @@ export async function action({ request }: Route.ActionArgs) {
   const form = await request.formData();
   const intent = String(form.get("_intent") ?? "");
   const id = Number(form.get("id"));
+  if (intent === "run-command")
+    return runPersistentSandboxCommand(
+      user,
+      id,
+      String(form.get("instanceId") ?? ""),
+      String(form.get("command") ?? ""),
+    );
   if (intent === "delete")
     return Number.isInteger(id) && (await deleteSandbox(user, id))
       ? { ok: true }
@@ -74,6 +83,14 @@ export async function action({ request }: Route.ActionArgs) {
       ? saveSandbox(user, id, form)
       : { ok: false, error: "サンドボックスが見つかりません。" };
   return { ok: false, error: "操作を判定できませんでした。" };
+}
+
+export function shouldRevalidate({
+  formData,
+  defaultShouldRevalidate,
+}: ShouldRevalidateFunctionArgs) {
+  if (formData?.get("_intent") === "run-command") return false;
+  return defaultShouldRevalidate;
 }
 
 export default function Sandboxes({ loaderData }: Route.ComponentProps) {

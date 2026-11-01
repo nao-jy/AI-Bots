@@ -4,6 +4,10 @@ import {
   ConnectionConfig,
   Sandbox as OpenSandbox,
 } from "@alibaba-group/opensandbox";
+import {
+  createLifecycleClient,
+  createRedirectSafeFetch,
+} from "@alibaba-group/opensandbox/internal";
 
 function getConfig() {
   const config = new ConnectionConfig({
@@ -17,18 +21,76 @@ function getConfig() {
 export const OPEN_SANDBOX: Sandbox = {
   sandboxType: "OpenSandbox",
   isAvailable: async () => {
+    return Boolean(process.env.OPEN_SANDBOX_DOMAIN);
+  },
+  executeCommandWithOpenNetwork: async (
+    instanceId,
+    envs,
+    _allowedDomains,
+    command,
+  ) => {
+    const sandbox = await OpenSandbox.connect({
+      connectionConfig: getConfig(),
+      sandboxId: instanceId,
+    });
+    const connection = sandbox.connectionConfig;
+    const baseUrl = connection.getBaseUrl();
+    const lifecycle = createLifecycleClient({
+      baseUrl,
+      apiKey: connection.apiKey,
+      headers: connection.headers,
+      fetch: createRedirectSafeFetch(
+        baseUrl,
+        connection.fetch,
+        {
+          overallTimeoutMs: connection.requestTimeoutSeconds * 1_000,
+        },
+      ),
+    });
+    const path = { sandboxId: instanceId };
+    const current = await lifecycle.GET(
+      "/sandboxes/{sandboxId}/networkpolicy",
+      { params: { path } },
+    );
+    if (current.error || !current.response.ok)
+      throw new Error(
+        `ネットワークポリシーを取得できませんでした (HTTP ${current.response.status})`,
+      );
+    const previousPolicy = current.data.policy;
+    if (!previousPolicy)
+      throw new Error("現在のネットワークポリシーを取得できませんでした。");
+
+    const opened = await lifecycle.PUT(
+      "/sandboxes/{sandboxId}/networkpolicy",
+      {
+        params: { path },
+        body: { defaultAction: "allow", egress: [] },
+      },
+    );
+    if (opened.error || !opened.response.ok)
+      throw new Error(
+        `シェル用のネットワークポリシーを設定できませんでした (HTTP ${opened.response.status})`,
+      );
     try {
-      const sandbox = await OpenSandbox.create({
-        connectionConfig: getConfig(),
-        timeoutSeconds: null,
-        image: "ubuntu",
-      });
-      await sandbox.kill();
-    } catch (error) {
-      logger.error(error);
-      return false;
+      const result = await sandbox.commands.run(command, { envs });
+      return {
+        stdout: result.logs.stdout.map((entry) => entry.text).join("\n"),
+        stderr: result.logs.stderr.map((entry) => entry.text).join("\n"),
+        exitCode: result.exitCode ?? 0,
+      };
+    } finally {
+      const restored = await lifecycle.PUT(
+        "/sandboxes/{sandboxId}/networkpolicy",
+        {
+          params: { path },
+          body: previousPolicy,
+        },
+      );
+      if (restored.error || !restored.response.ok)
+        throw new Error(
+          `元のネットワークポリシーを復元できませんでした (HTTP ${restored.response.status})`,
+        );
     }
-    return true;
   },
   getBashSandbox: async (
     instanceId: string | null,

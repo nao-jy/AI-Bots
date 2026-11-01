@@ -1,7 +1,16 @@
 import { db } from "./db";
 import type { AuthUser } from "../auth";
-import { jsonb, parseStringList, record } from "../utils";
-import { listSandboxNames } from "../features/toolsets/sandboxes";
+import {
+  jsonb,
+  jsonbToStringRecord,
+  parseStringList,
+  record,
+} from "../utils";
+import {
+  executeSandboxCommand,
+  listSandboxNames,
+} from "../features/toolsets/sandboxes";
+import { logger } from "~/.server/logger";
 import { SANDBOX_SCOPES } from "~/const";
 export type SandboxScope = keyof typeof SANDBOX_SCOPES;
 
@@ -19,18 +28,114 @@ export async function listSandboxes(user: AuthUser) {
       label: name,
       value: name,
     })),
-    records: sandboxes.map((sandbox) =>
-      record(sandbox.id, "—", {
-        sandboxType: sandbox.sandboxType,
-        type: sandbox.sandboxType,
-        sandboxScope: sandbox.sandboxScope,
-        scope: SANDBOX_SCOPES[sandbox.sandboxScope],
-        name: sandbox.name,
-        envs: JSON.stringify(sandbox.envs ?? {}),
-        allowedDomainList: JSON.stringify(sandbox.allowedDomainList),
+    records: await Promise.all(
+      sandboxes.map(async (sandbox) => {
+        const instances = await db.orm.aibot.PersistentSandboxInstance.where({
+          sandboxId: sandbox.id,
+        }).all();
+        return record(sandbox.id, "—", {
+          sandboxType: sandbox.sandboxType,
+          type: sandbox.sandboxType,
+          sandboxScope: sandbox.sandboxScope,
+          scope: SANDBOX_SCOPES[sandbox.sandboxScope],
+          name: sandbox.name,
+          envs: JSON.stringify(sandbox.envs ?? {}),
+          allowedDomainList: JSON.stringify(sandbox.allowedDomainList),
+          instances: JSON.stringify(
+            instances.map((instance) => ({
+              instanceId: instance.instanceId,
+              scopeLabel: instance.threadId
+                ? "スレッド"
+                : instance.adapterId !== null
+                  ? `アダプター #${instance.adapterId}`
+                  : instance.chatbotId !== null
+                    ? `ボット #${instance.chatbotId}`
+                    : "共有",
+            })),
+          ),
+        });
       }),
     ),
   };
+}
+
+const SHELL_OUTPUT_LIMIT = 30_000;
+
+function limitShellOutput(value: string) {
+  return value.length > SHELL_OUTPUT_LIMIT
+    ? `${value.slice(0, SHELL_OUTPUT_LIMIT)}\n\n[出力を省略しました]`
+    : value;
+}
+
+export async function runPersistentSandboxCommand(
+  user: AuthUser,
+  sandboxId: number,
+  instanceId: string,
+  command: string,
+) {
+  if (!Number.isInteger(sandboxId) || sandboxId <= 0)
+    return { ok: false, error: "サンドボックスが見つかりません。" };
+  if (!instanceId.trim())
+    return { ok: false, error: "実行するインスタンスを選択してください。" };
+  if (!command.trim())
+    return { ok: false, error: "コマンドを入力してください。" };
+  if (command.length > 4_000)
+    return { ok: false, error: "コマンドは4,000文字以内で入力してください。" };
+
+  const sandbox = await db.orm.aibot.Sandbox.first({
+    id: sandboxId,
+    ownerId: user.id,
+  });
+  if (!sandbox) return { ok: false, error: "サンドボックスが見つかりません。" };
+
+  const instance = await db.orm.aibot.PersistentSandboxInstance.whereUnique({
+    instanceId,
+  }).first();
+  if (!instance || instance.sandboxId !== sandbox.id)
+    return { ok: false, error: "選択したインスタンスが見つかりません。" };
+
+  try {
+    const result = await executeSandboxCommand(
+      sandbox.sandboxType,
+      instanceId,
+      jsonbToStringRecord(sandbox.envs),
+      [...sandbox.allowedDomainList],
+      command,
+    );
+    logger.info("Sandbox shell output diagnostics", {
+      sandboxId,
+      instanceId,
+      sandboxType: sandbox.sandboxType,
+      commandLength: command.length,
+      stdoutLength: result.stdout.length,
+      stdoutLineFeeds: (result.stdout.match(/\n/g) ?? []).length,
+      stdoutCarriageReturns: (result.stdout.match(/\r/g) ?? []).length,
+      stderrLength: result.stderr.length,
+      stderrLineFeeds: (result.stderr.match(/\n/g) ?? []).length,
+      stderrCarriageReturns: (result.stderr.match(/\r/g) ?? []).length,
+    });
+    return {
+      ok: true,
+      command,
+      stdout: limitShellOutput(result.stdout),
+      stderr: limitShellOutput(result.stderr),
+      exitCode: result.exitCode,
+    };
+  } catch (error) {
+    logger.error("Persistent sandbox command failed", {
+      error,
+      sandboxId,
+      instanceId,
+    });
+    return {
+      ok: false,
+      command,
+      error:
+        error instanceof Error
+          ? error.message
+          : "サンドボックスでコマンドを実行できませんでした。",
+    };
+  }
 }
 
 export async function saveSandbox(

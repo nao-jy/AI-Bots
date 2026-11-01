@@ -16,6 +16,12 @@ interface BashSandboxInfo {
 export interface Sandbox {
   sandboxType: string;
   isAvailable: () => Promise<boolean>;
+  executeCommandWithOpenNetwork: (
+    instanceId: string,
+    envs: Record<string, string>,
+    allowedDomains: string[],
+    command: string,
+  ) => Promise<Awaited<ReturnType<BashSandbox["executeCommand"]>>>;
   getBashSandbox: (
     instanceId: string | null,
     envs: Record<string, string>,
@@ -41,4 +47,23 @@ export async function listSandboxNames() {
 
 export function getSandbox(sandboxType: string) {
   return SANDBOXES.find((V) => V.sandboxType === sandboxType) ?? null;
+}
+
+export async function executeSandboxCommand(
+  sandboxType: string,
+  instanceId: string,
+  envs: Record<string, string>,
+  allowedDomains: string[],
+  command: string,
+) {
+  const sandboxProvider = getSandbox(sandboxType);
+  if (!sandboxProvider)
+    throw new Error(`Unsupported sandbox type: ${sandboxType}`);
+
+  return sandboxProvider.executeCommandWithOpenNetwork(
+    instanceId,
+    envs,
+    allowedDomains,
+    command,
+  );
 }

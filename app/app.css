@@ -108,3 +108,29 @@ a { color: inherit; text-decoration: none; }
   .webhook-details .webhook-endpoint { flex-wrap: wrap; }
   .webhook-details .webhook-adapter-name { flex-basis: 100%; }
 }
+.sandbox-shell-dock { position: fixed; z-index: 300; right: 0; bottom: 0; left: 250px; display: flex; flex-direction: column; gap: 8px; overflow: hidden; padding: 8px 14px 12px; border: 1px solid #393743; border-bottom: 0; border-radius: 9px 9px 0 0; color: #e8e7ed; background: #191821; box-shadow: 0 -8px 28px #24233124; }
+.sandbox-shell-resize { position: absolute; top: 0; right: 0; left: 0; height: 7px; cursor: ns-resize; touch-action: none; }
+.sandbox-shell-resize::after { position: absolute; top: 2px; left: 50%; width: 36px; height: 3px; border-radius: 3px; background: #777585; content: ""; transform: translateX(-50%); }
+.sandbox-shell-resize:focus-visible { outline: 2px solid #a28aea; outline-offset: -2px; }
+.sandbox-shell-toolbar { display: flex; flex: 0 0 auto; align-items: center; gap: 12px; min-height: 34px; padding-top: 5px; }
+.sandbox-shell-toolbar>strong { display: inline-flex; align-items: center; gap: 7px; color: #f0eff4; font-size: 11px; }
+.sandbox-shell-instance-select { width: min(460px, 60%); margin-left: auto; }
+.sandbox-shell-instance-select .mantine-Input-input { min-height: 32px; border-color: #494752; color: #e8e7ed; background: #25242e; font-size: 10px; }
+.sandbox-shell-instance-select .mantine-Select-dropdown { color: #242331; }
+.sandbox-shell-close { width: 30px; height: 30px; border: 0; border-radius: 5px; color: #c5c3ce; background: transparent; font-size: 21px; line-height: 1; cursor: pointer; }
+.sandbox-shell-close:hover { color: white; background: #393743; }
+.sandbox-shell-empty,.sandbox-shell-status { color: #92909e; font-size: 10px; }
+.sandbox-shell-empty,.sandbox-shell-status { margin: 0; }
+.sandbox-shell-warning { display: flex; flex: 0 0 auto; justify-content: space-between; gap: 12px; margin: 0; color: #d3a656; font-size: 9px; }
+.sandbox-shell-running { color: #80d9a8; white-space: nowrap; }
+.sandbox-shell-terminal { min-height: 0; flex: 1; overflow: hidden; padding: 8px 10px; border: 1px solid #302f39; border-radius: 6px; background: #111116; }
+.sandbox-shell-terminal .xterm { height: 100%; }
+.sandbox-shell-terminal .xterm-viewport { overflow-y: auto !important; }
+.sandbox-shell-terminal .xterm-screen { height: 100%; }
+.sandbox-shell-error { margin: 0; color: #ff9a9a; font-size: 11px; }
+@media (max-width: 600px) {
+  .sandbox-shell-dock { left: 0; padding: 8px 10px 10px; }
+  .sandbox-shell-toolbar { gap: 6px; }
+  .sandbox-shell-instance-select { width: auto; flex: 1; }
+}
+@media (min-width: 601px) and (max-width: 48em) { .sandbox-shell-dock { left: 0; } }

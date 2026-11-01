@@ -1,10 +1,12 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useFetcher } from "react-router";
+import "@xterm/xterm/css/xterm.css";
 import {
   ActionIcon,
   Badge,
   CopyButton,
   Group,
+  Select,
   Switch,
   Table,
   TextInput,
@@ -18,6 +20,7 @@ import {
   CopySimpleIcon,
   MagnifyingGlassIcon,
   PencilSimpleIcon,
+  TerminalWindowIcon,
   TrashIcon,
 } from "@phosphor-icons/react";
 import type { EntityRecord, PublicIdSlot } from "../../types/entities";
@@ -36,71 +39,129 @@ export function EntityTable({
   onStatusChange: (record: EntityRecord, enabled: boolean) => void;
 }) {
   const [query, setQuery] = useState("");
+  const [shellOpen, setShellOpen] = useState(false);
+  const [selectedInstanceId, setSelectedInstanceId] = useState<string | null>(
+    null,
+  );
+  const shellInstances =
+    page.icon === "sandboxes"
+      ? page.records.flatMap((record) =>
+          parsePersistentInstances(record.instances).map((instance) => ({
+            ...instance,
+            sandboxId: record.id,
+            sandboxName: String(record.name ?? "名称未設定"),
+          })),
+        )
+      : [];
   const visibleRecords = page.records.filter((record) =>
-    Object.values(record).join(" ").toLowerCase().includes(query.toLowerCase()),
+    Object.entries(record)
+      .filter(([key]) => key !== "instances")
+      .map(([, value]) => value)
+      .join(" ")
+      .toLowerCase()
+      .includes(query.toLowerCase()),
   );
 
   return (
-    <section className="entity-panel">
-      <div className="entity-toolbar">
-        <TextInput
-          className="search-field"
-          placeholder={`${page.title}を検索...`}
-          value={query}
-          onChange={(event) => setQuery(event.currentTarget.value)}
-          leftSection={<MagnifyingGlassIcon size={16} aria-hidden="true" />}
-          aria-label={`${page.title}を検索`}
-        />
-        <span className="record-count">{page.records.length} 件</span>
-      </div>
+    <>
+      <section className="entity-panel">
+        <div className="entity-toolbar">
+          <TextInput
+            className="search-field"
+            placeholder={`${page.title}を検索...`}
+            value={query}
+            onChange={(event) => setQuery(event.currentTarget.value)}
+            leftSection={<MagnifyingGlassIcon size={16} aria-hidden="true" />}
+            aria-label={`${page.title}を検索`}
+          />
+          <span className="record-count">{page.records.length} 件</span>
+        </div>
 
-      <div className="table-wrap">
-        <Table
-          className="entity-table"
-          verticalSpacing="md"
-          horizontalSpacing="md"
-        >
-          <Table.Thead>
-            <Table.Tr>
-              {page.columns.map((column) => (
-                <Table.Th key={column.key}>{column.label}</Table.Th>
-              ))}
-              <Table.Th className="actions-header">操作</Table.Th>
-            </Table.Tr>
-          </Table.Thead>
-          <Table.Tbody>
-            {visibleRecords.map((record) => (
-              <EntityRow
-                key={record.id}
-                page={page}
-                record={record}
-                onEdit={() => onEdit(record)}
-                onDelete={() => onDelete(record)}
-                onStatusChange={(enabled) => onStatusChange(record, enabled)}
-              />
-            ))}
-            {visibleRecords.length === 0 && (
+        <div className="table-wrap">
+          <Table
+            className="entity-table"
+            verticalSpacing="md"
+            horizontalSpacing="md"
+          >
+            <Table.Thead>
               <Table.Tr>
-                <Table.Td colSpan={page.columns.length + 1}>
-                  <div className="empty-state">
-                    <MagnifyingGlassIcon size={22} aria-hidden="true" />
-                    <strong>該当するデータがありません</strong>
-                    <small>
-                      検索条件を変えるか、新しく作成してください。
-                    </small>
-                  </div>
-                </Table.Td>
+                {page.columns.map((column) => (
+                  <Table.Th key={column.key}>{column.label}</Table.Th>
+                ))}
+                <Table.Th className="actions-header">操作</Table.Th>
               </Table.Tr>
-            )}
-          </Table.Tbody>
-        </Table>
-      </div>
-      <div className="table-footer">
-        <span>
-          {visibleRecords.length} 件中 <strong>1–{visibleRecords.length}</strong> 件を表示
-        </span>
-      </div>
-    </section>
+            </Table.Thead>
+            <Table.Tbody>
+              {visibleRecords.map((record) => (
+                <EntityRow
+                  key={record.id}
+                  page={page}
+                  record={record}
+                  onEdit={() => onEdit(record)}
+                  onDelete={() => onDelete(record)}
+                  onStatusChange={(enabled) =>
+                    onStatusChange(record, enabled)
+                  }
+                  onOpenShell={() => {
+                    if (
+                      shellOpen &&
+                      shellInstances.some(
+                        (instance) =>
+                          instance.sandboxId === record.id &&
+                          instance.instanceId === selectedInstanceId,
+                      )
+                    ) {
+                      setShellOpen(false);
+                      return;
+                    }
+                    const firstInstance = parsePersistentInstances(
+                      record.instances,
+                    )[0];
+                    setSelectedInstanceId(firstInstance?.instanceId ?? null);
+                    setShellOpen(true);
+                  }}
+                  shellOpen={
+                    shellOpen &&
+                    shellInstances.some(
+                      (instance) =>
+                        instance.sandboxId === record.id &&
+                        instance.instanceId === selectedInstanceId,
+                    )
+                  }
+                />
+              ))}
+              {visibleRecords.length === 0 && (
+                <Table.Tr>
+                  <Table.Td colSpan={page.columns.length + 1}>
+                    <div className="empty-state">
+                      <MagnifyingGlassIcon size={22} aria-hidden="true" />
+                      <strong>該当するデータがありません</strong>
+                      <small>
+                        検索条件を変えるか、新しく作成してください。
+                      </small>
+                    </div>
+                  </Table.Td>
+                </Table.Tr>
+              )}
+            </Table.Tbody>
+          </Table>
+        </div>
+        <div className="table-footer">
+          <span>
+            {visibleRecords.length} 件中{" "}
+            <strong>1–{visibleRecords.length}</strong> 件を表示
+          </span>
+        </div>
+      </section>
+      {page.icon === "sandboxes" && shellOpen && (
+        <SandboxShell
+          instances={shellInstances}
+          selectedInstanceId={selectedInstanceId}
+          onSelectInstance={setSelectedInstanceId}
+          onClose={() => setShellOpen(false)}
+        />
+      )}
+    </>
   );
 }
 
@@ -110,18 +171,23 @@ function EntityRow({
   onEdit,
   onDelete,
   onStatusChange,
+  onOpenShell,
+  shellOpen,
 }: {
   page: EntityPageDefinition;
   record: EntityRecord;
   onEdit: () => void;
   onDelete: () => void;
   onStatusChange: (enabled: boolean) => void;
+  onOpenShell: () => void;
+  shellOpen: boolean;
 }) {
   const fetcher = useFetcher();
   const cannotDelete = record.id === page.protectedRecordId;
   const recordName = record[page.columns[0].key];
   const supportsPublicIdRegeneration =
     page.icon === "bots" || page.icon === "adapters";
+  const supportsExpansion = supportsPublicIdRegeneration;
   const [expanded, setExpanded] = useState(false);
   const publicIds = parsePublicIds(record.publicIds);
   const webhookEndpoints =
@@ -132,15 +198,25 @@ function EntityRow({
       <Table.Tr>
         <Table.Td>
           <div className="entity-name-cell">
-            {supportsPublicIdRegeneration && (
+            {(supportsExpansion || page.icon === "sandboxes") && (
               <ActionIcon
                 variant="subtle"
                 color="gray"
-                aria-label={`${recordName}のパブリックIDを${expanded ? "閉じる" : "表示"}`}
-                aria-expanded={expanded}
-                onClick={() => setExpanded((current) => !current)}
+                aria-label={
+                  page.icon === "sandboxes"
+                    ? `${recordName}のシェルを${shellOpen ? "閉じる" : "開く"}`
+                    : `${recordName}のパブリックIDを${expanded ? "閉じる" : "表示"}`
+                }
+                aria-expanded={page.icon === "sandboxes" ? shellOpen : expanded}
+                onClick={
+                  page.icon === "sandboxes"
+                    ? onOpenShell
+                    : () => setExpanded((current) => !current)
+                }
               >
-                {expanded ? (
+                {page.icon === "sandboxes" ? (
+                  <TerminalWindowIcon size={16} aria-hidden="true" />
+                ) : expanded ? (
                   <CaretDownIcon size={16} aria-hidden="true" />
                 ) : (
                   <CaretRightIcon size={16} aria-hidden="true" />
@@ -183,9 +259,13 @@ function EntityRow({
               variant="subtle"
               color="gray"
               aria-label={
-                cannotDelete ? "自分のアカウントは削除できません" : `${recordName}を削除`
+                cannotDelete
+                  ? "自分のアカウントは削除できません"
+                  : `${recordName}を削除`
               }
-              title={cannotDelete ? "自分のアカウントは削除できません" : undefined}
+              title={
+                cannotDelete ? "自分のアカウントは削除できません" : undefined
+              }
               disabled={cannotDelete}
               onClick={onDelete}
             >
@@ -201,7 +281,9 @@ function EntityRow({
               <strong className="entity-details-title">パブリックID</strong>
               <div className="public-id-grid">
                 {(["first", "second"] as const).map((slot, index) => {
-                  const publicId = publicIds.find((item) => item.slot === slot)?.id;
+                  const publicId = publicIds.find(
+                    (item) => item.slot === slot,
+                  )?.id;
                   return (
                     <div className="public-id-card" key={slot}>
                       <div className="public-id-label">{index + 1}つ目</div>
@@ -210,7 +292,9 @@ function EntityRow({
                         {publicId && (
                           <CopyButton value={publicId} timeout={1500}>
                             {({ copied, copy }) => (
-                              <Tooltip label={copied ? "コピーしました" : "IDをコピー"}>
+                              <Tooltip
+                                label={copied ? "コピーしました" : "IDをコピー"}
+                              >
                                 <ActionIcon
                                   variant="subtle"
                                   color={copied ? "teal" : "gray"}
@@ -273,11 +357,17 @@ function EntityRow({
                           className="webhook-endpoint"
                           key={`${adapterName}-${url}`}
                         >
-                          <span className="webhook-adapter-name">{adapterName}</span>
+                          <span className="webhook-adapter-name">
+                            {adapterName}
+                          </span>
                           <code>{url}</code>
                           <CopyButton value={url} timeout={1500}>
                             {({ copied, copy }) => (
-                              <Tooltip label={copied ? "コピーしました" : "URLをコピー"}>
+                              <Tooltip
+                                label={
+                                  copied ? "コピーしました" : "URLをコピー"
+                                }
+                              >
                                 <ActionIcon
                                   variant="subtle"
                                   color={copied ? "teal" : "gray"}
@@ -306,6 +396,484 @@ function EntityRow({
         </Table.Tr>
       )}
     </>
+  );
+}
+
+type PersistentInstance = {
+  instanceId: string;
+  scopeLabel: string;
+};
+type SandboxShellInstance = PersistentInstance & {
+  sandboxId: number;
+  sandboxName: string;
+};
+type ShellResponse = {
+  ok?: boolean;
+  command?: string;
+  stdout?: string;
+  stderr?: string;
+  exitCode?: number;
+  error?: string;
+};
+
+function parsePersistentInstances(value: string | number | undefined) {
+  try {
+    const parsed: unknown = JSON.parse(String(value ?? "[]"));
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(
+      (item): item is PersistentInstance =>
+        item &&
+        typeof item === "object" &&
+        typeof item.instanceId === "string" &&
+        typeof item.scopeLabel === "string",
+    );
+  } catch {
+    return [];
+  }
+}
+
+function SandboxShell({
+  instances,
+  selectedInstanceId,
+  onSelectInstance,
+  onClose,
+}: {
+  instances: SandboxShellInstance[];
+  selectedInstanceId: string | null;
+  onSelectInstance: (instanceId: string | null) => void;
+  onClose: () => void;
+}) {
+  const [height, setHeight] = useState(320);
+  const [isResizing, setIsResizing] = useState(false);
+  const [terminalError, setTerminalError] = useState<string | null>(null);
+  const fetcher = useFetcher<ShellResponse>();
+  const lastResponse = useRef(fetcher.data);
+  const resizeStart = useRef<{ pointerY: number; height: number } | null>(null);
+  const terminalHost = useRef<HTMLDivElement>(null);
+  const terminal = useRef<import("@xterm/xterm").Terminal | null>(null);
+  const fitAddon = useRef<import("@xterm/addon-fit").FitAddon | null>(null);
+  const selectedInstance = instances.find(
+    (instance) => instance.instanceId === selectedInstanceId,
+  );
+  const selectedInstanceRef = useRef(selectedInstanceId);
+  const selectedSandboxNameRef = useRef(selectedInstance?.sandboxName ?? "");
+  const instancesRef = useRef(instances);
+  const fetcherStateRef = useRef(fetcher.state);
+  const submitRef = useRef(fetcher.submit);
+  const commandBuffer = useRef("");
+  const commandCursor = useRef(0);
+  const commandHistory = useRef<string[]>([]);
+  const historyIndex = useRef(0);
+
+  selectedInstanceRef.current = selectedInstanceId;
+  selectedSandboxNameRef.current = selectedInstance?.sandboxName ?? "";
+  instancesRef.current = instances;
+  fetcherStateRef.current = fetcher.state;
+  submitRef.current = fetcher.submit;
+
+  function writePrompt(target: import("@xterm/xterm").Terminal) {
+    const name = (selectedSandboxNameRef.current || "sandbox")
+      .replace(/[\x00-\x1f\x7f]/g, "")
+      .slice(0, 32);
+    target.write(`\x1b[32m${name}\x1b[0m:\x1b[34m~\x1b[0m$ `);
+  }
+
+  useEffect(() => {
+    let disposed = false;
+    let resizeObserver: ResizeObserver | null = null;
+    let dataSubscription: { dispose: () => void } | null = null;
+    let activeTerminal: import("@xterm/xterm").Terminal | null = null;
+    let activeFitAddon: import("@xterm/addon-fit").FitAddon | null = null;
+
+    async function initializeTerminal() {
+      const [{ Terminal }, { FitAddon }] = await Promise.all([
+        import("@xterm/xterm"),
+        import("@xterm/addon-fit"),
+      ]);
+      if (disposed || !terminalHost.current) return;
+
+      const instanceTerminal = new Terminal({
+        allowProposedApi: false,
+        convertEol: false,
+        cursorBlink: true,
+        fontFamily:
+          '"Cascadia Code", "SFMono-Regular", Menlo, Monaco, Consolas, monospace',
+        fontSize: 13,
+        lineHeight: 1.35,
+        scrollback: 2_000,
+        theme: {
+          background: "#111116",
+          foreground: "#e8e7ed",
+          cursor: "#c5b5ff",
+          selectionBackground: "#7560b880",
+          black: "#282733",
+          red: "#ff8080",
+          green: "#80d9a8",
+          yellow: "#f3c477",
+          blue: "#8bb8ff",
+          magenta: "#c4a4ff",
+          cyan: "#74d8d1",
+          white: "#e8e7ed",
+          brightBlack: "#777585",
+          brightRed: "#ff9a9a",
+          brightGreen: "#9ce9bd",
+          brightYellow: "#ffd78a",
+          brightBlue: "#a7c8ff",
+          brightMagenta: "#d6bdff",
+          brightCyan: "#8ce8e1",
+          brightWhite: "#ffffff",
+        },
+        screenReaderMode: true,
+      });
+      const fit = new FitAddon();
+      instanceTerminal.loadAddon(fit);
+      instanceTerminal.open(terminalHost.current);
+      fit.fit();
+      terminal.current = instanceTerminal;
+      fitAddon.current = fit;
+      activeTerminal = instanceTerminal;
+      activeFitAddon = fit;
+      resizeObserver = new ResizeObserver(() => fit.fit());
+      resizeObserver.observe(terminalHost.current);
+
+      function redrawLine() {
+        instanceTerminal.write("\r\x1b[2K");
+        writePrompt(instanceTerminal);
+        instanceTerminal.write(commandBuffer.current);
+        const trailingCharacters =
+          commandBuffer.current.length - commandCursor.current;
+        if (trailingCharacters > 0) {
+          instanceTerminal.write(`\x1b[${trailingCharacters}D`);
+        }
+      }
+
+      function submitCommand() {
+        const command = commandBuffer.current;
+        if (!command.trim()) {
+          instanceTerminal.write("\r\n");
+          commandBuffer.current = "";
+          commandCursor.current = 0;
+          writePrompt(instanceTerminal);
+          return;
+        }
+        if (
+          !selectedInstanceRef.current ||
+          fetcherStateRef.current !== "idle"
+        ) {
+          instanceTerminal.write("\r\n\x1b[33mA command is already running.\x1b[0m\r\n");
+          commandBuffer.current = "";
+          commandCursor.current = 0;
+          writePrompt(instanceTerminal);
+          return;
+        }
+
+        instanceTerminal.write("\r\n");
+        commandHistory.current.push(command);
+        historyIndex.current = commandHistory.current.length;
+        commandBuffer.current = "";
+        commandCursor.current = 0;
+        submitRef.current(
+          {
+            _intent: "run-command",
+            id: String(
+              instancesRef.current.find(
+                (instance) =>
+                  instance.instanceId === selectedInstanceRef.current,
+              )?.sandboxId ?? "",
+            ),
+            instanceId: selectedInstanceRef.current,
+            command,
+          },
+          { method: "post" },
+        );
+      }
+
+      function handleData(data: string) {
+        if (data === "\x03") {
+          if (fetcherStateRef.current !== "idle") {
+            instanceTerminal.write(
+              "\r\n^C\r\n\x1b[90mThe remote command cannot be interrupted here.\x1b[0m\r\n",
+            );
+            return;
+          }
+          instanceTerminal.write("^C\r\n");
+          commandBuffer.current = "";
+          commandCursor.current = 0;
+          writePrompt(instanceTerminal);
+          return;
+        }
+        if (data === "\x0c") {
+          instanceTerminal.write("\x1b[2J\x1b[H");
+          writePrompt(instanceTerminal);
+          instanceTerminal.write(commandBuffer.current);
+          return;
+        }
+        if (data === "\r") {
+          submitCommand();
+          return;
+        }
+        if (data === "\x1b[A" || data === "\x1b[B") {
+          if (commandHistory.current.length === 0) return;
+          historyIndex.current =
+            data === "\x1b[A"
+              ? Math.max(0, historyIndex.current - 1)
+              : Math.min(commandHistory.current.length, historyIndex.current + 1);
+          commandBuffer.current =
+            commandHistory.current[historyIndex.current] ?? "";
+          commandCursor.current = commandBuffer.current.length;
+          redrawLine();
+          return;
+        }
+        if (data === "\x1b[D") {
+          if (commandCursor.current > 0) {
+            commandCursor.current -= 1;
+            instanceTerminal.write("\x1b[D");
+          }
+          return;
+        }
+        if (data === "\x1b[C") {
+          if (commandCursor.current < commandBuffer.current.length) {
+            commandCursor.current += 1;
+            instanceTerminal.write("\x1b[C");
+          }
+          return;
+        }
+        if (data === "\x1b[H" || data === "\x1b[1~") {
+          commandCursor.current = 0;
+          redrawLine();
+          return;
+        }
+        if (data === "\x1b[F" || data === "\x1b[4~") {
+          commandCursor.current = commandBuffer.current.length;
+          redrawLine();
+          return;
+        }
+        if (data === "\x1b[3~") {
+          if (commandCursor.current < commandBuffer.current.length) {
+            commandBuffer.current =
+              commandBuffer.current.slice(0, commandCursor.current) +
+              commandBuffer.current.slice(commandCursor.current + 1);
+            redrawLine();
+          }
+          return;
+        }
+        if (data === "\x7f" || data === "\b") {
+          if (commandCursor.current > 0) {
+            commandBuffer.current =
+              commandBuffer.current.slice(0, commandCursor.current - 1) +
+              commandBuffer.current.slice(commandCursor.current);
+            commandCursor.current -= 1;
+            redrawLine();
+          }
+          return;
+        }
+        if (data.startsWith("\x1b")) return;
+        if (fetcherStateRef.current !== "idle") return;
+        const printable = Array.from(data)
+          .filter((character) => character >= " " && character !== "\x7f")
+          .join("");
+        if (!printable) return;
+        commandBuffer.current =
+          commandBuffer.current.slice(0, commandCursor.current) +
+          printable +
+          commandBuffer.current.slice(commandCursor.current);
+        commandCursor.current += printable.length;
+        redrawLine();
+      }
+
+      dataSubscription = instanceTerminal.onData(handleData);
+      instanceTerminal.write(
+        "\x1b[90mSandbox terminal · Enter to run · ↑/↓ for history · Ctrl+L to clear\x1b[0m\r\n",
+      );
+      if (selectedInstanceRef.current) {
+        instanceTerminal.write(
+          `\x1b[90mConnected to ${selectedSandboxNameRef.current} (${selectedInstanceRef.current})\x1b[0m\r\n`,
+        );
+        writePrompt(instanceTerminal);
+        instanceTerminal.focus();
+      } else {
+        instanceTerminal.write(
+          "\x1b[90mSelect an instance to start a shell session.\x1b[0m\r\n",
+        );
+      }
+    }
+
+    void initializeTerminal().catch((error: unknown) => {
+      if (!disposed) {
+        setTerminalError(
+          error instanceof Error
+            ? error.message
+            : "端末を初期化できませんでした。",
+        );
+      }
+    });
+
+    return () => {
+      disposed = true;
+      resizeObserver?.disconnect();
+      dataSubscription?.dispose();
+      activeTerminal?.dispose();
+      if (terminal.current === activeTerminal) terminal.current = null;
+      if (fitAddon.current === activeFitAddon) fitAddon.current = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    const activeTerminal = terminal.current;
+    if (!activeTerminal) return;
+    commandBuffer.current = "";
+    commandCursor.current = 0;
+    commandHistory.current = [];
+    historyIndex.current = 0;
+    activeTerminal.write("\x1b[2J\x1b[H");
+    if (selectedInstanceId) {
+      activeTerminal.write(
+        `\x1b[90mConnected to ${selectedSandboxNameRef.current} (${selectedInstanceId})\x1b[0m\r\n`,
+      );
+      writePrompt(activeTerminal);
+    } else {
+      activeTerminal.write(
+        "\x1b[90mSelect an instance to start a shell session.\x1b[0m\r\n",
+      );
+    }
+    fitAddon.current?.fit();
+  }, [selectedInstanceId]);
+
+  useEffect(() => {
+    const response = fetcher.data;
+    const activeTerminal = terminal.current;
+    if (
+      fetcher.state !== "idle" ||
+      !response ||
+      response === lastResponse.current ||
+      !activeTerminal
+    ) {
+      return;
+    }
+    lastResponse.current = response;
+    if (response.stdout) {
+      activeTerminal.write(response.stdout.replace(/\r\n|\r|\n/g, "\r\n"));
+      if (!/[\r\n]$/.test(response.stdout)) activeTerminal.write("\r\n");
+    }
+    if (response.stderr) {
+      activeTerminal.write(
+        `\x1b[31m${response.stderr.replace(/\r\n|\r|\n/g, "\r\n")}${
+          /[\r\n]$/.test(response.stderr) ? "" : "\r\n"
+        }\x1b[0m`,
+      );
+    }
+    if (response.error) {
+      activeTerminal.write(
+        `\x1b[31m${response.error.replace(/\r\n|\r|\n/g, "\r\n")}\x1b[0m\r\n`,
+      );
+    }
+    if (response.exitCode !== undefined && response.exitCode !== 0) {
+      activeTerminal.write(
+        `\x1b[90mProcess exited with code ${response.exitCode}.\x1b[0m\r\n`,
+      );
+    }
+    writePrompt(activeTerminal);
+  }, [fetcher.data, fetcher.state]);
+
+  useEffect(() => {
+    if (!isResizing) return;
+    function resize(event: PointerEvent) {
+      const start = resizeStart.current;
+      if (!start) return;
+      const maxHeight = Math.min(window.innerHeight * 0.75, 720);
+      setHeight(
+        Math.max(180, Math.min(maxHeight, start.height + start.pointerY - event.clientY)),
+      );
+    }
+    function stopResize() {
+      resizeStart.current = null;
+      setIsResizing(false);
+    }
+    window.addEventListener("pointermove", resize);
+    window.addEventListener("pointerup", stopResize);
+    return () => {
+      window.removeEventListener("pointermove", resize);
+      window.removeEventListener("pointerup", stopResize);
+    };
+  }, [isResizing]);
+
+  return (
+    <section className="sandbox-shell-dock" style={{ height }}>
+      <div
+        className="sandbox-shell-resize"
+        role="separator"
+        aria-label="シェル領域の高さを変更"
+        aria-orientation="horizontal"
+        aria-valuenow={height}
+        aria-valuemin={180}
+        aria-valuemax={Math.min(
+          typeof window === "undefined" ? 720 : window.innerHeight * 0.75,
+          720,
+        )}
+        tabIndex={0}
+        onPointerDown={(event) => {
+          resizeStart.current = { pointerY: event.clientY, height };
+          setIsResizing(true);
+          event.preventDefault();
+        }}
+        onKeyDown={(event) => {
+          if (event.key === "ArrowUp") {
+            setHeight((current) => Math.min(current + 24, 720));
+            event.preventDefault();
+          } else if (event.key === "ArrowDown") {
+            setHeight((current) => Math.max(current - 24, 180));
+            event.preventDefault();
+          }
+        }}
+      />
+      <div className="sandbox-shell-toolbar">
+        <strong>
+          <TerminalWindowIcon size={16} aria-hidden="true" /> シェル
+        </strong>
+        <Select
+          aria-label="実行するインスタンス"
+          placeholder="シェルを選択"
+          data={instances.map((instance) => ({
+            value: instance.instanceId,
+            label: `${instance.sandboxName} · ${instance.scopeLabel} · ${instance.instanceId}`,
+          }))}
+          value={selectedInstanceId}
+          onChange={onSelectInstance}
+          searchable
+          nothingFoundMessage="該当するインスタンスがありません"
+          disabled={fetcher.state !== "idle"}
+          className="sandbox-shell-instance-select"
+        />
+        <button
+          type="button"
+          className="sandbox-shell-close"
+          onClick={onClose}
+          aria-label="シェルを閉じる"
+        >
+          ×
+        </button>
+      </div>
+      <p className="sandbox-shell-warning">
+        シェル実行中はすべてのドメインへの通信が許可されます。
+        {fetcher.state !== "idle" && (
+          <span className="sandbox-shell-running" role="status">
+            ● 実行中
+          </span>
+        )}
+      </p>
+      {terminalError ? (
+        <p className="sandbox-shell-error" role="alert">
+          端末を読み込めませんでした: {terminalError}
+        </p>
+      ) : (
+        <div
+          className="sandbox-shell-terminal"
+          ref={terminalHost}
+          aria-label="サンドボックスシェル端末"
+          onClick={() => terminal.current?.focus()}
+        />
+      )}
+    </section>
   );
 }
 
@@ -357,7 +925,7 @@ function EntityCell({
   if (columnKey === "webhooks" && page.icon === "bots") {
     const endpoints = parseWebhookEndpoints(value);
     if (endpoints.length === 0) return <span className="table-text">—</span>;
-    return <span className="table-text">{endpoints.length} 件（展開）</span>;
+    return <span className="table-text">{endpoints.length} 件</span>;
   }
 
   if (columnKey === "status" && page.icon === "bots")
@@ -390,7 +958,9 @@ function EntityCell({
 }
 
 function Status({ value }: { value: string }) {
-  const active = ["稼働中", "接続済み", "接続先登録済み", "有効"].includes(value);
+  const active = ["稼働中", "接続済み", "接続先登録済み", "有効"].includes(
+    value,
+  );
   const pending = ["招待中", "未接続", "接続先未設定"].includes(value);
 
   return (
