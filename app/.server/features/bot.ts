@@ -234,20 +234,15 @@ export function registerBotHandlers(
       }
 
       const currentDateTime = new Date().toISOString();
-      let history: Awaited<ReturnType<typeof toAiMessages>> = [];
+      let history: Message<unknown>[] = [];
       if (chatbot.lookbackMessages > 0) {
         try {
-          const recentMessages = await thread.adapter.fetchMessages(
-            thread.id,
-            { limit: chatbot.lookbackMessages + 1 },
-          );
-          history = await toAiMessages(
-            recentMessages.messages
-              .filter(
-                (historicalMessage) => historicalMessage.id !== message.id,
-              )
-              .slice(-chatbot.lookbackMessages),
-          );
+          const recentMessages = await thread.adapter.fetchMessages(thread.id, {
+            limit: chatbot.lookbackMessages + 1,
+          });
+          history = recentMessages.messages
+            .filter((historicalMessage) => historicalMessage.id !== message.id)
+            .slice(-chatbot.lookbackMessages);
         } catch (error) {
           logger.warn(
             `Failed to fetch message history for chatbot ${botId}`,
@@ -260,11 +255,7 @@ export function registerBotHandlers(
         providerOptions: modelInfo.options,
         system: chatbot.instruction,
         prompt: [
-          ...history,
-          {
-            role: "user",
-            content: message.text,
-          },
+          ...(await toAiMessages([...history, message])),
           {
             role: "user",
             content: `[実行時補足情報]\n現在のスレッドID: ${thread.id}\n現在日時 (UTC, ISO 8601): ${currentDateTime}`,

@@ -113,7 +113,7 @@ export default function Workspace({ loaderData }: Route.ComponentProps) {
             aria-label="メニューを開閉"
           />
           <div className="breadcrumbs">
-            <span>ワークスペース</span>
+            <span>{APP_NAME}</span>
             <b>/</b>
             <strong>{current.label}</strong>
           </div>

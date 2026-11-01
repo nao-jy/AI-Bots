@@ -13,7 +13,7 @@ import { APP_NAME } from "~/const";
 
 const page: Omit<EntityPageDefinition, "records"> = {
   title: "ユーザー",
-  description: "ワークスペースにログインできるユーザーアカウントを管理します。",
+  description: "ログインできるユーザーアカウントを管理します。",
   icon: "users",
   columns: [
     { key: "name", label: "ユーザー" },
