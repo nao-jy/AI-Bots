@@ -18,6 +18,7 @@ const page: Omit<EntityPageDefinition, "records"> = {
   title: "アダプタ",
   description: "SlackやDiscordなど、チャットアプリとの接続を管理します。",
   icon: "adapters",
+  tableFeatures: { publicIds: true },
   columns: [
     { key: "name", label: "接続名" },
     { key: "platform", label: "プラットフォーム" },

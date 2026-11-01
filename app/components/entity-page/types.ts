@@ -33,9 +33,20 @@ export type EntitySection =
   | "oauth_authentications"
   | "sandboxes";
 
-export type EntityColumn = { key: string; label: string };
+export type EntityColumn = {
+  key: string;
+  label: string;
+  presentation?: "status-toggle" | "webhook-count";
+};
 export type EntityDialogMode =
   "create" | "edit" | "delete" | "status-change" | null;
+
+export type EntityTableFeatures = {
+  subtitleKeys?: string[];
+  publicIds?: boolean;
+  webhookDetails?: boolean;
+  sandboxShell?: boolean;
+};
 
 export type EntityPageDefinition = {
   title: string;
@@ -43,6 +54,7 @@ export type EntityPageDefinition = {
   icon: EntitySection;
   protectedRecordId?: number;
   columns: EntityColumn[];
+  tableFeatures?: EntityTableFeatures;
   fields: EntityField[];
   records: EntityRecord[];
   createIntent?: string;

@@ -19,6 +19,7 @@ const page: Omit<EntityPageDefinition, "records"> = {
   description:
     "チャットボットが利用する実行環境、環境変数、ネットワーク制限を管理します。",
   icon: "sandboxes",
+  tableFeatures: { sandboxShell: true },
   columns: [
     { key: "name", label: "サンドボックス" },
     { key: "type", label: "タイプ" },

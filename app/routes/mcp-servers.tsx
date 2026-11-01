@@ -18,6 +18,7 @@ function getPage(transport: Record<string, string>) {
     title: "MCPサーバー",
     description: "MCPサーバーの接続先と利用可能なツール情報を管理します。",
     icon: "mcp",
+    tableFeatures: { subtitleKeys: ["description", "endpoint"] },
     columns: [
       { key: "name", label: "サーバー名" },
       { key: "transport", label: "トランスポート" },

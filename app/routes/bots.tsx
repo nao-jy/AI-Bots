@@ -18,14 +18,23 @@ const page: Omit<EntityPageDefinition, "records"> = {
   description:
     "チャットボットの設定と接続アダプタを管理し、各アダプタの Webhook URL を確認・コピーできます。",
   icon: "bots",
+  tableFeatures: {
+    subtitleKeys: ["description"],
+    publicIds: true,
+    webhookDetails: true,
+  },
   columns: [
     { key: "name", label: "ボット名" },
     { key: "agent", label: "エージェント" },
     { key: "adapters", label: "接続アダプタ" },
     { key: "sandboxes", label: "サンドボックス" },
     { key: "toolsets", label: "ToolSet" },
-    { key: "webhooks", label: "Webhook エンドポイント" },
-    { key: "status", label: "ステータス" },
+    {
+      key: "webhooks",
+      label: "Webhook エンドポイント",
+      presentation: "webhook-count",
+    },
+    { key: "status", label: "ステータス", presentation: "status-toggle" },
     { key: "updated", label: "最終更新" },
   ],
   fields: [
