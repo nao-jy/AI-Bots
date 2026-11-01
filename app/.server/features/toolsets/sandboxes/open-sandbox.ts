@@ -404,8 +404,8 @@ export const OPEN_SANDBOX: Sandbox = {
       async executeCommand(command) {
         const result = await sandbox.commands.run(command, { envs: envs });
         return {
-          stdout: result.logs.stdout.at(0)?.text ?? "",
-          stderr: result.logs.stderr.at(0)?.text ?? "",
+          stdout: result.logs.stdout.map((v) => v.text).join("\n") ?? "",
+          stderr: result.logs.stderr.map((v) => v.text).join("\n") ?? "",
           exitCode: result.exitCode ?? 0,
         };
       },
