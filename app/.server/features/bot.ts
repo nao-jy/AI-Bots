@@ -101,6 +101,7 @@ async function getBotSandbox(
         persistentInstance.instanceId,
         jsonbToStringRecord(sandbox.envs),
         [...sandbox.allowedDomainList],
+        [...sandbox.initCommands],
       );
       return {
         instanceId: persistentInstance.instanceId,
@@ -114,6 +115,7 @@ async function getBotSandbox(
     null,
     jsonbToStringRecord(sandbox.envs),
     [...sandbox.allowedDomainList],
+    [...sandbox.initCommands],
   );
   if (!info.createdInstanceId) {
     throw new Error(`failed to create sandbox for chatbot ${chatbotId}`);

@@ -1,8 +1,4 @@
-import {
-  type BashSandboxExtended,
-  type Sandbox,
-  type TerminalSize,
-} from ".";
+import { type BashSandboxExtended, type Sandbox, type TerminalSize } from ".";
 import { Sandbox as E2BSandbox } from "e2b";
 
 async function* toAsyncIterable(
@@ -19,6 +15,13 @@ async function* toAsyncIterable(
   } finally {
     reader.releaseLock();
   }
+}
+
+function restrictNetwork(sandbox: E2BSandbox, allowedDomains: string[]) {
+  return sandbox.updateNetwork({
+    allowOut: allowedDomains,
+    denyOut: ({ allTraffic }) => [allTraffic],
+  });
 }
 
 export const E2B: Sandbox = {
@@ -109,6 +112,7 @@ export const E2B: Sandbox = {
     instanceId: string | null,
     envs: Record<string, string>,
     allowedDomains: string[],
+    initCommands: string[],
   ) => {
     let sandbox: E2BSandbox | null = null;
     let createdInstanceId: string | null = null;
@@ -128,10 +132,36 @@ export const E2B: Sandbox = {
       throw new Error("sandbox creation failed!");
     }
 
-    await sandbox.updateNetwork({
-      allowOut: allowedDomains,
-      denyOut: ({ allTraffic }) => [allTraffic],
-    });
+    try {
+      if (createdInstanceId && initCommands.length > 0) {
+        await sandbox.updateNetwork({ allowInternetAccess: true });
+        try {
+          for (const command of initCommands) {
+            const result = await sandbox.commands.run(command, { envs });
+            if ((result.exitCode ?? 0) !== 0)
+              throw new Error(
+                `生成時特権コマンドが失敗しました (exit code ${result.exitCode}): ${command}`,
+              );
+          }
+        } finally {
+          await restrictNetwork(sandbox, allowedDomains);
+        }
+      } else {
+        await restrictNetwork(sandbox, allowedDomains);
+      }
+    } catch (error) {
+      if (createdInstanceId) {
+        try {
+          await sandbox.kill();
+        } catch (cleanupError) {
+          throw new AggregateError(
+            [error, cleanupError],
+            "サンドボックス初期化の失敗後にサンドボックスを削除できませんでした。",
+          );
+        }
+      }
+      throw error;
+    }
 
     const bashSandbox: BashSandboxExtended = {
       async executeCommand(command) {

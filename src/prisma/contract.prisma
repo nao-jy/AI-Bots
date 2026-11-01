@@ -237,6 +237,7 @@ namespace aibot {
     name              String
     envs              Jsonb?
     allowedDomainList String[]
+    initCommands      String[]                    @default([])
     sandboxScope      SandboxScope
     owner             User                        @relation(fields: [ownerId], references: [id], onDelete: Cascade)
     ownerId           Int

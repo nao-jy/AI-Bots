@@ -3,6 +3,7 @@ import type { ShouldRevalidateFunctionArgs } from "react-router";
 import { requireUser } from "../.server/auth";
 import {
   deleteSandbox,
+  deleteSandboxInstance,
   listSandboxes,
   runPersistentSandboxCommand,
   saveSandbox,
@@ -17,7 +18,7 @@ import { APP_NAME, SANDBOX_SCOPES } from "~/const";
 const page: Omit<EntityPageDefinition, "records"> = {
   title: "サンドボックス",
   description:
-    "チャットボットが利用する実行環境、環境変数、ネットワーク制限を管理します。",
+    "チャットボットが利用する実行環境、環境変数、ネットワーク制限を管理します。特権コマンドは新規生成時に許可ドメイン制限を一時的に解除して実行します。",
   icon: "sandboxes",
   tableFeatures: { sandboxShell: true },
   columns: [
@@ -25,6 +26,7 @@ const page: Omit<EntityPageDefinition, "records"> = {
     { key: "type", label: "タイプ" },
     { key: "scope", label: "適用範囲" },
     { key: "allowedDomainList", label: "許可ドメイン" },
+    { key: "initCommands", label: "生成時特権コマンド" },
   ],
   fields: [
     { key: "sandboxName", label: "名前", type: "text" },
@@ -50,6 +52,13 @@ const page: Omit<EntityPageDefinition, "records"> = {
       label: "許可ドメイン",
       type: "tags",
       placeholder: "example.com を入力して Enter",
+      wide: true,
+    },
+    {
+      key: "initCommands",
+      label: "生成時特権コマンド",
+      type: "textarea",
+      placeholder: "新規生成時のみ。1行に1コマンド (例: pip install package)",
       wide: true,
     },
   ],
@@ -84,6 +93,13 @@ export async function action({ request }: Route.ActionArgs) {
       Number(form.get("rows")),
     );
     return { ...result, instanceId: String(form.get("instanceId") ?? "") };
+  }
+  if (intent === "delete-instance") {
+    const instanceId = String(form.get("instanceId") ?? "");
+    const deleted = await deleteSandboxInstance(user, id, instanceId);
+    return deleted
+      ? { ok: true, instanceId }
+      : { ok: false, error: "Persistent Instanceが見つかりません。" };
   }
   if (intent === "delete")
     return Number.isInteger(id) && (await deleteSandbox(user, id))

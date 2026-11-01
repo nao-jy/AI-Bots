@@ -10,6 +10,57 @@ import {
   createRedirectSafeFetch,
 } from "@alibaba-group/opensandbox/internal";
 
+async function withOpenNetwork<T>(
+  sandbox: OpenSandbox,
+  operation: () => Promise<T>,
+) {
+  const connection = sandbox.connectionConfig;
+  const baseUrl = connection.getBaseUrl();
+  const lifecycle = createLifecycleClient({
+    baseUrl,
+    apiKey: connection.apiKey,
+    headers: connection.headers,
+    fetch: createRedirectSafeFetch(baseUrl, connection.fetch, {
+      overallTimeoutMs: connection.requestTimeoutSeconds * 1_000,
+    }),
+  });
+  const path = { sandboxId: sandbox.id };
+  const current = await lifecycle.GET("/sandboxes/{sandboxId}/networkpolicy", {
+    params: { path },
+  });
+  if (current.error || !current.response.ok)
+    throw new Error(
+      `ネットワークポリシーを取得できませんでした (HTTP ${current.response.status})`,
+    );
+  const previousPolicy = current.data.policy;
+  if (!previousPolicy)
+    throw new Error("現在のネットワークポリシーを取得できませんでした。");
+
+  const opened = await lifecycle.PUT("/sandboxes/{sandboxId}/networkpolicy", {
+    params: { path },
+    body: { defaultAction: "allow", egress: [] },
+  });
+  if (opened.error || !opened.response.ok)
+    throw new Error(
+      `コマンド実行用のネットワークポリシーを設定できませんでした (HTTP ${opened.response.status})`,
+    );
+  try {
+    return await operation();
+  } finally {
+    const restored = await lifecycle.PUT(
+      "/sandboxes/{sandboxId}/networkpolicy",
+      {
+        params: { path },
+        body: previousPolicy,
+      },
+    );
+    if (restored.error || !restored.response.ok)
+      throw new Error(
+        `元のネットワークポリシーを復元できませんでした (HTTP ${restored.response.status})`,
+      );
+  }
+}
+
 function getConfig() {
   const config = new ConnectionConfig({
     domain: process.env.OPEN_SANDBOX_DOMAIN,
@@ -55,57 +106,14 @@ export const OPEN_SANDBOX: Sandbox = {
       connectionConfig: getConfig(),
       sandboxId: instanceId,
     });
-    const connection = sandbox.connectionConfig;
-    const baseUrl = connection.getBaseUrl();
-    const lifecycle = createLifecycleClient({
-      baseUrl,
-      apiKey: connection.apiKey,
-      headers: connection.headers,
-      fetch: createRedirectSafeFetch(baseUrl, connection.fetch, {
-        overallTimeoutMs: connection.requestTimeoutSeconds * 1_000,
-      }),
-    });
-    const path = { sandboxId: instanceId };
-    const current = await lifecycle.GET(
-      "/sandboxes/{sandboxId}/networkpolicy",
-      { params: { path } },
+    const result = await withOpenNetwork(sandbox, () =>
+      sandbox.commands.run(command, { envs }),
     );
-    if (current.error || !current.response.ok)
-      throw new Error(
-        `ネットワークポリシーを取得できませんでした (HTTP ${current.response.status})`,
-      );
-    const previousPolicy = current.data.policy;
-    if (!previousPolicy)
-      throw new Error("現在のネットワークポリシーを取得できませんでした。");
-
-    const opened = await lifecycle.PUT("/sandboxes/{sandboxId}/networkpolicy", {
-      params: { path },
-      body: { defaultAction: "allow", egress: [] },
-    });
-    if (opened.error || !opened.response.ok)
-      throw new Error(
-        `シェル用のネットワークポリシーを設定できませんでした (HTTP ${opened.response.status})`,
-      );
-    try {
-      const result = await sandbox.commands.run(command, { envs });
-      return {
-        stdout: result.logs.stdout.map((entry) => entry.text).join("\n"),
-        stderr: result.logs.stderr.map((entry) => entry.text).join("\n"),
-        exitCode: result.exitCode ?? 0,
-      };
-    } finally {
-      const restored = await lifecycle.PUT(
-        "/sandboxes/{sandboxId}/networkpolicy",
-        {
-          params: { path },
-          body: previousPolicy,
-        },
-      );
-      if (restored.error || !restored.response.ok)
-        throw new Error(
-          `元のネットワークポリシーを復元できませんでした (HTTP ${restored.response.status})`,
-        );
-    }
+    return {
+      stdout: result.logs.stdout.map((entry) => entry.text).join("\n"),
+      stderr: result.logs.stderr.map((entry) => entry.text).join("\n"),
+      exitCode: result.exitCode ?? 0,
+    };
   },
   createTerminalSession: async (
     instanceId,
@@ -322,6 +330,7 @@ export const OPEN_SANDBOX: Sandbox = {
     instanceId: string | null,
     envs: Record<string, string>,
     allowedDomains: string[],
+    initCommands: string[],
   ) => {
     let sandbox: OpenSandbox | null = null;
     let createdInstanceId: string | null = null;
@@ -349,17 +358,46 @@ export const OPEN_SANDBOX: Sandbox = {
       throw new Error("sandbox creation failed!");
     }
 
-    const current = await sandbox.getEgressPolicy();
-    if (current.egress !== undefined && current.egress.length > 0) {
-      const targets = current.egress
-        .map((rule) => rule.target)
-        .filter((t) => t !== undefined);
-      await sandbox.deleteEgressRules(targets);
-    }
-    if (allowedDomains.length > 0) {
-      await sandbox.patchEgressRules(
-        allowedDomains.map((target) => ({ action: "allow" as const, target })),
-      );
+    try {
+      if (createdInstanceId && initCommands.length > 0) {
+        await withOpenNetwork(sandbox, async () => {
+          for (const command of initCommands) {
+            const result = await sandbox.commands.run(command, { envs });
+            if ((result.exitCode ?? 0) !== 0)
+              throw new Error(
+                `生成時特権コマンドが失敗しました (exit code ${result.exitCode}): ${command}`,
+              );
+          }
+        });
+      }
+
+      const current = await sandbox.getEgressPolicy();
+      if (current.egress !== undefined && current.egress.length > 0) {
+        const targets = current.egress
+          .map((rule) => rule.target)
+          .filter((t) => t !== undefined);
+        await sandbox.deleteEgressRules(targets);
+      }
+      if (allowedDomains.length > 0) {
+        await sandbox.patchEgressRules(
+          allowedDomains.map((target) => ({
+            action: "allow" as const,
+            target,
+          })),
+        );
+      }
+    } catch (error) {
+      if (createdInstanceId) {
+        try {
+          await sandbox.kill();
+        } catch (cleanupError) {
+          throw new AggregateError(
+            [error, cleanupError],
+            "サンドボックス初期化の失敗後にサンドボックスを削除できませんでした。",
+          );
+        }
+      }
+      throw error;
     }
 
     const bashSandbox: BashSandboxExtended = {
@@ -398,7 +436,10 @@ export const OPEN_SANDBOX: Sandbox = {
   },
 
   destroySandbox: async (instanceId: string) => {
-    const conn = await OpenSandbox.connect({ sandboxId: instanceId });
+    const conn = await OpenSandbox.connect({
+      connectionConfig: getConfig(),
+      sandboxId: instanceId,
+    });
     await conn.kill();
   },
 };

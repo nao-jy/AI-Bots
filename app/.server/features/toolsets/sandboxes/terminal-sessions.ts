@@ -192,6 +192,18 @@ export async function closeSandboxTerminal(userId: number, id: string) {
   }
 }
 
+export async function closeSandboxTerminalsForInstance(
+  userId: number,
+  instanceId: string,
+) {
+  const instanceSessions = [...sessions.values()].filter(
+    (session) =>
+      session.userId === userId && session.instanceId === instanceId,
+  );
+  for (const session of instanceSessions)
+    await closeSandboxTerminal(userId, session.id);
+}
+
 export function hasOwnedSandboxTerminal(userId: number, id: string) {
   const session = getOwnedSession(userId, id);
   return Boolean(session && !session.closed);

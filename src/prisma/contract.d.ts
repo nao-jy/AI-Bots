@@ -23,7 +23,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'4fd2772b1724343a71ec5b35a7dc90bc50e9e56f9f2d4a3e087d9042d5f2de76'>;
+  StorageHashBase<'cadc1f89b7c38a1244d6aefef9cf738d035b1edda1702f5102daf373131db2e9'>;
 export type ExecutionHash =
   ExecutionHashBase<'5c1984e92c9f7200ee5ad8e0c0de5b1b5b5329ee0cfca95a089762069a80e0dd'>;
 export type ProfileHash =
@@ -522,6 +522,7 @@ export namespace Models {
     allowedDomainList: FieldOutputTypes['aibot']['Sandbox']['allowedDomainList'];
     envs: FieldOutputTypes['aibot']['Sandbox']['envs'];
     id: FieldOutputTypes['aibot']['Sandbox']['id'];
+    initCommands: FieldOutputTypes['aibot']['Sandbox']['initCommands'];
     name: FieldOutputTypes['aibot']['Sandbox']['name'];
     ownerId: FieldOutputTypes['aibot']['Sandbox']['ownerId'];
     sandboxScope: FieldOutputTypes['aibot']['Sandbox']['sandboxScope'];
@@ -1885,6 +1886,16 @@ type ContractBase = Omit<
                     readonly expression: 'autoincrement()';
                   };
                   readonly many: false;
+                };
+                readonly initCommands: {
+                  readonly dataType: 'pg/text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/text@1', readonly []>;
+                  };
+                  readonly many: { readonly elementNullable: false };
                 };
                 readonly name: {
                   readonly dataType: 'pg/text';
@@ -3301,6 +3312,11 @@ type ContractBase = Omit<
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
               };
+              readonly initCommands: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+                readonly many: { readonly elementNullable: false };
+              };
               readonly name: {
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
@@ -3347,6 +3363,7 @@ type ContractBase = Omit<
                 readonly allowedDomainList: { readonly column: 'allowedDomainList' };
                 readonly envs: { readonly column: 'envs' };
                 readonly id: { readonly column: 'id' };
+                readonly initCommands: { readonly column: 'initCommands' };
                 readonly name: { readonly column: 'name' };
                 readonly ownerId: { readonly column: 'ownerId' };
                 readonly sandboxScope: { readonly column: 'sandboxScope' };

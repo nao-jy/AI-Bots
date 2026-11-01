@@ -4,7 +4,6 @@ import {
   CaretDownIcon,
   CaretRightIcon,
   PencilSimpleIcon,
-  TerminalWindowIcon,
   TrashIcon,
 } from "@phosphor-icons/react";
 import type { EntityRecord } from "../../types/entities";
@@ -12,6 +11,11 @@ import type { EntityPageDefinition } from "./types";
 import { EntityCell } from "./entity-cell";
 import { PublicIdDetails } from "./public-id-details";
 import { SectionIcon } from "./section-icon";
+import {
+  parsePersistentInstances,
+  type PersistentInstance,
+} from "./sandbox-shell";
+import { SandboxInstanceDetails } from "./sandbox-instance-details";
 
 export function EntityRow({
   page,
@@ -20,20 +24,23 @@ export function EntityRow({
   onDelete,
   onStatusChange,
   onOpenShell,
-  shellOpen,
+  onDeleteInstance,
 }: {
   page: EntityPageDefinition;
   record: EntityRecord;
   onEdit: () => void;
   onDelete: () => void;
   onStatusChange: (enabled: boolean) => void;
-  onOpenShell: () => void;
-  shellOpen: boolean;
+  onOpenShell: (instanceId: string) => void;
+  onDeleteInstance: (instanceId: string) => void;
 }) {
   const cannotDelete = record.id === page.protectedRecordId;
   const recordName = record[page.columns[0].key];
   const supportsPublicIds = page.tableFeatures?.publicIds ?? false;
   const supportsSandboxShell = page.tableFeatures?.sandboxShell ?? false;
+  const instances: PersistentInstance[] = parsePersistentInstances(
+    record.instances,
+  );
   const [expanded, setExpanded] = useState(false);
   const subtitle = page.tableFeatures?.subtitleKeys
     ?.map((key) => record[key])
@@ -50,19 +57,13 @@ export function EntityRow({
                 color="gray"
                 aria-label={
                   supportsSandboxShell
-                    ? `${recordName}のシェルを${shellOpen ? "閉じる" : "開く"}`
+                    ? `${recordName}のPersistent Instanceを${expanded ? "閉じる" : "表示"}`
                     : `${recordName}のパブリックIDを${expanded ? "閉じる" : "表示"}`
                 }
-                aria-expanded={supportsSandboxShell ? shellOpen : expanded}
-                onClick={
-                  supportsSandboxShell
-                    ? onOpenShell
-                    : () => setExpanded((current) => !current)
-                }
+                aria-expanded={expanded}
+                onClick={() => setExpanded((current) => !current)}
               >
-                {supportsSandboxShell ? (
-                  <TerminalWindowIcon size={16} aria-hidden="true" />
-                ) : expanded ? (
+                {expanded ? (
                   <CaretDownIcon size={16} aria-hidden="true" />
                 ) : (
                   <CaretRightIcon size={16} aria-hidden="true" />
@@ -117,15 +118,25 @@ export function EntityRow({
           </Group>
         </Table.Td>
       </Table.Tr>
-      {supportsPublicIds && expanded && (
+      {((supportsPublicIds || supportsSandboxShell) && expanded) && (
         <Table.Tr className="entity-details-row">
           <Table.Td colSpan={page.columns.length + 1}>
-            <PublicIdDetails
-              recordId={record.id}
-              publicIdsValue={record.publicIds}
-              webhookEndpointsValue={record.webhooks}
-              showWebhooks={page.tableFeatures?.webhookDetails ?? false}
-            />
+            {supportsPublicIds && (
+              <PublicIdDetails
+                recordId={record.id}
+                publicIdsValue={record.publicIds}
+                webhookEndpointsValue={record.webhooks}
+                showWebhooks={page.tableFeatures?.webhookDetails ?? false}
+              />
+            )}
+            {supportsSandboxShell && (
+              <SandboxInstanceDetails
+                sandboxId={record.id}
+                instances={instances}
+                onOpenShell={onOpenShell}
+                onDeleted={onDeleteInstance}
+              />
+            )}
           </Table.Td>
         </Table.Tr>
       )}

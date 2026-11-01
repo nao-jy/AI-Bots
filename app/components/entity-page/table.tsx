@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { Table, TextInput } from "@mantine/core";
 import { MagnifyingGlassIcon } from "@phosphor-icons/react";
 import type { EntityRecord } from "../../types/entities";
@@ -25,6 +25,19 @@ export function EntityTable({
   const [shellOpen, setShellOpen] = useState(false);
   const [selectedInstanceId, setSelectedInstanceId] = useState<string | null>(
     null,
+  );
+  const handleOpenShell = useCallback((instanceId: string) => {
+    setSelectedInstanceId(instanceId);
+    setShellOpen(true);
+  }, []);
+  const handleDeleteInstance = useCallback(
+    (instanceId: string) => {
+      if (selectedInstanceId === instanceId) {
+        setSelectedInstanceId(null);
+        setShellOpen(false);
+      }
+    },
+    [selectedInstanceId],
   );
   const shellInstances: SandboxShellInstance[] = page.tableFeatures?.sandboxShell
     ? page.records.flatMap((record) =>
@@ -84,32 +97,8 @@ export function EntityTable({
                   onStatusChange={(enabled) =>
                     onStatusChange(record, enabled)
                   }
-                  onOpenShell={() => {
-                    if (
-                      shellOpen &&
-                      shellInstances.some(
-                        (instance) =>
-                          instance.sandboxId === record.id &&
-                          instance.instanceId === selectedInstanceId,
-                      )
-                    ) {
-                      setShellOpen(false);
-                      return;
-                    }
-                    const firstInstance = parsePersistentInstances(
-                      record.instances,
-                    )[0];
-                    setSelectedInstanceId(firstInstance?.instanceId ?? null);
-                    setShellOpen(true);
-                  }}
-                  shellOpen={
-                    shellOpen &&
-                    shellInstances.some(
-                      (instance) =>
-                        instance.sandboxId === record.id &&
-                        instance.instanceId === selectedInstanceId,
-                    )
-                  }
+                  onOpenShell={handleOpenShell}
+                  onDeleteInstance={handleDeleteInstance}
                 />
               ))}
               {visibleRecords.length === 0 && (

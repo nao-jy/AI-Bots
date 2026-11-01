@@ -1870,6 +1870,16 @@
                   "kind": "scalar"
                 }
               },
+              "initCommands": {
+                "many": {
+                  "elementNullable": false
+                },
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
               "name": {
                 "nullable": false,
                 "type": {
@@ -1948,6 +1958,9 @@
                 },
                 "id": {
                   "column": "id"
+                },
+                "initCommands": {
+                  "column": "initCommands"
                 },
                 "name": {
                   "column": "name"
@@ -3858,6 +3871,11 @@
                   "prefix": "Sandbox_allowedDomainList_elem_not_null"
                 },
                 {
+                  "expression": "array_position(\"initCommands\", NULL) IS NULL",
+                  "name": "Sandbox_initCommands_elem_not_null_c09761bc",
+                  "prefix": "Sandbox_initCommands_elem_not_null"
+                },
+                {
                   "expression": "\"sandboxScope\" IN ('turn', 'thread', 'adapter', 'bot', 'all')",
                   "name": "Sandbox_sandboxScope_check_825fb1d7",
                   "prefix": "Sandbox_sandboxScope_check"
@@ -3883,6 +3901,18 @@
                   "default": {
                     "expression": "autoincrement()",
                     "kind": "function"
+                  },
+                  "nullable": false
+                },
+                "initCommands": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "default": {
+                    "kind": "literal",
+                    "value": []
+                  },
+                  "many": {
+                    "elementNullable": false
                   },
                   "nullable": false
                 },
@@ -4135,7 +4165,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "4fd2772b1724343a71ec5b35a7dc90bc50e9e56f9f2d4a3e087d9042d5f2de76"
+    "storageHash": "cadc1f89b7c38a1244d6aefef9cf738d035b1edda1702f5102daf373131db2e9"
   },
   "execution": {
     "executionHash": "5c1984e92c9f7200ee5ad8e0c0de5b1b5b5329ee0cfca95a089762069a80e0dd",

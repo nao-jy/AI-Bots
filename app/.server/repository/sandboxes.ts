@@ -1,17 +1,15 @@
 import { db } from "./db";
 import type { AuthUser } from "../auth";
-import {
-  jsonb,
-  jsonbToStringRecord,
-  parseStringList,
-  record,
-} from "../utils";
+import { jsonb, jsonbToStringRecord, parseStringList, record } from "../utils";
 import {
   executeSandboxCommand,
   getSandbox,
   listSandboxNames,
 } from "../features/toolsets/sandboxes";
-import { openSandboxTerminal } from "../features/toolsets/sandboxes/terminal-sessions";
+import {
+  closeSandboxTerminalsForInstance,
+  openSandboxTerminal,
+} from "../features/toolsets/sandboxes/terminal-sessions";
 import { logger } from "~/.server/logger";
 import { SANDBOX_SCOPES } from "~/const";
 export type SandboxScope = keyof typeof SANDBOX_SCOPES;
@@ -43,6 +41,7 @@ export async function listSandboxes(user: AuthUser) {
           name: sandbox.name,
           envs: JSON.stringify(sandbox.envs ?? {}),
           allowedDomainList: JSON.stringify(sandbox.allowedDomainList),
+          initCommands: sandbox.initCommands.join("\n"),
           instances: JSON.stringify(
             instances.map((instance) => ({
               instanceId: instance.instanceId,
@@ -202,6 +201,7 @@ export async function saveSandbox(
     return { error: "サンドボックスの適用範囲を選択してください。" };
   let envs: Record<string, string>;
   let allowedDomainList: string[];
+  let initCommands: string[];
   try {
     const envValue: unknown = JSON.parse(
       String(values.get("envs") ?? "{}").trim() || "{}",
@@ -220,6 +220,10 @@ export async function saveSandbox(
       String(values.get("allowedDomainList") ?? "[]").trim(),
       "許可ドメイン",
     );
+    initCommands = String(values.get("initCommands") ?? "")
+      .split(/\r?\n/)
+      .map((command) => command.trim())
+      .filter(Boolean);
   } catch (error) {
     return {
       error:
@@ -236,6 +240,7 @@ export async function saveSandbox(
     sandboxScope,
     envs: jsonb(envs),
     allowedDomainList,
+    initCommands,
     name: sandboxName,
   };
   if (id === null)
@@ -335,22 +340,32 @@ export async function createPersistentSandboxInstance(values: {
   return db.orm.aibot.PersistentSandboxInstance.create(values);
 }
 
-export async function deleteSandboxInstance(instanceId: string) {
+export async function deleteSandboxInstance(
+  user: AuthUser,
+  sandboxId: number,
+  instanceId: string,
+) {
+  if (!Number.isInteger(sandboxId) || sandboxId <= 0 || !instanceId.trim())
+    return false;
   const instance = await db.orm.aibot.PersistentSandboxInstance.whereUnique({
     instanceId,
   })
     .include("sandbox")
     .first();
-  if (!instance) return;
+  if (
+    !instance ||
+    instance.sandboxId !== sandboxId ||
+    instance.sandbox.ownerId !== user.id
+  )
+    return false;
 
+  await closeSandboxTerminalsForInstance(user.id, instanceId);
   await destroySandboxInstance(instance.sandbox.sandboxType, instanceId);
   await db.orm.aibot.PersistentSandboxInstance.where({ instanceId }).delete();
+  return true;
 }
 
-async function destroySandboxInstance(
-  sandboxType: string,
-  instanceId: string,
-) {
+async function destroySandboxInstance(sandboxType: string, instanceId: string) {
   const sandboxProvider = getSandbox(sandboxType);
   if (!sandboxProvider)
     throw new Error(`Unsupported sandbox type: ${sandboxType}`);

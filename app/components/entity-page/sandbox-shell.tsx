@@ -169,9 +169,9 @@ export function SandboxShell({
           const input = pendingInput.current;
           pendingInput.current = "";
           inputTimer.current = null;
-          void postTerminalAction(activeTerminalId, "input", { data: input }).catch(
-            reportTerminalError,
-          );
+          void postTerminalAction(activeTerminalId, "input", {
+            data: input,
+          }).catch(reportTerminalError);
         }, 12);
       }
 
@@ -290,9 +290,7 @@ export function SandboxShell({
     const activeTerminal = terminal.current;
     if (!activeTerminal) return;
 
-    const source = new EventSource(
-      `/api/sandbox-terminals/${terminalId}`,
-    );
+    const source = new EventSource(`/api/sandbox-terminals/${terminalId}`);
     let hasReportedDisconnect = false;
     source.onmessage = (event) => {
       try {
@@ -349,7 +347,10 @@ export function SandboxShell({
       if (!start) return;
       const maxHeight = Math.min(window.innerHeight * 0.75, 720);
       setHeight(
-        Math.max(180, Math.min(maxHeight, start.height + start.pointerY - event.clientY)),
+        Math.max(
+          180,
+          Math.min(maxHeight, start.height + start.pointerY - event.clientY),
+        ),
       );
     }
     function stopResize() {
@@ -408,9 +409,7 @@ export function SandboxShell({
           onChange={onSelectInstance}
           searchable
           nothingFoundMessage="該当するインスタンスがありません"
-          disabled={
-            terminalFetcher.state !== "idle"
-          }
+          disabled={terminalFetcher.state !== "idle"}
           className="sandbox-shell-instance-select"
         />
         <button
