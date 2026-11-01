@@ -54,6 +54,13 @@ const page: Omit<EntityPageDefinition, "records"> = {
       placeholder: "ボットAIへの指示プロンプト",
     },
     {
+      key: "onFailedMessage",
+      label: "失敗時メッセージ",
+      type: "textarea",
+      wide: true,
+      placeholder: "Sorry, failed to generate answer.",
+    },
+    {
       key: "agentId",
       label: "エージェント",
       type: "select",
@@ -110,7 +117,8 @@ export async function action({ request }: Route.ActionArgs) {
     const slot = String(form.get("slot") ?? "");
     if (slot !== "first" && slot !== "second")
       return { ok: false, error: "再生成するパブリックIDを指定してください。" };
-    return Number.isInteger(id) && (await regenerateBotPublicIds(user, id, slot))
+    return Number.isInteger(id) &&
+      (await regenerateBotPublicIds(user, id, slot))
       ? { ok: true }
       : { ok: false, error: "ボットが見つかりません。" };
   }

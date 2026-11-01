@@ -23,7 +23,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'cadc1f89b7c38a1244d6aefef9cf738d035b1edda1702f5102daf373131db2e9'>;
+  StorageHashBase<'02659c08474c66b7621bcccc9c2973775026b33d7568800104f29e5c95ece8b1'>;
 export type ExecutionHash =
   ExecutionHashBase<'5c1984e92c9f7200ee5ad8e0c0de5b1b5b5329ee0cfca95a089762069a80e0dd'>;
 export type ProfileHash =
@@ -431,6 +431,7 @@ export namespace Models {
     isDeleted: FieldOutputTypes['aibot']['Chatbot']['isDeleted'];
     isEnabled: FieldOutputTypes['aibot']['Chatbot']['isEnabled'];
     name: FieldOutputTypes['aibot']['Chatbot']['name'];
+    onFailedMessage: FieldOutputTypes['aibot']['Chatbot']['onFailedMessage'];
     ownerId: FieldOutputTypes['aibot']['Chatbot']['ownerId'];
     updatedAt: FieldOutputTypes['aibot']['Chatbot']['updatedAt'];
     adapters: aibot_ChatbotAdapter[];
@@ -1023,6 +1024,12 @@ type ContractBase = Omit<
                   readonly many: false;
                 };
                 readonly name: {
+                  readonly dataType: 'pg/text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly onFailedMessage: {
                   readonly dataType: 'pg/text';
                   readonly codecId: 'pg/text@1';
                   readonly nullable: false;
@@ -2524,6 +2531,10 @@ type ContractBase = Omit<
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
               };
+              readonly onFailedMessage: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
               readonly ownerId: {
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
@@ -2615,6 +2626,7 @@ type ContractBase = Omit<
                 readonly isDeleted: { readonly column: 'isDeleted' };
                 readonly isEnabled: { readonly column: 'isEnabled' };
                 readonly name: { readonly column: 'name' };
+                readonly onFailedMessage: { readonly column: 'onFailedMessage' };
                 readonly ownerId: { readonly column: 'ownerId' };
                 readonly updatedAt: { readonly column: 'updatedAt' };
               };

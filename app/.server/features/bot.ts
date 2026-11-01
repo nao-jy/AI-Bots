@@ -157,17 +157,16 @@ export function registerBotHandlers(
     const mcpClients: Array<Awaited<ReturnType<typeof createMCPClient>>> = [];
     let turnSandbox: Awaited<ReturnType<typeof getBotSandbox>> = null;
     let replied = false;
-
+    let onFailedMessage = "Sorry, we could not generate an answer.";
     try {
       const chatbot = await getAvailableBot(botId);
       const agent = chatbot?.agent;
 
       if (!chatbot || !agent || agent.provider.ownerId !== chatbot.ownerId) {
-        await thread.post(
-          "このボットには利用可能な AI エージェントが設定されていません。",
-        );
+        await thread.post("Service Unavailable");
         return;
       }
+      onFailedMessage = chatbot.onFailedMessage;
 
       const modelInfo = getModelInfo(
         agent.provider.providerName,
@@ -260,7 +259,7 @@ export function registerBotHandlers(
       logger.error(`Failed to handle mention for chatbot ${botId}`, error);
       if (!replied) {
         try {
-          await thread.post("すみません。現在、回答を作成できませんでした。");
+          await thread.post(onFailedMessage);
         } catch (replyError) {
           logger.error(
             `Failed to post mention error for chatbot ${botId}`,

@@ -952,6 +952,13 @@
                   "kind": "scalar"
                 }
               },
+              "onFailedMessage": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
               "ownerId": {
                 "nullable": false,
                 "type": {
@@ -1086,6 +1093,9 @@
                 },
                 "name": {
                   "column": "name"
+                },
+                "onFailedMessage": {
+                  "column": "onFailedMessage"
                 },
                 "ownerId": {
                   "column": "ownerId"
@@ -3124,6 +3134,11 @@
                   "dataType": "pg/text",
                   "nullable": false
                 },
+                "onFailedMessage": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "nullable": false
+                },
                 "ownerId": {
                   "codecId": "pg/int4@1",
                   "dataType": "pg/int4",
@@ -4165,7 +4180,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "cadc1f89b7c38a1244d6aefef9cf738d035b1edda1702f5102daf373131db2e9"
+    "storageHash": "02659c08474c66b7621bcccc9c2973775026b33d7568800104f29e5c95ece8b1"
   },
   "execution": {
     "executionHash": "5c1984e92c9f7200ee5ad8e0c0de5b1b5b5329ee0cfca95a089762069a80e0dd",

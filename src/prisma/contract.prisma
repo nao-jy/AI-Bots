@@ -54,23 +54,24 @@ namespace aibot {
   }
 
   model Chatbot {
-    id          Int                      @id @default(autoincrement())
-    name        String
-    description String?
-    instruction String
-    isEnabled   Boolean                  @default(true)
-    owner       User                     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-    ownerId     Int
-    agent       AgentDefinition?         @relation(fields: [agentId], references: [id], onDelete: SetNull)
-    agentId     Int?                     @unique
-    adapters    ChatbotAdapter[]
-    mcpServers  ChatBotMcpServer[]
-    createdAt   TimestamptzString        @default(now())
-    updatedAt   temporal.UpdatedAtString
+    id              Int                      @id @default(autoincrement())
+    name            String
+    description     String?
+    instruction     String
+    onFailedMessage String
+    isEnabled       Boolean                  @default(true)
+    owner           User                     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+    ownerId         Int
+    agent           AgentDefinition?         @relation(fields: [agentId], references: [id], onDelete: SetNull)
+    agentId         Int?                     @unique
+    adapters        ChatbotAdapter[]
+    mcpServers      ChatBotMcpServer[]
+    createdAt       TimestamptzString        @default(now())
+    updatedAt       temporal.UpdatedAtString
 
-    isDeleted   Boolean                  @default(false)
-    publicIds   ChatBotPublicId[]
-    usage       AgentUsage[]
+    isDeleted       Boolean                  @default(false)
+    publicIds       ChatBotPublicId[]
+    usage           AgentUsage[]
 
     @@index([ownerId])
   }

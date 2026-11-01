@@ -45,6 +45,7 @@ export async function listBots(user: AuthUser, publicOrigin: string) {
         adapterIds: bot.adapters.map((link) => link.adapterId).join(","),
         mcpServerIds: bot.mcpServers.map((link) => link.mcpServerId).join(","),
         instruction: bot.instruction,
+        onFailedMessage: bot.onFailedMessage,
         sandboxId: sandboxLinks
           .filter(
             (link) =>
@@ -139,6 +140,7 @@ export async function saveBot(
   const name = String(values.get("name") ?? "").trim();
   const description = String(values.get("description") ?? "").trim();
   const instruction = String(values.get("instruction") ?? "").trim();
+  const onFailedMessage = String(values.get("onFailedMessage") ?? "").trim();
   const agentValue = String(values.get("agentId") ?? "").trim();
   const agentId = agentValue ? Number(agentValue) : null;
   const adapterIds = idList(values.get("adapterIds")?.toString() ?? null);
@@ -235,6 +237,7 @@ export async function saveBot(
         name,
         description: description || null,
         instruction: instruction,
+        onFailedMessage: onFailedMessage,
         agentId,
         ownerId: user.id,
       });
@@ -251,6 +254,7 @@ export async function saveBot(
         name,
         description: description || null,
         instruction: instruction,
+        onFailedMessage: onFailedMessage,
         agentId,
       });
     }
