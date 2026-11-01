@@ -234,17 +234,27 @@ export function registerBotHandlers(
       }
 
       const currentDateTime = new Date().toISOString();
-      const recentMessages =
-        chatbot.lookbackMessages > 0
-          ? await thread.adapter.fetchMessages(thread.id, {
-              limit: chatbot.lookbackMessages + 1,
-            })
-          : { messages: [] };
-      const history = await toAiMessages(
-        recentMessages.messages
-          .filter((historicalMessage) => historicalMessage.id !== message.id)
-          .slice(-chatbot.lookbackMessages),
-      );
+      let history: Awaited<ReturnType<typeof toAiMessages>> = [];
+      if (chatbot.lookbackMessages > 0) {
+        try {
+          const recentMessages = await thread.adapter.fetchMessages(
+            thread.id,
+            { limit: chatbot.lookbackMessages + 1 },
+          );
+          history = await toAiMessages(
+            recentMessages.messages
+              .filter(
+                (historicalMessage) => historicalMessage.id !== message.id,
+              )
+              .slice(-chatbot.lookbackMessages),
+          );
+        } catch (error) {
+          logger.warn(
+            `Failed to fetch message history for chatbot ${botId}`,
+            error,
+          );
+        }
+      }
       const result = await generateText({
         model: modelInfo.model,
         providerOptions: modelInfo.options,
