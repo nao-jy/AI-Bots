@@ -17,6 +17,7 @@ import { getSandbox } from "./toolsets/sandboxes";
 import { getFileParseTools } from "./toolsets/file-parse";
 import { logger } from "../logger";
 import { insertUsage } from "../repository/agents";
+import { SearXNGWebSearch } from "./toolsets/tools/web/search-searxng";
 
 const MAX_AGENT_STEPS = 8;
 
@@ -189,7 +190,8 @@ export function registerBotHandlers(
           scope: thread,
           strictScope: true,
         }),
-        ...getFileParseTools(chat, adapterPlatform),
+        ...getFileParseTools(chat, adapterPlatform, thread.id),
+        searchWeb: SearXNGWebSearch,
       } as ToolSet;
 
       turnSandbox = await getBotSandbox(
@@ -231,11 +233,21 @@ export function registerBotHandlers(
         }
       }
 
+      const currentDateTime = new Date().toISOString();
       const result = await generateText({
         model: modelInfo.model,
         providerOptions: modelInfo.options,
         system: chatbot.instruction,
-        prompt: message.text,
+        prompt: [
+          {
+            role: "user",
+            content: message.text,
+          },
+          {
+            role: "user",
+            content: `[実行時補足情報]\n現在のスレッドID: ${thread.id}\n現在日時 (UTC, ISO 8601): ${currentDateTime}`,
+          },
+        ],
         tools,
         stopWhen: stepCountIs(MAX_AGENT_STEPS),
         onStepFinish: ({ toolResults }) => {

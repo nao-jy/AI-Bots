@@ -51,7 +51,11 @@ export interface AttachmentData {
 
 const MAX_PAGINATION = 5;
 
-export function getFileParseTools(chat: Chat, adapterPlatform: string) {
+export function getFileParseTools(
+  chat: Chat,
+  adapterPlatform: string,
+  threadId: string,
+) {
   const adapter = chat.getAdapter(adapterPlatform);
   const fileParseFromUri = tool({
     description: "Webコンテンツをフェッチしてパースします",
@@ -93,7 +97,6 @@ export function getFileParseTools(chat: Chat, adapterPlatform: string) {
     description:
       "会話に添付されたPDF、Office文書、画像などを解析し、Markdownを返します。",
     inputSchema: z.object({
-      threadId: z.string().min(1).describe("スレッドID"),
       messageId: z.string().min(1).describe("メッセージID"),
       attachmentIndex: z
         .number()
@@ -104,7 +107,7 @@ export function getFileParseTools(chat: Chat, adapterPlatform: string) {
         .describe("tesseract ocr languages such as 'eng'"),
     }),
 
-    execute: async ({ threadId, messageId, attachmentIndex, ocrLanguages }) => {
+    execute: async ({ messageId, attachmentIndex, ocrLanguages }) => {
       try {
         let attachment: null | Attachment = null;
         const message = await adapter.fetchMessage?.(threadId, messageId);
