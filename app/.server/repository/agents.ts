@@ -160,6 +160,8 @@ export async function insertUsage(
   agentId: number,
   usage: LanguageModelUsage,
   toolResults: Array<TypedToolResult<ToolSet>>,
+  platform: string,
+  threadId: string,
 ) {
   await db.orm.aibot.AgentUsage.create({
     chatbotId: chatbotId,
@@ -182,5 +184,7 @@ export async function insertUsage(
         output: v.output,
       })),
     ),
+    platform: platform,
+    threadId: threadId,
   });
 }

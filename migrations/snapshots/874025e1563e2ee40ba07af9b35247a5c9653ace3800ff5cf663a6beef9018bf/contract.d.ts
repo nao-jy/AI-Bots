@@ -23,7 +23,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'19f36f9987d180efa636e1d4448499c1e68583f7ef7122fd7a093a427f62e60c'>;
+  StorageHashBase<'874025e1563e2ee40ba07af9b35247a5c9653ace3800ff5cf663a6beef9018bf'>;
 export type ExecutionHash =
   ExecutionHashBase<'2edef0a9e649f7d4fec54fb6e1236cb304696ca7f4e909082a496d8d33430a90'>;
 export type ProfileHash =
@@ -362,6 +362,8 @@ export namespace Models {
     inputTokens: FieldOutputTypes['aibot']['AgentUsage']['inputTokens'];
     outputDetails: FieldOutputTypes['aibot']['AgentUsage']['outputDetails'];
     outputTokens: FieldOutputTypes['aibot']['AgentUsage']['outputTokens'];
+    platform: FieldOutputTypes['aibot']['AgentUsage']['platform'];
+    threadId: FieldOutputTypes['aibot']['AgentUsage']['threadId'];
     toolHistory: FieldOutputTypes['aibot']['AgentUsage']['toolHistory'];
     agent: aibot_AgentDefinition;
     chatbot: aibot_ChatBot;
@@ -779,6 +781,18 @@ type ContractBase = Omit<
                 readonly outputTokens: {
                   readonly dataType: 'pg/int4';
                   readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly platform: {
+                  readonly dataType: 'pg/text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly threadId: {
+                  readonly dataType: 'pg/text';
+                  readonly codecId: 'pg/text@1';
                   readonly nullable: false;
                   readonly many: false;
                 };
@@ -2501,6 +2515,14 @@ type ContractBase = Omit<
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
               };
+              readonly platform: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly threadId: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
               readonly toolHistory: {
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/jsonb@1' };
@@ -2543,6 +2565,8 @@ type ContractBase = Omit<
                 readonly inputTokens: { readonly column: 'inputTokens' };
                 readonly outputDetails: { readonly column: 'outputDetails' };
                 readonly outputTokens: { readonly column: 'outputTokens' };
+                readonly platform: { readonly column: 'platform' };
+                readonly threadId: { readonly column: 'threadId' };
                 readonly toolHistory: { readonly column: 'toolHistory' };
               };
             };

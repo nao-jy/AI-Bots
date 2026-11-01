@@ -273,7 +273,14 @@ async function processBotMessage(
       },
     });
 
-    await insertUsage(chatbot.id, agent.id, result.usage, result.toolResults);
+    await insertUsage(
+      chatbot.id,
+      agent.id,
+      result.usage,
+      result.toolResults,
+      adapterPlatform,
+      thread.id,
+    );
 
     if (!replied && result.text.trim()) {
       await thread.post(result.text);
@@ -362,7 +369,8 @@ export function registerBotHandlers(
   const process = (
     thread: Thread<Record<string, unknown>, unknown>,
     message: Message<unknown>,
-  ) => processBotMessage(chat, botId, adapterId, adapterPlatform, thread, message);
+  ) =>
+    processBotMessage(chat, botId, adapterId, adapterPlatform, thread, message);
 
   chat.onDirectMessage(async (thread, message) => {
     logger.info("[ON_DIRECT_MESSAGE]");

@@ -305,6 +305,20 @@
                   "kind": "scalar"
                 }
               },
+              "platform": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "threadId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
               "toolHistory": {
                 "nullable": false,
                 "type": {
@@ -369,6 +383,12 @@
                 },
                 "outputTokens": {
                   "column": "outputTokens"
+                },
+                "platform": {
+                  "column": "platform"
+                },
+                "threadId": {
+                  "column": "threadId"
                 },
                 "toolHistory": {
                   "column": "toolHistory"
@@ -2683,6 +2703,16 @@
                   "dataType": "pg/int4",
                   "nullable": false
                 },
+                "platform": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "nullable": false
+                },
+                "threadId": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "nullable": false
+                },
                 "toolHistory": {
                   "codecId": "pg/jsonb@1",
                   "dataType": "pg/jsonb",
@@ -4620,7 +4650,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "19f36f9987d180efa636e1d4448499c1e68583f7ef7122fd7a093a427f62e60c"
+    "storageHash": "874025e1563e2ee40ba07af9b35247a5c9653ace3800ff5cf663a6beef9018bf"
   },
   "execution": {
     "executionHash": "2edef0a9e649f7d4fec54fb6e1236cb304696ca7f4e909082a496d8d33430a90",

@@ -165,6 +165,9 @@ namespace aibot {
     outputDetails Jsonb
     toolHistory   Jsonb
 
+    platform      String
+    threadId      String
+
     @@index([agentId])
     @@index([chatbotId])
   }
