@@ -8,6 +8,7 @@ import {
 } from "../utils";
 import {
   executeSandboxCommand,
+  getSandbox,
   listSandboxNames,
 } from "../features/toolsets/sandboxes";
 import { openSandboxTerminal } from "../features/toolsets/sandboxes/terminal-sessions";
@@ -244,8 +245,18 @@ export async function saveSandbox(
 }
 
 export async function deleteSandbox(user: AuthUser, id: number) {
-  if (!(await db.orm.aibot.Sandbox.first({ id, ownerId: user.id })))
-    return false;
+  const sandbox = await db.orm.aibot.Sandbox.first({
+    id,
+    ownerId: user.id,
+  });
+  if (!sandbox) return false;
+
+  const instances = await db.orm.aibot.PersistentSandboxInstance.where({
+    sandboxId: id,
+  }).all();
+  for (const instance of instances)
+    await destroySandboxInstance(sandbox.sandboxType, instance.instanceId);
+
   await db.orm.aibot.Sandbox.where({ id, ownerId: user.id }).delete();
   return true;
 }
@@ -325,5 +336,23 @@ export async function createPersistentSandboxInstance(values: {
 }
 
 export async function deleteSandboxInstance(instanceId: string) {
+  const instance = await db.orm.aibot.PersistentSandboxInstance.whereUnique({
+    instanceId,
+  })
+    .include("sandbox")
+    .first();
+  if (!instance) return;
+
+  await destroySandboxInstance(instance.sandbox.sandboxType, instanceId);
   await db.orm.aibot.PersistentSandboxInstance.where({ instanceId }).delete();
+}
+
+async function destroySandboxInstance(
+  sandboxType: string,
+  instanceId: string,
+) {
+  const sandboxProvider = getSandbox(sandboxType);
+  if (!sandboxProvider)
+    throw new Error(`Unsupported sandbox type: ${sandboxType}`);
+  await sandboxProvider.destroySandbox(instanceId);
 }

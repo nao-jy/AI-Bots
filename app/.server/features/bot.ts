@@ -4,7 +4,6 @@ import { createChatTools } from "chat/ai";
 import type { Chat, Message, Thread } from "chat";
 import {
   createPersistentSandboxInstance,
-  deleteSandboxInstance,
   getChatbotSandbox,
   getPersistentSandboxInstance,
   type SandboxScope,
@@ -273,7 +272,6 @@ export function registerBotHandlers(
           await turnSandbox.sandboxProvider.destroySandbox(
             turnSandbox.instanceId,
           );
-          await deleteSandboxInstance(turnSandbox.instanceId);
         } catch (error) {
           logger.error(
             `Failed to destroy turn sandbox for chatbot ${botId}`,
