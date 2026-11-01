@@ -1,6 +1,6 @@
 import { createMCPClient } from "@ai-sdk/mcp";
 import { generateText, stepCountIs, type ToolSet } from "ai";
-import { createChatTools, toAiMessages } from "chat/ai";
+import { toAiMessages } from "chat/ai";
 import { Message, parseMarkdown, type Chat, type Thread } from "chat";
 import { randomUUID } from "node:crypto";
 import {
@@ -19,6 +19,8 @@ import { getFileParseTools } from "./toolsets/file-parse";
 import { logger } from "../logger";
 import { insertUsage } from "../repository/agents";
 import { SearXNGWebSearch } from "./toolsets/tools/web/search-searxng";
+import { getChatTools } from "./toolsets/chat-tools";
+import type { FileHandleReaderMap } from "./toolsets/file-handle";
 
 const MAX_AGENT_STEPS = 8;
 
@@ -181,15 +183,10 @@ async function processBotMessage(
       );
     }
 
+    const fileHandles: FileHandleReaderMap = new Map();
     const tools = {
-      ...createChatTools({
-        chat,
-        preset: "messenger",
-        requireApproval: false,
-        scope: thread,
-        strictScope: true,
-      }),
-      ...getFileParseTools(chat, adapterPlatform, thread.id),
+      ...getChatTools(chat, adapterPlatform, thread, fileHandles),
+      ...getFileParseTools(fileHandles),
       searchWeb: SearXNGWebSearch,
     } as ToolSet;
 
@@ -202,7 +199,7 @@ async function processBotMessage(
     if (turnSandbox) {
       Object.assign(
         tools,
-        await getSandboxTools(turnSandbox.bashSandbox, chat, thread.id),
+        await getSandboxTools(turnSandbox.bashSandbox, fileHandles),
       );
     }
 

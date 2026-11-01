@@ -1,31 +1,39 @@
 import type { Tool } from "ai";
 import { z } from "zod";
+import type { FileHandleReaderMap } from "./file-handle";
+import { FACTORY as REMOTE_FILES_FACTORY } from "./remote-files";
 
 export interface ToolSet {
-  name: string;
-  getToolSetContextSchema: () => z.core.ZodStandardJSONSchemaPayload<unknown>;
-  validateContext: (value: unknown) => string | null;
   getTools: (
     toolSetCtx: Record<string, unknown>,
   ) => Promise<Record<string, Tool>>;
 }
 
-const TOOLSETS: ToolSet[] = [];
+export interface ToolSetFactory {
+  name: string;
+  getToolSetContextSchema: () => z.core.ZodStandardJSONSchemaPayload<unknown>;
+  validateContext: (value: unknown) => boolean;
+  getToolSet: (fileHandles: FileHandleReaderMap) => ToolSet;
+}
+
+const TOOLSET_FACTORIES: ToolSetFactory[] = [REMOTE_FILES_FACTORY];
 
 export function listToolSetNames() {
-  return TOOLSETS.map((toolSet) => toolSet.name);
+  return TOOLSET_FACTORIES.map((factory) => factory.name);
 }
 
 export function listToolSetSchemas() {
-  return TOOLSETS.map((toolSet) => ({
-    name: toolSet.name,
-    schema: toolSet.getToolSetContextSchema(),
+  return TOOLSET_FACTORIES.map((factory) => ({
+    name: factory.name,
+    schema: factory.getToolSetContextSchema(),
   }));
 }
 
 export function validateToolSetContext(name: string, value: unknown) {
-  const toolSet = TOOLSETS.find((candidate) => candidate.name === name);
-  return toolSet
-    ? toolSet.validateContext(value)
+  const factory = TOOLSET_FACTORIES.find(
+    (candidate) => candidate.name === name,
+  );
+  return factory
+    ? factory.validateContext(value)
     : `利用できない ToolSet です: ${name}`;
 }

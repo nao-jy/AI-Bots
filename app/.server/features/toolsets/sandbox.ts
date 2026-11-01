@@ -1,23 +1,17 @@
-import type { Chat } from "chat";
 import { createBashTool } from "bash-tool";
 import { tool } from "ai";
 import { z } from "zod";
+import { basename } from "node:path";
 import { type BashSandboxExtended } from "./sandboxes";
-
-async function toBuffer(source: AsyncIterable<Uint8Array>): Promise<Buffer> {
-  const chunks: Buffer[] = [];
-
-  for await (const chunk of source) {
-    chunks.push(Buffer.from(chunk.buffer, chunk.byteOffset, chunk.byteLength));
-  }
-
-  return Buffer.concat(chunks);
-}
+import {
+  generateFileHandle,
+  toBuffer,
+  type FileHandleReaderMap,
+} from "./file-handle";
 
 export async function getSandboxTools(
   bashSandbox: BashSandboxExtended,
-  chat: Chat,
-  threadId: string,
+  fileHandles: FileHandleReaderMap,
 ) {
   const { tools } = await createBashTool({
     sandbox: bashSandbox,
@@ -25,24 +19,47 @@ export async function getSandboxTools(
   });
 
   return {
-    ...tools,
-    uploadFileToChat: tool({
-      description:
-        "Upload a file from the sandbox to a chat thread as an attachment.",
+    sandboxBash: tools.bash,
+    sandboxReadFile: tool({
+      description: "read file from sandbox and return file handle",
       inputSchema: z.object({
-        path: z.string().describe("Path of the file inside the sandbox."),
+        srcPath: z.string().describe("filepath in sandbox"),
       }),
-      execute: async ({ path }) => {
-        const stream = bashSandbox.readFileBinaryStream(path);
-        const data = await toBuffer(stream);
-        const filename = path.split("/").filter(Boolean).at(-1) ?? path;
-
-        await chat.thread(threadId).post({
-          markdown: "",
-          files: [{ data, filename }],
-        });
-
-        return { success: true, filename, threadId };
+      execute: async ({ srcPath }) => {
+        try {
+          const handle = generateFileHandle();
+          fileHandles.set(handle, {
+            stream: () => bashSandbox.readFileBinaryStream(srcPath),
+            filename: basename(srcPath),
+          });
+          return {
+            success: true,
+            fileHandle: handle,
+            filename: basename(srcPath),
+          };
+        } catch (e) {
+          return { error: e instanceof Error ? e.message : String(e) };
+        }
+      },
+    }),
+    sandboxWriteFile: tool({
+      description: "write file from file handle to sandbox",
+      inputSchema: z.object({
+        dstPath: z.string().describe("destination in sandbox"),
+        fileHandle: z.string().describe("file handle to write"),
+      }),
+      execute: async ({ dstPath, fileHandle }) => {
+        try {
+          const fileInfo = fileHandles.get(fileHandle);
+          if (fileInfo === undefined) {
+            return { success: false, message: "file not registered" };
+          }
+          const content = await toBuffer(fileInfo.stream());
+          await bashSandbox.writeFiles([{ path: dstPath, content }]);
+          return { success: true, path: dstPath, bytesWritten: content.length };
+        } catch (e) {
+          return { error: e instanceof Error ? e.message : String(e) };
+        }
       },
     }),
   };
