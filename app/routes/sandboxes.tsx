@@ -6,6 +6,7 @@ import {
   listSandboxes,
   runPersistentSandboxCommand,
   saveSandbox,
+  startPersistentSandboxTerminal,
 } from "../.server/repository/entities";
 import {
   EntityPageView,
@@ -73,6 +74,16 @@ export async function action({ request }: Route.ActionArgs) {
       String(form.get("instanceId") ?? ""),
       String(form.get("command") ?? ""),
     );
+  if (intent === "start-terminal") {
+    const result = await startPersistentSandboxTerminal(
+      user,
+      id,
+      String(form.get("instanceId") ?? ""),
+      Number(form.get("cols")),
+      Number(form.get("rows")),
+    );
+    return { ...result, instanceId: String(form.get("instanceId") ?? "") };
+  }
   if (intent === "delete")
     return Number.isInteger(id) && (await deleteSandbox(user, id))
       ? { ok: true }
@@ -89,7 +100,11 @@ export function shouldRevalidate({
   formData,
   defaultShouldRevalidate,
 }: ShouldRevalidateFunctionArgs) {
-  if (formData?.get("_intent") === "run-command") return false;
+  if (
+    formData?.get("_intent") === "run-command" ||
+    formData?.get("_intent") === "start-terminal"
+  )
+    return false;
   return defaultShouldRevalidate;
 }
 

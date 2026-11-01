@@ -1,4 +1,8 @@
-import { type BashSandboxExtended, type Sandbox } from ".";
+import {
+  type BashSandboxExtended,
+  type Sandbox,
+  type TerminalSize,
+} from ".";
 import { Sandbox as E2BSandbox } from "e2b";
 
 async function* toAsyncIterable(
@@ -37,6 +41,68 @@ export const E2B: Sandbox = {
         allowOut: allowedDomains,
         denyOut: ({ allTraffic }) => [allTraffic],
       });
+    }
+  },
+  createTerminalSession: async (
+    instanceId,
+    envs,
+    allowedDomains,
+    size,
+    onData,
+    onExit,
+  ) => {
+    const sandbox = await E2BSandbox.connect(instanceId);
+    await sandbox.updateNetwork({ allowInternetAccess: true });
+    try {
+      const terminal = await sandbox.pty.create({
+        ...size,
+        envs,
+        timeoutMs: 0,
+        onData,
+      });
+      let closed = false;
+      let exitReported = false;
+      void terminal.wait().then(
+        ({ exitCode }) => {
+          if (exitReported) return;
+          exitReported = true;
+          onExit(exitCode);
+        },
+        () => {
+          if (exitReported) return;
+          exitReported = true;
+          onExit();
+        },
+      );
+      return {
+        sendInput: async (data: string) => {
+          await sandbox.pty.sendInput(
+            terminal.pid,
+            new TextEncoder().encode(data),
+          );
+        },
+        resize: async (nextSize: TerminalSize) => {
+          await sandbox.pty.resize(terminal.pid, nextSize);
+        },
+        close: async () => {
+          if (closed) return;
+          closed = true;
+          try {
+            await sandbox.pty.kill(terminal.pid);
+          } finally {
+            await sandbox.updateNetwork({
+              allowOut: allowedDomains,
+              denyOut: ({ allTraffic }) => [allTraffic],
+            });
+          }
+        },
+      };
+    } catch (error) {
+      await sandbox.updateNetwork({
+        allowOut: allowedDomains,
+        denyOut: ({ allTraffic }) => [allTraffic],
+      });
+      throw error;
     }
   },
   getBashSandbox: async (

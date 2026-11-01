@@ -18,4 +18,5 @@ export default [
   route("login", "routes/login.tsx"),
   route("logout", "routes/logout.tsx"),
   route("api/webhooks/:botId/:adapterId", "routes/webhook.tsx"),
+  route("api/sandbox-terminals/:terminalId", "routes/sandbox-terminal.tsx"),
 ] satisfies RouteConfig;

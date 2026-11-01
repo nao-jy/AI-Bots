@@ -10,6 +10,7 @@ import {
   executeSandboxCommand,
   listSandboxNames,
 } from "../features/toolsets/sandboxes";
+import { openSandboxTerminal } from "../features/toolsets/sandboxes/terminal-sessions";
 import { logger } from "~/.server/logger";
 import { SANDBOX_SCOPES } from "~/const";
 export type SandboxScope = keyof typeof SANDBOX_SCOPES;
@@ -102,18 +103,6 @@ export async function runPersistentSandboxCommand(
       [...sandbox.allowedDomainList],
       command,
     );
-    logger.info("Sandbox shell output diagnostics", {
-      sandboxId,
-      instanceId,
-      sandboxType: sandbox.sandboxType,
-      commandLength: command.length,
-      stdoutLength: result.stdout.length,
-      stdoutLineFeeds: (result.stdout.match(/\n/g) ?? []).length,
-      stdoutCarriageReturns: (result.stdout.match(/\r/g) ?? []).length,
-      stderrLength: result.stderr.length,
-      stderrLineFeeds: (result.stderr.match(/\n/g) ?? []).length,
-      stderrCarriageReturns: (result.stderr.match(/\r/g) ?? []).length,
-    });
     return {
       ok: true,
       command,
@@ -134,6 +123,66 @@ export async function runPersistentSandboxCommand(
         error instanceof Error
           ? error.message
           : "サンドボックスでコマンドを実行できませんでした。",
+    };
+  }
+}
+
+export async function startPersistentSandboxTerminal(
+  user: AuthUser,
+  sandboxId: number,
+  instanceId: string,
+  cols: number,
+  rows: number,
+) {
+  if (!Number.isInteger(sandboxId) || sandboxId <= 0)
+    return { ok: false, error: "サンドボックスが見つかりません。" };
+  if (!instanceId.trim())
+    return { ok: false, error: "実行するインスタンスを選択してください。" };
+  if (
+    !Number.isInteger(cols) ||
+    !Number.isInteger(rows) ||
+    cols < 2 ||
+    cols > 500 ||
+    rows < 1 ||
+    rows > 300
+  ) {
+    return { ok: false, error: "端末サイズが不正です。" };
+  }
+
+  const sandbox = await db.orm.aibot.Sandbox.first({
+    id: sandboxId,
+    ownerId: user.id,
+  });
+  if (!sandbox) return { ok: false, error: "サンドボックスが見つかりません。" };
+
+  const instance = await db.orm.aibot.PersistentSandboxInstance.whereUnique({
+    instanceId,
+  }).first();
+  if (!instance || instance.sandboxId !== sandbox.id)
+    return { ok: false, error: "選択したインスタンスが見つかりません。" };
+
+  try {
+    const terminalId = await openSandboxTerminal(
+      user.id,
+      sandbox.sandboxType,
+      instanceId,
+      jsonbToStringRecord(sandbox.envs),
+      [...sandbox.allowedDomainList],
+      { cols, rows },
+    );
+    return { ok: true, terminalId };
+  } catch (error) {
+    logger.error("Persistent sandbox terminal failed to start", {
+      error,
+      sandboxId,
+      instanceId,
+    });
+    return {
+      ok: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "サンドボックスのシェルを開始できませんでした。",
     };
   }
 }

@@ -407,12 +407,10 @@ type SandboxShellInstance = PersistentInstance & {
   sandboxId: number;
   sandboxName: string;
 };
-type ShellResponse = {
-  ok?: boolean;
-  command?: string;
-  stdout?: string;
-  stderr?: string;
-  exitCode?: number;
+type TerminalStartResponse = {
+  ok: boolean;
+  terminalId?: string;
+  instanceId?: string;
   error?: string;
 };
 
@@ -446,42 +444,63 @@ function SandboxShell({
   const [height, setHeight] = useState(320);
   const [isResizing, setIsResizing] = useState(false);
   const [terminalError, setTerminalError] = useState<string | null>(null);
-  const fetcher = useFetcher<ShellResponse>();
-  const lastResponse = useRef(fetcher.data);
+  const terminalFetcher = useFetcher<TerminalStartResponse>();
+  const [terminalId, setTerminalId] = useState<string | null>(null);
+  const [terminalReady, setTerminalReady] = useState(false);
   const resizeStart = useRef<{ pointerY: number; height: number } | null>(null);
   const terminalHost = useRef<HTMLDivElement>(null);
   const terminal = useRef<import("@xterm/xterm").Terminal | null>(null);
   const fitAddon = useRef<import("@xterm/addon-fit").FitAddon | null>(null);
+  const terminalIdRef = useRef<string | null>(null);
+  const pendingInput = useRef("");
+  const inputTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const selectedInstance = instances.find(
     (instance) => instance.instanceId === selectedInstanceId,
   );
-  const selectedInstanceRef = useRef(selectedInstanceId);
   const selectedSandboxNameRef = useRef(selectedInstance?.sandboxName ?? "");
   const instancesRef = useRef(instances);
-  const fetcherStateRef = useRef(fetcher.state);
-  const submitRef = useRef(fetcher.submit);
-  const commandBuffer = useRef("");
-  const commandCursor = useRef(0);
-  const commandHistory = useRef<string[]>([]);
-  const historyIndex = useRef(0);
 
-  selectedInstanceRef.current = selectedInstanceId;
+  terminalIdRef.current = terminalId;
   selectedSandboxNameRef.current = selectedInstance?.sandboxName ?? "";
   instancesRef.current = instances;
-  fetcherStateRef.current = fetcher.state;
-  submitRef.current = fetcher.submit;
 
-  function writePrompt(target: import("@xterm/xterm").Terminal) {
-    const name = (selectedSandboxNameRef.current || "sandbox")
-      .replace(/[\x00-\x1f\x7f]/g, "")
-      .slice(0, 32);
-    target.write(`\x1b[32m${name}\x1b[0m:\x1b[34m~\x1b[0m$ `);
+  async function postTerminalAction(
+    id: string,
+    intent: "input" | "resize" | "close",
+    fields: Record<string, string> = {},
+  ) {
+    const form = new FormData();
+    form.set("_intent", intent);
+    for (const [key, value] of Object.entries(fields)) form.set(key, value);
+    const response = await fetch(`/api/sandbox-terminals/${id}`, {
+      method: "POST",
+      body: form,
+    });
+    const result: unknown = await response.json();
+    if (!response.ok) {
+      const error =
+        result &&
+        typeof result === "object" &&
+        "error" in result &&
+        typeof result.error === "string"
+          ? result.error
+          : `シェル操作に失敗しました (HTTP ${response.status})`;
+      throw new Error(error);
+    }
+  }
+
+  function reportTerminalError(error: unknown) {
+    const message =
+      error instanceof Error ? error.message : "シェル操作に失敗しました。";
+    setTerminalError(message);
+    terminal.current?.write(`\r\n\x1b[31m${message}\x1b[0m\r\n`);
   }
 
   useEffect(() => {
     let disposed = false;
     let resizeObserver: ResizeObserver | null = null;
     let dataSubscription: { dispose: () => void } | null = null;
+    let resizeSubscription: { dispose: () => void } | null = null;
     let activeTerminal: import("@xterm/xterm").Terminal | null = null;
     let activeFitAddon: import("@xterm/addon-fit").FitAddon | null = null;
 
@@ -536,166 +555,44 @@ function SandboxShell({
       resizeObserver = new ResizeObserver(() => fit.fit());
       resizeObserver.observe(terminalHost.current);
 
-      function redrawLine() {
-        instanceTerminal.write("\r\x1b[2K");
-        writePrompt(instanceTerminal);
-        instanceTerminal.write(commandBuffer.current);
-        const trailingCharacters =
-          commandBuffer.current.length - commandCursor.current;
-        if (trailingCharacters > 0) {
-          instanceTerminal.write(`\x1b[${trailingCharacters}D`);
-        }
-      }
-
-      function submitCommand() {
-        const command = commandBuffer.current;
-        if (!command.trim()) {
-          instanceTerminal.write("\r\n");
-          commandBuffer.current = "";
-          commandCursor.current = 0;
-          writePrompt(instanceTerminal);
-          return;
-        }
-        if (
-          !selectedInstanceRef.current ||
-          fetcherStateRef.current !== "idle"
-        ) {
-          instanceTerminal.write("\r\n\x1b[33mA command is already running.\x1b[0m\r\n");
-          commandBuffer.current = "";
-          commandCursor.current = 0;
-          writePrompt(instanceTerminal);
-          return;
-        }
-
-        instanceTerminal.write("\r\n");
-        commandHistory.current.push(command);
-        historyIndex.current = commandHistory.current.length;
-        commandBuffer.current = "";
-        commandCursor.current = 0;
-        submitRef.current(
-          {
-            _intent: "run-command",
-            id: String(
-              instancesRef.current.find(
-                (instance) =>
-                  instance.instanceId === selectedInstanceRef.current,
-              )?.sandboxId ?? "",
-            ),
-            instanceId: selectedInstanceRef.current,
-            command,
-          },
-          { method: "post" },
-        );
-      }
-
       function handleData(data: string) {
-        if (data === "\x03") {
-          if (fetcherStateRef.current !== "idle") {
-            instanceTerminal.write(
-              "\r\n^C\r\n\x1b[90mThe remote command cannot be interrupted here.\x1b[0m\r\n",
-            );
-            return;
-          }
-          instanceTerminal.write("^C\r\n");
-          commandBuffer.current = "";
-          commandCursor.current = 0;
-          writePrompt(instanceTerminal);
-          return;
-        }
-        if (data === "\x0c") {
-          instanceTerminal.write("\x1b[2J\x1b[H");
-          writePrompt(instanceTerminal);
-          instanceTerminal.write(commandBuffer.current);
-          return;
-        }
-        if (data === "\r") {
-          submitCommand();
-          return;
-        }
-        if (data === "\x1b[A" || data === "\x1b[B") {
-          if (commandHistory.current.length === 0) return;
-          historyIndex.current =
-            data === "\x1b[A"
-              ? Math.max(0, historyIndex.current - 1)
-              : Math.min(commandHistory.current.length, historyIndex.current + 1);
-          commandBuffer.current =
-            commandHistory.current[historyIndex.current] ?? "";
-          commandCursor.current = commandBuffer.current.length;
-          redrawLine();
-          return;
-        }
-        if (data === "\x1b[D") {
-          if (commandCursor.current > 0) {
-            commandCursor.current -= 1;
-            instanceTerminal.write("\x1b[D");
-          }
-          return;
-        }
-        if (data === "\x1b[C") {
-          if (commandCursor.current < commandBuffer.current.length) {
-            commandCursor.current += 1;
-            instanceTerminal.write("\x1b[C");
-          }
-          return;
-        }
-        if (data === "\x1b[H" || data === "\x1b[1~") {
-          commandCursor.current = 0;
-          redrawLine();
-          return;
-        }
-        if (data === "\x1b[F" || data === "\x1b[4~") {
-          commandCursor.current = commandBuffer.current.length;
-          redrawLine();
-          return;
-        }
-        if (data === "\x1b[3~") {
-          if (commandCursor.current < commandBuffer.current.length) {
-            commandBuffer.current =
-              commandBuffer.current.slice(0, commandCursor.current) +
-              commandBuffer.current.slice(commandCursor.current + 1);
-            redrawLine();
-          }
-          return;
-        }
-        if (data === "\x7f" || data === "\b") {
-          if (commandCursor.current > 0) {
-            commandBuffer.current =
-              commandBuffer.current.slice(0, commandCursor.current - 1) +
-              commandBuffer.current.slice(commandCursor.current);
-            commandCursor.current -= 1;
-            redrawLine();
-          }
-          return;
-        }
-        if (data.startsWith("\x1b")) return;
-        if (fetcherStateRef.current !== "idle") return;
-        const printable = Array.from(data)
-          .filter((character) => character >= " " && character !== "\x7f")
-          .join("");
-        if (!printable) return;
-        commandBuffer.current =
-          commandBuffer.current.slice(0, commandCursor.current) +
-          printable +
-          commandBuffer.current.slice(commandCursor.current);
-        commandCursor.current += printable.length;
-        redrawLine();
+        const activeTerminalId = terminalIdRef.current;
+        if (!activeTerminalId) return;
+        pendingInput.current += data;
+        if (inputTimer.current) clearTimeout(inputTimer.current);
+        inputTimer.current = setTimeout(() => {
+          const input = pendingInput.current;
+          pendingInput.current = "";
+          inputTimer.current = null;
+          void postTerminalAction(activeTerminalId, "input", { data: input }).catch(
+            reportTerminalError,
+          );
+        }, 12);
       }
 
       dataSubscription = instanceTerminal.onData(handleData);
+      resizeSubscription = instanceTerminal.onResize(({ cols, rows }) => {
+        const activeTerminalId = terminalIdRef.current;
+        if (activeTerminalId) {
+          void postTerminalAction(activeTerminalId, "resize", {
+            cols: String(cols),
+            rows: String(rows),
+          }).catch(reportTerminalError);
+        }
+      });
       instanceTerminal.write(
-        "\x1b[90mSandbox terminal · Enter to run · ↑/↓ for history · Ctrl+L to clear\x1b[0m\r\n",
+        "\x1b[90mSandbox terminal · interactive PTY\x1b[0m\r\n",
       );
-      if (selectedInstanceRef.current) {
+      if (selectedInstanceId) {
         instanceTerminal.write(
-          `\x1b[90mConnected to ${selectedSandboxNameRef.current} (${selectedInstanceRef.current})\x1b[0m\r\n`,
+          `\x1b[90mConnecting to ${selectedSandboxNameRef.current} (${selectedInstanceId})…\x1b[0m\r\n`,
         );
-        writePrompt(instanceTerminal);
-        instanceTerminal.focus();
       } else {
         instanceTerminal.write(
           "\x1b[90mSelect an instance to start a shell session.\x1b[0m\r\n",
         );
       }
+      setTerminalReady(true);
     }
 
     void initializeTerminal().catch((error: unknown) => {
@@ -712,7 +609,10 @@ function SandboxShell({
       disposed = true;
       resizeObserver?.disconnect();
       dataSubscription?.dispose();
+      resizeSubscription?.dispose();
+      if (inputTimer.current) clearTimeout(inputTimer.current);
       activeTerminal?.dispose();
+      setTerminalReady(false);
       if (terminal.current === activeTerminal) terminal.current = null;
       if (fitAddon.current === activeFitAddon) fitAddon.current = null;
     };
@@ -720,17 +620,15 @@ function SandboxShell({
 
   useEffect(() => {
     const activeTerminal = terminal.current;
+    setTerminalId(null);
+    terminalIdRef.current = null;
+    setTerminalError(null);
     if (!activeTerminal) return;
-    commandBuffer.current = "";
-    commandCursor.current = 0;
-    commandHistory.current = [];
-    historyIndex.current = 0;
     activeTerminal.write("\x1b[2J\x1b[H");
     if (selectedInstanceId) {
       activeTerminal.write(
-        `\x1b[90mConnected to ${selectedSandboxNameRef.current} (${selectedInstanceId})\x1b[0m\r\n`,
+        `\x1b[90mConnecting to ${selectedSandboxNameRef.current} (${selectedInstanceId})…\x1b[0m\r\n`,
       );
-      writePrompt(activeTerminal);
     } else {
       activeTerminal.write(
         "\x1b[90mSelect an instance to start a shell session.\x1b[0m\r\n",
@@ -740,40 +638,104 @@ function SandboxShell({
   }, [selectedInstanceId]);
 
   useEffect(() => {
-    const response = fetcher.data;
-    const activeTerminal = terminal.current;
+    if (!terminalReady) return;
+    if (!selectedInstanceId) {
+      setTerminalId(null);
+      terminalIdRef.current = null;
+      return;
+    }
+
+    const instance = instancesRef.current.find(
+      (candidate) => candidate.instanceId === selectedInstanceId,
+    );
+    if (!instance) return;
+    setTerminalId(null);
+    terminalIdRef.current = null;
+    terminalFetcher.submit(
+      {
+        _intent: "start-terminal",
+        id: String(instance.sandboxId),
+        instanceId: instance.instanceId,
+        cols: String(terminal.current?.cols ?? 80),
+        rows: String(terminal.current?.rows ?? 24),
+      },
+      { method: "post", action: "/sandboxes" },
+    );
+  }, [selectedInstanceId, terminalReady]);
+
+  useEffect(() => {
+    const response = terminalFetcher.data;
     if (
-      fetcher.state !== "idle" ||
+      terminalFetcher.state !== "idle" ||
       !response ||
-      response === lastResponse.current ||
-      !activeTerminal
+      response.instanceId !== selectedInstanceId
     ) {
       return;
     }
-    lastResponse.current = response;
-    if (response.stdout) {
-      activeTerminal.write(response.stdout.replace(/\r\n|\r|\n/g, "\r\n"));
-      if (!/[\r\n]$/.test(response.stdout)) activeTerminal.write("\r\n");
+    if (!response.ok || !response.terminalId) {
+      setTerminalError(response.error ?? "シェルを開始できませんでした。");
+      return;
     }
-    if (response.stderr) {
+    setTerminalId(response.terminalId);
+    terminalIdRef.current = response.terminalId;
+  }, [selectedInstanceId, terminalFetcher.data, terminalFetcher.state]);
+
+  useEffect(() => {
+    if (!terminalId) return;
+    const activeTerminal = terminal.current;
+    if (!activeTerminal) return;
+
+    const source = new EventSource(
+      `/api/sandbox-terminals/${terminalId}`,
+    );
+    let hasReportedDisconnect = false;
+    source.onmessage = (event) => {
+      try {
+        const payload: unknown = JSON.parse(event.data);
+        if (
+          !payload ||
+          typeof payload !== "object" ||
+          !("data" in payload) ||
+          typeof payload.data !== "string"
+        ) {
+          throw new Error("端末出力の形式が不正です。");
+        }
+        const decoded = atob(payload.data);
+        const bytes = Uint8Array.from(decoded, (character) =>
+          character.charCodeAt(0),
+        );
+        activeTerminal.write(bytes);
+        hasReportedDisconnect = false;
+      } catch (error) {
+        reportTerminalError(error);
+      }
+    };
+    source.addEventListener("exit", () => {
+      activeTerminal.write("\r\n\x1b[90mPTY session closed.\x1b[0m\r\n");
+      source.close();
+    });
+    source.onerror = () => {
+      if (hasReportedDisconnect) return;
+      hasReportedDisconnect = true;
       activeTerminal.write(
-        `\x1b[31m${response.stderr.replace(/\r\n|\r|\n/g, "\r\n")}${
-          /[\r\n]$/.test(response.stderr) ? "" : "\r\n"
-        }\x1b[0m`,
+        "\r\n\x1b[33mTerminal connection interrupted; reconnecting…\x1b[0m\r\n",
       );
-    }
-    if (response.error) {
-      activeTerminal.write(
-        `\x1b[31m${response.error.replace(/\r\n|\r|\n/g, "\r\n")}\x1b[0m\r\n`,
-      );
-    }
-    if (response.exitCode !== undefined && response.exitCode !== 0) {
-      activeTerminal.write(
-        `\x1b[90mProcess exited with code ${response.exitCode}.\x1b[0m\r\n`,
-      );
-    }
-    writePrompt(activeTerminal);
-  }, [fetcher.data, fetcher.state]);
+    };
+
+    return () => {
+      source.close();
+      const pending = pendingInput.current;
+      pendingInput.current = "";
+      if (inputTimer.current) clearTimeout(inputTimer.current);
+      inputTimer.current = null;
+      const closeSession = pending
+        ? postTerminalAction(terminalId, "input", { data: pending })
+        : Promise.resolve();
+      void closeSession
+        .then(() => postTerminalAction(terminalId, "close"))
+        .catch(reportTerminalError);
+    };
+  }, [terminalId]);
 
   useEffect(() => {
     if (!isResizing) return;
@@ -841,7 +803,9 @@ function SandboxShell({
           onChange={onSelectInstance}
           searchable
           nothingFoundMessage="該当するインスタンスがありません"
-          disabled={fetcher.state !== "idle"}
+          disabled={
+            terminalFetcher.state !== "idle"
+          }
           className="sandbox-shell-instance-select"
         />
         <button
@@ -855,24 +819,23 @@ function SandboxShell({
       </div>
       <p className="sandbox-shell-warning">
         シェル実行中はすべてのドメインへの通信が許可されます。
-        {fetcher.state !== "idle" && (
+        {(terminalFetcher.state !== "idle" || terminalId) && (
           <span className="sandbox-shell-running" role="status">
-            ● 実行中
+            ● {terminalId ? "接続中" : "起動中"}
           </span>
         )}
       </p>
-      {terminalError ? (
+      {terminalError && (
         <p className="sandbox-shell-error" role="alert">
           端末を読み込めませんでした: {terminalError}
         </p>
-      ) : (
-        <div
-          className="sandbox-shell-terminal"
-          ref={terminalHost}
-          aria-label="サンドボックスシェル端末"
-          onClick={() => terminal.current?.focus()}
-        />
       )}
+      <div
+        className="sandbox-shell-terminal"
+        ref={terminalHost}
+        aria-label="サンドボックスシェル端末"
+        onClick={() => terminal.current?.focus()}
+      />
     </section>
   );
 }

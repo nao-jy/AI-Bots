@@ -13,6 +13,17 @@ interface BashSandboxInfo {
   sandbox: BashSandboxExtended;
 }
 
+export interface TerminalSize {
+  cols: number;
+  rows: number;
+}
+
+export interface SandboxTerminalSession {
+  sendInput: (data: string) => Promise<void>;
+  resize: (size: TerminalSize) => Promise<void>;
+  close: () => Promise<void>;
+}
+
 export interface Sandbox {
   sandboxType: string;
   isAvailable: () => Promise<boolean>;
@@ -22,6 +33,14 @@ export interface Sandbox {
     allowedDomains: string[],
     command: string,
   ) => Promise<Awaited<ReturnType<BashSandbox["executeCommand"]>>>;
+  createTerminalSession: (
+    instanceId: string,
+    envs: Record<string, string>,
+    allowedDomains: string[],
+    size: TerminalSize,
+    onData: (data: Uint8Array) => void,
+    onExit: (exitCode?: number) => void,
+  ) => Promise<SandboxTerminalSession>;
   getBashSandbox: (
     instanceId: string | null,
     envs: Record<string, string>,
@@ -65,5 +84,28 @@ export async function executeSandboxCommand(
     envs,
     allowedDomains,
     command,
+  );
+}
+
+export async function createSandboxTerminalSession(
+  sandboxType: string,
+  instanceId: string,
+  envs: Record<string, string>,
+  allowedDomains: string[],
+  size: TerminalSize,
+  onData: (data: Uint8Array) => void,
+  onExit: (exitCode?: number) => void,
+) {
+  const sandboxProvider = getSandbox(sandboxType);
+  if (!sandboxProvider)
+    throw new Error(`Unsupported sandbox type: ${sandboxType}`);
+
+  return sandboxProvider.createTerminalSession(
+    instanceId,
+    envs,
+    allowedDomains,
+    size,
+    onData,
+    onExit,
   );
 }
