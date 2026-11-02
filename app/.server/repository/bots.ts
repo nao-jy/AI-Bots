@@ -2,11 +2,7 @@ import { db } from "./db";
 import type { AuthUser } from "../auth";
 import type { PublicIdSlot } from "../../types/entities";
 import { generatePublicId, idList, jsonb, record } from "../utils";
-import {
-  listToolSetNames,
-  listToolSetSchemas,
-  validateToolSetContext,
-} from "../features/toolsets";
+import { ToolSetFactoryRegistry } from "../features/toolsets";
 
 export async function listBots(user: AuthUser, publicOrigin: string) {
   const bots = await db.orm.aibot.ChatBot.where({
@@ -37,6 +33,8 @@ export async function listBots(user: AuthUser, publicOrigin: string) {
       db.orm.aibot.ChatBotToolSetContext.all(),
       db.orm.aibot.OAuthAuthentication.where({ ownerId: user.id }).all(),
     ]);
+  const toolSetRegistry = new ToolSetFactoryRegistry(user.id);
+  const toolSetSchemas = await toolSetRegistry.listToolSetSchemas();
   return {
     records: bots.map((bot) =>
       record(bot.id, bot.updatedAt, {
@@ -144,7 +142,7 @@ export async function listBots(user: AuthUser, publicOrigin: string) {
       label: `${sandbox.sandboxType} (${sandbox.sandboxScope})`,
       value: String(sandbox.id),
     })),
-    toolSetSchemas: listToolSetSchemas(),
+    toolSetSchemas: toolSetSchemas,
   };
 }
 
@@ -207,7 +205,8 @@ export async function saveBot(
   } catch {
     return { error: "ToolSet context はJSONオブジェクトで入力してください。" };
   }
-  const supportedToolSetNames = listToolSetNames();
+  const toolSetRegistry = new ToolSetFactoryRegistry(user.id);
+  const supportedToolSetNames = await toolSetRegistry.listToolSetNames();
   if (
     Object.keys(toolSetContexts).some(
       (name) => !supportedToolSetNames.includes(name),
@@ -284,7 +283,8 @@ export async function saveBot(
         error: `${toolSetName} ToolSet context はJSONオブジェクトで入力してください。`,
       };
     else {
-      const validationError = validateToolSetContext(
+      const toolSetRegistry = new ToolSetFactoryRegistry(user.id);
+      const validationError = await toolSetRegistry.validateToolSetContext(
         toolSetName,
         toolSetContext,
       );

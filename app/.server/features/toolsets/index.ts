@@ -1,7 +1,7 @@
 import type { Tool } from "ai";
 import { z } from "zod";
-import type { FileHandleReaderMap } from "./file-handle";
-import { FACTORY as REMOTE_FILES_FACTORY } from "./remote-files";
+import type { FileHandleReaderMap } from "./helpers/file-handle";
+import { getToolSetFactory as getRemoteFilesToolSetFactory } from "./remote-files";
 
 export interface ToolSet {
   getTools: (
@@ -16,24 +16,32 @@ export interface ToolSetFactory {
   getToolSet: (fileHandles: FileHandleReaderMap) => ToolSet;
 }
 
-const TOOLSET_FACTORIES: ToolSetFactory[] = [REMOTE_FILES_FACTORY];
+export class ToolSetFactoryRegistry {
+  private userId: number;
+  constructor(userId: number) {
+    this.userId = userId;
+  }
+  private async getToolSetFactories() {
+    const remoteFilesFactory = await getRemoteFilesToolSetFactory(this.userId);
+    return [remoteFilesFactory];
+  }
 
-export function listToolSetNames() {
-  return TOOLSET_FACTORIES.map((factory) => factory.name);
-}
+  async listToolSetNames() {
+    const factories = await this.getToolSetFactories();
+    return factories.map((factory) => factory.name);
+  }
 
-export function listToolSetSchemas() {
-  return TOOLSET_FACTORIES.map((factory) => ({
-    name: factory.name,
-    schema: factory.getToolSetContextSchema(),
-  }));
-}
+  async listToolSetSchemas() {
+    const factories = await this.getToolSetFactories();
+    return factories.map((factory) => ({
+      name: factory.name,
+      schema: factory.getToolSetContextSchema(),
+    }));
+  }
 
-export function validateToolSetContext(name: string, value: unknown) {
-  const factory = TOOLSET_FACTORIES.find(
-    (candidate) => candidate.name === name,
-  );
-  return factory
-    ? factory.validateContext(value)
-    : `利用できない ToolSet です: ${name}`;
+  async validateToolSetContext(name: string, value: unknown) {
+    const factories = await this.getToolSetFactories();
+    const factory = factories.find((candidate) => candidate.name === name);
+    return factory?.validateContext(value);
+  }
 }

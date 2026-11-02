@@ -4,7 +4,7 @@ import { extract, ExtractInputKind } from "@xberg-io/xberg";
 import dns from "node:dns/promises";
 import net from "node:net";
 import type { Chat } from "chat";
-import { toBuffer, type FileHandleReaderMap } from "./file-handle";
+import { toBuffer, type FileHandleReaderMap } from "./helpers/file-handle";
 
 // SSRF
 function isPrivateIp(ip: string): boolean {

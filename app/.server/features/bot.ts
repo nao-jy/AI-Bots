@@ -20,7 +20,7 @@ import { logger } from "../logger";
 import { insertUsage } from "../repository/agents";
 import { SearXNGWebSearch } from "./toolsets/tools/web/search-searxng";
 import { getChatTools } from "./toolsets/chat-tools";
-import type { FileHandleReaderMap } from "./toolsets/file-handle";
+import type { FileHandleReaderMap } from "./toolsets/helpers/file-handle";
 
 const MAX_AGENT_STEPS = 8;
 

@@ -7,7 +7,7 @@ import {
   generateFileHandle,
   toBuffer,
   type FileHandleReaderMap,
-} from "./file-handle";
+} from "./helpers/file-handle";
 
 export async function getSandboxTools(
   bashSandbox: BashSandboxExtended,
@@ -20,6 +20,8 @@ export async function getSandboxTools(
 
   return {
     sandboxBash: tools.bash,
+    sandboxReadFileAsText: tools.readFile,
+    sandboxWriteFileAsText: tools.writeFile,
     sandboxReadFile: tool({
       description: "read file from sandbox and return file handle",
       inputSchema: z.object({

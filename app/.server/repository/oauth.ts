@@ -255,6 +255,24 @@ export async function deleteOAuthClient(user: AuthUser, id: number) {
   return true;
 }
 
+export async function listOauth(ownerId: number) {
+  const data = await db.orm.aibot.OAuthClient.where({ ownerId })
+    .include("authentications")
+    .orderBy((authentication) => authentication.updatedAt.desc())
+    .all();
+  const ret = data
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .map((client) => ({
+      name: client.name,
+      authentications: client.authentications
+        .sort((a, b) => a.name.localeCompare(b.name))
+        .map((auth) => ({
+          id: auth.id,
+          name: auth.name,
+        })),
+    }));
+  return ret;
+}
 export async function listOAuthAuthentications(user: AuthUser) {
   const [authentications, clients] = await Promise.all([
     db.orm.aibot.OAuthAuthentication.where({ ownerId: user.id })

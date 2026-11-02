@@ -4,7 +4,7 @@ import {
   generateFileHandle,
   toBuffer,
   type FileHandleReaderMap,
-} from "./file-handle";
+} from "./helpers/file-handle";
 import { tool } from "ai";
 import z from "zod";
 
