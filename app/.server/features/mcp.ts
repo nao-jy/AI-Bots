@@ -9,7 +9,7 @@ export async function getMcpClient(
 ) {
   const auth = authId !== null ? await getAccessToken(authId) : null;
   if (auth !== null) {
-    headers["Authorization"] = `Bearer ${auth}`;
+    headers["Authorization"] = `Bearer ${auth.accessToken}`;
   }
   const client = await createMCPClient({
     transport: {

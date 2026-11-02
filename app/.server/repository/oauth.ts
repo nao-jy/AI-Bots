@@ -68,7 +68,7 @@ export async function getAdapterOAuthInfo(authId: number) {
     const clientInfo: AdapterOAuthInfo = {
       clientId: client.clientId,
       clientSecret: client.clientSecret,
-      accessToken: await getAccessToken(authId),
+      accessToken: (await getAccessToken(authId)).accessToken,
       refreshToken: decryptCredential(authentication.refreshToken),
     };
 
@@ -78,7 +78,7 @@ export async function getAdapterOAuthInfo(authId: number) {
 }
 
 /** Return an authentication's access token, refreshing it shortly before expiry. */
-export async function getAccessToken(authId: number): Promise<string> {
+export async function getAccessToken(authId: number) {
   const authentication = await db.orm.aibot.OAuthAuthentication.first({
     id: authId,
   });
@@ -98,7 +98,10 @@ export async function getAccessToken(authId: number): Promise<string> {
     !Number.isFinite(expiresAt) ||
     expiresAt - Date.now() >= TOKEN_REFRESH_WINDOW_MS
   )
-    return decryptCredential(authentication.accessToken);
+    return {
+      name: authentication.name,
+      accessToken: decryptCredential(authentication.accessToken),
+    };
 
   const tokens = await oidc.refreshTokenGrant(
     refreshConfiguration(client),
@@ -123,7 +126,7 @@ export async function getAccessToken(authId: number): Promise<string> {
     expiresAt: refreshedExpiresAt,
   });
 
-  return tokens.access_token;
+  return { name: authentication.name, accessToken: tokens.access_token };
 }
 
 export async function saveOAuthAuthentication(

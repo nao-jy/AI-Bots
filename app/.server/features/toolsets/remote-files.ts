@@ -68,15 +68,17 @@ export async function getToolSetFactory(userId: number) {
             ({ key, value }) => [key, value] as const,
           );
           if (accessToken !== null) {
-            config = [...config, ["access_token", accessToken]];
+            config = [...config, ["access_token", accessToken.accessToken]];
           }
           const operator = new Operator(
             args.service,
             Object.fromEntries(config),
           );
 
+          const authName = accessToken?.name ? `_${accessToken.name}` : "";
+
           return {
-            [`listRemoteFiles_${args.service}`]: tool({
+            [`listRemoteFiles_${args.service}${authName}`]: tool({
               description:
                 "リモートファイルソースの指定したパス直下または配下のファイル・ディレクトリを一覧します。",
               inputSchema: z.object({
@@ -155,7 +157,7 @@ export async function getToolSetFactory(userId: number) {
                 };
               },
             }),
-            [`readRemoteFileAsText_${args.service}`]: tool({
+            [`readRemoteFileAsText_${args.service}${authName}`]: tool({
               description:
                 "リモートファイルを指定バイト範囲で読み込みます。テキストはUTF-8、その他のデータはBase64で返します。",
               inputSchema: z.object({
@@ -191,7 +193,7 @@ export async function getToolSetFactory(userId: number) {
                 };
               },
             }),
-            getRemoteFileMetadata: tool({
+            [`getRemoteFileMetadata_${args.service}${authName}`]: tool({
               description:
                 "リモートファイルまたはディレクトリのメタデータを取得します。",
               inputSchema: z.object({
@@ -202,7 +204,7 @@ export async function getToolSetFactory(userId: number) {
                 return { path, ...serializeMetadata(metadata) };
               },
             }),
-            remoteFileExists: tool({
+            [`remoteFileExists_${args.service}${authName}`]: tool({
               description: "リモートソース上のパスが存在するかを確認します。",
               inputSchema: z.object({
                 path: z.string().min(1).describe("確認するパス"),
