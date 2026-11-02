@@ -1,5 +1,13 @@
 import { useState } from "react";
-import { Button, Divider, Group, Stack, Text, Input } from "@mantine/core";
+import {
+  Button,
+  Collapse,
+  Group,
+  Input,
+  Select,
+  Stack,
+  Text,
+} from "@mantine/core";
 import Form from "@rjsf/mantine";
 import type { RJSFSchema, UiSchema } from "@rjsf/utils";
 import validator from "@rjsf/validator-ajv8";
@@ -72,6 +80,10 @@ export function ToolSetContextEditor({
   initialValue: unknown;
 }) {
   const [contexts, setContexts] = useState(() => parseContexts(initialValue));
+  const [expandedIds, setExpandedIds] = useState<Set<number>>(() => new Set());
+  const schemaByName = new Map(
+    schemas.map((toolSet) => [toolSet.name, toolSet]),
+  );
 
   return (
     <Stack gap="sm">
@@ -80,83 +92,129 @@ export function ToolSetContextEditor({
         type="hidden"
         name={name}
         value={JSON.stringify(
-          contexts.map(({ toolSetName, context }) => ({
-            toolSetName,
-            context,
-          })),
+          contexts
+            .filter(({ toolSetName }) => toolSetName)
+            .map(({ toolSetName, context }) => ({ toolSetName, context })),
         )}
       />
-      {schemas.map(({ name: toolSetName, displayName, schema }) => {
-        const instances = contexts.filter(
-          (entry) => entry.toolSetName === toolSetName,
-        );
+      {contexts.map((instance, index) => {
+        const toolSet = schemaByName.get(instance.toolSetName);
+        const expanded = expandedIds.has(instance.id);
+        const panelId = `toolset-context-${instance.id}`;
         return (
-          <div key={toolSetName}>
-            <Input.Wrapper size="sm" label={displayName} />
-            {instances.map((instance, index) => (
-              <div className="toolset-context-form" key={instance.id}>
-                <Group justify="space-between" mb="xs">
-                  <Text size="xs" c="dimmed">
-                    context {index + 1}
-                  </Text>
-                  <Button
-                    type="button"
-                    variant="subtle"
-                    color="red"
-                    size="xs"
-                    onClick={() =>
+          <div key={instance.id}>
+            <Group align="flex-end" wrap="nowrap">
+              <Select
+                label={`ツールセット ${index + 1}`}
+                placeholder="ツールセットを選択"
+                data={schemas.map(({ name: value, displayName: label }) => ({
+                  value,
+                  label,
+                }))}
+                value={instance.toolSetName || null}
+                onChange={(toolSetName) =>
+                  setContexts((current) =>
+                    current.map((entry) =>
+                      entry.id === instance.id
+                        ? {
+                            ...entry,
+                            toolSetName: toolSetName ?? "",
+                            context:
+                              toolSetName === entry.toolSetName
+                                ? entry.context
+                                : {},
+                          }
+                        : entry,
+                    ),
+                  )
+                }
+                searchable
+                clearable
+                nothingFoundMessage="該当するオプションがありません"
+                style={{ flex: 1 }}
+              />
+              <Button
+                type="button"
+                variant="light"
+                disabled={!toolSet}
+                aria-expanded={expanded}
+                aria-controls={panelId}
+                onClick={() =>
+                  setExpandedIds((current) => {
+                    const next = new Set(current);
+                    if (next.has(instance.id)) next.delete(instance.id);
+                    else next.add(instance.id);
+                    return next;
+                  })
+                }
+              >
+                {expanded ? "コンテクストを閉じる" : "コンテクストを設定"}
+              </Button>
+              <Button
+                type="button"
+                variant="subtle"
+                color="red"
+                onClick={() => {
+                  setContexts((current) =>
+                    current.filter((entry) => entry.id !== instance.id),
+                  );
+                  setExpandedIds((current) => {
+                    const next = new Set(current);
+                    next.delete(instance.id);
+                    return next;
+                  });
+                }}
+              >
+                削除
+              </Button>
+            </Group>
+            {toolSet && (
+              <Collapse id={panelId} expanded={expanded}>
+                <div className="toolset-context-form">
+                  <Form
+                    schema={toolSet.schema as RJSFSchema}
+                    validator={validator}
+                    formData={instance.context}
+                    onChange={({ formData }) =>
                       setContexts((current) =>
-                        current.filter((entry) => entry.id !== instance.id),
+                        current.map((entry) =>
+                          entry.id === instance.id
+                            ? { ...entry, context: formData ?? {} }
+                            : entry,
+                        ),
                       )
                     }
-                  >
-                    削除
-                  </Button>
-                </Group>
-                <Form
-                  schema={schema as RJSFSchema}
-                  validator={validator}
-                  formData={instance.context}
-                  onChange={({ formData }) =>
-                    setContexts((current) =>
-                      current.map((entry) =>
-                        entry.id === instance.id
-                          ? { ...entry, context: formData ?? {} }
-                          : entry,
-                      ),
-                    )
-                  }
-                  liveValidate="onChange"
-                  noHtml5Validate
-                  tagName="div"
-                  uiSchema={getToolSetUiSchema(schema)}
-                />
-              </div>
-            ))}
-            <Button
-              type="button"
-              variant="light"
-              size="xs"
-              onClick={() =>
-                setContexts((current) => [
-                  ...current,
-                  {
-                    id: current.reduce(
-                      (nextId, entry) => Math.max(nextId, entry.id + 1),
-                      0,
-                    ),
-                    toolSetName,
-                    context: {},
-                  },
-                ])
-              }
-            >
-              ＋ {instances.length === 0 ? "有効にする" : "contextを追加"}
-            </Button>
-            <Divider mt="sm" />
+                    liveValidate="onBlur"
+                    noHtml5Validate
+                    tagName="div"
+                    uiSchema={getToolSetUiSchema(toolSet.schema)}
+                  />
+                </div>
+              </Collapse>
+            )}
           </div>
         );
       })}
+      <Button
+        type="button"
+        variant="light"
+        size="xs"
+        onClick={() =>
+          setContexts((current) => [
+            ...current,
+            {
+              id: current.reduce(
+                (nextId, entry) => Math.max(nextId, entry.id + 1),
+                0,
+              ),
+              toolSetName: "",
+              context: {},
+            },
+          ])
+        }
+      >
+        ＋ ツールセットを追加
+      </Button>
       {schemas.length === 0 && (
         <Text size="sm" c="dimmed">
           利用可能な ToolSet がありません。
