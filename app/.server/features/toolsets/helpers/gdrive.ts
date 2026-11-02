@@ -123,6 +123,81 @@ export async function listGoogleDriveFiles({
     .slice(0, limit);
 }
 
+export async function listGoogleDriveSharedFiles({
+  accessToken,
+  limit,
+  startAfter,
+}: {
+  accessToken: string;
+  limit: number;
+  startAfter?: string;
+}) {
+  const driveClient = getDriveClient(accessToken);
+  const files: Array<{
+    path: string;
+    id: string;
+    name: string;
+    [key: string]: unknown;
+  }> = [];
+  let pageToken: string | undefined;
+
+  do {
+    const response = await driveClient.files.list({
+      q: "sharedWithMe = true and trashed = false",
+      pageSize: 1000,
+      pageToken,
+      orderBy: "name",
+      fields: `nextPageToken,files(${DRIVE_FILE_FIELDS})`,
+      includeItemsFromAllDrives: true,
+      supportsAllDrives: true,
+    });
+
+    for (const file of response.data.files ?? []) {
+      if (!file.id || !file.name) continue;
+      if (startAfter && file.name.localeCompare(startAfter) <= 0) continue;
+      files.push({ ...file, path: file.name, id: file.id, name: file.name });
+    }
+
+    pageToken = response.data.nextPageToken ?? undefined;
+  } while (pageToken && files.length < limit);
+
+  return files.sort((a, b) => a.path.localeCompare(b.path)).slice(0, limit);
+}
+
+export async function searchGoogleDriveFiles({
+  accessToken,
+  q,
+  limit,
+  pageToken,
+}: {
+  accessToken: string;
+  q: string;
+  limit: number;
+  pageToken?: string;
+}) {
+  const response = await getDriveClient(accessToken).files.list({
+    q,
+    pageSize: limit,
+    pageToken,
+    fields: `nextPageToken,files(${DRIVE_FILE_FIELDS})`,
+    corpora: "allDrives",
+    includeItemsFromAllDrives: true,
+    supportsAllDrives: true,
+  });
+
+  return {
+    files: (response.data.files ?? [])
+      .filter((file) => file.id && file.name)
+      .map((file) => ({
+        ...file,
+        path: file.name!,
+        id: file.id!,
+        name: file.name!,
+      })),
+    nextPageToken: response.data.nextPageToken ?? null,
+  };
+}
+
 export async function getGoogleDriveFileMetadata({
   accessToken,
   fileId,

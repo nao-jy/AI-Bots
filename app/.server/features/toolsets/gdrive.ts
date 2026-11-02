@@ -12,6 +12,8 @@ import {
   googleDriveFileExists,
   isGoogleDriveFolder,
   listGoogleDriveFiles,
+  listGoogleDriveSharedFiles,
+  searchGoogleDriveFiles,
 } from "./helpers/gdrive";
 import { ReservedParams } from "./helpers/reserved-params";
 
@@ -100,6 +102,73 @@ export async function getToolSetFactory(userId: number) {
               ...file,
               ...serializeMetadata(file),
             }));
+          },
+        }),
+        [`listSharedGdrive_${authName}`]: tool({
+          description:
+            "Googleドライブで自分と共有されているファイル・フォルダを一覧します。共有フォルダの中身は通常の一覧ツールで取得してください。",
+          inputSchema: z.object({
+            limit: z
+              .number()
+              .int()
+              .min(1)
+              .max(1000)
+              .default(100)
+              .describe("取得する最大件数（1〜1000）"),
+            startAfter: z
+              .string()
+              .optional()
+              .describe("この名前より後から一覧を続ける場合の開始位置"),
+          }),
+          execute: async ({ limit, startAfter }) => {
+            const { accessToken: token } = requireAccessToken(accessToken);
+            const files = await listGoogleDriveSharedFiles({
+              accessToken: token,
+              limit,
+              startAfter,
+            });
+            return files.map((file) => ({
+              ...file,
+              ...serializeMetadata(file),
+            }));
+          },
+        }),
+        [`searchGdrive_${authName}`]: tool({
+          description:
+            "Google Drive APIの検索クエリ（q）でファイル・フォルダを検索します。Drive APIのq構文を使い、name contains、fullText contains、'<folderId>' in parents、modifiedTime、mimeType、sharedWithMeなどの条件を指定してください。複数条件はand/orで組み合わせられます。詳細な構文はGoogle Drive APIの仕様に従います。",
+          inputSchema: z.object({
+            q: z
+              .string()
+              .trim()
+              .min(1)
+              .describe("Google Drive APIの検索クエリ"),
+            limit: z
+              .number()
+              .int()
+              .min(1)
+              .max(1000)
+              .default(100)
+              .describe("取得する最大件数（1〜1000）"),
+            pageToken: z
+              .string()
+              .optional()
+              .describe("前回の検索結果に含まれる次ページトークン"),
+          }),
+          execute: async ({ q, limit, pageToken }) => {
+            const { accessToken: token } = requireAccessToken(accessToken);
+            const result = await searchGoogleDriveFiles({
+              accessToken: token,
+              q,
+              limit,
+              pageToken,
+            });
+            return {
+              files: result.files.map((file) => ({
+                ...file,
+                ...serializeMetadata(file),
+              })),
+              nextPageToken: result.nextPageToken,
+            };
           },
         }),
         [`getGdriveFileHandle_${authName}`]: tool({
