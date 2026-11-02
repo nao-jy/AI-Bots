@@ -224,8 +224,11 @@ async function processBotMessage(
       mcpClients.push(client);
 
       const mcpTools = await client.tools();
+      const authName = link.authentication
+        ? `_${link.authentication.name}`
+        : "";
       for (const [name, tool] of Object.entries(mcpTools)) {
-        tools[`mcp_${server.id}_${safeToolName(name)}`] = tool;
+        tools[`mcp${authName}_${server.id}_${safeToolName(name)}`] = tool;
       }
     }
 

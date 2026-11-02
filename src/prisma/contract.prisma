@@ -67,6 +67,7 @@ namespace aibot {
     agentId          Int?                     @unique
     adapters         ChatBotAdapter[]
     mcpServers       ChatBotMcpServer[]
+    toolSets         ChatBotToolSetContext[]
     createdAt        TimestamptzString        @default(now())
     updatedAt        temporal.UpdatedAtString
 
@@ -189,6 +190,7 @@ namespace aibot {
   }
 
   model ChatBotMcpServer {
+    id             Int                  @id @default(autoincrement())
     chatbot        ChatBot              @relation(fields: [chatbotId], references: [id], onDelete: Cascade)
     chatbotId      Int
     mcpServer      McpServer            @relation(fields: [mcpServerId], references: [id], onDelete: Cascade)
@@ -197,7 +199,7 @@ namespace aibot {
     authId         Int?
     createdAt      TimestamptzString    @default(now())
 
-    @@id([chatbotId, mcpServerId])
+    @@unique([chatbotId, mcpServerId, authId])
     @@index([mcpServerId])
   }
 
@@ -279,12 +281,13 @@ namespace aibot {
   }
 
   model ChatBotToolSetContext {
+    id             Int     @id @default(autoincrement())
     toolSetName    String
     chatbotId      Int
     chatbot        ChatBot @relation(fields: [chatbotId], references: [id], onDelete: Cascade)
-    toolSetContext Jsonb?
+    toolSetContext Jsonb   @default(json`{}`)
 
-    @@id([toolSetName, chatbotId])
+    @@unique([toolSetName, chatbotId, toolSetContext])
     @@index([chatbotId])
   }
 

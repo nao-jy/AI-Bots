@@ -791,6 +791,21 @@
                   "namespace": "aibot"
                 }
               },
+              "toolSets": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "chatbotId"
+                  ]
+                },
+                "to": {
+                  "model": "ChatBotToolSetContext",
+                  "namespace": "aibot"
+                }
+              },
               "usage": {
                 "cardinality": "1:N",
                 "on": {
@@ -972,6 +987,13 @@
                   "kind": "scalar"
                 }
               },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
               "mcpServerId": {
                 "nullable": false,
                 "type": {
@@ -1040,6 +1062,9 @@
                 },
                 "createdAt": {
                   "column": "createdAt"
+                },
+                "id": {
+                  "column": "id"
                 },
                 "mcpServerId": {
                   "column": "mcpServerId"
@@ -1309,8 +1334,15 @@
                   "kind": "scalar"
                 }
               },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
               "toolSetContext": {
-                "nullable": true,
+                "nullable": false,
                 "type": {
                   "codecId": "pg/jsonb@1",
                   "kind": "scalar"
@@ -1346,6 +1378,9 @@
               "fields": {
                 "chatbotId": {
                   "column": "chatbotId"
+                },
+                "id": {
+                  "column": "id"
                 },
                 "toolSetContext": {
                   "column": "toolSetContext"
@@ -3263,6 +3298,15 @@
                   },
                   "nullable": false
                 },
+                "id": {
+                  "codecId": "pg/int4@1",
+                  "dataType": "pg/int4",
+                  "default": {
+                    "expression": "autoincrement()",
+                    "kind": "function"
+                  },
+                  "nullable": false
+                },
                 "mcpServerId": {
                   "codecId": "pg/int4@1",
                   "dataType": "pg/int4",
@@ -3359,11 +3403,18 @@
               ],
               "primaryKey": {
                 "columns": [
-                  "chatbotId",
-                  "mcpServerId"
+                  "id"
                 ]
               },
-              "uniques": []
+              "uniques": [
+                {
+                  "columns": [
+                    "chatbotId",
+                    "mcpServerId",
+                    "authId"
+                  ]
+                }
+              ]
             },
             "ChatBotPublicId": {
               "checks": [
@@ -3624,10 +3675,23 @@
                   "dataType": "pg/int4",
                   "nullable": false
                 },
+                "id": {
+                  "codecId": "pg/int4@1",
+                  "dataType": "pg/int4",
+                  "default": {
+                    "expression": "autoincrement()",
+                    "kind": "function"
+                  },
+                  "nullable": false
+                },
                 "toolSetContext": {
                   "codecId": "pg/jsonb@1",
                   "dataType": "pg/jsonb",
-                  "nullable": true
+                  "default": {
+                    "kind": "literal",
+                    "value": {}
+                  },
+                  "nullable": false
                 },
                 "toolSetName": {
                   "codecId": "pg/text@1",
@@ -3669,11 +3733,18 @@
               ],
               "primaryKey": {
                 "columns": [
-                  "toolSetName",
-                  "chatbotId"
+                  "id"
                 ]
               },
-              "uniques": []
+              "uniques": [
+                {
+                  "columns": [
+                    "toolSetName",
+                    "chatbotId",
+                    "toolSetContext"
+                  ]
+                }
+              ]
             },
             "ChatTarget": {
               "columns": {
@@ -4650,7 +4721,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "874025e1563e2ee40ba07af9b35247a5c9653ace3800ff5cf663a6beef9018bf"
+    "storageHash": "fb0fbd2e381004420b453aa3238e28ae97928fca440b31ccd7c556fe9cff8eca"
   },
   "execution": {
     "executionHash": "2edef0a9e649f7d4fec54fb6e1236cb304696ca7f4e909082a496d8d33430a90",

@@ -418,7 +418,10 @@ export async function getAvailableBot(botId: number) {
     isEnabled: true,
   })
     .include("agent", (agent) => agent.include("provider"))
-    .include("mcpServers", (server) => server.include("mcpServer"))
+    .include("mcpServers", (server) =>
+      server.include("mcpServer").include("authentication"),
+    )
+    .include("toolSets")
     .first();
   return chatbot;
 }
