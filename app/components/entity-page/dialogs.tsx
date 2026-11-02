@@ -297,6 +297,7 @@ export function EntityPageDialogs({
                       authenticationOptions={
                         page.mcpAuthenticationOptions ?? []
                       }
+                      initialConnections={selected?.mcpConnections}
                       initialServerIds={selected?.mcpServerIds}
                       initialAuthenticationIds={selected?.mcpAuthIds}
                       placeholder={field.placeholder}

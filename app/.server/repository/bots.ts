@@ -4,6 +4,30 @@ import type { PublicIdSlot } from "../../types/entities";
 import { generatePublicId, idList, jsonb, record } from "../utils";
 import { ToolSetFactoryRegistry } from "../features/toolsets";
 
+type ToolSetContextEntry = { toolSetName: string; context: Record<string, unknown> };
+
+function positiveId(value: unknown): number {
+  const id =
+    typeof value === "number"
+      ? value
+      : typeof value === "string" && /^\d+$/.test(value)
+        ? Number(value)
+        : NaN;
+  if (!Number.isInteger(id) || id < 1) throw new Error();
+  return id;
+}
+
+function stableJson(value: unknown): string {
+  if (Array.isArray(value))
+    return `[${value.map((item) => stableJson(item)).join(",")}]`;
+  if (value && typeof value === "object")
+    return `{${Object.entries(value)
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([key, item]) => `${JSON.stringify(key)}:${stableJson(item)}`)
+      .join(",")}}`;
+  return JSON.stringify(value) ?? "null";
+}
+
 export async function listBots(user: AuthUser, publicOrigin: string) {
   const bots = await db.orm.aibot.ChatBot.where({
     ownerId: user.id,
@@ -43,6 +67,12 @@ export async function listBots(user: AuthUser, publicOrigin: string) {
         agent: bot.agent?.name ?? "—",
         agentId: bot.agentId ?? "",
         adapterIds: bot.adapters.map((link) => link.adapterId).join(","),
+        mcpConnections: JSON.stringify(
+          bot.mcpServers.map((link) => ({
+            serverId: link.mcpServerId,
+            authId: link.authId,
+          })),
+        ),
         mcpServerIds: bot.mcpServers.map((link) => link.mcpServerId).join(","),
         mcpAuthIds: JSON.stringify(
           Object.fromEntries(
@@ -75,14 +105,12 @@ export async function listBots(user: AuthUser, publicOrigin: string) {
             .filter(Boolean)
             .join("、") || "—",
         toolSetContexts: JSON.stringify(
-          Object.fromEntries(
-            toolSetContexts
-              .filter((context) => context.chatbotId === bot.id)
-              .map((context) => [
-                context.toolSetName,
-                context.toolSetContext ?? {},
-              ]),
-          ),
+          toolSetContexts
+            .filter((context) => context.chatbotId === bot.id)
+            .map((context) => ({
+              toolSetName: context.toolSetName,
+              context: context.toolSetContext ?? {},
+            })),
           null,
           2,
         ),
@@ -161,55 +189,102 @@ export async function saveBot(
   const agentValue = String(values.get("agentId") ?? "").trim();
   const agentId = agentValue ? Number(agentValue) : null;
   const adapterIds = idList(values.get("adapterIds")?.toString() ?? null);
-  const mcpServerIds = idList(values.get("mcpServerIds")?.toString() ?? null);
-  let mcpAuthIds: Record<string, number>;
+  let mcpConnections: { serverId: number; authId: number | null }[];
   try {
-    const parsed: unknown = JSON.parse(
-      String(values.get("mcpAuthIds") ?? "{}"),
-    );
-    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed))
-      throw new Error();
-    mcpAuthIds = Object.fromEntries(
-      Object.entries(parsed).map(([serverId, authId]) => {
-        const key = Number(serverId);
-        const value =
-          typeof authId === "number"
-            ? authId
-            : typeof authId === "string" && /^\d+$/.test(authId)
-              ? Number(authId)
-              : NaN;
+    const rawConnections = values.get("mcpConnections");
+    if (rawConnections !== null) {
+      const parsed: unknown = JSON.parse(String(rawConnections));
+      if (!Array.isArray(parsed)) throw new Error();
+      mcpConnections = parsed.map((connection) => {
         if (
-          !/^\d+$/.test(serverId) ||
-          !Number.isInteger(key) ||
-          key < 1 ||
-          !Number.isInteger(value) ||
-          value < 1
+          !connection ||
+          typeof connection !== "object" ||
+          Array.isArray(connection) ||
+          !("serverId" in connection)
         )
           throw new Error();
-        return [String(key), value];
-      }),
-    );
+        const parsedServerId = positiveId(connection.serverId);
+        const parsedAuthId =
+          !("authId" in connection) ||
+          connection.authId === null ||
+          connection.authId === undefined
+            ? null
+            : positiveId(connection.authId);
+        return { serverId: parsedServerId, authId: parsedAuthId };
+      });
+    } else {
+      const serverIds = idList(values.get("mcpServerIds")?.toString() ?? null);
+      const parsedAuthIds: unknown = JSON.parse(
+        String(values.get("mcpAuthIds") ?? "{}"),
+      );
+      if (
+        !parsedAuthIds ||
+        typeof parsedAuthIds !== "object" ||
+        Array.isArray(parsedAuthIds)
+      )
+        throw new Error();
+      const authIds = Object.fromEntries(
+        Object.entries(parsedAuthIds).map(([serverId, authId]) => {
+          positiveId(serverId);
+          return [serverId, positiveId(authId)];
+        }),
+      );
+      mcpConnections = serverIds.map((serverId) => ({
+        serverId,
+        authId: authIds[String(serverId)] ?? null,
+      }));
+    }
   } catch {
-    return { error: "MCP OAuth認証の設定形式を確認してください。" };
+    return { error: "MCP接続の設定形式を確認してください。" };
   }
+  const mcpServerIds = mcpConnections.map(({ serverId }) => serverId);
   const sandboxIdRaw = values.get("sandboxId")?.toString() ?? null;
   const sandboxId = sandboxIdRaw !== null ? Number(sandboxIdRaw) : null;
-  let toolSetContexts: Record<string, unknown>;
+  let toolSetContexts: ToolSetContextEntry[];
   try {
     const parsed: unknown = JSON.parse(
-      String(values.get("toolSetContexts") ?? "{}").trim() || "{}",
+      String(values.get("toolSetContexts") ?? "[]").trim() || "[]",
     );
-    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed))
+    if (Array.isArray(parsed)) {
+      toolSetContexts = parsed.map((entry) => {
+        if (
+          !entry ||
+          typeof entry !== "object" ||
+          !("toolSetName" in entry) ||
+          typeof entry.toolSetName !== "string" ||
+          !("context" in entry) ||
+          !entry.context ||
+          typeof entry.context !== "object" ||
+          Array.isArray(entry.context)
+        )
+          throw new Error();
+        return {
+          toolSetName: entry.toolSetName,
+          context: entry.context as Record<string, unknown>,
+        };
+      });
+    } else if (parsed && typeof parsed === "object") {
+      toolSetContexts = Object.entries(parsed).map(
+        ([toolSetName, context]) => {
+          if (!context || typeof context !== "object" || Array.isArray(context))
+            throw new Error();
+          return {
+            toolSetName,
+            context: context as Record<string, unknown>,
+          };
+        },
+      );
+    } else {
       throw new Error();
-    toolSetContexts = parsed as Record<string, unknown>;
+    }
   } catch {
-    return { error: "ToolSet context はJSONオブジェクトで入力してください。" };
+    return { error: "ToolSet context は有効な配列で入力してください。" };
   }
   const toolSetRegistry = new ToolSetFactoryRegistry(user.id);
   const supportedToolSetNames = await toolSetRegistry.listToolSetNames();
   if (
-    Object.keys(toolSetContexts).some(
-      (name) => !supportedToolSetNames.includes(name),
+    toolSetContexts.some(
+      ({ toolSetName }) => !supportedToolSetNames.includes(toolSetName),
     )
   )
     return {
@@ -247,6 +322,11 @@ export async function saveBot(
   if (mcpServerIds.some((id) => !allowedMcpServerIds.has(id))) {
     return { error: "選択したMCPサーバーを使用できません。" };
   }
+  const mcpConnectionKeys = mcpConnections.map(
+    ({ serverId, authId }) => `${serverId}:${authId ?? "none"}`,
+  );
+  if (new Set(mcpConnectionKeys).size !== mcpConnectionKeys.length)
+    return { error: "同じMCPサーバーとOAuth認証の接続は重複できません。" };
   const authentications = await db.orm.aibot.OAuthAuthentication.where({
     ownerId: user.id,
   }).all();
@@ -254,11 +334,9 @@ export async function saveBot(
     authentications.map((authentication) => authentication.id),
   );
   if (
-    Object.values(mcpAuthIds).some(
-      (authId) => !allowedAuthenticationIds.has(authId),
-    ) ||
-    Object.keys(mcpAuthIds).some(
-      (serverId) => !mcpServerIds.includes(Number(serverId)),
+    mcpConnections.some(
+      ({ authId }) =>
+        authId !== null && !allowedAuthenticationIds.has(authId),
     )
   )
     return {
@@ -273,24 +351,19 @@ export async function saveBot(
   );
   if (sandboxId !== null && !allowedSandboxIds.has(sandboxId))
     return { error: "選択したサンドボックスを使用できません。" };
-  for (const [toolSetName, toolSetContext] of Object.entries(toolSetContexts))
-    if (
-      !toolSetContext ||
-      typeof toolSetContext !== "object" ||
-      Array.isArray(toolSetContext)
-    )
-      return {
-        error: `${toolSetName} ToolSet context はJSONオブジェクトで入力してください。`,
-      };
-    else {
-      const toolSetRegistry = new ToolSetFactoryRegistry(user.id);
-      const validationError = await toolSetRegistry.validateToolSetContext(
-        toolSetName,
-        toolSetContext,
-      );
-      if (validationError)
-        return { error: `${toolSetName}: ${validationError}` };
-    }
+  const toolSetContextKeys = toolSetContexts.map(
+    ({ toolSetName, context }) =>
+      JSON.stringify([toolSetName, stableJson(context)]),
+  );
+  if (new Set(toolSetContextKeys).size !== toolSetContextKeys.length)
+    return { error: "同じToolSet名とcontextの組み合わせは重複できません。" };
+  for (const { toolSetName, context } of toolSetContexts) {
+    const validationError = await toolSetRegistry.validateToolSetContext(
+      toolSetName,
+      context,
+    );
+    if (validationError) return { error: `${toolSetName}: ${validationError}` };
+  }
   if (
     id !== null &&
     !(await db.orm.aibot.ChatBot.first({ id, ownerId: user.id }))
@@ -335,11 +408,11 @@ export async function saveBot(
       });
     }
     await tx.orm.aibot.ChatBotMcpServer.where({ chatbotId: botId! }).delete();
-    for (const mcpServerId of mcpServerIds) {
+    for (const { serverId, authId } of mcpConnections) {
       await tx.orm.aibot.ChatBotMcpServer.create({
         chatbotId: botId!,
-        mcpServerId,
-        authId: mcpAuthIds[String(mcpServerId)] ?? null,
+        mcpServerId: serverId,
+        authId,
       });
     }
     await tx.orm.aibot.ChatBotToolSandbox.where({ chatbotId: botId! }).delete();
@@ -352,11 +425,11 @@ export async function saveBot(
     await tx.orm.aibot.ChatBotToolSetContext.where({
       chatbotId: botId!,
     }).delete();
-    for (const [toolSetName, toolSetContext] of Object.entries(toolSetContexts))
+    for (const { toolSetName, context } of toolSetContexts)
       await tx.orm.aibot.ChatBotToolSetContext.create({
         chatbotId: botId!,
         toolSetName,
-        toolSetContext: jsonb(toolSetContext),
+        toolSetContext: jsonb(context),
       });
   });
   return { ok: true };

@@ -52,6 +52,7 @@ export async function getToolSetFactory(userId: number) {
   const schema = await getSchema(userId);
   const ret: ToolSetFactory = {
     name: "remote-files-opendal",
+    displayName: "汎用リモートファイルツール（OpenDAL）",
     getToolSetContextSchema: () => {
       return schema.toJSONSchema({ target: "draft-7" });
     },

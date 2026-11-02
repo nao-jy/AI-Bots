@@ -68,5 +68,5 @@ export type EntityPageDefinition = {
   createSubmitLabel?: string;
   launchIntent?: string;
   launchLabel?: string;
-  toolSetSchemas?: { name: string; schema: unknown }[];
+  toolSetSchemas?: { name: string; displayName: string; schema: unknown }[];
 };

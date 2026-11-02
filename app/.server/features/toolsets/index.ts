@@ -11,6 +11,7 @@ export interface ToolSet {
 
 export interface ToolSetFactory {
   name: string;
+  displayName: string;
   getToolSetContextSchema: () => z.core.ZodStandardJSONSchemaPayload<unknown>;
   validateContext: (value: unknown) => boolean;
   getToolSet: (fileHandles: FileHandleReaderMap) => ToolSet;
@@ -35,6 +36,7 @@ export class ToolSetFactoryRegistry {
     const factories = await this.getToolSetFactories();
     return factories.map((factory) => ({
       name: factory.name,
+      displayName: factory.displayName,
       schema: factory.getToolSetContextSchema(),
     }));
   }

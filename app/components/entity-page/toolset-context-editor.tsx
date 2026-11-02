@@ -1,20 +1,48 @@
 import { useState } from "react";
-import { Divider, Stack, Switch, Text } from "@mantine/core";
+import { Button, Divider, Group, Stack, Text, Input } from "@mantine/core";
 import Form from "@rjsf/mantine";
 import type { RJSFSchema, UiSchema } from "@rjsf/utils";
 import validator from "@rjsf/validator-ajv8";
 
-type ToolSetSchema = { name: string; schema: unknown };
+type ToolSetSchema = {
+  name: string;
+  displayName: string;
+  schema: unknown;
+};
+type ToolSetContextEntry = {
+  id: number;
+  toolSetName: string;
+  context: unknown;
+};
 
-function parseContexts(value: unknown): Record<string, unknown> {
-  if (typeof value !== "string" || !value) return {};
+function parseContexts(value: unknown): ToolSetContextEntry[] {
+  if (typeof value !== "string" || !value) return [];
   try {
     const parsed: unknown = JSON.parse(value);
-    return parsed && typeof parsed === "object" && !Array.isArray(parsed)
-      ? (parsed as Record<string, unknown>)
-      : {};
+    if (Array.isArray(parsed))
+      return parsed.flatMap((entry, id) =>
+        entry &&
+        typeof entry === "object" &&
+        "toolSetName" in entry &&
+        typeof entry.toolSetName === "string" &&
+        "context" in entry &&
+        entry.context &&
+        typeof entry.context === "object" &&
+        !Array.isArray(entry.context)
+          ? [{ id, toolSetName: entry.toolSetName, context: entry.context }]
+          : [],
+      );
+    if (!parsed || typeof parsed !== "object") return [];
+    return Object.entries(parsed).map(([toolSetName, context], id) => ({
+      id,
+      toolSetName,
+      context:
+        context && typeof context === "object" && !Array.isArray(context)
+          ? context
+          : {},
+    }));
   } catch {
-    return {};
+    return [];
   }
 }
 
@@ -45,39 +73,58 @@ export function ToolSetContextEditor({
 }) {
   const [contexts, setContexts] = useState(() => parseContexts(initialValue));
 
-  function setEnabled(toolSetName: string, enabled: boolean) {
-    setContexts((current) => {
-      const next = { ...current };
-      if (enabled) next[toolSetName] ??= {};
-      else delete next[toolSetName];
-      return next;
-    });
-  }
-
   return (
     <Stack gap="sm">
-      <Text size="sm" fw={500}>ToolSet context</Text>
-      <input type="hidden" name={name} value={JSON.stringify(contexts)} />
-      {schemas.map(({ name: toolSetName, schema }) => {
-        const enabled = Object.hasOwn(contexts, toolSetName);
+      <Input.Wrapper size="sm" label="ツールセット" />
+      <input
+        type="hidden"
+        name={name}
+        value={JSON.stringify(
+          contexts.map(({ toolSetName, context }) => ({
+            toolSetName,
+            context,
+          })),
+        )}
+      />
+      {schemas.map(({ name: toolSetName, displayName, schema }) => {
+        const instances = contexts.filter(
+          (entry) => entry.toolSetName === toolSetName,
+        );
         return (
           <div key={toolSetName}>
-            <Switch
-              label={`${toolSetName} を有効にする`}
-              checked={enabled}
-              onChange={(event) => setEnabled(toolSetName, event.currentTarget.checked)}
-            />
-            {enabled && (
-              <div className="toolset-context-form">
+            <Input.Wrapper size="sm" label={displayName} />
+            {instances.map((instance, index) => (
+              <div className="toolset-context-form" key={instance.id}>
+                <Group justify="space-between" mb="xs">
+                  <Text size="xs" c="dimmed">
+                    context {index + 1}
+                  </Text>
+                  <Button
+                    type="button"
+                    variant="subtle"
+                    color="red"
+                    size="xs"
+                    onClick={() =>
+                      setContexts((current) =>
+                        current.filter((entry) => entry.id !== instance.id),
+                      )
+                    }
+                  >
+                    削除
+                  </Button>
+                </Group>
                 <Form
                   schema={schema as RJSFSchema}
                   validator={validator}
-                  formData={contexts[toolSetName]}
+                  formData={instance.context}
                   onChange={({ formData }) =>
-                    setContexts((current) => ({
-                      ...current,
-                      [toolSetName]: formData ?? {},
-                    }))
+                    setContexts((current) =>
+                      current.map((entry) =>
+                        entry.id === instance.id
+                          ? { ...entry, context: formData ?? {} }
+                          : entry,
+                      ),
+                    )
                   }
                   liveValidate="onChange"
                   noHtml5Validate
@@ -85,13 +132,35 @@ export function ToolSetContextEditor({
                   uiSchema={getToolSetUiSchema(schema)}
                 />
               </div>
-            )}
+            ))}
+            <Button
+              type="button"
+              variant="light"
+              size="xs"
+              onClick={() =>
+                setContexts((current) => [
+                  ...current,
+                  {
+                    id: current.reduce(
+                      (nextId, entry) => Math.max(nextId, entry.id + 1),
+                      0,
+                    ),
+                    toolSetName,
+                    context: {},
+                  },
+                ])
+              }
+            >
+              ＋ {instances.length === 0 ? "有効にする" : "contextを追加"}
+            </Button>
             <Divider mt="sm" />
           </div>
         );
       })}
       {schemas.length === 0 && (
-        <Text size="sm" c="dimmed">利用可能な ToolSet がありません。</Text>
+        <Text size="sm" c="dimmed">
+          利用可能な ToolSet がありません。
+        </Text>
       )}
     </Stack>
   );
