@@ -1,5 +1,4 @@
 import { tool } from "ai";
-import { isUtf8 } from "node:buffer";
 import { Operator, type Metadata } from "opendal";
 import z from "zod";
 import type { ToolSetFactory } from ".";
@@ -9,9 +8,10 @@ import {
   generateFileHandle,
   type FileHandleReaderMap,
 } from "./helpers/file-handle";
-
-const MAX_READ_SIZE = 1024 * 1024;
-const DEFAULT_READ_SIZE = 256 * 1024;
+import {
+  exportGoogleWorkspaceFile,
+  isGoogleWorkspaceFile,
+} from "./helpers/gdrive";
 
 async function getSchema(userId: number) {
   const schema = z.object({
@@ -108,9 +108,8 @@ export async function getToolSetFactory(userId: number) {
             }));
           },
         }),
-        getRemoteFileHandle: tool({
-          description:
-            "リモートファイルを他のファイルツールで扱うためのハンドルを取得します。",
+        [`getRemoteFileHandle_${args.service}${authName}`]: tool({
+          description: "リモートファイルのハンドルを取得します。",
           inputSchema: z.object({
             path: z
               .string()
@@ -122,13 +121,37 @@ export async function getToolSetFactory(userId: number) {
             if (!metadata.isFile()) {
               throw new Error(`Not a remote file: ${path}`);
             }
-
-            const filename = path.split("/").filter(Boolean).at(-1) ?? path;
+            const sourceFilename =
+              path.split("/").filter(Boolean).at(-1) ?? path;
+            const sourceMimeType = metadata.contentType;
+            let exportedFile:
+              | Awaited<ReturnType<typeof exportGoogleWorkspaceFile>>
+              | undefined;
+            if (
+              sourceMimeType &&
+              isGoogleWorkspaceFile(sourceMimeType)
+            ) {
+              if (!accessToken) {
+                throw new Error(
+                  "Google Workspace files require an OAuth authentication.",
+                );
+              }
+              exportedFile = await exportGoogleWorkspaceFile({
+                accessToken: accessToken.accessToken,
+                fileId: path,
+                mimeType: sourceMimeType,
+                filename: sourceFilename,
+              });
+            }
+            const filename = exportedFile?.filename ?? sourceFilename;
+            const mimeType = exportedFile?.mimeType ?? sourceMimeType;
             const handle = generateFileHandle();
             fileHandles.set(handle, {
               stream: async function* () {
-                const reader = await operator.reader(path);
-                for await (const chunk of reader.createReadStream()) {
+                const source = exportedFile
+                  ? exportedFile.stream
+                  : (await operator.reader(path)).createReadStream();
+                for await (const chunk of source) {
                   if (!(chunk instanceof Uint8Array)) {
                     throw new Error(
                       `Remote file reader returned non-binary data: ${path}`,
@@ -142,7 +165,7 @@ export async function getToolSetFactory(userId: number) {
                 }
               },
               filename,
-              mimeType: metadata.contentType ?? undefined,
+              mimeType: mimeType ?? undefined,
             });
 
             return {
@@ -150,42 +173,7 @@ export async function getToolSetFactory(userId: number) {
               fileHandle: handle,
               filename,
               ...serializeMetadata(metadata),
-            };
-          },
-        }),
-        [`readRemoteFileAsText_${args.service}${authName}`]: tool({
-          description:
-            "リモートファイルを指定バイト範囲で読み込みます。テキストはUTF-8、その他のデータはBase64で返します。",
-          inputSchema: z.object({
-            path: z.string().min(1).describe("読み込むファイルのパス"),
-            offset: z
-              .number()
-              .int()
-              .min(0)
-              .default(0)
-              .describe("読み込み開始位置（バイト）"),
-            size: z
-              .number()
-              .int()
-              .min(1)
-              .max(MAX_READ_SIZE)
-              .default(DEFAULT_READ_SIZE)
-              .describe("読み込む最大サイズ（1〜1048576バイト）"),
-          }),
-          execute: async ({ path, offset, size }) => {
-            const data = await operator.read(path, {
-              offset: BigInt(offset),
-              size: BigInt(size),
-            });
-            const isText = isUtf8(data);
-            const content = data.toString(isText ? "utf8" : "base64");
-            const encoding = isText ? "utf-8" : "base64";
-            return {
-              path,
-              offset,
-              bytesRead: data.length,
-              encoding,
-              content,
+              contentType: mimeType ?? null,
             };
           },
         }),

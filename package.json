@@ -23,6 +23,7 @@
     "@chat-adapter/state-pg": "^4.43.0",
     "@chat-adapter/teams": "^4.43.0",
     "@chat-adapter/x": "^4.43.0",
+    "@googleapis/drive": "^27.0.0",
     "@mantine/core": "^9.7.3",
     "@mantine/dates": "^9.7.4",
     "@mantine/hooks": "^9.7.3",
