@@ -17,11 +17,17 @@ async function getSchema(userId: number) {
   const schema = z.object({
     service: z
       .string()
+      .meta({
+        title: "OpenDALサービス名",
+      })
       .describe(
         "service name of OpenDAL. see https://opendal.apache.org/services/",
       ),
     configuration: z
-      .array(z.tuple([z.string(), z.string()]))
+      .array(z.object({ key: z.string(), value: z.string() }))
+      .meta({
+        title: "OpenDALサービスの設定",
+      })
       .describe("configuration of service"),
     ...(await ReservedParams.getAuthIdSchema(userId)),
   });
@@ -47,7 +53,7 @@ export async function getToolSetFactory(userId: number) {
   const ret: ToolSetFactory = {
     name: "remote-files-opendal",
     getToolSetContextSchema: () => {
-      return schema.toJSONSchema();
+      return schema.toJSONSchema({ target: "draft-7" });
     },
     validateContext: (value: unknown) => {
       return schema.validate(value);
@@ -58,7 +64,9 @@ export async function getToolSetFactory(userId: number) {
           const args = schema.parse(toolSetCtx);
           const accessToken =
             args.authId !== null ? await getAccessToken(args.authId) : null;
-          let config = args.configuration;
+          let config = args.configuration.map(
+            ({ key, value }) => [key, value] as const,
+          );
           if (accessToken !== null) {
             config = [...config, ["access_token", accessToken]];
           }

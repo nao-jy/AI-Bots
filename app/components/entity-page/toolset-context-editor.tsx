@@ -22,6 +22,18 @@ const uiSchema: UiSchema = {
   "ui:submitButtonOptions": { norender: true },
 };
 
+function getToolSetUiSchema(schema: unknown): UiSchema {
+  const authIdSchema = (schema as RJSFSchema).properties?.authId;
+  const authIdEnumNames =
+    authIdSchema && typeof authIdSchema === "object"
+      ? (authIdSchema as RJSFSchema).enumNames
+      : undefined;
+  return {
+    ...uiSchema,
+    authId: { "ui:enumNames": authIdEnumNames },
+  };
+}
+
 export function ToolSetContextEditor({
   name,
   schemas,
@@ -70,7 +82,7 @@ export function ToolSetContextEditor({
                   liveValidate="onChange"
                   noHtml5Validate
                   tagName="div"
-                  uiSchema={uiSchema}
+                  uiSchema={getToolSetUiSchema(schema)}
                 />
               </div>
             )}

@@ -15,6 +15,7 @@ export namespace ReservedParams {
       authId: z
         .literal([null, ...authentications.map(({ id }) => id)])
         .meta({
+          title: "OAuth認証情報",
           enumNames: ["未設定", ...authentications.map(({ label }) => label)],
         })
         .describe("OAuth認証情報を選択"),
