@@ -1,5 +1,8 @@
 import { drive } from "@googleapis/drive";
 
+const DRIVE_FILE_FIELDS =
+  "id,name,mimeType,size,modifiedTime,createdTime,md5Checksum,webViewLink,description,parents,trashed";
+
 const EXPORT_FORMAT_PRIORITY = [
   (mimeType: string) => mimeType === "text/markdown",
   (mimeType: string) =>
@@ -43,11 +46,119 @@ const MIME_TYPE_EXTENSIONS: Record<string, string> = {
   "text/tab-separated-values": "tsv",
 };
 
+const FOLDER_MIME_TYPE = "application/vnd.google-apps.folder";
+
+function getDriveClient(accessToken: string) {
+  return drive({ version: "v3", auth: accessToken });
+}
+
+function escapeQueryValue(value: string) {
+  return value.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
+}
+
 export function isGoogleWorkspaceFile(mimeType: string): boolean {
   return (
     mimeType.startsWith("application/vnd.google-apps.") ||
     mimeType.startsWith("application/vnd.google-gemini.")
   );
+}
+
+export function isGoogleDriveFolder(mimeType: string | null | undefined) {
+  return mimeType === FOLDER_MIME_TYPE;
+}
+
+export async function listGoogleDriveFiles({
+  accessToken,
+  folderId,
+  recursive,
+  limit,
+  startAfter,
+}: {
+  accessToken: string;
+  folderId: string;
+  recursive: boolean;
+  limit: number;
+  startAfter?: string;
+}) {
+  const driveClient = getDriveClient(accessToken);
+  const files: Array<{
+    path: string;
+    id: string;
+    name: string;
+    [key: string]: unknown;
+  }> = [];
+  const pendingFolders = [{ id: folderId, path: "" }];
+
+  while (pendingFolders.length > 0) {
+    const folder = pendingFolders.shift();
+    if (!folder) break;
+
+    let pageToken: string | undefined;
+    do {
+      const response = await driveClient.files.list({
+        q: `'${escapeQueryValue(folder.id)}' in parents and trashed = false`,
+        pageSize: 1000,
+        pageToken,
+        orderBy: "name",
+        fields: `nextPageToken,files(${DRIVE_FILE_FIELDS})`,
+        includeItemsFromAllDrives: true,
+        supportsAllDrives: true,
+      });
+
+      for (const file of response.data.files ?? []) {
+        if (!file.id || !file.name) continue;
+        const path = folder.path ? `${folder.path}/${file.name}` : file.name;
+        files.push({ ...file, path, id: file.id, name: file.name });
+        if (recursive && isGoogleDriveFolder(file.mimeType)) {
+          pendingFolders.push({ id: file.id, path });
+        }
+      }
+      pageToken = response.data.nextPageToken ?? undefined;
+    } while (pageToken);
+  }
+
+  return files
+    .filter((file) => !startAfter || file.path.localeCompare(startAfter) > 0)
+    .sort((a, b) => a.path.localeCompare(b.path))
+    .slice(0, limit);
+}
+
+export async function getGoogleDriveFileMetadata({
+  accessToken,
+  fileId,
+}: {
+  accessToken: string;
+  fileId: string;
+}) {
+  const response = await getDriveClient(accessToken).files.get({
+    fileId,
+    fields: DRIVE_FILE_FIELDS,
+    supportsAllDrives: true,
+  });
+  return response.data;
+}
+
+export async function googleDriveFileExists({
+  accessToken,
+  fileId,
+}: {
+  accessToken: string;
+  fileId: string;
+}) {
+  try {
+    await getGoogleDriveFileMetadata({ accessToken, fileId });
+    return true;
+  } catch (error) {
+    if (
+      typeof error === "object" &&
+      error !== null &&
+      "code" in error &&
+      error.code === 404
+    ) {
+      return false;
+    }
+    throw error;
+  }
 }
 
 function getExportPriority(mimeType: string): number {
@@ -78,7 +189,7 @@ export async function exportGoogleWorkspaceFile({
   mimeType: string;
   filename: string;
 }) {
-  const driveClient = drive({ version: "v3", auth: accessToken });
+  const driveClient = getDriveClient(accessToken);
   const about = await driveClient.about.get({ fields: "exportFormats" });
   const formats = about.data.exportFormats?.[sourceMimeType] ?? [];
   const mimeType = formats
@@ -104,5 +215,36 @@ export async function exportGoogleWorkspaceFile({
     stream: response.data,
     filename: withExportExtension(filename, mimeType),
     mimeType,
+  };
+}
+
+export async function downloadGoogleDriveFile({
+  accessToken,
+  fileId,
+  mimeType: sourceMimeType,
+  filename,
+}: {
+  accessToken: string;
+  fileId: string;
+  mimeType: string;
+  filename: string;
+}) {
+  if (isGoogleWorkspaceFile(sourceMimeType)) {
+    return exportGoogleWorkspaceFile({
+      accessToken,
+      fileId,
+      mimeType: sourceMimeType,
+      filename,
+    });
+  }
+
+  const response = await getDriveClient(accessToken).files.get(
+    { fileId, alt: "media", supportsAllDrives: true },
+    { responseType: "stream" },
+  );
+  return {
+    stream: response.data,
+    filename,
+    mimeType: sourceMimeType,
   };
 }
