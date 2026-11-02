@@ -3,18 +3,15 @@ import { z } from "zod";
 import type { FileHandleReaderMap } from "./helpers/file-handle";
 import { getToolSetFactory as getRemoteFilesToolSetFactory } from "./remote-files";
 
-export interface ToolSet {
-  getTools: (
-    toolSetCtx: Record<string, unknown>,
-  ) => Promise<Record<string, Tool>>;
-}
-
 export interface ToolSetFactory {
   name: string;
   displayName: string;
   getToolSetContextSchema: () => z.core.ZodStandardJSONSchemaPayload<unknown>;
   validateContext: (value: unknown) => boolean;
-  getToolSet: (fileHandles: FileHandleReaderMap) => ToolSet;
+  getTools: (
+    fileHandles: FileHandleReaderMap,
+    context: unknown,
+  ) => Promise<Record<string, Tool>>;
 }
 
 export class ToolSetFactoryRegistry {
@@ -45,5 +42,15 @@ export class ToolSetFactoryRegistry {
     const factories = await this.getToolSetFactories();
     const factory = factories.find((candidate) => candidate.name === name);
     return factory?.validateContext(value);
+  }
+
+  async getTools(
+    name: string,
+    context: unknown,
+    fileHandles: FileHandleReaderMap,
+  ) {
+    const factories = await this.getToolSetFactories();
+    const factory = factories.find((candidate) => candidate.name === name);
+    return factory?.getTools(fileHandles, context);
   }
 }

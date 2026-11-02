@@ -21,6 +21,7 @@ import { insertUsage } from "../repository/agents";
 import { SearXNGWebSearch } from "./toolsets/tools/web/search-searxng";
 import { getChatTools } from "./toolsets/chat-tools";
 import type { FileHandleReaderMap } from "./toolsets/helpers/file-handle";
+import { ToolSetFactoryRegistry } from "./toolsets";
 
 const MAX_AGENT_STEPS = 8;
 
@@ -229,6 +230,25 @@ async function processBotMessage(
         : "";
       for (const [name, tool] of Object.entries(mcpTools)) {
         tools[`mcp${authName}_${server.id}_${safeToolName(name)}`] = tool;
+      }
+    }
+
+    const toolSetContexts = new Map<string, unknown[]>();
+    chatbot.toolSets.forEach((toolSet) => {
+      if (!toolSetContexts.has(toolSet.toolSetName)) {
+        toolSetContexts.set(toolSet.toolSetName, []);
+      }
+      toolSetContexts
+        .get(toolSet.toolSetName)
+        ?.push(asRecord(toolSet.toolSetContext));
+    });
+    const registry = new ToolSetFactoryRegistry(chatbot.ownerId);
+    for (const [toolSetName, contexts] of toolSetContexts.entries()) {
+      for (const context of contexts) {
+        const t = await registry.getTools(toolSetName, context, fileHandles);
+        if (t) {
+          Object.assign(tools, t);
+        }
       }
     }
 
