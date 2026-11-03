@@ -10,10 +10,31 @@ import { logger } from "./logger";
 
 const jobs = new Map<
   number,
-  { cronParam: string; timezone: string; task: ScheduledTask }
+  {
+    cronParam: string;
+    timezone: string;
+    revision: symbol;
+    task: ScheduledTask;
+  }
 >();
-let refreshQueue = Promise.resolve();
-let startupPromise: Promise<void> | undefined;
+type SchedulerState = {
+  jobs: typeof jobs;
+  refreshQueue: Promise<void>;
+  startupRevision: symbol | null;
+  startupPromise: Promise<void> | undefined;
+};
+
+const globalScheduler = globalThis as typeof globalThis & {
+  __botManagerCronScheduler?: SchedulerState;
+};
+const schedulerState =
+  (globalScheduler.__botManagerCronScheduler ??= {
+    jobs,
+    refreshQueue: Promise.resolve(),
+    startupRevision: null,
+    startupPromise: undefined,
+  });
+const moduleRevision = Symbol("scheduler-module-revision");
 
 async function refreshJobs() {
   const schedules = await listSchedulePatterns();
@@ -27,16 +48,20 @@ async function refreshJobs() {
   for (const [id, { cronParam, timezone }] of desired) {
     if (!cron.validate(cronParam)) {
       logger.error(`Invalid Cron expression for schedule ${id}: ${cronParam}`);
-      const previous = jobs.get(id);
+      const previous = schedulerState.jobs.get(id);
       if (previous) {
         await previous.task.destroy();
-        jobs.delete(id);
+        schedulerState.jobs.delete(id);
       }
       continue;
     }
 
-    const previous = jobs.get(id);
-    if (previous?.cronParam === cronParam && previous.timezone === timezone)
+    const previous = schedulerState.jobs.get(id);
+    if (
+      previous?.cronParam === cronParam &&
+      previous.timezone === timezone &&
+      previous.revision === moduleRevision
+    )
       continue;
     if (previous) await previous.task.destroy();
 
@@ -47,13 +72,18 @@ async function refreshJobs() {
       },
       { name: `chatbot-schedule-${id}`, noOverlap: true, timezone },
     );
-    jobs.set(id, { cronParam, timezone, task });
+    schedulerState.jobs.set(id, {
+      cronParam,
+      timezone,
+      revision: moduleRevision,
+      task,
+    });
   }
 
-  for (const [id, job] of jobs) {
+  for (const [id, job] of schedulerState.jobs) {
     if (desired.has(id)) continue;
     await job.task.destroy();
-    jobs.delete(id);
+    schedulerState.jobs.delete(id);
   }
 }
 
@@ -104,17 +134,26 @@ async function executeSchedule(id: number) {
 }
 
 export function refreshCronJobs() {
-  const refresh = refreshQueue.then(refreshJobs);
-  refreshQueue = refresh.catch(() => undefined);
+  const refresh = schedulerState.refreshQueue.then(refreshJobs);
+  schedulerState.refreshQueue = refresh.catch(() => undefined);
   return refresh;
 }
 
 export function startCronScheduler() {
-  if (!startupPromise) {
+  let startupPromise = schedulerState.startupPromise;
+  if (
+    schedulerState.startupRevision !== moduleRevision ||
+    !startupPromise
+  ) {
+    schedulerState.startupRevision = moduleRevision;
     startupPromise = refreshCronJobs().catch((error: unknown) => {
-      startupPromise = undefined;
+      if (schedulerState.startupRevision === moduleRevision) {
+        schedulerState.startupRevision = null;
+        schedulerState.startupPromise = undefined;
+      }
       throw error;
     });
+    schedulerState.startupPromise = startupPromise;
   }
   return startupPromise;
 }
