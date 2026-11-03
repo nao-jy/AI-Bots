@@ -23,7 +23,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'d9007c449b35e786dda7380dbecac2451e1fa9249899e764d871ed7160d23b17'>;
+  StorageHashBase<'c7c241480cdbd0a5eb582eb0411944060dab7b300489f24b07eeec615bb11458'>;
 export type ExecutionHash =
   ExecutionHashBase<'2edef0a9e649f7d4fec54fb6e1236cb304696ca7f4e909082a496d8d33430a90'>;
 export type ProfileHash =
@@ -371,6 +371,7 @@ export namespace Models {
   };
   export type aibot_AppSettings = {
     id: FieldOutputTypes['aibot']['AppSettings']['id'];
+    maxLoginAttempts: FieldOutputTypes['aibot']['AppSettings']['maxLoginAttempts'];
     mfaEnabled: FieldOutputTypes['aibot']['AppSettings']['mfaEnabled'];
     sessionDurationSeconds: FieldOutputTypes['aibot']['AppSettings']['sessionDurationSeconds'];
     readonly [RelationKeys]?: never;
@@ -572,6 +573,8 @@ export namespace Models {
     createdAt: FieldOutputTypes['aibot']['Session']['createdAt'];
     expiresAt: FieldOutputTypes['aibot']['Session']['expiresAt'];
     id: FieldOutputTypes['aibot']['Session']['id'];
+    mfaAttempts: FieldOutputTypes['aibot']['Session']['mfaAttempts'];
+    mfaVerified: FieldOutputTypes['aibot']['Session']['mfaVerified'];
     tokenHash: FieldOutputTypes['aibot']['Session']['tokenHash'];
     userId: FieldOutputTypes['aibot']['Session']['userId'];
     user: aibot_User;
@@ -583,6 +586,7 @@ export namespace Models {
     emailVerified: FieldOutputTypes['aibot']['User']['emailVerified'];
     id: FieldOutputTypes['aibot']['User']['id'];
     isAdmin: FieldOutputTypes['aibot']['User']['isAdmin'];
+    loginAttempts: FieldOutputTypes['aibot']['User']['loginAttempts'];
     mfaSecret: FieldOutputTypes['aibot']['User']['mfaSecret'];
     name: FieldOutputTypes['aibot']['User']['name'];
     passwordHash: FieldOutputTypes['aibot']['User']['passwordHash'];
@@ -869,6 +873,16 @@ type ContractBase = Omit<
                   readonly default: {
                     readonly kind: 'literal';
                     readonly value: DefaultLiteralValue<'pg/text@1', 'global'>;
+                  };
+                  readonly many: false;
+                };
+                readonly maxLoginAttempts: {
+                  readonly dataType: 'pg/int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/int4@1', 5>;
                   };
                   readonly many: false;
                 };
@@ -2266,6 +2280,26 @@ type ContractBase = Omit<
                   };
                   readonly many: false;
                 };
+                readonly mfaAttempts: {
+                  readonly dataType: 'pg/int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/int4@1', 0>;
+                  };
+                  readonly many: false;
+                };
+                readonly mfaVerified: {
+                  readonly dataType: 'pg/bool';
+                  readonly codecId: 'pg/bool@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/bool@1', true>;
+                  };
+                  readonly many: false;
+                };
                 readonly tokenHash: {
                   readonly dataType: 'pg/text';
                   readonly codecId: 'pg/text@1';
@@ -2352,6 +2386,16 @@ type ContractBase = Omit<
                   readonly default: {
                     readonly kind: 'literal';
                     readonly value: DefaultLiteralValue<'pg/bool@1', false>;
+                  };
+                  readonly many: false;
+                };
+                readonly loginAttempts: {
+                  readonly dataType: 'pg/int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/int4@1', 0>;
                   };
                   readonly many: false;
                 };
@@ -2690,6 +2734,10 @@ type ContractBase = Omit<
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
               };
+              readonly maxLoginAttempts: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
               readonly mfaEnabled: {
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/bool@1' };
@@ -2705,6 +2753,7 @@ type ContractBase = Omit<
               readonly namespaceId: 'aibot';
               readonly fields: {
                 readonly id: { readonly column: 'id' };
+                readonly maxLoginAttempts: { readonly column: 'maxLoginAttempts' };
                 readonly mfaEnabled: { readonly column: 'mfaEnabled' };
                 readonly sessionDurationSeconds: { readonly column: 'sessionDurationSeconds' };
               };
@@ -3935,6 +3984,14 @@ type ContractBase = Omit<
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
               };
+              readonly mfaAttempts: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+              readonly mfaVerified: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/bool@1' };
+              };
               readonly tokenHash: {
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
@@ -3962,6 +4019,8 @@ type ContractBase = Omit<
                 readonly createdAt: { readonly column: 'createdAt' };
                 readonly expiresAt: { readonly column: 'expiresAt' };
                 readonly id: { readonly column: 'id' };
+                readonly mfaAttempts: { readonly column: 'mfaAttempts' };
+                readonly mfaVerified: { readonly column: 'mfaVerified' };
                 readonly tokenHash: { readonly column: 'tokenHash' };
                 readonly userId: { readonly column: 'userId' };
               };
@@ -3991,6 +4050,10 @@ type ContractBase = Omit<
               readonly isAdmin: {
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/bool@1' };
+              };
+              readonly loginAttempts: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
               };
               readonly mfaSecret: {
                 readonly nullable: true;
@@ -4078,6 +4141,7 @@ type ContractBase = Omit<
                 readonly emailVerified: { readonly column: 'emailVerified' };
                 readonly id: { readonly column: 'id' };
                 readonly isAdmin: { readonly column: 'isAdmin' };
+                readonly loginAttempts: { readonly column: 'loginAttempts' };
                 readonly mfaSecret: { readonly column: 'mfaSecret' };
                 readonly name: { readonly column: 'name' };
                 readonly passwordHash: { readonly column: 'passwordHash' };

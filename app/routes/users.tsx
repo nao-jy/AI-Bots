@@ -10,9 +10,11 @@ import {
   forceLogoutUser,
   listUsers,
   resetUserMfa,
+  unlockUserLogin,
   saveUser,
   setUserAdmin,
 } from "../.server/repository/entities";
+import { getAppSettings } from "../.server/repository/app-settings";
 import {
   isEmailVerificationEnabled,
   sendEmailVerification,
@@ -29,6 +31,7 @@ const page: Omit<EntityPageDefinition, "records"> = {
     forceLogout: true,
     emailVerification: true,
     mfaReset: true,
+    loginUnlock: true,
   },
   columns: [
     { key: "name", label: "ユーザー" },
@@ -40,6 +43,7 @@ const page: Omit<EntityPageDefinition, "records"> = {
     },
     { key: "mfaStatus", label: "MFA", presentation: "mfa-status" },
     { key: "isAdmin", label: "権限", presentation: "admin-toggle" },
+    { key: "loginLockStatus", label: "ログイン制限" },
     { key: "loginStatus", label: "ログイン状態" },
     { key: "lastLogin", label: "最終ログイン" },
     { key: "updated", label: "最終更新" },
@@ -68,8 +72,12 @@ export function meta() {
 
 export async function loader({ request }: Route.LoaderArgs) {
   const currentUser = await requireAdmin(request);
+  const settings = await getAppSettings();
   return {
-    users: await listUsers(isEmailVerificationEnabled()),
+    users: await listUsers(
+      isEmailVerificationEnabled(),
+      settings.maxLoginAttempts,
+    ),
     currentUserId: currentUser.id,
   };
 }
@@ -98,6 +106,10 @@ export async function action({ request }: Route.ActionArgs) {
   if (intent === "reset-mfa")
     return Number.isInteger(id)
       ? resetUserMfa(id)
+      : { ok: false, error: "ユーザーが見つかりません。" };
+  if (intent === "unlock-login")
+    return Number.isInteger(id)
+      ? unlockUserLogin(id)
       : { ok: false, error: "ユーザーが見つかりません。" };
   if (intent === "send-verification") {
     if (!Number.isInteger(id))

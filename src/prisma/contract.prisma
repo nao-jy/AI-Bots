@@ -32,12 +32,14 @@ namespace aibot {
     isAdmin       Boolean                  @default(false)
     emailVerified Boolean                  @default(false)
     mfaSecret     String?                  @unique
+    loginAttempts Int                      @default(0)
   }
 
   model AppSettings {
     id                     String  @id @default("global")
     mfaEnabled             Boolean @default(false)
     sessionDurationSeconds Int     @default(2592000)
+    maxLoginAttempts       Int     @default(5)
   }
 
   model Session {

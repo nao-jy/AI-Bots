@@ -18,6 +18,8 @@ import {
   createUser,
   findUserByEmail,
   hasUsers,
+  recordFailedLoginAttempt,
+  resetLoginAttemptsForLogin,
 } from "../.server/repository/users";
 import {
   isEmailVerificationEnabled,
@@ -101,11 +103,34 @@ export async function action({ request }: Route.ActionArgs) {
         );
       }
     }
-  } else if (!(await verifyPassword(password, user.passwordHash))) {
-    return data(
-      { error: "メールアドレスまたはパスワードが正しくありません。" },
-      { status: 401 },
-    );
+  } else {
+    const maxLoginAttempts = (await getAppSettings()).maxLoginAttempts;
+    if (user.loginAttempts >= maxLoginAttempts) {
+      return data(
+        { error: "ログイン試行回数の上限に達しました。管理者にお問い合わせください。" },
+        { status: 423 },
+      );
+    }
+
+    if (!(await verifyPassword(password, user.passwordHash))) {
+      const result = await recordFailedLoginAttempt(user.id, maxLoginAttempts);
+      return data(
+        {
+          error:
+            result === "locked"
+              ? "ログイン試行回数の上限に達しました。管理者にお問い合わせください。"
+              : "メールアドレスまたはパスワードが正しくありません。",
+        },
+        { status: result === "locked" ? 423 : 401 },
+      );
+    }
+
+    if (!(await resetLoginAttemptsForLogin(user.id, maxLoginAttempts))) {
+      return data(
+        { error: "ログイン試行回数の上限に達しました。管理者にお問い合わせください。" },
+        { status: 423 },
+      );
+    }
   }
 
   if ((await getAppSettings()).mfaEnabled) {

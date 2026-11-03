@@ -46,6 +46,7 @@ export function EntityRow({
   const supportsSandboxShell = page.tableFeatures?.sandboxShell ?? false;
   const supportsEmailVerification =
     page.tableFeatures?.emailVerification ?? false;
+  const supportsLoginUnlock = page.tableFeatures?.loginUnlock ?? false;
   const instances: PersistentInstance[] = parsePersistentInstances(
     record.instances,
   );
@@ -141,6 +142,12 @@ export function EntityRow({
                   recordName={String(recordName ?? "")}
                 />
               )}
+            {supportsLoginUnlock && record.loginLockStatus === "ロック中" && (
+              <LoginUnlockAction
+                recordId={record.id}
+                recordName={String(recordName ?? "")}
+              />
+            )}
             <ActionIcon
               variant="subtle"
               color="gray"
@@ -273,6 +280,45 @@ function MfaResetAction({
       {fetcher.data?.ok && (
         <Text c="green" size="xs" role="status">
           MFAをリセットしました。
+        </Text>
+      )}
+    </>
+  );
+}
+
+function LoginUnlockAction({
+  recordId,
+  recordName,
+}: {
+  recordId: number;
+  recordName: string;
+}) {
+  const fetcher = useFetcher<{ ok?: boolean; error?: string }>();
+
+  return (
+    <>
+      <fetcher.Form method="post" action="/users">
+        <input type="hidden" name="_intent" value="unlock-login" />
+        <input type="hidden" name="id" value={recordId} />
+        <ActionIcon
+          variant="subtle"
+          color="blue"
+          type="submit"
+          aria-label={`${recordName}のログインロックを解除`}
+          title="ログインロックを解除"
+          disabled={fetcher.state !== "idle"}
+        >
+          <ArrowCounterClockwiseIcon size={16} aria-hidden="true" />
+        </ActionIcon>
+      </fetcher.Form>
+      {fetcher.data?.error && (
+        <Text c="red" size="xs" role="alert">
+          {fetcher.data.error}
+        </Text>
+      )}
+      {fetcher.data?.ok && (
+        <Text c="green" size="xs" role="status">
+          ログインロックを解除しました。
         </Text>
       )}
     </>

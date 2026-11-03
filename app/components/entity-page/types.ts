@@ -61,6 +61,7 @@ export type EntityTableFeatures = {
   forceLogout?: boolean;
   emailVerification?: boolean;
   mfaReset?: boolean;
+  loginUnlock?: boolean;
 };
 
 export type EntityPageDefinition = {

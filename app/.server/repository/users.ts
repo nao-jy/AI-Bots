@@ -32,7 +32,10 @@ export async function createUser(values: {
   return db.orm.aibot.User.create(values);
 }
 
-export async function listUsers(emailVerificationEnabled: boolean) {
+export async function listUsers(
+  emailVerificationEnabled: boolean,
+  maxLoginAttempts: number,
+) {
   if (!emailVerificationEnabled)
     await db.orm.aibot.User.where({ emailVerified: false }).update({
       emailVerified: true,
@@ -55,10 +58,46 @@ export async function listUsers(emailVerificationEnabled: boolean) {
       isAdmin: user.isAdmin ? "管理者" : "一般ユーザー",
       emailVerification: user.emailVerified ? "検証済み" : "未検証",
       mfaStatus: user.mfaSecret ? "設定済み" : "未設定",
+      loginLockStatus:
+        user.loginAttempts >= maxLoginAttempts ? "ロック中" : "—",
       loginStatus: active ? "ログイン中" : "ログアウト",
       lastLogin: sessions[0] ? timestamp(sessions[0].createdAt) : "—",
     });
   });
+}
+
+export async function recordFailedLoginAttempt(
+  id: number,
+  maxLoginAttempts: number,
+) {
+  return db.transaction(async (tx) => {
+    const user = await tx.orm.aibot.User.where({ id }).forUpdate().first();
+    if (!user || user.loginAttempts >= maxLoginAttempts) return "locked";
+
+    const loginAttempts = user.loginAttempts + 1;
+    await tx.orm.aibot.User.where({ id }).update({ loginAttempts });
+    return loginAttempts >= maxLoginAttempts ? "locked" : "failed";
+  });
+}
+
+export async function resetLoginAttemptsForLogin(
+  id: number,
+  maxLoginAttempts: number,
+) {
+  return db.transaction(async (tx) => {
+    const user = await tx.orm.aibot.User.where({ id }).forUpdate().first();
+    if (!user || user.loginAttempts >= maxLoginAttempts) return false;
+    if (user.loginAttempts > 0)
+      await tx.orm.aibot.User.where({ id }).update({ loginAttempts: 0 });
+    return true;
+  });
+}
+
+export async function unlockUserLogin(id: number) {
+  const user = await db.orm.aibot.User.first({ id });
+  if (!user) return { error: "ユーザーが見つかりません。" };
+  await db.orm.aibot.User.where({ id }).update({ loginAttempts: 0 });
+  return { ok: true };
 }
 
 export async function saveUser(

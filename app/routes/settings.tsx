@@ -18,6 +18,7 @@ export async function loader({ request }: Route.LoaderArgs) {
   return {
     mfaEnabled: settings.mfaEnabled,
     sessionDurationDays: settings.sessionDurationSeconds / 86400,
+    maxLoginAttempts: settings.maxLoginAttempts,
   };
 }
 
@@ -27,10 +28,14 @@ export async function action({ request }: Route.ActionArgs) {
   const durationDays = Number(form.get("sessionDurationDays"));
   if (!Number.isInteger(durationDays) || durationDays < 1 || durationDays > 365)
     return { error: "セッション持続時間は1〜365日の整数で指定してください。" };
+  const maxLoginAttempts = Number(form.get("maxLoginAttempts"));
+  if (!Number.isSafeInteger(maxLoginAttempts) || maxLoginAttempts < 1)
+    return { error: "ログイン失敗の上限は1以上の整数で指定してください。" };
 
   await saveAppSettings({
     mfaEnabled: form.get("mfaEnabled") === "on",
     sessionDurationSeconds: durationDays * 86400,
+    maxLoginAttempts,
   });
   return { ok: true };
 }
@@ -73,6 +78,17 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
             max={365}
             step={1}
             defaultValue={loaderData.sessionDurationDays}
+            allowDecimal={false}
+            required
+            mb="lg"
+          />
+          <NumberInput
+            name="maxLoginAttempts"
+            label="ログイン失敗の上限回数"
+            description="この回数失敗するとログインをロックします。ユーザー一覧から解除できます。"
+            min={1}
+            step={1}
+            defaultValue={loaderData.maxLoginAttempts}
             allowDecimal={false}
             required
             mb="lg"
