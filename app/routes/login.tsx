@@ -14,6 +14,11 @@ import {
   findUserByEmail,
   hasUsers,
 } from "../.server/repository/users";
+import {
+  isEmailVerificationEnabled,
+  sendEmailVerification,
+} from "../.server/features/email-verification";
+import { logger } from "../.server/logger";
 import { APP_NAME } from "~/const";
 
 export function meta() {
@@ -57,11 +62,13 @@ export async function action({ request }: Route.ActionArgs) {
       );
     }
     try {
+      const emailVerified = !isEmailVerificationEnabled();
       user = await createUser({
         email,
         name,
         passwordHash: await hashPassword(password),
         isAdmin: true,
+        emailVerified,
       });
     } catch {
       return data(
@@ -71,6 +78,23 @@ export async function action({ request }: Route.ActionArgs) {
         },
         { status: 400 },
       );
+    }
+    if (!user.emailVerified) {
+      try {
+        await sendEmailVerification(user, request.url);
+      } catch (error) {
+        logger.error("Failed to send initial administrator verification email", {
+          userId: user.id,
+          error,
+        });
+        return data(
+          {
+            error:
+              "アカウントを作成しましたが、検証メールを送信できませんでした。ログイン後、ユーザー一覧から再送してください。",
+          },
+          { status: 502 },
+        );
+      }
     }
   } else if (!(await verifyPassword(password, user.passwordHash))) {
     return data(

@@ -13,7 +13,7 @@
 - **MCP servers:** Configure MCP endpoints and HTTP headers, test connections, and make the servers available to bots.
 - **Sandboxes:** Configure E2B or OpenSandbox execution environments, including environment variables, allowed network domains, initialization commands, and sharing scope. Inspect persistent instances and use the built-in terminal.
 - **Scheduled prompts:** Run a prompt on selected bot/adapter threads using a five-field or six-field Cron expression and an IANA timezone. Schedule changes are synchronized with the running scheduler.
-- **OAuth and users:** Manage OAuth clients and authorize accounts for integrations. The first user registered through the login page becomes an administrator; only administrators can manage workspace accounts and grant or revoke administrator privileges. At least one administrator is always required.
+- **OAuth and users:** Manage OAuth clients and authorize accounts for integrations. The first user registered through the login page becomes an administrator; only administrators can manage workspace accounts and grant or revoke administrator privileges. At least one administrator is always required. Set `RESEND_API_KEY` to send email verification messages when creating the initial administrator, creating users, or changing their email addresses. Administrators can resend verification messages from the users page. Without a configured provider, email verification is skipped.
 
 ## Requirements
 
@@ -73,11 +73,13 @@ The provided Compose configuration uses PostgreSQL 16. SearXNG and OpenSandbox a
 | `DATABASE_URL` | Yes | PostgreSQL connection string used by the app and chat state store. |
 | `CREDENTIALS_ENCRYPTION_KEY` | Yes | Base64-encoded 32-byte key for encrypting credentials and signing OAuth authorization state. |
 | `OAUTH_BASE_URL` | For OAuth | Public HTTPS origin (no path) used to form the OAuth callback URL, `/oauth/callback`. `http://localhost` is allowed for local development. Register the resulting callback URL with the OAuth provider. |
-| `PUBLIC_APP_URL` | Optional | Public application URL used when generating webhook URLs. If unset, the request origin is used. |
+| `PUBLIC_APP_URL` | Optional | Public application URL used when generating webhook URLs and email verification links. If unset, the request origin is used. |
 | `E2B_API_KEY` | Optional | Enables the E2B sandbox provider. |
 | `OPEN_SANDBOX_DOMAIN` | Optional | Enables OpenSandbox and sets its connection domain. |
 | `OPEN_SANDBOX_API_KEY` | Optional | API key passed to the OpenSandbox server in the included Compose setup. |
 | `SEARXNG_URL` | Optional | SearXNG endpoint for the web search tool. |
+| `RESEND_API_KEY` | Optional | Enables email verification messages through Resend. Verification is skipped when unset. |
+| `RESEND_FROM_EMAIL` | Optional | Sender address for Resend. Defaults to its test sender; configure an address on a verified domain for production. |
 | `CLOUDFLARE_TOKEN` | Optional | Cloudflare Tunnel token used by `npm run dev`. |
 | `LOG_DIR` | Optional | Log directory; defaults to `logs`. |
 

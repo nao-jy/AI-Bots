@@ -1,6 +1,7 @@
 import { db } from "./db";
 import { hashPassword } from "../auth";
 import { record, timestamp } from "../utils";
+import { isEmailVerificationEnabled } from "../features/email-verification";
 
 export async function hasUsers() {
   return Boolean(await db.orm.aibot.User.first());
@@ -10,16 +11,25 @@ export async function findUserByEmail(email: string) {
   return db.orm.aibot.User.first({ email });
 }
 
+export async function findUserById(id: number) {
+  return db.orm.aibot.User.first({ id });
+}
+
 export async function createUser(values: {
   email: string;
   name: string;
   passwordHash: string;
   isAdmin: boolean;
+  emailVerified: boolean;
 }) {
   return db.orm.aibot.User.create(values);
 }
 
 export async function listUsers() {
+  if (!isEmailVerificationEnabled())
+    await db.orm.aibot.User.where({ emailVerified: false }).update({
+      emailVerified: true,
+    });
   const users = await db.orm.aibot.User.include("sessions")
     .orderBy((user) => user.createdAt.asc())
     .all();
@@ -36,6 +46,7 @@ export async function listUsers() {
       name: user.name ?? "",
       email: user.email,
       isAdmin: user.isAdmin ? "管理者" : "一般ユーザー",
+      emailVerification: user.emailVerified ? "検証済み" : "未検証",
       loginStatus: active ? "ログイン中" : "ログアウト",
       lastLogin: sessions[0] ? timestamp(sessions[0].createdAt) : "—",
     });
@@ -53,24 +64,36 @@ export async function saveUser(id: number | null, values: FormData) {
   if (id === null) {
     if (password.length < 12)
       return { error: "パスワードは12文字以上で入力してください。" };
+    const emailVerified = !isEmailVerificationEnabled();
     await db.orm.aibot.User.create({
       name,
       email,
       passwordHash: await hashPassword(password),
       isAdmin: false,
+      emailVerified,
     });
+    return { ok: true, verificationRequired: !emailVerified };
   } else {
-    if (!(await db.orm.aibot.User.first({ id })))
+    const user = await db.orm.aibot.User.first({ id });
+    if (!user)
       return { error: "ユーザーが見つかりません。" };
     if (password && password.length < 12)
       return { error: "パスワードは12文字以上で入力してください。" };
+    const emailChanged = user.email !== email;
+    const emailVerified = emailChanged
+      ? !isEmailVerificationEnabled()
+      : user.emailVerified;
     await db.orm.aibot.User.where({ id }).update({
       name,
       email,
+      emailVerified,
       ...(password ? { passwordHash: await hashPassword(password) } : {}),
     });
+    return {
+      ok: true,
+      verificationRequired: emailChanged && !emailVerified,
+    };
   }
-  return { ok: true };
 }
 
 export async function setUserAdmin(

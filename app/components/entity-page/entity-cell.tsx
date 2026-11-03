@@ -20,6 +20,20 @@ export function EntityCell({
     return <span className="table-text">{endpoints.length} 件</span>;
   }
 
+  if (column.presentation === "verification-status") {
+    const verified = String(value) === "検証済み";
+    return (
+      <Badge
+        className={`status-badge ${verified ? "success" : "pending"}`}
+        variant="light"
+        radius="sm"
+        leftSection={<span className="status-dot" />}
+      >
+        {value}
+      </Badge>
+    );
+  }
+
   if (column.presentation === "status-toggle")
     return (
       <Group gap="xs">

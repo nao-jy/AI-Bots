@@ -17,6 +17,7 @@ export default [
     route("users", "routes/users.tsx"),
   ]),
   route("login", "routes/login.tsx"),
+  route("verify-email", "routes/verify-email.tsx"),
   route("logout", "routes/logout.tsx"),
   route("api/webhooks/:botId/:adapterId", "routes/webhook.tsx"),
   route("api/sandbox-terminals/:terminalId", "routes/sandbox-terminal.tsx"),

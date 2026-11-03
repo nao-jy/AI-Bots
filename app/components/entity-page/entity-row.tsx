@@ -1,12 +1,14 @@
 import { useState } from "react";
-import { ActionIcon, Group, Table } from "@mantine/core";
+import { ActionIcon, Group, Table, Text } from "@mantine/core";
 import {
   CaretDownIcon,
   CaretRightIcon,
+  EnvelopeSimpleIcon,
   PencilSimpleIcon,
   SignOutIcon,
   TrashIcon,
 } from "@phosphor-icons/react";
+import { useFetcher } from "react-router";
 import type { EntityRecord } from "../../types/entities";
 import type { EntityPageDefinition } from "./types";
 import { EntityCell } from "./entity-cell";
@@ -41,6 +43,8 @@ export function EntityRow({
   const recordName = record[page.columns[0].key];
   const supportsPublicIds = page.tableFeatures?.publicIds ?? false;
   const supportsSandboxShell = page.tableFeatures?.sandboxShell ?? false;
+  const supportsEmailVerification =
+    page.tableFeatures?.emailVerification ?? false;
   const instances: PersistentInstance[] = parsePersistentInstances(
     record.instances,
   );
@@ -122,6 +126,13 @@ export function EntityRow({
                 <SignOutIcon size={16} aria-hidden="true" />
               </ActionIcon>
             )}
+            {supportsEmailVerification &&
+              record.emailVerification !== "検証済み" && (
+                <EmailVerificationAction
+                  recordId={record.id}
+                  recordName={String(recordName ?? "")}
+                />
+              )}
             <ActionIcon
               variant="subtle"
               color="gray"
@@ -170,6 +181,45 @@ export function EntityRow({
             )}
           </Table.Td>
         </Table.Tr>
+      )}
+    </>
+  );
+}
+
+function EmailVerificationAction({
+  recordId,
+  recordName,
+}: {
+  recordId: number;
+  recordName: string;
+}) {
+  const fetcher = useFetcher<{ ok?: boolean; error?: string }>();
+
+  return (
+    <>
+      <fetcher.Form method="post" action="/users">
+        <input type="hidden" name="_intent" value="send-verification" />
+        <input type="hidden" name="id" value={recordId} />
+        <ActionIcon
+          variant="subtle"
+          color="blue"
+          type="submit"
+          aria-label={`${recordName}に検証メールを送信`}
+          title="検証メールを送信"
+          disabled={fetcher.state !== "idle"}
+        >
+          <EnvelopeSimpleIcon size={16} aria-hidden="true" />
+        </ActionIcon>
+      </fetcher.Form>
+      {fetcher.data?.error && (
+        <Text c="red" size="xs" role="alert">
+          {fetcher.data.error}
+        </Text>
+      )}
+      {fetcher.data?.ok && (
+        <Text c="green" size="xs" role="status">
+          検証メールを送信しました。
+        </Text>
       )}
     </>
   );

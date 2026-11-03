@@ -42,7 +42,11 @@ export type EntitySection =
 export type EntityColumn = {
   key: string;
   label: string;
-  presentation?: "status-toggle" | "admin-toggle" | "webhook-count";
+  presentation?:
+    | "status-toggle"
+    | "admin-toggle"
+    | "webhook-count"
+    | "verification-status";
 };
 export type EntityDialogMode =
   "create" | "edit" | "delete" | "status-change" | "force-logout" | null;
@@ -53,6 +57,7 @@ export type EntityTableFeatures = {
   webhookDetails?: boolean;
   sandboxShell?: boolean;
   forceLogout?: boolean;
+  emailVerification?: boolean;
 };
 
 export type EntityPageDefinition = {
