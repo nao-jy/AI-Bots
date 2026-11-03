@@ -1,5 +1,5 @@
 import { createHash, createHmac, timingSafeEqual } from "node:crypto";
-import { db } from "../repository/db";
+import { findUserById, markEmailVerified } from "../repository/users";
 import { getEmailProvider } from "./email-providers";
 
 const EMAIL_VERIFICATION_TTL_MS = 1000 * 60 * 60 * 24;
@@ -112,7 +112,7 @@ async function resolveVerification(token: string) {
   if (!decoded.payload) return { status: "invalid" as const };
 
   const { userId, emailHash } = decoded.payload;
-  const user = await db.orm.aibot.User.first({ id: userId });
+  const user = await findUserById(userId);
   if (!user || hashEmail(user.email) !== emailHash)
     return { status: "invalid" as const };
   if (user.emailVerified) return { status: "already-verified" as const };
@@ -127,8 +127,6 @@ export async function verifyEmail(token: string) {
   const resolved = await resolveVerification(token);
   if (resolved.status !== "ready") return resolved.status;
 
-  await db.orm.aibot.User.where({ id: resolved.userId }).update({
-    emailVerified: true,
-  });
+  await markEmailVerified(resolved.userId);
   return "verified" as const;
 }

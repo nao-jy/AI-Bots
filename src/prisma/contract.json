@@ -2352,6 +2352,20 @@
                   "kind": "scalar"
                 }
               },
+              "mfaAttempts": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "mfaVerified": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/bool@1",
+                  "kind": "scalar"
+                }
+              },
               "tokenHash": {
                 "nullable": false,
                 "type": {
@@ -2395,6 +2409,12 @@
                 },
                 "id": {
                   "column": "id"
+                },
+                "mfaAttempts": {
+                  "column": "mfaAttempts"
+                },
+                "mfaVerified": {
+                  "column": "mfaVerified"
                 },
                 "tokenHash": {
                   "column": "tokenHash"
@@ -4677,6 +4697,24 @@
                   },
                   "nullable": false
                 },
+                "mfaAttempts": {
+                  "codecId": "pg/int4@1",
+                  "dataType": "pg/int4",
+                  "default": {
+                    "kind": "literal",
+                    "value": 0
+                  },
+                  "nullable": false
+                },
+                "mfaVerified": {
+                  "codecId": "pg/bool@1",
+                  "dataType": "pg/bool",
+                  "default": {
+                    "kind": "literal",
+                    "value": true
+                  },
+                  "nullable": false
+                },
                 "tokenHash": {
                   "codecId": "pg/text@1",
                   "dataType": "pg/text",
@@ -4863,7 +4901,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "d9007c449b35e786dda7380dbecac2451e1fa9249899e764d871ed7160d23b17"
+    "storageHash": "82a2d18b26b958d3db79d78ef0c28b67187d3a707db2faf4ff3149e6e86536e9"
   },
   "execution": {
     "executionHash": "2edef0a9e649f7d4fec54fb6e1236cb304696ca7f4e909082a496d8d33430a90",

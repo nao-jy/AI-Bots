@@ -37,7 +37,8 @@ export type EntitySection =
   | "oauth_clients"
   | "oauth_authentications"
   | "sandboxes"
-  | "schedules";
+  | "schedules"
+  | "settings";
 
 export type EntityColumn = {
   key: string;
@@ -46,7 +47,8 @@ export type EntityColumn = {
     | "status-toggle"
     | "admin-toggle"
     | "webhook-count"
-    | "verification-status";
+    | "verification-status"
+    | "mfa-status";
 };
 export type EntityDialogMode =
   "create" | "edit" | "delete" | "status-change" | "force-logout" | null;
@@ -58,6 +60,7 @@ export type EntityTableFeatures = {
   sandboxShell?: boolean;
   forceLogout?: boolean;
   emailVerification?: boolean;
+  mfaReset?: boolean;
 };
 
 export type EntityPageDefinition = {

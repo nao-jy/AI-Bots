@@ -11,6 +11,7 @@ import {
   getSessionUser as getSessionUserInner,
   createSession as createSessionInner,
 } from "./repository/session";
+import { getAppSettings } from "./repository/app-settings";
 
 const scrypt = promisify(scryptCallback);
 const SESSION_COOKIE = "bot_manager_session";
@@ -23,11 +24,11 @@ export type AuthUser = {
   isAdmin: boolean;
 };
 
-function hashSessionToken(token: string) {
+export function hashSessionToken(token: string) {
   return createHash("sha256").update(token).digest("hex");
 }
 
-function getSessionToken(request: Request) {
+export function getSessionToken(request: Request) {
   const cookieHeader = request.headers.get("Cookie") ?? "";
   const cookie = cookieHeader
     .split(";")
@@ -48,7 +49,11 @@ export function clearSessionCookie() {
 
 export async function createSession(userId: number) {
   const token = randomBytes(32).toString("base64url");
-  const expiresAt = new Date(Date.now() + SESSION_TTL_MS);
+  const settings = await getAppSettings();
+  const expiresAt = new Date(
+    Date.now() +
+      (settings.sessionDurationSeconds * 1000 || SESSION_TTL_MS),
+  );
   await createSessionInner(hashSessionToken(token), userId, expiresAt);
   return { token, expiresAt };
 }
@@ -67,6 +72,7 @@ export async function getSessionUser(
 
   const session = await getSessionUserInner(hashSessionToken(token));
   if (!session) return null;
+  if (!session.mfaVerified) return null;
   if (Date.parse(session.expiresAt) <= Date.now()) return null;
 
   return {

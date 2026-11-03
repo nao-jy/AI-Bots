@@ -41,12 +41,14 @@ namespace aibot {
   }
 
   model Session {
-    id        Int               @id @default(autoincrement())
-    tokenHash String            @unique
-    expiresAt TimestamptzString
-    user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-    userId    Int
-    createdAt TimestamptzString @default(now())
+    id          Int               @id @default(autoincrement())
+    tokenHash   String            @unique
+    expiresAt   TimestamptzString
+    user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+    userId      Int
+    createdAt   TimestamptzString @default(now())
+    mfaVerified Boolean           @default(true)
+    mfaAttempts Int               @default(0)
 
     @@index([userId])
     @@index([expiresAt])

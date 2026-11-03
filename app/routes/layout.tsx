@@ -31,7 +31,11 @@ export async function loader({ request }: Route.LoaderArgs) {
   return {
     user,
     items: user.isAdmin
-      ? [...items, { path: "/users", id: "users" as const, label: "ユーザー" }]
+      ? [
+          ...items,
+          { path: "/users", id: "users" as const, label: "ユーザー" },
+          { path: "/settings", id: "settings" as const, label: "設定" },
+        ]
       : items,
   };
 }

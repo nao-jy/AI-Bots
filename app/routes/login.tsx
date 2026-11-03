@@ -9,6 +9,11 @@ import {
   sessionCookie,
   verifyPassword,
 } from "../.server/auth";
+import { getAppSettings } from "../.server/repository/app-settings";
+import {
+  createMfaLoginChallenge,
+  createMfaSecret,
+} from "../.server/features/mfa";
 import {
   createUser,
   findUserByEmail,
@@ -101,6 +106,20 @@ export async function action({ request }: Route.ActionArgs) {
       { error: "メールアドレスまたはパスワードが正しくありません。" },
       { status: 401 },
     );
+  }
+
+  if ((await getAppSettings()).mfaEnabled) {
+    const challenge = await createMfaLoginChallenge(
+      user.id,
+      user.mfaSecret ? undefined : createMfaSecret(),
+    );
+    const headers = new Headers();
+    headers.append(
+      "Set-Cookie",
+      sessionCookie(challenge.token, challenge.expiresAt),
+    );
+    headers.append("Set-Cookie", challenge.setupCookie);
+    return redirect("/mfa", { headers });
   }
 
   const session = await createSession(user.id);

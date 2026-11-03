@@ -4,6 +4,7 @@ import {
   CaretDownIcon,
   CaretRightIcon,
   EnvelopeSimpleIcon,
+  ArrowCounterClockwiseIcon,
   PencilSimpleIcon,
   SignOutIcon,
   TrashIcon,
@@ -133,6 +134,13 @@ export function EntityRow({
                   recordName={String(recordName ?? "")}
                 />
               )}
+            {page.tableFeatures?.mfaReset &&
+              record.mfaStatus === "設定済み" && (
+                <MfaResetAction
+                  recordId={record.id}
+                  recordName={String(recordName ?? "")}
+                />
+              )}
             <ActionIcon
               variant="subtle"
               color="gray"
@@ -219,6 +227,52 @@ function EmailVerificationAction({
       {fetcher.data?.ok && (
         <Text c="green" size="xs" role="status">
           検証メールを送信しました。
+        </Text>
+      )}
+    </>
+  );
+}
+
+function MfaResetAction({
+  recordId,
+  recordName,
+}: {
+  recordId: number;
+  recordName: string;
+}) {
+  const fetcher = useFetcher<{ ok?: boolean; error?: string }>();
+
+  return (
+    <>
+      <fetcher.Form
+        method="post"
+        action="/users"
+        onSubmit={(event) => {
+          if (!window.confirm(`${recordName}のMFA設定をリセットしますか？`))
+            event.preventDefault();
+        }}
+      >
+        <input type="hidden" name="_intent" value="reset-mfa" />
+        <input type="hidden" name="id" value={recordId} />
+        <ActionIcon
+          variant="subtle"
+          color="orange"
+          type="submit"
+          aria-label={`${recordName}のMFAをリセット`}
+          title="MFAをリセット"
+          disabled={fetcher.state !== "idle"}
+        >
+          <ArrowCounterClockwiseIcon size={16} aria-hidden="true" />
+        </ActionIcon>
+      </fetcher.Form>
+      {fetcher.data?.error && (
+        <Text c="red" size="xs" role="alert">
+          {fetcher.data.error}
+        </Text>
+      )}
+      {fetcher.data?.ok && (
+        <Text c="green" size="xs" role="status">
+          MFAをリセットしました。
         </Text>
       )}
     </>

@@ -34,6 +34,20 @@ export function EntityCell({
     );
   }
 
+  if (column.presentation === "mfa-status") {
+    const configured = String(value) === "設定済み";
+    return (
+      <Badge
+        className={`status-badge ${configured ? "success" : "pending"}`}
+        variant="light"
+        radius="sm"
+        leftSection={<span className="status-dot" />}
+      >
+        {value}
+      </Badge>
+    );
+  }
+
   if (column.presentation === "status-toggle")
     return (
       <Group gap="xs">

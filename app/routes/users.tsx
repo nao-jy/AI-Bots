@@ -9,10 +9,14 @@ import {
   findUserById,
   forceLogoutUser,
   listUsers,
+  resetUserMfa,
   saveUser,
   setUserAdmin,
 } from "../.server/repository/entities";
-import { sendEmailVerification } from "../.server/features/email-verification";
+import {
+  isEmailVerificationEnabled,
+  sendEmailVerification,
+} from "../.server/features/email-verification";
 import { requireAdmin } from "../.server/auth";
 import { logger } from "../.server/logger";
 import { APP_NAME } from "~/const";
@@ -21,7 +25,11 @@ const page: Omit<EntityPageDefinition, "records"> = {
   title: "ユーザー",
   description: "ログインできるユーザーアカウントを管理します。",
   icon: "users",
-  tableFeatures: { forceLogout: true, emailVerification: true },
+  tableFeatures: {
+    forceLogout: true,
+    emailVerification: true,
+    mfaReset: true,
+  },
   columns: [
     { key: "name", label: "ユーザー" },
     { key: "email", label: "メールアドレス" },
@@ -30,6 +38,7 @@ const page: Omit<EntityPageDefinition, "records"> = {
       label: "メールアドレス検証",
       presentation: "verification-status",
     },
+    { key: "mfaStatus", label: "MFA", presentation: "mfa-status" },
     { key: "isAdmin", label: "権限", presentation: "admin-toggle" },
     { key: "loginStatus", label: "ログイン状態" },
     { key: "lastLogin", label: "最終ログイン" },
@@ -59,7 +68,10 @@ export function meta() {
 
 export async function loader({ request }: Route.LoaderArgs) {
   const currentUser = await requireAdmin(request);
-  return { users: await listUsers(), currentUserId: currentUser.id };
+  return {
+    users: await listUsers(isEmailVerificationEnabled()),
+    currentUserId: currentUser.id,
+  };
 }
 
 export async function action({ request }: Route.ActionArgs) {
@@ -83,6 +95,10 @@ export async function action({ request }: Route.ActionArgs) {
       ? forceLogoutUser(id, actor.id)
       : { ok: false, error: "ユーザーが見つかりません。" };
   }
+  if (intent === "reset-mfa")
+    return Number.isInteger(id)
+      ? resetUserMfa(id)
+      : { ok: false, error: "ユーザーが見つかりません。" };
   if (intent === "send-verification") {
     if (!Number.isInteger(id))
       return { ok: false, error: "ユーザーが見つかりません。" };
@@ -107,7 +123,11 @@ export async function action({ request }: Route.ActionArgs) {
     }
   }
   if (intent === "create") {
-    const result = await saveUser(null, form);
+    const result = await saveUser(
+      null,
+      form,
+      isEmailVerificationEnabled(),
+    );
     if ("error" in result || !result.verificationRequired) return result;
     return sendNewUserVerification(
       String(form.get("email") ?? "").trim().toLowerCase(),
@@ -117,7 +137,11 @@ export async function action({ request }: Route.ActionArgs) {
   if (intent === "update") {
     if (!Number.isInteger(id))
       return { ok: false, error: "ユーザーが見つかりません。" };
-    const result = await saveUser(id, form);
+    const result = await saveUser(
+      id,
+      form,
+      isEmailVerificationEnabled(),
+    );
     if ("error" in result || !result.verificationRequired) return result;
     return sendNewUserVerification(
       String(form.get("email") ?? "").trim().toLowerCase(),

@@ -23,7 +23,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'d9007c449b35e786dda7380dbecac2451e1fa9249899e764d871ed7160d23b17'>;
+  StorageHashBase<'82a2d18b26b958d3db79d78ef0c28b67187d3a707db2faf4ff3149e6e86536e9'>;
 export type ExecutionHash =
   ExecutionHashBase<'2edef0a9e649f7d4fec54fb6e1236cb304696ca7f4e909082a496d8d33430a90'>;
 export type ProfileHash =
@@ -572,6 +572,8 @@ export namespace Models {
     createdAt: FieldOutputTypes['aibot']['Session']['createdAt'];
     expiresAt: FieldOutputTypes['aibot']['Session']['expiresAt'];
     id: FieldOutputTypes['aibot']['Session']['id'];
+    mfaAttempts: FieldOutputTypes['aibot']['Session']['mfaAttempts'];
+    mfaVerified: FieldOutputTypes['aibot']['Session']['mfaVerified'];
     tokenHash: FieldOutputTypes['aibot']['Session']['tokenHash'];
     userId: FieldOutputTypes['aibot']['Session']['userId'];
     user: aibot_User;
@@ -2266,6 +2268,26 @@ type ContractBase = Omit<
                   };
                   readonly many: false;
                 };
+                readonly mfaAttempts: {
+                  readonly dataType: 'pg/int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/int4@1', 0>;
+                  };
+                  readonly many: false;
+                };
+                readonly mfaVerified: {
+                  readonly dataType: 'pg/bool';
+                  readonly codecId: 'pg/bool@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/bool@1', true>;
+                  };
+                  readonly many: false;
+                };
                 readonly tokenHash: {
                   readonly dataType: 'pg/text';
                   readonly codecId: 'pg/text@1';
@@ -3935,6 +3957,14 @@ type ContractBase = Omit<
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
               };
+              readonly mfaAttempts: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+              readonly mfaVerified: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/bool@1' };
+              };
               readonly tokenHash: {
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
@@ -3962,6 +3992,8 @@ type ContractBase = Omit<
                 readonly createdAt: { readonly column: 'createdAt' };
                 readonly expiresAt: { readonly column: 'expiresAt' };
                 readonly id: { readonly column: 'id' };
+                readonly mfaAttempts: { readonly column: 'mfaAttempts' };
+                readonly mfaVerified: { readonly column: 'mfaVerified' };
                 readonly tokenHash: { readonly column: 'tokenHash' };
                 readonly userId: { readonly column: 'userId' };
               };

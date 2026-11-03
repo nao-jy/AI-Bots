@@ -1,7 +1,6 @@
 import { db } from "./db";
 import { hashPassword } from "../auth";
 import { record, timestamp } from "../utils";
-import { isEmailVerificationEnabled } from "../features/email-verification";
 
 export async function hasUsers() {
   return Boolean(await db.orm.aibot.User.first());
@@ -15,6 +14,14 @@ export async function findUserById(id: number) {
   return db.orm.aibot.User.first({ id });
 }
 
+export async function markEmailVerified(id: number) {
+  await db.orm.aibot.User.where({ id }).update({ emailVerified: true });
+}
+
+export async function saveMfaSecret(id: number, mfaSecret: string) {
+  await db.orm.aibot.User.where({ id }).update({ mfaSecret });
+}
+
 export async function createUser(values: {
   email: string;
   name: string;
@@ -25,8 +32,8 @@ export async function createUser(values: {
   return db.orm.aibot.User.create(values);
 }
 
-export async function listUsers() {
-  if (!isEmailVerificationEnabled())
+export async function listUsers(emailVerificationEnabled: boolean) {
+  if (!emailVerificationEnabled)
     await db.orm.aibot.User.where({ emailVerified: false }).update({
       emailVerified: true,
     });
@@ -47,13 +54,18 @@ export async function listUsers() {
       email: user.email,
       isAdmin: user.isAdmin ? "管理者" : "一般ユーザー",
       emailVerification: user.emailVerified ? "検証済み" : "未検証",
+      mfaStatus: user.mfaSecret ? "設定済み" : "未設定",
       loginStatus: active ? "ログイン中" : "ログアウト",
       lastLogin: sessions[0] ? timestamp(sessions[0].createdAt) : "—",
     });
   });
 }
 
-export async function saveUser(id: number | null, values: FormData) {
+export async function saveUser(
+  id: number | null,
+  values: FormData,
+  emailVerificationEnabled: boolean,
+) {
   const name = String(values.get("name") ?? "").trim();
   const email = String(values.get("email") ?? "")
     .trim()
@@ -64,7 +76,7 @@ export async function saveUser(id: number | null, values: FormData) {
   if (id === null) {
     if (password.length < 12)
       return { error: "パスワードは12文字以上で入力してください。" };
-    const emailVerified = !isEmailVerificationEnabled();
+    const emailVerified = !emailVerificationEnabled;
     await db.orm.aibot.User.create({
       name,
       email,
@@ -81,7 +93,7 @@ export async function saveUser(id: number | null, values: FormData) {
       return { error: "パスワードは12文字以上で入力してください。" };
     const emailChanged = user.email !== email;
     const emailVerified = emailChanged
-      ? !isEmailVerificationEnabled()
+      ? !emailVerificationEnabled
       : user.emailVerified;
     await db.orm.aibot.User.where({ id }).update({
       name,
@@ -155,4 +167,18 @@ export async function forceLogoutUser(id: number, currentUserId: number) {
     });
     return { ok: true };
   });
+}
+
+export async function resetUserMfa(id: number) {
+  const user = await db.orm.aibot.User.first({ id });
+  if (!user) return { error: "ユーザーが見つかりません。" };
+  if (!user.mfaSecret) return { error: "このユーザーはMFAを設定していません。" };
+
+  await db.transaction(async (tx) => {
+    await tx.orm.aibot.User.where({ id }).update({ mfaSecret: null });
+    await tx.orm.aibot.Session.where({ userId: id }).update({
+      expiresAt: new Date().toISOString(),
+    });
+  });
+  return { ok: true };
 }
