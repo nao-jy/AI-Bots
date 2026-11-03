@@ -27,6 +27,7 @@
     "@mantine/core": "^9.7.3",
     "@mantine/dates": "^9.7.4",
     "@mantine/hooks": "^9.7.3",
+    "@mantine/notifications": "^9.7.4",
     "@phosphor-icons/react": "^2.1.10",
     "@prisma/orm-postgres": "^8.0.0-rc.18",
     "@react-router/node": "^8.4.0",

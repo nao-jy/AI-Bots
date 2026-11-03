@@ -12,6 +12,7 @@ import {
 
 import type { Route } from "./+types/root";
 import "@mantine/core/styles.css";
+import "@mantine/notifications/styles.css";
 import "./app.css";
 
 import {
@@ -19,6 +20,7 @@ import {
   MantineProvider,
   mantineHtmlProps,
 } from "@mantine/core";
+import { Notifications } from "@mantine/notifications";
 import { logger } from "./.server/logger";
 import { randomUUID } from "node:crypto";
 import {
@@ -54,7 +56,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Links />
       </head>
       <body>
-        <MantineProvider>{children}</MantineProvider>
+        <MantineProvider>
+          <Notifications />
+          {children}
+        </MantineProvider>
         <ScrollRestoration />
         <Scripts />
       </body>

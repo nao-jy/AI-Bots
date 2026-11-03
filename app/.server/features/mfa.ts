@@ -13,6 +13,7 @@ import { decryptCredential, encryptCredential } from "../utils";
 import { getSessionToken, hashSessionToken } from "../auth";
 
 const MFA_SETUP_COOKIE = "bot_manager_mfa_setup";
+const LEGACY_MFA_SETUP_COOKIE_PATH = "/mfa";
 const MFA_CHALLENGE_TTL_MS = 10 * 60 * 1000;
 
 type SetupChallenge = {
@@ -29,16 +30,49 @@ function secureCookie() {
   return process.env.NODE_ENV === "production" ? "; Secure" : "";
 }
 
-function serializeCookie(name: string, value: string, maxAge: number) {
-  return `${name}=${value}; Path=/mfa; Max-Age=${maxAge}; HttpOnly; SameSite=Strict${secureCookie()}`;
+function serializeCookie(
+  name: string,
+  value: string,
+  maxAge: number,
+  path = "/",
+) {
+  return `${name}=${value}; Path=${path}; Max-Age=${maxAge}; HttpOnly; SameSite=Strict${secureCookie()}`;
 }
 
-export function clearMfaSetupCookie() {
-  return serializeCookie(MFA_SETUP_COOKIE, "", 0);
+function clearLegacyMfaSetupCookie() {
+  return serializeCookie(
+    MFA_SETUP_COOKIE,
+    "",
+    0,
+    LEGACY_MFA_SETUP_COOKIE_PATH,
+  );
+}
+
+export function clearMfaSetupCookies() {
+  return [
+    serializeCookie(MFA_SETUP_COOKIE, "", 0),
+    clearLegacyMfaSetupCookie(),
+  ];
 }
 
 function encodeSetupChallenge(challenge: SetupChallenge) {
   return encryptCredential(JSON.stringify(challenge)).replaceAll(".", "~");
+}
+
+function createSetupCookie(
+  userId: number,
+  secret: string,
+  expiresAt: Date,
+) {
+  return serializeCookie(
+    MFA_SETUP_COOKIE,
+    encodeSetupChallenge({
+      userId,
+      secret,
+      expiresAt: expiresAt.getTime(),
+    }),
+    Math.max(1, Math.ceil((expiresAt.getTime() - Date.now()) / 1000)),
+  );
 }
 
 function decodeSetupChallenge(request: Request): SetupChallenge | null {
@@ -78,17 +112,12 @@ export async function createMfaLoginChallenge(
   return {
     token,
     expiresAt,
-    setupCookie: secret
-      ? serializeCookie(
-          MFA_SETUP_COOKIE,
-          encodeSetupChallenge({
-            userId,
-            secret,
-            expiresAt: expiresAt.getTime(),
-          }),
-          MFA_CHALLENGE_TTL_MS / 1000,
-        )
-      : clearMfaSetupCookie(),
+    setupCookies: secret
+      ? [
+          createSetupCookie(userId, secret, expiresAt),
+          clearLegacyMfaSetupCookie(),
+        ]
+      : clearMfaSetupCookies(),
   };
 }
 
@@ -108,17 +137,50 @@ export async function getMfaChallenge(request: Request) {
   }
 
   const setup = decodeSetupChallenge(request);
-  if (!setup || setup.userId !== session.user.id) return null;
-  return { user: session.user, stage: "setup" as const, secret: setup.secret };
+  if (setup && setup.userId === session.user.id) {
+    return {
+      user: session.user,
+      stage: "setup" as const,
+      secret: setup.secret,
+    };
+  }
+
+  const secret = createMfaSecret();
+  const expiresAt = new Date(session.expiresAt);
+  return {
+    user: session.user,
+    stage: "setup" as const,
+    secret,
+    setupCookies: [
+      createSetupCookie(session.user.id, secret, expiresAt),
+      clearLegacyMfaSetupCookie(),
+    ],
+  };
 }
 
 export async function getMfaSetupUri(secret: string, email: string) {
-  return generateURI({ issuer: APP_NAME, label: email, secret });
+  return generateURI({
+    issuer: APP_NAME,
+    label: email,
+    secret,
+    algorithm: "sha1",
+    digits: 6,
+    period: 30,
+  });
 }
 
 export async function verifyMfaCode(secret: string, code: string) {
   if (!/^\d{6}$/.test(code)) return false;
-  return (await verify({ secret, token: code })).valid;
+  return (
+    await verify({
+      secret,
+      token: code,
+      algorithm: "sha1",
+      digits: 6,
+      period: 30,
+      epochTolerance: 30,
+    })
+  ).valid;
 }
 
 export async function recordMfaFailure(request: Request) {

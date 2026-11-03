@@ -143,7 +143,8 @@ export async function action({ request }: Route.ActionArgs) {
       "Set-Cookie",
       sessionCookie(challenge.token, challenge.expiresAt),
     );
-    headers.append("Set-Cookie", challenge.setupCookie);
+    for (const cookie of challenge.setupCookies)
+      headers.append("Set-Cookie", cookie);
     return redirect("/mfa", { headers });
   }
 

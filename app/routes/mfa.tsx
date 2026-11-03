@@ -3,7 +3,7 @@ import QRCode from "qrcode";
 import { data, Form, redirect, useActionData } from "react-router";
 import type { Route } from "./+types/mfa";
 import {
-  clearMfaSetupCookie,
+  clearMfaSetupCookies,
   finishMfaLogin,
   finishMfaSetup,
   getMfaChallenge,
@@ -27,9 +27,15 @@ export async function loader({ request }: Route.LoaderArgs) {
   if (!challenge) {
     const headers = new Headers({ "Cache-Control": "no-store" });
     headers.append("Set-Cookie", clearSessionCookie());
-    headers.append("Set-Cookie", clearMfaSetupCookie());
+    for (const cookie of clearMfaSetupCookies())
+      headers.append("Set-Cookie", cookie);
     throw redirect("/login", { headers });
   }
+
+  const headers = new Headers({ "Cache-Control": "no-store" });
+  if ("setupCookies" in challenge)
+    for (const cookie of challenge.setupCookies ?? [])
+      headers.append("Set-Cookie", cookie);
 
   return data(
     {
@@ -42,7 +48,7 @@ export async function loader({ request }: Route.LoaderArgs) {
             )
           : null,
     },
-    { headers: { "Cache-Control": "no-store" } },
+    { headers },
   );
 }
 
@@ -51,7 +57,8 @@ export async function action({ request }: Route.ActionArgs) {
   if (!challenge) {
     const headers = new Headers({ "Cache-Control": "no-store" });
     headers.append("Set-Cookie", clearSessionCookie());
-    headers.append("Set-Cookie", clearMfaSetupCookie());
+    for (const cookie of clearMfaSetupCookies())
+      headers.append("Set-Cookie", cookie);
     return data(
       { error: "認証手続きの有効期限が切れました。もう一度ログインしてください。" },
       { status: 401, headers },
@@ -65,7 +72,8 @@ export async function action({ request }: Route.ActionArgs) {
     const headers = new Headers({ "Cache-Control": "no-store" });
     if (locked) {
       headers.append("Set-Cookie", clearSessionCookie());
-      headers.append("Set-Cookie", clearMfaSetupCookie());
+      for (const cookie of clearMfaSetupCookies())
+        headers.append("Set-Cookie", cookie);
     }
     return data(
       {
@@ -92,7 +100,8 @@ export async function action({ request }: Route.ActionArgs) {
   const headers = new Headers();
   headers.append("Cache-Control", "no-store");
   headers.append("Set-Cookie", sessionCookie(token, completed.expiresAt));
-  headers.append("Set-Cookie", clearMfaSetupCookie());
+  for (const cookie of clearMfaSetupCookies())
+    headers.append("Set-Cookie", cookie);
   return redirect("/bots", { headers });
 }
 
