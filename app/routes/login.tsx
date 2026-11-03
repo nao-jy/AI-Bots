@@ -1,5 +1,5 @@
 import { Alert, Button, PasswordInput, TextInput } from "@mantine/core";
-import { ArrowRightIcon, SparkleIcon } from "@phosphor-icons/react";
+import { ArrowRightIcon } from "@phosphor-icons/react";
 import { data, Form, Link, redirect, useActionData } from "react-router";
 import type { Route } from "./+types/login";
 import {
@@ -178,22 +178,14 @@ export default function Login({ loaderData }: Route.ComponentProps) {
       <div className="login-decoration decor-three" />
       <div className="login-top">
         <Link to="/login" className="brand">
-          <span className="brand-mark">
-            <SparkleIcon size={20} weight="fill" aria-hidden="true" />
-          </span>
-          <span>
-            {APP_NAME}
-            <span className="brand-dot">.</span>
-            <small>AI WORKSPACE</small>
-          </span>
+          <img src="/logo.png" alt={APP_NAME} />
         </Link>
       </div>
       <div className="login-card-wrap">
         <section className="login-card">
           <div className="login-welcome-mark">
-            <SparkleIcon size={23} weight="fill" aria-hidden="true" />
+            <img src="/logo.png" alt={APP_NAME} />
           </div>
-          <div className="eyebrow">YOUR AI WORKSPACE</div>
           <h1>{setupRequired ? "最初のアカウントを作成" : "おかえりなさい"}</h1>
           <p className="login-subtitle">
             {setupRequired
