@@ -98,16 +98,20 @@ export async function getToolSetFactory(userId: number) {
               .describe("このパスより後から一覧を続ける場合の開始位置"),
           }),
           execute: async ({ path, recursive, limit, startAfter }) => {
-            const entries = await operator.list(path, {
-              recursive,
-              limit,
-              startAfter,
-            });
-            return entries.map((entry) => ({
-              path: entry.path(),
-              name: entry.name(),
-              ...serializeMetadata(entry.metadata()),
-            }));
+            try {
+              const entries = await operator.list(path, {
+                recursive,
+                limit,
+                startAfter,
+              });
+              return entries.map((entry) => ({
+                path: entry.path(),
+                name: entry.name(),
+                ...serializeMetadata(entry.metadata()),
+              }));
+            } catch (e) {
+              return { error: e instanceof Error ? e.message : String(e) };
+            }
           },
         }),
         [`getRemoteFileHandle_${args.service}${authName}`]: tool({
@@ -119,60 +123,65 @@ export async function getToolSetFactory(userId: number) {
               .describe("ハンドルを作成するファイルのパス"),
           }),
           execute: async ({ path }) => {
-            const metadata = await operator.stat(path);
-            if (!metadata.isFile()) {
-              throw new Error(`Not a remote file: ${path}`);
-            }
-            const sourceFilename =
-              path.split("/").filter(Boolean).at(-1) ?? path;
-            const sourceMimeType = metadata.contentType;
-            let exportedFile:
-              Awaited<ReturnType<typeof exportGoogleWorkspaceFile>> | undefined;
-            if (sourceMimeType && isGoogleWorkspaceFile(sourceMimeType)) {
-              if (!accessToken) {
-                throw new Error(
-                  "Google Workspace files require an OAuth authentication.",
-                );
+            try {
+              const metadata = await operator.stat(path);
+              if (!metadata.isFile()) {
+                throw new Error(`Not a remote file: ${path}`);
               }
-              exportedFile = await exportGoogleWorkspaceFile({
-                accessToken: accessToken.accessToken,
-                fileId: path,
-                mimeType: sourceMimeType,
-                filename: sourceFilename,
-              });
-            }
-            const filename = exportedFile?.filename ?? sourceFilename;
-            const mimeType = exportedFile?.mimeType ?? sourceMimeType;
-            const handle = generateFileHandle();
-            fileHandles.set(handle, {
-              stream: async function* () {
-                const source = exportedFile
-                  ? exportedFile.stream
-                  : (await operator.reader(path)).createReadStream();
-                for await (const chunk of source) {
-                  if (!(chunk instanceof Uint8Array)) {
-                    throw new Error(
-                      `Remote file reader returned non-binary data: ${path}`,
-                    );
-                  }
-                  yield new Uint8Array(
-                    chunk.buffer,
-                    chunk.byteOffset,
-                    chunk.byteLength,
+              const sourceFilename =
+                path.split("/").filter(Boolean).at(-1) ?? path;
+              const sourceMimeType = metadata.contentType;
+              let exportedFile:
+                | Awaited<ReturnType<typeof exportGoogleWorkspaceFile>>
+                | undefined;
+              if (sourceMimeType && isGoogleWorkspaceFile(sourceMimeType)) {
+                if (!accessToken) {
+                  throw new Error(
+                    "Google Workspace files require an OAuth authentication.",
                   );
                 }
-              },
-              filename,
-              mimeType: mimeType ?? undefined,
-            });
+                exportedFile = await exportGoogleWorkspaceFile({
+                  accessToken: accessToken.accessToken,
+                  fileId: path,
+                  mimeType: sourceMimeType,
+                  filename: sourceFilename,
+                });
+              }
+              const filename = exportedFile?.filename ?? sourceFilename;
+              const mimeType = exportedFile?.mimeType ?? sourceMimeType;
+              const handle = generateFileHandle();
+              fileHandles.set(handle, {
+                stream: async function* () {
+                  const source = exportedFile
+                    ? exportedFile.stream
+                    : (await operator.reader(path)).createReadStream();
+                  for await (const chunk of source) {
+                    if (!(chunk instanceof Uint8Array)) {
+                      throw new Error(
+                        `Remote file reader returned non-binary data: ${path}`,
+                      );
+                    }
+                    yield new Uint8Array(
+                      chunk.buffer,
+                      chunk.byteOffset,
+                      chunk.byteLength,
+                    );
+                  }
+                },
+                filename,
+                mimeType: mimeType ?? undefined,
+              });
 
-            return {
-              success: true,
-              fileHandle: handle,
-              filename,
-              ...serializeMetadata(metadata),
-              contentType: mimeType ?? null,
-            };
+              return {
+                success: true,
+                fileHandle: handle,
+                filename,
+                ...serializeMetadata(metadata),
+                contentType: mimeType ?? null,
+              };
+            } catch (e) {
+              return { error: e instanceof Error ? e.message : String(e) };
+            }
           },
         }),
         [`getRemoteFileMetadata_${args.service}${authName}`]: tool({
@@ -182,8 +191,12 @@ export async function getToolSetFactory(userId: number) {
             path: z.string().min(1).describe("メタデータを取得するパス"),
           }),
           execute: async ({ path }) => {
-            const metadata = await operator.stat(path);
-            return { path, ...serializeMetadata(metadata) };
+            try {
+              const metadata = await operator.stat(path);
+              return { path, ...serializeMetadata(metadata) };
+            } catch (e) {
+              return { error: e instanceof Error ? e.message : String(e) };
+            }
           },
         }),
         [`remoteFileExists_${args.service}${authName}`]: tool({
@@ -191,10 +204,13 @@ export async function getToolSetFactory(userId: number) {
           inputSchema: z.object({
             path: z.string().min(1).describe("確認するパス"),
           }),
-          execute: async ({ path }) => ({
-            path,
-            exists: await operator.exists(path),
-          }),
+          execute: async ({ path }) => {
+            try {
+              return { path, exists: await operator.exists(path) };
+            } catch (e) {
+              return { error: e instanceof Error ? e.message : String(e) };
+            }
+          },
         }),
       };
     },

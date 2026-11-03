@@ -92,18 +92,22 @@ export async function getToolSetFactory(userId: number) {
               .describe("このパスより後から一覧を続ける場合の開始位置"),
           }),
           execute: async ({ folderId, recursive, limit, startAfter }) => {
-            const { accessToken: token } = requireAccessToken(accessToken);
-            const files = await listGoogleDriveFiles({
-              accessToken: token,
-              folderId,
-              recursive,
-              limit,
-              startAfter,
-            });
-            return files.map((file) => ({
-              ...file,
-              ...serializeMetadata(file),
-            }));
+            try {
+              const { accessToken: token } = requireAccessToken(accessToken);
+              const files = await listGoogleDriveFiles({
+                accessToken: token,
+                folderId,
+                recursive,
+                limit,
+                startAfter,
+              });
+              return files.map((file) => ({
+                ...file,
+                ...serializeMetadata(file),
+              }));
+            } catch (e) {
+              return { error: e instanceof Error ? e.message : String(e) };
+            }
           },
         }),
         [`listSharedGdrive_${authName}`]: tool({
@@ -123,16 +127,20 @@ export async function getToolSetFactory(userId: number) {
               .describe("この名前より後から一覧を続ける場合の開始位置"),
           }),
           execute: async ({ limit, startAfter }) => {
-            const { accessToken: token } = requireAccessToken(accessToken);
-            const files = await listGoogleDriveSharedFiles({
-              accessToken: token,
-              limit,
-              startAfter,
-            });
-            return files.map((file) => ({
-              ...file,
-              ...serializeMetadata(file),
-            }));
+            try {
+              const { accessToken: token } = requireAccessToken(accessToken);
+              const files = await listGoogleDriveSharedFiles({
+                accessToken: token,
+                limit,
+                startAfter,
+              });
+              return files.map((file) => ({
+                ...file,
+                ...serializeMetadata(file),
+              }));
+            } catch (e) {
+              return { error: e instanceof Error ? e.message : String(e) };
+            }
           },
         }),
         [`searchGdrive_${authName}`]: tool({
@@ -157,20 +165,24 @@ export async function getToolSetFactory(userId: number) {
               .describe("前回の検索結果に含まれる次ページトークン"),
           }),
           execute: async ({ q, limit, pageToken }) => {
-            const { accessToken: token } = requireAccessToken(accessToken);
-            const result = await searchGoogleDriveFiles({
-              accessToken: token,
-              q,
-              limit,
-              pageToken,
-            });
-            return {
-              files: result.files.map((file) => ({
-                ...file,
-                ...serializeMetadata(file),
-              })),
-              nextPageToken: result.nextPageToken,
-            };
+            try {
+              const { accessToken: token } = requireAccessToken(accessToken);
+              const result = await searchGoogleDriveFiles({
+                accessToken: token,
+                q,
+                limit,
+                pageToken,
+              });
+              return {
+                files: result.files.map((file) => ({
+                  ...file,
+                  ...serializeMetadata(file),
+                })),
+                nextPageToken: result.nextPageToken,
+              };
+            } catch (e) {
+              return { error: e instanceof Error ? e.message : String(e) };
+            }
           },
         }),
         [`getGdriveFileHandle_${authName}`]: tool({
@@ -183,51 +195,58 @@ export async function getToolSetFactory(userId: number) {
               .describe("ハンドルを作成するファイルのID"),
           }),
           execute: async ({ fileId }) => {
-            const { accessToken: token } = requireAccessToken(accessToken);
-            const metadata = await getGoogleDriveFileMetadata({
-              accessToken: token,
-              fileId,
-            });
-            if (!metadata.mimeType || isGoogleDriveFolder(metadata.mimeType)) {
-              throw new Error(`Not a Google Drive file: ${fileId}`);
-            }
+            try {
+              const { accessToken: token } = requireAccessToken(accessToken);
+              const metadata = await getGoogleDriveFileMetadata({
+                accessToken: token,
+                fileId,
+              });
+              if (
+                !metadata.mimeType ||
+                isGoogleDriveFolder(metadata.mimeType)
+              ) {
+                throw new Error(`Not a Google Drive file: ${fileId}`);
+              }
 
-            const sourceFilename = metadata.name ?? fileId;
-            const downloadedFile = await downloadGoogleDriveFile({
-              accessToken: token,
-              fileId,
-              mimeType: metadata.mimeType,
-              filename: sourceFilename,
-            });
-            const { filename, mimeType } = downloadedFile;
-            const handle = generateFileHandle();
+              const sourceFilename = metadata.name ?? fileId;
+              const downloadedFile = await downloadGoogleDriveFile({
+                accessToken: token,
+                fileId,
+                mimeType: metadata.mimeType,
+                filename: sourceFilename,
+              });
+              const { filename, mimeType } = downloadedFile;
+              const handle = generateFileHandle();
 
-            fileHandles.set(handle, {
-              stream: async function* () {
-                for await (const chunk of downloadedFile.stream) {
-                  if (!(chunk instanceof Uint8Array)) {
-                    throw new Error(
-                      `Google Drive returned non-binary data: ${fileId}`,
+              fileHandles.set(handle, {
+                stream: async function* () {
+                  for await (const chunk of downloadedFile.stream) {
+                    if (!(chunk instanceof Uint8Array)) {
+                      throw new Error(
+                        `Google Drive returned non-binary data: ${fileId}`,
+                      );
+                    }
+                    yield new Uint8Array(
+                      chunk.buffer,
+                      chunk.byteOffset,
+                      chunk.byteLength,
                     );
                   }
-                  yield new Uint8Array(
-                    chunk.buffer,
-                    chunk.byteOffset,
-                    chunk.byteLength,
-                  );
-                }
-              },
-              filename,
-              mimeType,
-            });
+                },
+                filename,
+                mimeType,
+              });
 
-            return {
-              success: true,
-              fileHandle: handle,
-              filename,
-              ...serializeMetadata(metadata),
-              contentType: mimeType,
-            };
+              return {
+                success: true,
+                fileHandle: handle,
+                filename,
+                ...serializeMetadata(metadata),
+                contentType: mimeType,
+              };
+            } catch (e) {
+              return { error: e instanceof Error ? e.message : String(e) };
+            }
           },
         }),
         [`getGdriveFileMetadata_${authName}`]: tool({
@@ -240,12 +259,16 @@ export async function getToolSetFactory(userId: number) {
               .describe("メタデータを取得するファイルまたはフォルダのID"),
           }),
           execute: async ({ fileOrFolderId }) => {
-            const { accessToken: token } = requireAccessToken(accessToken);
-            const metadata = await getGoogleDriveFileMetadata({
-              accessToken: token,
-              fileId: fileOrFolderId,
-            });
-            return serializeMetadata(metadata);
+            try {
+              const { accessToken: token } = requireAccessToken(accessToken);
+              const metadata = await getGoogleDriveFileMetadata({
+                accessToken: token,
+                fileId: fileOrFolderId,
+              });
+              return serializeMetadata(metadata);
+            } catch (e) {
+              return { error: e instanceof Error ? e.message : String(e) };
+            }
           },
         }),
         [`gdriveFileExists_${authName}`]: tool({
@@ -258,14 +281,18 @@ export async function getToolSetFactory(userId: number) {
               .describe("存在を確認するファイルまたはフォルダのID"),
           }),
           execute: async ({ fileOrFolderId }) => {
-            const { accessToken: token } = requireAccessToken(accessToken);
-            return {
-              fileOrFolderId,
-              exists: await googleDriveFileExists({
-                accessToken: token,
-                fileId: fileOrFolderId,
-              }),
-            };
+            try {
+              const { accessToken: token } = requireAccessToken(accessToken);
+              return {
+                fileOrFolderId,
+                exists: await googleDriveFileExists({
+                  accessToken: token,
+                  fileId: fileOrFolderId,
+                }),
+              };
+            } catch (e) {
+              return { error: e instanceof Error ? e.message : String(e) };
+            }
           },
         }),
       };

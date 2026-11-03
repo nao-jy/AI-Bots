@@ -131,16 +131,20 @@ function makeEmployeeMonthTool(
     description,
     inputSchema: employeeMonthSchema,
     execute: async ({ employeeKey, yearMonth }) => {
-      const { path, parameters } = getRequest(employeeKey, yearMonth);
-      const data = await getApiData(accessToken, path, parameters);
-      const employeeData = filterEmployeeRecords(data, employeeKey);
-      return {
-        employeeKey,
-        yearMonth,
-        data: makeReadableValues(
-          employeeData === DROP_RECORD ? null : employeeData,
-        ),
-      };
+      try {
+        const { path, parameters } = getRequest(employeeKey, yearMonth);
+        const data = await getApiData(accessToken, path, parameters);
+        const employeeData = filterEmployeeRecords(data, employeeKey);
+        return {
+          employeeKey,
+          yearMonth,
+          data: makeReadableValues(
+            employeeData === DROP_RECORD ? null : employeeData,
+          ),
+        };
+      } catch (e) {
+        return { error: e instanceof Error ? e.message : String(e) };
+      }
     },
   });
 }
@@ -169,64 +173,71 @@ export async function getToolSetFactory(userId: number) {
             yearMonth: yearMonthSchema,
           }),
           execute: async ({ employeeName, yearMonth }) => {
-            const data = await getApiData(args.apiKey, "/employees", {
-              date: `${yearMonth}-01`,
-              includeResigner: "true",
-            });
-            const employees = Array.isArray(data)
-              ? data
-              : isRecord(data) && Array.isArray(data.employees)
-                ? data.employees
-                : null;
-            if (!employees) {
-              throw new Error(
-                "King of Time returned an unexpected employee list response.",
-              );
-            }
-
-            const searchName = normalizeEmployeeName(employeeName);
-            const matches = employees.flatMap((employee) => {
-              if (!isRecord(employee)) return [];
-              const lastName =
-                typeof employee.lastName === "string" ? employee.lastName : "";
-              const firstName =
-                typeof employee.firstName === "string"
-                  ? employee.firstName
-                  : "";
-              const fullName = `${lastName}${firstName}`;
-              if (!normalizeEmployeeName(fullName).includes(searchName)) {
-                return [];
-              }
-              if (typeof employee.employeeKey !== "string") {
+            try {
+              const data = await getApiData(args.apiKey, "/employees", {
+                date: `${yearMonth}-01`,
+                includeResigner: "true",
+              });
+              const employees = Array.isArray(data)
+                ? data
+                : isRecord(data) && Array.isArray(data.employees)
+                  ? data.employees
+                  : null;
+              if (!employees) {
                 throw new Error(
-                  "King of Time employee data is missing employeeKey.",
+                  "King of Time returned an unexpected employee list response.",
                 );
               }
-              return [
-                {
-                  employeeKey: employee.employeeKey,
-                  employeeCode:
-                    typeof employee.code === "string" ? employee.code : null,
-                  name: `${lastName} ${firstName}`.trim(),
-                  division:
-                    typeof employee.divisionName === "string"
-                      ? employee.divisionName
-                      : null,
-                  employmentType:
-                    typeof employee.typeName === "string"
-                      ? employee.typeName
-                      : null,
-                },
-              ];
-            });
 
-            return {
-              yearMonth,
-              matches,
-              sameNameCandidates:
-                new Set(matches.map(({ name }) => normalizeEmployeeName(name)))
-                  .size < matches.length,
-            };
+              const searchName = normalizeEmployeeName(employeeName);
+              const matches = employees.flatMap((employee) => {
+                if (!isRecord(employee)) return [];
+                const lastName =
+                  typeof employee.lastName === "string"
+                    ? employee.lastName
+                    : "";
+                const firstName =
+                  typeof employee.firstName === "string"
+                    ? employee.firstName
+                    : "";
+                const fullName = `${lastName}${firstName}`;
+                if (!normalizeEmployeeName(fullName).includes(searchName)) {
+                  return [];
+                }
+                if (typeof employee.employeeKey !== "string") {
+                  throw new Error(
+                    "King of Time employee data is missing employeeKey.",
+                  );
+                }
+                return [
+                  {
+                    employeeKey: employee.employeeKey,
+                    employeeCode:
+                      typeof employee.code === "string" ? employee.code : null,
+                    name: `${lastName} ${firstName}`.trim(),
+                    division:
+                      typeof employee.divisionName === "string"
+                        ? employee.divisionName
+                        : null,
+                    employmentType:
+                      typeof employee.typeName === "string"
+                        ? employee.typeName
+                        : null,
+                  },
+                ];
+              });
+
+              return {
+                yearMonth,
+                matches,
+                sameNameCandidates:
+                  new Set(
+                    matches.map(({ name }) => normalizeEmployeeName(name)),
+                  ).size < matches.length,
+              };
+            } catch (e) {
+              return { error: e instanceof Error ? e.message : String(e) };
+            }
           },
         }),
         [`getKingOfTimeDailyAttendance`]: makeEmployeeMonthTool(
@@ -268,13 +279,17 @@ export async function getToolSetFactory(userId: number) {
             "King of Time に登録されている休暇区分コードと名称を一覧します。",
           inputSchema: z.object({}),
           execute: async () => {
-            const data = await getApiData(args.apiKey, "/holiday-types");
-            if (!Array.isArray(data)) {
-              throw new Error(
-                "King of Time returned an unexpected holiday type list response.",
-              );
+            try {
+              const data = await getApiData(args.apiKey, "/holiday-types");
+              if (!Array.isArray(data)) {
+                throw new Error(
+                  "King of Time returned an unexpected holiday type list response.",
+                );
+              }
+              return makeReadableValues(data);
+            } catch (e) {
+              return { error: e instanceof Error ? e.message : String(e) };
             }
-            return makeReadableValues(data);
           },
         }),
       };
