@@ -94,7 +94,7 @@ export function McpServerEditor({
 
   return (
     <Stack gap="sm">
-      <Input.Wrapper size="sm" label={label} />
+      <strong className="entity-details-title">{label}</strong>
       <input
         type="hidden"
         name="mcpConnections"

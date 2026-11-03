@@ -90,7 +90,7 @@ export function ToolSetContextEditor({
 
   return (
     <Stack gap="sm">
-      <Input.Wrapper size="sm" label="ツールセット" />
+      <strong className="entity-details-title">ツールセット</strong>
       <input
         type="hidden"
         name={name}

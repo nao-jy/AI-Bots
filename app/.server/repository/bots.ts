@@ -358,11 +358,14 @@ export async function saveBot(
   if (new Set(toolSetContextKeys).size !== toolSetContextKeys.length)
     return { error: "同じToolSet名とcontextの組み合わせは重複できません。" };
   for (const { toolSetName, context } of toolSetContexts) {
-    const validationError = await toolSetRegistry.validateToolSetContext(
+    const isValidContext = await toolSetRegistry.validateToolSetContext(
       toolSetName,
       context,
     );
-    if (validationError) return { error: `${toolSetName}: ${validationError}` };
+    if (!isValidContext)
+      return {
+        error: `${toolSetName}: ToolSet context の設定を確認してください。`,
+      };
   }
   if (
     id !== null &&
