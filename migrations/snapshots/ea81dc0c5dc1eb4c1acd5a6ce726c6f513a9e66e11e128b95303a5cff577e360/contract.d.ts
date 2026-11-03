@@ -23,7 +23,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'291754cf813955716def4a7dc788512baa20acb61911400e7a4169f07b507c6c'>;
+  StorageHashBase<'ea81dc0c5dc1eb4c1acd5a6ce726c6f513a9e66e11e128b95303a5cff577e360'>;
 export type ExecutionHash =
   ExecutionHashBase<'2edef0a9e649f7d4fec54fb6e1236cb304696ca7f4e909082a496d8d33430a90'>;
 export type ProfileHash =
@@ -574,8 +574,10 @@ export namespace Models {
   export type aibot_User = {
     createdAt: FieldOutputTypes['aibot']['User']['createdAt'];
     email: FieldOutputTypes['aibot']['User']['email'];
+    emailVerified: FieldOutputTypes['aibot']['User']['emailVerified'];
     id: FieldOutputTypes['aibot']['User']['id'];
     isAdmin: FieldOutputTypes['aibot']['User']['isAdmin'];
+    mfaEnabled: FieldOutputTypes['aibot']['User']['mfaEnabled'];
     name: FieldOutputTypes['aibot']['User']['name'];
     passwordHash: FieldOutputTypes['aibot']['User']['passwordHash'];
     updatedAt: FieldOutputTypes['aibot']['User']['updatedAt'];
@@ -2278,6 +2280,16 @@ type ContractBase = Omit<
                   readonly nullable: false;
                   readonly many: false;
                 };
+                readonly emailVerified: {
+                  readonly dataType: 'pg/bool';
+                  readonly codecId: 'pg/bool@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/bool@1', false>;
+                  };
+                  readonly many: false;
+                };
                 readonly id: {
                   readonly dataType: 'pg/int4';
                   readonly codecId: 'pg/int4@1';
@@ -2289,6 +2301,16 @@ type ContractBase = Omit<
                   readonly many: false;
                 };
                 readonly isAdmin: {
+                  readonly dataType: 'pg/bool';
+                  readonly codecId: 'pg/bool@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/bool@1', false>;
+                  };
+                  readonly many: false;
+                };
+                readonly mfaEnabled: {
                   readonly dataType: 'pg/bool';
                   readonly codecId: 'pg/bool@1';
                   readonly nullable: false;
@@ -3884,11 +3906,19 @@ type ContractBase = Omit<
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
               };
+              readonly emailVerified: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/bool@1' };
+              };
               readonly id: {
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
               };
               readonly isAdmin: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/bool@1' };
+              };
+              readonly mfaEnabled: {
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/bool@1' };
               };
@@ -3971,8 +4001,10 @@ type ContractBase = Omit<
               readonly fields: {
                 readonly createdAt: { readonly column: 'createdAt' };
                 readonly email: { readonly column: 'email' };
+                readonly emailVerified: { readonly column: 'emailVerified' };
                 readonly id: { readonly column: 'id' };
                 readonly isAdmin: { readonly column: 'isAdmin' };
+                readonly mfaEnabled: { readonly column: 'mfaEnabled' };
                 readonly name: { readonly column: 'name' };
                 readonly passwordHash: { readonly column: 'passwordHash' };
                 readonly updatedAt: { readonly column: 'updatedAt' };

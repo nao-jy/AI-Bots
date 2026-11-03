@@ -2378,6 +2378,13 @@
                   "kind": "scalar"
                 }
               },
+              "emailVerified": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/bool@1",
+                  "kind": "scalar"
+                }
+              },
               "id": {
                 "nullable": false,
                 "type": {
@@ -2386,6 +2393,13 @@
                 }
               },
               "isAdmin": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/bool@1",
+                  "kind": "scalar"
+                }
+              },
+              "mfaEnabled": {
                 "nullable": false,
                 "type": {
                   "codecId": "pg/bool@1",
@@ -2499,11 +2513,17 @@
                 "email": {
                   "column": "email"
                 },
+                "emailVerified": {
+                  "column": "emailVerified"
+                },
                 "id": {
                   "column": "id"
                 },
                 "isAdmin": {
                   "column": "isAdmin"
+                },
+                "mfaEnabled": {
+                  "column": "mfaEnabled"
                 },
                 "name": {
                   "column": "name"
@@ -4653,6 +4673,15 @@
                   "dataType": "pg/text",
                   "nullable": false
                 },
+                "emailVerified": {
+                  "codecId": "pg/bool@1",
+                  "dataType": "pg/bool",
+                  "default": {
+                    "kind": "literal",
+                    "value": false
+                  },
+                  "nullable": false
+                },
                 "id": {
                   "codecId": "pg/int4@1",
                   "dataType": "pg/int4",
@@ -4663,6 +4692,15 @@
                   "nullable": false
                 },
                 "isAdmin": {
+                  "codecId": "pg/bool@1",
+                  "dataType": "pg/bool",
+                  "default": {
+                    "kind": "literal",
+                    "value": false
+                  },
+                  "nullable": false
+                },
+                "mfaEnabled": {
                   "codecId": "pg/bool@1",
                   "dataType": "pg/bool",
                   "default": {
@@ -4740,7 +4778,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "291754cf813955716def4a7dc788512baa20acb61911400e7a4169f07b507c6c"
+    "storageHash": "ea81dc0c5dc1eb4c1acd5a6ce726c6f513a9e66e11e128b95303a5cff577e360"
   },
   "execution": {
     "executionHash": "2edef0a9e649f7d4fec54fb6e1236cb304696ca7f4e909082a496d8d33430a90",

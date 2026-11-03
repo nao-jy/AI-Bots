@@ -18,18 +18,20 @@ enum PublicIdSlot {
 
 namespace aibot {
   model User {
-    id           Int                      @id @default(autoincrement())
-    email        String                   @unique
-    passwordHash String
-    name         String?
-    chatbots     ChatBot[]
-    providers    Provider[]
-    adapters     ChatAdapter[]
-    mcpServers   McpServer[]
-    sessions     Session[]
-    createdAt    TimestamptzString        @default(now())
-    updatedAt    temporal.UpdatedAtString
-    isAdmin      Boolean                  @default(false)
+    id            Int                      @id @default(autoincrement())
+    email         String                   @unique
+    passwordHash  String
+    name          String?
+    chatbots      ChatBot[]
+    providers     Provider[]
+    adapters      ChatAdapter[]
+    mcpServers    McpServer[]
+    sessions      Session[]
+    createdAt     TimestamptzString        @default(now())
+    updatedAt     temporal.UpdatedAtString
+    isAdmin       Boolean                  @default(false)
+    emailVerified Boolean                  @default(false)
+    mfaEnabled    Boolean                  @default(false)
   }
 
   model Session {
