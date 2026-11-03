@@ -48,7 +48,6 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
       <header className="page-header">
         <div>
           <h1>設定</h1>
-          <p>ワークスペース全体の認証設定を管理します。</p>
         </div>
       </header>
       <section className="entity-panel" style={{ padding: 24, maxWidth: 680 }}>
