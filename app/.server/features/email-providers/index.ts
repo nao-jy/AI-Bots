@@ -6,8 +6,15 @@ export type EmailVerificationMessage = {
   verificationUrl: string;
 };
 
+export type PasswordResetMessage = {
+  to: string;
+  name: string | null;
+  resetUrl: string;
+};
+
 export interface EmailProvider {
   sendVerificationEmail(message: EmailVerificationMessage): Promise<void>;
+  sendPasswordResetEmail(message: PasswordResetMessage): Promise<void>;
 }
 
 export function getEmailProvider(): EmailProvider | null {

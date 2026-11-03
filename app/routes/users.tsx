@@ -28,6 +28,7 @@ const page: Omit<EntityPageDefinition, "records"> = {
   description: "ログインできるユーザーアカウントを管理します。",
   icon: "users",
   tableFeatures: {
+    expandableActions: true,
     forceLogout: true,
     emailVerification: true,
     mfaReset: true,
@@ -126,7 +127,11 @@ export async function action({ request }: Route.ActionArgs) {
     } catch (error) {
       logger.error("Failed to send user verification email", {
         userId: user.id,
-        error,
+        error:
+          error instanceof Error
+            ? `${error.name}: ${error.message}`
+            : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
       });
       return {
         ok: false,
@@ -165,17 +170,27 @@ export async function action({ request }: Route.ActionArgs) {
 
 async function sendNewUserVerification(email: string, requestUrl: string) {
   const user = await findUserByEmail(email);
-  if (!user) return { ok: false, error: "ユーザーが見つかりません。" };
+  if (!user)
+    return {
+      ok: false,
+      notification: "verification-email" as const,
+      error: "ユーザーを保存しましたが検証メールを送信できませんでした。ユーザー一覧から再送してください。",
+    };
   try {
     await sendEmailVerification(user, requestUrl);
-    return { ok: true };
+    return { ok: true, notification: "verification-email" as const };
   } catch (error) {
     logger.error("Failed to send user verification email", {
       userId: user.id,
-      error,
+      error:
+        error instanceof Error
+          ? `${error.name}: ${error.message}`
+          : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
     });
     return {
       ok: false,
+      notification: "verification-email" as const,
       error: "ユーザーを保存しましたが検証メールを送信できませんでした。ユーザー一覧から再送してください。",
     };
   }

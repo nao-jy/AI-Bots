@@ -27,9 +27,7 @@ function signingKey() {
 }
 
 function sign(payload: string) {
-  return createHmac("sha256", signingKey())
-    .update(payload)
-    .digest("base64url");
+  return createHmac("sha256", signingKey()).update(payload).digest("base64url");
 }
 
 function createVerificationToken(userId: number, email: string) {

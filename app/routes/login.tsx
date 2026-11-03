@@ -25,6 +25,7 @@ import {
   isEmailVerificationEnabled,
   sendEmailVerification,
 } from "../.server/features/email-verification";
+import { isPasswordResetEnabled } from "../.server/features/password-reset";
 import { logger } from "../.server/logger";
 import { APP_NAME } from "~/const";
 
@@ -37,7 +38,10 @@ export function meta() {
 
 export async function loader({ request }: Route.LoaderArgs) {
   if (await getSessionUser(request)) throw redirect("/bots");
-  return { setupRequired: !(await hasUsers()) };
+  return {
+    setupRequired: !(await hasUsers()),
+    passwordResetEnabled: isPasswordResetEnabled(),
+  };
 }
 
 export async function action({ request }: Route.ActionArgs) {
@@ -90,10 +94,13 @@ export async function action({ request }: Route.ActionArgs) {
       try {
         await sendEmailVerification(user, request.url);
       } catch (error) {
-        logger.error("Failed to send initial administrator verification email", {
-          userId: user.id,
-          error,
-        });
+        logger.error(
+          "Failed to send initial administrator verification email",
+          {
+            userId: user.id,
+            error,
+          },
+        );
         return data(
           {
             error:
@@ -107,7 +114,10 @@ export async function action({ request }: Route.ActionArgs) {
     const maxLoginAttempts = (await getAppSettings()).maxLoginAttempts;
     if (user.loginAttempts >= maxLoginAttempts) {
       return data(
-        { error: "ログイン試行回数の上限に達しました。管理者にお問い合わせください。" },
+        {
+          error:
+            "ログイン試行回数の上限に達しました。管理者にお問い合わせください。",
+        },
         { status: 423 },
       );
     }
@@ -127,7 +137,10 @@ export async function action({ request }: Route.ActionArgs) {
 
     if (!(await resetLoginAttemptsForLogin(user.id, maxLoginAttempts))) {
       return data(
-        { error: "ログイン試行回数の上限に達しました。管理者にお問い合わせください。" },
+        {
+          error:
+            "ログイン試行回数の上限に達しました。管理者にお問い合わせください。",
+        },
         { status: 423 },
       );
     }
@@ -212,6 +225,11 @@ export default function Login({ loaderData }: Route.ComponentProps) {
               required
             />
             {actionData?.error && <Alert color="red">{actionData.error}</Alert>}
+            {loaderData.passwordResetEnabled && !setupRequired && (
+              <Link to="/forgot-password" className="forgot-password-link">
+                パスワードをお忘れですか？
+              </Link>
+            )}
             <Button
               type="submit"
               fullWidth

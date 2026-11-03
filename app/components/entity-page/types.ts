@@ -58,6 +58,7 @@ export type EntityTableFeatures = {
   publicIds?: boolean;
   webhookDetails?: boolean;
   sandboxShell?: boolean;
+  expandableActions?: boolean;
   forceLogout?: boolean;
   emailVerification?: boolean;
   mfaReset?: boolean;

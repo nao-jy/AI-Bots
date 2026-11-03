@@ -15,6 +15,7 @@ import {
   Title,
 } from "@mantine/core";
 import { useFetcher } from "react-router";
+import { notifications } from "@mantine/notifications";
 import type { EntityRecord } from "../../types/entities";
 import type { EntityDialogMode, EntityPageDefinition } from "./types";
 import { InfoIcon } from "@phosphor-icons/react";
@@ -209,6 +210,7 @@ export function EntityPageDialogs({
     error?: string;
     message?: string;
     intent?: string;
+    notification?: "verification-email";
   }>();
 
   useEffect(() => {
@@ -216,10 +218,31 @@ export function EntityPageDialogs({
       fetcher.state === "idle" &&
       fetcher.data?.ok &&
       !fetcher.data.message &&
-      fetcher.data.intent !== "test"
+      fetcher.data.intent !== "test" &&
+      fetcher.data.notification !== "verification-email"
     )
       onClose();
   }, [fetcher.state, fetcher.data, onClose]);
+
+  useEffect(() => {
+    if (
+      page.icon !== "users" ||
+      fetcher.state !== "idle" ||
+      fetcher.data?.notification !== "verification-email"
+    )
+      return;
+
+    notifications.show({
+      title: fetcher.data.ok
+        ? "検証メールを送信しました"
+        : "検証メールの送信に失敗しました",
+      message: fetcher.data.ok
+        ? "ユーザーを保存し、検証メールを送信しました。"
+        : (fetcher.data.error ?? "検証メールを送信できませんでした。"),
+      color: fetcher.data.ok ? "green" : "red",
+    });
+    onClose();
+  }, [page.icon, fetcher.state, fetcher.data, onClose]);
 
   return (
     <>
@@ -254,21 +277,22 @@ export function EntityPageDialogs({
           <Text className="modal-intro">
             {page.description} 必要な情報を入力してください。
           </Text>
-          {(fetcher.data?.error || fetcher.data?.message) && (
-            <Alert
-              color={
-                fetcher.data.ok
-                  ? fetcher.data.message
-                    ? "yellow"
-                    : "green"
-                  : "red"
-              }
-              role="status"
-              icon={<InfoIcon />}
-            >
-              {fetcher.data.message ?? fetcher.data.error}
-            </Alert>
-          )}
+          {fetcher.data?.notification !== "verification-email" &&
+            (fetcher.data?.error || fetcher.data?.message) && (
+              <Alert
+                color={
+                  fetcher.data.ok
+                    ? fetcher.data.message
+                      ? "yellow"
+                      : "green"
+                    : "red"
+                }
+                role="status"
+                icon={<InfoIcon />}
+              >
+                {fetcher.data.message ?? fetcher.data.error}
+              </Alert>
+            )}
           <div className="form-grid">
             {page.fields
               .filter((field) => !field.createOnly || mode === "create")

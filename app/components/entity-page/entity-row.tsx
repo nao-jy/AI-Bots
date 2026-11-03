@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ActionIcon, Group, Table, Text, Tooltip } from "@mantine/core";
+import { ActionIcon, Button, Group, Table, Tooltip } from "@mantine/core";
 import {
   CaretDownIcon,
   CaretRightIcon,
@@ -45,6 +45,9 @@ export function EntityRow({
   const recordName = record[page.columns[0].key];
   const supportsPublicIds = page.tableFeatures?.publicIds ?? false;
   const supportsSandboxShell = page.tableFeatures?.sandboxShell ?? false;
+  const supportsActions = page.tableFeatures?.expandableActions ?? false;
+  const hasExpandedContent =
+    supportsPublicIds || supportsSandboxShell || supportsActions;
   const supportsEmailVerification =
     page.tableFeatures?.emailVerification ?? false;
   const supportsLoginUnlock = page.tableFeatures?.loginUnlock ?? false;
@@ -56,26 +59,148 @@ export function EntityRow({
     ?.map((key) => record[key])
     .find((value) => value !== undefined && value !== null && value !== "");
 
+  const actions = supportsActions ? (
+    <div className="entity-action-list">
+      {page.tableFeatures?.forceLogout && (
+        <Button
+          variant="light"
+          color="orange"
+          size="xs"
+          leftSection={<SignOutIcon size={15} aria-hidden="true" />}
+          disabled={
+            cannotDelete || record.loginStatus !== "ログイン中"
+          }
+          onClick={onForceLogout}
+        >
+          強制ログアウト
+        </Button>
+      )}
+      {supportsEmailVerification &&
+        record.emailVerification !== "検証済み" && (
+          <EmailVerificationAction
+            recordId={record.id}
+            recordName={String(recordName ?? "")}
+          />
+        )}
+      {page.tableFeatures?.mfaReset && record.mfaStatus === "設定済み" && (
+        <MfaResetAction
+          recordId={record.id}
+          recordName={String(recordName ?? "")}
+        />
+      )}
+      {supportsLoginUnlock && record.loginLockStatus === "ロック中" && (
+        <LoginUnlockAction
+          recordId={record.id}
+          recordName={String(recordName ?? "")}
+        />
+      )}
+    </div>
+  ) : (
+    <Group gap={5} justify="flex-end">
+      {page.tableFeatures?.forceLogout && (
+        <Tooltip
+          label={
+            cannotDelete
+              ? "自分自身は強制ログアウトできません"
+              : record.loginStatus !== "ログイン中"
+                ? "このユーザーはログインしていません"
+                : "すべてのセッションを終了"
+          }
+        >
+          <span style={{ display: "inline-flex" }}>
+            <ActionIcon
+              variant="subtle"
+              color="orange"
+              aria-label={`${recordName}を強制ログアウト`}
+              disabled={
+                cannotDelete || record.loginStatus !== "ログイン中"
+              }
+              onClick={onForceLogout}
+            >
+              <SignOutIcon size={16} aria-hidden="true" />
+            </ActionIcon>
+          </span>
+        </Tooltip>
+      )}
+      {supportsEmailVerification &&
+        record.emailVerification !== "検証済み" && (
+          <EmailVerificationAction
+            recordId={record.id}
+            recordName={String(recordName ?? "")}
+          />
+        )}
+      {page.tableFeatures?.mfaReset && record.mfaStatus === "設定済み" && (
+        <MfaResetAction
+          recordId={record.id}
+          recordName={String(recordName ?? "")}
+        />
+      )}
+      {supportsLoginUnlock && record.loginLockStatus === "ロック中" && (
+        <LoginUnlockAction
+          recordId={record.id}
+          recordName={String(recordName ?? "")}
+        />
+      )}
+      <Tooltip label={`${recordName}を編集`}>
+        <ActionIcon
+          variant="subtle"
+          color="gray"
+          aria-label={`${recordName}を編集`}
+          onClick={onEdit}
+        >
+          <PencilSimpleIcon size={16} aria-hidden="true" />
+        </ActionIcon>
+      </Tooltip>
+      <Tooltip
+        label={
+          cannotDelete
+            ? "自分のアカウントは削除できません"
+            : `${recordName}を削除`
+        }
+      >
+        <span style={{ display: "inline-flex" }}>
+          <ActionIcon
+            variant="subtle"
+            color="gray"
+            aria-label={
+              cannotDelete
+                ? "自分のアカウントは削除できません"
+                : `${recordName}を削除`
+            }
+            disabled={cannotDelete}
+            onClick={onDelete}
+          >
+            <TrashIcon size={16} aria-hidden="true" />
+          </ActionIcon>
+        </span>
+      </Tooltip>
+    </Group>
+  );
+
   return (
     <>
       <Table.Tr>
         <Table.Td>
           <div className="entity-name-cell">
-            {(supportsPublicIds || supportsSandboxShell) && (
+            {hasExpandedContent && (
               <Tooltip
                 label={
-                  supportsSandboxShell
-                    ? `${recordName}のPersistent Instanceを${expanded ? "閉じる" : "表示"}`
-                    : `${recordName}のパブリックIDを${expanded ? "閉じる" : "表示"}`
+                  supportsActions
+                    ? `${recordName}の操作を${expanded ? "閉じる" : "表示"}`
+                    : supportsSandboxShell
+                      ? `${recordName}のPersistent Instanceを${expanded ? "閉じる" : "表示"}`
+                      : `${recordName}のパブリックIDを${expanded ? "閉じる" : "表示"}`
                 }
               >
                 <ActionIcon
                   variant="subtle"
                   color="gray"
                   aria-label={
-                    supportsSandboxShell
-                      ? `${recordName}のPersistent Instanceを${expanded ? "閉じる" : "表示"}`
-                      : `${recordName}のパブリックIDを${expanded ? "閉じる" : "表示"}`
+                    supportsActions
+                      ? `${recordName}の操作を${expanded ? "閉じる" : "表示"}`
+                      : supportsSandboxShell
+                        ? `${recordName}のPersistent Instanceを${expanded ? "閉じる" : "表示"}`
+                        : `${recordName}のパブリックIDを${expanded ? "閉じる" : "表示"}`
                   }
                   aria-expanded={expanded}
                   onClick={() => setExpanded((current) => !current)}
@@ -112,107 +237,74 @@ export function EntityRow({
           </Table.Td>
         ))}
         <Table.Td>
-          <Group gap={5} justify="flex-end">
-            {page.tableFeatures?.forceLogout && (
+          {supportsActions ? (
+            <Group gap={5} justify="flex-end">
+              <Tooltip label={`${recordName}を編集`}>
+                <ActionIcon
+                  variant="subtle"
+                  color="gray"
+                  aria-label={`${recordName}を編集`}
+                  onClick={onEdit}
+                >
+                  <PencilSimpleIcon size={16} aria-hidden="true" />
+                </ActionIcon>
+              </Tooltip>
               <Tooltip
                 label={
                   cannotDelete
-                    ? "自分自身は強制ログアウトできません"
-                    : record.loginStatus !== "ログイン中"
-                      ? "このユーザーはログインしていません"
-                      : "すべてのセッションを終了"
+                    ? "自分のアカウントは削除できません"
+                    : `${recordName}を削除`
                 }
               >
                 <span style={{ display: "inline-flex" }}>
                   <ActionIcon
                     variant="subtle"
-                    color="orange"
-                    aria-label={`${recordName}を強制ログアウト`}
-                    disabled={
-                      cannotDelete || record.loginStatus !== "ログイン中"
+                    color="gray"
+                    aria-label={
+                      cannotDelete
+                        ? "自分のアカウントは削除できません"
+                        : `${recordName}を削除`
                     }
-                    onClick={onForceLogout}
+                    disabled={cannotDelete}
+                    onClick={onDelete}
                   >
-                    <SignOutIcon size={16} aria-hidden="true" />
+                    <TrashIcon size={16} aria-hidden="true" />
                   </ActionIcon>
                 </span>
               </Tooltip>
-            )}
-            {supportsEmailVerification &&
-              record.emailVerification !== "検証済み" && (
-                <EmailVerificationAction
-                  recordId={record.id}
-                  recordName={String(recordName ?? "")}
-                />
-              )}
-            {page.tableFeatures?.mfaReset &&
-              record.mfaStatus === "設定済み" && (
-                <MfaResetAction
-                  recordId={record.id}
-                  recordName={String(recordName ?? "")}
-                />
-              )}
-            {supportsLoginUnlock && record.loginLockStatus === "ロック中" && (
-              <LoginUnlockAction
-                recordId={record.id}
-                recordName={String(recordName ?? "")}
-              />
-            )}
-            <Tooltip label={`${recordName}を編集`}>
-              <ActionIcon
-                variant="subtle"
-                color="gray"
-                aria-label={`${recordName}を編集`}
-                onClick={onEdit}
-              >
-                <PencilSimpleIcon size={16} aria-hidden="true" />
-              </ActionIcon>
-            </Tooltip>
-            <Tooltip
-              label={
-                cannotDelete
-                  ? "自分のアカウントは削除できません"
-                  : `${recordName}を削除`
-              }
-            >
-              <span style={{ display: "inline-flex" }}>
-                <ActionIcon
-                  variant="subtle"
-                  color="gray"
-                  aria-label={
-                    cannotDelete
-                      ? "自分のアカウントは削除できません"
-                      : `${recordName}を削除`
-                  }
-                  disabled={cannotDelete}
-                  onClick={onDelete}
-                >
-                  <TrashIcon size={16} aria-hidden="true" />
-                </ActionIcon>
-              </span>
-            </Tooltip>
-          </Group>
+            </Group>
+          ) : (
+            actions
+          )}
         </Table.Td>
       </Table.Tr>
-      {((supportsPublicIds || supportsSandboxShell) && expanded) && (
+      {hasExpandedContent && expanded && (
         <Table.Tr className="entity-details-row">
           <Table.Td colSpan={page.columns.length + 1}>
-            {supportsPublicIds && (
-              <PublicIdDetails
-                recordId={record.id}
-                publicIdsValue={record.publicIds}
-                webhookEndpointsValue={record.webhooks}
-                showWebhooks={page.tableFeatures?.webhookDetails ?? false}
-              />
-            )}
-            {supportsSandboxShell && (
-              <SandboxInstanceDetails
-                sandboxId={record.id}
-                instances={instances}
-                onOpenShell={onOpenShell}
-                onDeleted={onDeleteInstance}
-              />
-            )}
+            <div className="entity-details">
+              {supportsPublicIds && (
+                <PublicIdDetails
+                  recordId={record.id}
+                  publicIdsValue={record.publicIds}
+                  webhookEndpointsValue={record.webhooks}
+                  showWebhooks={page.tableFeatures?.webhookDetails ?? false}
+                />
+              )}
+              {supportsSandboxShell && (
+                <SandboxInstanceDetails
+                  sandboxId={record.id}
+                  instances={instances}
+                  onOpenShell={onOpenShell}
+                  onDeleted={onDeleteInstance}
+                />
+              )}
+              {supportsActions && (
+                <>
+                  <strong className="entity-details-title">操作</strong>
+                  {actions}
+                </>
+              )}
+            </div>
           </Table.Td>
         </Table.Tr>
       )}
@@ -229,35 +321,38 @@ function EmailVerificationAction({
 }) {
   const fetcher = useFetcher<{ ok?: boolean; error?: string }>();
 
+  useEffect(() => {
+    if (fetcher.data?.error) {
+      notifications.show({
+        title: "検証メールの送信に失敗しました",
+        message: fetcher.data.error,
+        color: "red",
+      });
+    } else if (fetcher.data?.ok) {
+      notifications.show({
+        title: "検証メールを送信しました",
+        message: `${recordName}宛に検証メールを送信しました。`,
+        color: "green",
+      });
+    }
+  }, [fetcher.data, recordName]);
+
   return (
     <>
       <fetcher.Form method="post" action="/users">
         <input type="hidden" name="_intent" value="send-verification" />
         <input type="hidden" name="id" value={recordId} />
-        <Tooltip label={`${recordName}に検証メールを送信`}>
-          <span style={{ display: "inline-flex" }}>
-            <ActionIcon
-              variant="subtle"
-              color="blue"
-              type="submit"
-              aria-label={`${recordName}に検証メールを送信`}
-              disabled={fetcher.state !== "idle"}
-            >
-              <EnvelopeSimpleIcon size={16} aria-hidden="true" />
-            </ActionIcon>
-          </span>
-        </Tooltip>
+        <Button
+          variant="light"
+          color="blue"
+          size="xs"
+          type="submit"
+          leftSection={<EnvelopeSimpleIcon size={15} aria-hidden="true" />}
+          disabled={fetcher.state !== "idle"}
+        >
+          検証メールを再送
+        </Button>
       </fetcher.Form>
-      {fetcher.data?.error && (
-        <Text c="red" size="xs" role="alert">
-          {fetcher.data.error}
-        </Text>
-      )}
-      {fetcher.data?.ok && (
-        <Text c="green" size="xs" role="status">
-          検証メールを送信しました。
-        </Text>
-      )}
     </>
   );
 }
@@ -271,6 +366,22 @@ function MfaResetAction({
 }) {
   const fetcher = useFetcher<{ ok?: boolean; error?: string }>();
 
+  useEffect(() => {
+    if (fetcher.data?.error) {
+      notifications.show({
+        title: "MFAをリセットできませんでした",
+        message: fetcher.data.error,
+        color: "red",
+      });
+    } else if (fetcher.data?.ok) {
+      notifications.show({
+        title: "MFAをリセットしました",
+        message: `${recordName}のMFA設定をリセットしました。`,
+        color: "green",
+      });
+    }
+  }, [fetcher.data, recordName]);
+
   return (
     <>
       <fetcher.Form
@@ -283,30 +394,19 @@ function MfaResetAction({
       >
         <input type="hidden" name="_intent" value="reset-mfa" />
         <input type="hidden" name="id" value={recordId} />
-        <Tooltip label={`${recordName}のMFAをリセット`}>
-          <span style={{ display: "inline-flex" }}>
-            <ActionIcon
-              variant="subtle"
-              color="orange"
-              type="submit"
-              aria-label={`${recordName}のMFAをリセット`}
-              disabled={fetcher.state !== "idle"}
-            >
-              <ArrowCounterClockwiseIcon size={16} aria-hidden="true" />
-            </ActionIcon>
-          </span>
-        </Tooltip>
+        <Button
+          variant="light"
+          color="orange"
+          size="xs"
+          type="submit"
+          leftSection={
+            <ArrowCounterClockwiseIcon size={15} aria-hidden="true" />
+          }
+          disabled={fetcher.state !== "idle"}
+        >
+          MFAをリセット
+        </Button>
       </fetcher.Form>
-      {fetcher.data?.error && (
-        <Text c="red" size="xs" role="alert">
-          {fetcher.data.error}
-        </Text>
-      )}
-      {fetcher.data?.ok && (
-        <Text c="green" size="xs" role="status">
-          MFAをリセットしました。
-        </Text>
-      )}
     </>
   );
 }
@@ -321,7 +421,13 @@ function LoginUnlockAction({
   const fetcher = useFetcher<{ ok?: boolean; error?: string }>();
 
   useEffect(() => {
-    if (fetcher.data?.ok) {
+    if (fetcher.data?.error) {
+      notifications.show({
+        title: "ログインロックを解除できませんでした",
+        message: fetcher.data.error,
+        color: "red",
+      });
+    } else if (fetcher.data?.ok) {
       notifications.show({
         title: "ログインロックを解除しました",
         message: `${recordName}がログインできるようになりました。`,
@@ -335,25 +441,19 @@ function LoginUnlockAction({
       <fetcher.Form method="post" action="/users">
         <input type="hidden" name="_intent" value="unlock-login" />
         <input type="hidden" name="id" value={recordId} />
-        <Tooltip label={`${recordName}のログインロックを解除`}>
-          <span style={{ display: "inline-flex" }}>
-            <ActionIcon
-              variant="subtle"
-              color="blue"
-              type="submit"
-              aria-label={`${recordName}のログインロックを解除`}
-              disabled={fetcher.state !== "idle"}
-            >
-              <ArrowCounterClockwiseIcon size={16} aria-hidden="true" />
-            </ActionIcon>
-          </span>
-        </Tooltip>
+        <Button
+          variant="light"
+          color="blue"
+          size="xs"
+          type="submit"
+          leftSection={
+            <ArrowCounterClockwiseIcon size={15} aria-hidden="true" />
+          }
+          disabled={fetcher.state !== "idle"}
+        >
+          ログインロックを解除
+        </Button>
       </fetcher.Form>
-      {fetcher.data?.error && (
-        <Text c="red" size="xs" role="alert">
-          {fetcher.data.error}
-        </Text>
-      )}
     </>
   );
 }

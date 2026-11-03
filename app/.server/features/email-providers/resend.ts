@@ -1,5 +1,9 @@
 import { Resend } from "resend";
-import type { EmailProvider, EmailVerificationMessage } from "./index";
+import type {
+  EmailProvider,
+  EmailVerificationMessage,
+  PasswordResetMessage,
+} from "./index";
 
 export function createResendEmailProvider(apiKey: string): EmailProvider {
   const resend = new Resend(apiKey);
@@ -24,7 +28,33 @@ export function createResendEmailProvider(apiKey: string): EmailProvider {
           verificationUrl,
         ].join("\n"),
       });
-      if (error) throw new Error(`Resendでメールを送信できませんでした: ${error.message}`);
+      if (error)
+        throw new Error(
+          `Resendでメールを送信できませんでした: ${error.message}`,
+        );
+    },
+    async sendPasswordResetEmail({
+      to,
+      name,
+      resetUrl,
+    }: PasswordResetMessage) {
+      const { error } = await resend.emails.send({
+        from,
+        to,
+        subject: "パスワードの再設定",
+        text: [
+          `${name ? `${name} さん、` : ""}パスワードの再設定がリクエストされました。`,
+          "",
+          "次のリンクから1時間以内に新しいパスワードを設定してください。",
+          resetUrl,
+          "",
+          "このメールに心当たりがない場合は、何も操作する必要はありません。",
+        ].join("\n"),
+      });
+      if (error)
+        throw new Error(
+          `Resendでメールを送信できませんでした: ${error.message}`,
+        );
     },
   };
 }

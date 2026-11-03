@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { db } from "./db";
 import { hashPassword } from "../auth";
 import { record, timestamp } from "../utils";
@@ -16,6 +17,28 @@ export async function findUserById(id: number) {
 
 export async function markEmailVerified(id: number) {
   await db.orm.aibot.User.where({ id }).update({ emailVerified: true });
+}
+
+export async function resetUserPassword(
+  id: number,
+  expectedPasswordHashDigest: string,
+  passwordHash: string,
+) {
+  return db.transaction(async (tx) => {
+    const user = await tx.orm.aibot.User.where({ id }).forUpdate().first();
+    if (
+      !user ||
+      createHash("sha256").update(user.passwordHash).digest("base64url") !==
+        expectedPasswordHashDigest
+    )
+      return false;
+
+    await tx.orm.aibot.User.where({ id }).update({ passwordHash });
+    await tx.orm.aibot.Session.where({ userId: id }).update({
+      expiresAt: new Date().toISOString(),
+    });
+    return true;
+  });
 }
 
 export async function saveMfaSecret(id: number, mfaSecret: string) {

@@ -58,7 +58,6 @@ export function EntityTable({
       .toLowerCase()
       .includes(query.toLowerCase()),
   );
-
   return (
     <>
       <section className="entity-panel">

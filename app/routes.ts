@@ -18,6 +18,8 @@ export default [
     route("settings", "routes/settings.tsx"),
   ]),
   route("login", "routes/login.tsx"),
+  route("forgot-password", "routes/forgot-password.tsx"),
+  route("reset-password", "routes/reset-password.tsx"),
   route("mfa", "routes/mfa.tsx"),
   route("verify-email", "routes/verify-email.tsx"),
   route("logout", "routes/logout.tsx"),
