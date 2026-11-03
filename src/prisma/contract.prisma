@@ -31,7 +31,13 @@ namespace aibot {
     updatedAt     temporal.UpdatedAtString
     isAdmin       Boolean                  @default(false)
     emailVerified Boolean                  @default(false)
-    mfaEnabled    Boolean                  @default(false)
+    mfaConfigured Boolean                  @default(false)
+  }
+
+  model AppSettings {
+    id                     String  @id @default("global")
+    mfaEnabled             Boolean @default(false)
+    sessionDurationSeconds Int     @default(2592000)
   }
 
   model Session {

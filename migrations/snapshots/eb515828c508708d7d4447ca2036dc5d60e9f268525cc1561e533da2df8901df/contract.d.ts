@@ -23,7 +23,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'ea81dc0c5dc1eb4c1acd5a6ce726c6f513a9e66e11e128b95303a5cff577e360'>;
+  StorageHashBase<'eb515828c508708d7d4447ca2036dc5d60e9f268525cc1561e533da2df8901df'>;
 export type ExecutionHash =
   ExecutionHashBase<'2edef0a9e649f7d4fec54fb6e1236cb304696ca7f4e909082a496d8d33430a90'>;
 export type ProfileHash =
@@ -369,6 +369,12 @@ export namespace Models {
     chatbot: aibot_ChatBot;
     readonly [RelationKeys]?: 'agent' | 'chatbot';
   };
+  export type aibot_AppSettings = {
+    id: FieldOutputTypes['aibot']['AppSettings']['id'];
+    mfaEnabled: FieldOutputTypes['aibot']['AppSettings']['mfaEnabled'];
+    sessionDurationSeconds: FieldOutputTypes['aibot']['AppSettings']['sessionDurationSeconds'];
+    readonly [RelationKeys]?: never;
+  };
   export type aibot_ChatAdapter = {
     authId: FieldOutputTypes['aibot']['ChatAdapter']['authId'];
     config: FieldOutputTypes['aibot']['ChatAdapter']['config'];
@@ -577,7 +583,7 @@ export namespace Models {
     emailVerified: FieldOutputTypes['aibot']['User']['emailVerified'];
     id: FieldOutputTypes['aibot']['User']['id'];
     isAdmin: FieldOutputTypes['aibot']['User']['isAdmin'];
-    mfaEnabled: FieldOutputTypes['aibot']['User']['mfaEnabled'];
+    mfaConfigured: FieldOutputTypes['aibot']['User']['mfaConfigured'];
     name: FieldOutputTypes['aibot']['User']['name'];
     passwordHash: FieldOutputTypes['aibot']['User']['passwordHash'];
     updatedAt: FieldOutputTypes['aibot']['User']['updatedAt'];
@@ -594,6 +600,7 @@ export declare const models: {
   aibot: {
     AgentDefinition: Models.aibot_AgentDefinition;
     AgentUsage: Models.aibot_AgentUsage;
+    AppSettings: Models.aibot_AppSettings;
     ChatAdapter: Models.aibot_ChatAdapter;
     ChatAdapterPublicId: Models.aibot_ChatAdapterPublicId;
     ChatBot: Models.aibot_ChatBot;
@@ -852,6 +859,44 @@ type ContractBase = Omit<
                   };
                 },
               ];
+            };
+            readonly AppSettings: {
+              columns: {
+                readonly id: {
+                  readonly dataType: 'pg/text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/text@1', 'global'>;
+                  };
+                  readonly many: false;
+                };
+                readonly mfaEnabled: {
+                  readonly dataType: 'pg/bool';
+                  readonly codecId: 'pg/bool@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/bool@1', false>;
+                  };
+                  readonly many: false;
+                };
+                readonly sessionDurationSeconds: {
+                  readonly dataType: 'pg/int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/int4@1', 2592000>;
+                  };
+                  readonly many: false;
+                };
+              };
+              primaryKey: { readonly columns: readonly ['id'] };
+              uniques: readonly [];
+              indexes: readonly [];
+              foreignKeys: readonly [];
             };
             readonly ChatAdapter: {
               columns: {
@@ -2310,7 +2355,7 @@ type ContractBase = Omit<
                   };
                   readonly many: false;
                 };
-                readonly mfaEnabled: {
+                readonly mfaConfigured: {
                   readonly dataType: 'pg/bool';
                   readonly codecId: 'pg/bool@1';
                   readonly nullable: false;
@@ -2383,6 +2428,10 @@ type ContractBase = Omit<
     readonly AgentUsage: {
       readonly namespace: 'aibot' & NamespaceId;
       readonly model: 'AgentUsage';
+    };
+    readonly AppSettings: {
+      readonly namespace: 'aibot' & NamespaceId;
+      readonly model: 'AppSettings';
     };
     readonly ChatAdapter: {
       readonly namespace: 'aibot' & NamespaceId;
@@ -2633,6 +2682,32 @@ type ContractBase = Omit<
                 readonly platform: { readonly column: 'platform' };
                 readonly threadId: { readonly column: 'threadId' };
                 readonly toolHistory: { readonly column: 'toolHistory' };
+              };
+            };
+          };
+          readonly AppSettings: {
+            readonly fields: {
+              readonly id: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly mfaEnabled: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/bool@1' };
+              };
+              readonly sessionDurationSeconds: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+            };
+            readonly relations: Record<string, never>;
+            readonly storage: {
+              readonly table: 'AppSettings';
+              readonly namespaceId: 'aibot';
+              readonly fields: {
+                readonly id: { readonly column: 'id' };
+                readonly mfaEnabled: { readonly column: 'mfaEnabled' };
+                readonly sessionDurationSeconds: { readonly column: 'sessionDurationSeconds' };
               };
             };
           };
@@ -3918,7 +3993,7 @@ type ContractBase = Omit<
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/bool@1' };
               };
-              readonly mfaEnabled: {
+              readonly mfaConfigured: {
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/bool@1' };
               };
@@ -4004,7 +4079,7 @@ type ContractBase = Omit<
                 readonly emailVerified: { readonly column: 'emailVerified' };
                 readonly id: { readonly column: 'id' };
                 readonly isAdmin: { readonly column: 'isAdmin' };
-                readonly mfaEnabled: { readonly column: 'mfaEnabled' };
+                readonly mfaConfigured: { readonly column: 'mfaConfigured' };
                 readonly name: { readonly column: 'name' };
                 readonly passwordHash: { readonly column: 'passwordHash' };
                 readonly updatedAt: { readonly column: 'updatedAt' };

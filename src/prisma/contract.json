@@ -12,6 +12,10 @@
       "model": "AgentUsage",
       "namespace": "aibot"
     },
+    "AppSettings": {
+      "model": "AppSettings",
+      "namespace": "aibot"
+    },
     "ChatAdapter": {
       "model": "ChatAdapter",
       "namespace": "aibot"
@@ -396,6 +400,47 @@
               },
               "namespaceId": "aibot",
               "table": "AgentUsage"
+            }
+          },
+          "AppSettings": {
+            "fields": {
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "mfaEnabled": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/bool@1",
+                  "kind": "scalar"
+                }
+              },
+              "sessionDurationSeconds": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {},
+            "storage": {
+              "fields": {
+                "id": {
+                  "column": "id"
+                },
+                "mfaEnabled": {
+                  "column": "mfaEnabled"
+                },
+                "sessionDurationSeconds": {
+                  "column": "sessionDurationSeconds"
+                }
+              },
+              "namespaceId": "aibot",
+              "table": "AppSettings"
             }
           },
           "ChatAdapter": {
@@ -2399,7 +2444,7 @@
                   "kind": "scalar"
                 }
               },
-              "mfaEnabled": {
+              "mfaConfigured": {
                 "nullable": false,
                 "type": {
                   "codecId": "pg/bool@1",
@@ -2522,8 +2567,8 @@
                 "isAdmin": {
                   "column": "isAdmin"
                 },
-                "mfaEnabled": {
-                  "column": "mfaEnabled"
+                "mfaConfigured": {
+                  "column": "mfaConfigured"
                 },
                 "name": {
                   "column": "name"
@@ -2844,6 +2889,45 @@
                   "unique": false
                 }
               ],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "uniques": []
+            },
+            "AppSettings": {
+              "columns": {
+                "id": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "default": {
+                    "kind": "literal",
+                    "value": "global"
+                  },
+                  "nullable": false
+                },
+                "mfaEnabled": {
+                  "codecId": "pg/bool@1",
+                  "dataType": "pg/bool",
+                  "default": {
+                    "kind": "literal",
+                    "value": false
+                  },
+                  "nullable": false
+                },
+                "sessionDurationSeconds": {
+                  "codecId": "pg/int4@1",
+                  "dataType": "pg/int4",
+                  "default": {
+                    "kind": "literal",
+                    "value": 2592000
+                  },
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [],
+              "indexes": [],
               "primaryKey": {
                 "columns": [
                   "id"
@@ -4700,7 +4784,7 @@
                   },
                   "nullable": false
                 },
-                "mfaEnabled": {
+                "mfaConfigured": {
                   "codecId": "pg/bool@1",
                   "dataType": "pg/bool",
                   "default": {
@@ -4778,7 +4862,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "ea81dc0c5dc1eb4c1acd5a6ce726c6f513a9e66e11e128b95303a5cff577e360"
+    "storageHash": "eb515828c508708d7d4447ca2036dc5d60e9f268525cc1561e533da2df8901df"
   },
   "execution": {
     "executionHash": "2edef0a9e649f7d4fec54fb6e1236cb304696ca7f4e909082a496d8d33430a90",
