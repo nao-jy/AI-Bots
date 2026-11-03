@@ -66,7 +66,10 @@ function getToolSetUiSchema(schema: unknown): UiSchema {
       : undefined;
   return {
     ...uiSchema,
-    authId: { "ui:enumNames": authIdEnumNames },
+    authId: {
+      "ui:enumNames": authIdEnumNames,
+      "ui:options": { clearable: true },
+    },
   };
 }
 
@@ -172,6 +175,7 @@ export function ToolSetContextEditor({
               <Collapse id={panelId} expanded={expanded}>
                 <div className="toolset-context-form">
                   <Form
+                    key={toolSet.name}
                     schema={toolSet.schema as RJSFSchema}
                     validator={validator}
                     formData={instance.context}

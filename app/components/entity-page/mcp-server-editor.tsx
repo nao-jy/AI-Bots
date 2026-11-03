@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Button, Group, Select, Stack, Text } from "@mantine/core";
+import { Button, Group, Input, Select, Stack, Text } from "@mantine/core";
 import type { EntityOption } from "../../types/entities";
 
 type McpConnection = { serverId: string; authId: string | null };
@@ -94,9 +94,7 @@ export function McpServerEditor({
 
   return (
     <Stack gap="sm">
-      <Text size="sm" fw={500}>
-        {label}
-      </Text>
+      <Input.Wrapper size="sm" label={label} />
       <input
         type="hidden"
         name="mcpConnections"

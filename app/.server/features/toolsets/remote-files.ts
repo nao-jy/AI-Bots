@@ -29,7 +29,7 @@ async function getSchema(userId: number) {
         title: "OpenDALサービスの設定",
       })
       .describe("configuration of service"),
-    ...(await ReservedParams.getAuthIdSchema(userId)),
+    ...(await ReservedParams.getAuthIdOptionalSchema(userId)),
   });
   return schema;
 }
@@ -62,7 +62,9 @@ export async function getToolSetFactory(userId: number) {
     getTools: async (fileHandles: FileHandleReaderMap, context: unknown) => {
       const args = schema.parse(context);
       const accessToken =
-        args.authId !== null ? await getAccessToken(args.authId) : null;
+        args.authId !== null && args.authId !== undefined
+          ? await getAccessToken(args.authId)
+          : null;
       let config = args.configuration.map(
         ({ key, value }) => [key, value] as const,
       );
@@ -125,12 +127,8 @@ export async function getToolSetFactory(userId: number) {
               path.split("/").filter(Boolean).at(-1) ?? path;
             const sourceMimeType = metadata.contentType;
             let exportedFile:
-              | Awaited<ReturnType<typeof exportGoogleWorkspaceFile>>
-              | undefined;
-            if (
-              sourceMimeType &&
-              isGoogleWorkspaceFile(sourceMimeType)
-            ) {
+              Awaited<ReturnType<typeof exportGoogleWorkspaceFile>> | undefined;
+            if (sourceMimeType && isGoogleWorkspaceFile(sourceMimeType)) {
               if (!accessToken) {
                 throw new Error(
                   "Google Workspace files require an OAuth authentication.",

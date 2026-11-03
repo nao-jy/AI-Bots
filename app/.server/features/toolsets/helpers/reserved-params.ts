@@ -12,13 +12,32 @@ export namespace ReservedParams {
     );
 
     return {
+      authId: z.literal(authentications.map(({ id }) => id)).meta({
+        title: "OAuth認証情報",
+        enumNames: authentications.map(({ label }) => label),
+      }),
+    };
+  }
+
+  export async function getAuthIdOptionalSchema(ownerId: number) {
+    const oauthClients = await listOauth(ownerId);
+    const authentications = oauthClients.flatMap((client) =>
+      client.authentications.map((authentication) => ({
+        id: authentication.id,
+        label: `${client.name} (${authentication.name})`,
+      })),
+    );
+    const authenticationIds = authentications.map(({ id }) => id);
+
+    return {
       authId: z
-        .literal([null, ...authentications.map(({ id }) => id)])
+        .literal(authenticationIds)
+        .optional()
         .meta({
           title: "OAuth認証情報",
-          enumNames: ["未設定", ...authentications.map(({ label }) => label)],
-        })
-        .describe("OAuth認証情報を選択"),
+          enum: authenticationIds,
+          enumNames: authentications.map(({ label }) => label),
+        }),
     };
   }
 }

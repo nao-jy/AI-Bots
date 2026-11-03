@@ -1,7 +1,6 @@
 import { tool, type Tool } from "ai";
 import z from "zod";
 import type { ToolSetFactory } from ".";
-import { getAccessToken } from "~/.server/repository/oauth";
 import type { FileHandleReaderMap } from "./helpers/file-handle";
 
 const API_BASE_URL = "https://api.kingtime.jp/v1.0";
@@ -67,15 +66,6 @@ async function getApiData(
     );
   }
   return data;
-}
-
-function requireAccessToken(
-  accessToken: Awaited<ReturnType<typeof getAccessToken>> | null,
-) {
-  if (!accessToken) {
-    throw new Error("King of Time tools require an OAuth authentication.");
-  }
-  return accessToken.accessToken;
 }
 
 function getMonthRange(yearMonth: string) {
@@ -157,7 +147,7 @@ function makeEmployeeMonthTool(
 
 export async function getToolSetFactory(userId: number) {
   const schema = z.object({
-    apiKey: z.string().min(1).describe("King of Time APIキー"),
+    apiKey: z.string().min(1).meta({ title: "King of Time APIキー" }),
   });
   const ret: ToolSetFactory = {
     name: "king-of-time",

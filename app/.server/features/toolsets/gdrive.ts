@@ -19,7 +19,7 @@ import { ReservedParams } from "./helpers/reserved-params";
 
 async function getSchema(userId: number) {
   return z.object({
-    ...(await ReservedParams.getAuthIdSchema(userId)),
+    ...(await ReservedParams.getAuthIdOptionalSchema(userId)),
   });
 }
 
@@ -64,7 +64,9 @@ export async function getToolSetFactory(userId: number) {
     getTools: async (fileHandles: FileHandleReaderMap, context: unknown) => {
       const args = schema.parse(context);
       const accessToken =
-        args.authId !== null ? await getAccessToken(args.authId) : null;
+        args.authId !== null && args.authId !== undefined
+          ? await getAccessToken(args.authId)
+          : null;
       const authName = accessToken?.name ? `_${accessToken.name}` : "";
 
       return {
