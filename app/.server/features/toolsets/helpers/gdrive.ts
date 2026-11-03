@@ -1,4 +1,5 @@
 import { drive } from "@googleapis/drive";
+import { OAuth2Client } from "google-auth-library";
 
 const DRIVE_FILE_FIELDS =
   "id,name,mimeType,size,modifiedTime,createdTime,md5Checksum,webViewLink,description,parents,trashed";
@@ -49,7 +50,9 @@ const MIME_TYPE_EXTENSIONS: Record<string, string> = {
 const FOLDER_MIME_TYPE = "application/vnd.google-apps.folder";
 
 function getDriveClient(accessToken: string) {
-  return drive({ version: "v3", auth: accessToken });
+  const auth = new OAuth2Client();
+  auth.setCredentials({ access_token: accessToken });
+  return drive({ version: "v3", auth });
 }
 
 function escapeQueryValue(value: string) {

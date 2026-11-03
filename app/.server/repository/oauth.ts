@@ -94,7 +94,6 @@ export async function getAccessToken(authId: number) {
     ? new Date(authentication.expiresAt).getTime()
     : Number.NaN;
   if (
-    !authentication.refreshToken ||
     !Number.isFinite(expiresAt) ||
     expiresAt - Date.now() >= TOKEN_REFRESH_WINDOW_MS
   )
@@ -102,6 +101,11 @@ export async function getAccessToken(authId: number) {
       name: authentication.name,
       accessToken: decryptCredential(authentication.accessToken),
     };
+
+  if (!authentication.refreshToken)
+    throw new Error(
+      "アクセストークンの有効期限が切れています。refresh tokenがないためOAuth認証を再接続してください。",
+    );
 
   const tokens = await oidc.refreshTokenGrant(
     refreshConfiguration(client),

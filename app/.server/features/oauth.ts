@@ -173,6 +173,16 @@ export async function startOAuthAuthorization(user: AuthUser, form: FormData) {
     const state = oidc.randomState();
     const codeVerifier = oidc.randomPKCECodeVerifier();
     const codeChallenge = await oidc.calculatePKCECodeChallenge(codeVerifier);
+    const authorizationHost = new URL(
+      oauthClient.authorizationEndpoint,
+    ).hostname;
+    const isGoogleOAuth =
+      authorizationHost === "google.com" ||
+      authorizationHost.endsWith(".google.com") ||
+      authorizationHost === "googleapis.com" ||
+      authorizationHost.endsWith(".googleapis.com");
+    const scopes = new Set(oauthClient.scopes);
+    if (!isGoogleOAuth) scopes.add("offline_access");
     const payload = Buffer.from(
       JSON.stringify({
         state,
@@ -187,9 +197,9 @@ export async function startOAuthAuthorization(user: AuthUser, form: FormData) {
     const authorizationUrl = oidc.buildAuthorizationUrl(config, {
       redirect_uri: callbackUrl.href,
       response_type: "code",
-      ...(oauthClient.scopes.length
-        ? { scope: oauthClient.scopes.join(" ") }
-        : {}),
+      scope: [...scopes].join(" "),
+      ...(isGoogleOAuth ? { access_type: "offline" } : {}),
+      prompt: "consent",
       state,
       code_challenge: codeChallenge,
       code_challenge_method: "S256",

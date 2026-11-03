@@ -67,7 +67,7 @@ export async function getToolSetFactory(userId: number) {
         args.authId !== null && args.authId !== undefined
           ? await getAccessToken(args.authId)
           : null;
-      const authName = accessToken?.name ? `_${accessToken.name}` : "";
+      const authName = accessToken?.name ?? "";
 
       return {
         [`listGdrive_${authName}`]: tool({
