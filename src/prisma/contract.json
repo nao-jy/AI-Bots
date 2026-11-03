@@ -2444,10 +2444,10 @@
                   "kind": "scalar"
                 }
               },
-              "mfaConfigured": {
-                "nullable": false,
+              "mfaSecret": {
+                "nullable": true,
                 "type": {
-                  "codecId": "pg/bool@1",
+                  "codecId": "pg/text@1",
                   "kind": "scalar"
                 }
               },
@@ -2567,8 +2567,8 @@
                 "isAdmin": {
                   "column": "isAdmin"
                 },
-                "mfaConfigured": {
-                  "column": "mfaConfigured"
+                "mfaSecret": {
+                  "column": "mfaSecret"
                 },
                 "name": {
                   "column": "name"
@@ -4784,14 +4784,10 @@
                   },
                   "nullable": false
                 },
-                "mfaConfigured": {
-                  "codecId": "pg/bool@1",
-                  "dataType": "pg/bool",
-                  "default": {
-                    "kind": "literal",
-                    "value": false
-                  },
-                  "nullable": false
+                "mfaSecret": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "nullable": true
                 },
                 "name": {
                   "codecId": "pg/text@1",
@@ -4820,6 +4816,11 @@
                 {
                   "columns": [
                     "email"
+                  ]
+                },
+                {
+                  "columns": [
+                    "mfaSecret"
                   ]
                 }
               ]
@@ -4862,7 +4863,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "eb515828c508708d7d4447ca2036dc5d60e9f268525cc1561e533da2df8901df"
+    "storageHash": "d9007c449b35e786dda7380dbecac2451e1fa9249899e764d871ed7160d23b17"
   },
   "execution": {
     "executionHash": "2edef0a9e649f7d4fec54fb6e1236cb304696ca7f4e909082a496d8d33430a90",

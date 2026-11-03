@@ -23,7 +23,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'eb515828c508708d7d4447ca2036dc5d60e9f268525cc1561e533da2df8901df'>;
+  StorageHashBase<'d9007c449b35e786dda7380dbecac2451e1fa9249899e764d871ed7160d23b17'>;
 export type ExecutionHash =
   ExecutionHashBase<'2edef0a9e649f7d4fec54fb6e1236cb304696ca7f4e909082a496d8d33430a90'>;
 export type ProfileHash =
@@ -583,7 +583,7 @@ export namespace Models {
     emailVerified: FieldOutputTypes['aibot']['User']['emailVerified'];
     id: FieldOutputTypes['aibot']['User']['id'];
     isAdmin: FieldOutputTypes['aibot']['User']['isAdmin'];
-    mfaConfigured: FieldOutputTypes['aibot']['User']['mfaConfigured'];
+    mfaSecret: FieldOutputTypes['aibot']['User']['mfaSecret'];
     name: FieldOutputTypes['aibot']['User']['name'];
     passwordHash: FieldOutputTypes['aibot']['User']['passwordHash'];
     updatedAt: FieldOutputTypes['aibot']['User']['updatedAt'];
@@ -2355,14 +2355,10 @@ type ContractBase = Omit<
                   };
                   readonly many: false;
                 };
-                readonly mfaConfigured: {
-                  readonly dataType: 'pg/bool';
-                  readonly codecId: 'pg/bool@1';
-                  readonly nullable: false;
-                  readonly default: {
-                    readonly kind: 'literal';
-                    readonly value: DefaultLiteralValue<'pg/bool@1', false>;
-                  };
+                readonly mfaSecret: {
+                  readonly dataType: 'pg/text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
                   readonly many: false;
                 };
                 readonly name: {
@@ -2385,7 +2381,10 @@ type ContractBase = Omit<
                 };
               };
               primaryKey: { readonly columns: readonly ['id'] };
-              uniques: readonly [{ readonly columns: readonly ['email'] }];
+              uniques: readonly [
+                { readonly columns: readonly ['email'] },
+                { readonly columns: readonly ['mfaSecret'] },
+              ];
               indexes: readonly [];
               foreignKeys: readonly [];
             };
@@ -3993,9 +3992,9 @@ type ContractBase = Omit<
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/bool@1' };
               };
-              readonly mfaConfigured: {
-                readonly nullable: false;
-                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/bool@1' };
+              readonly mfaSecret: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
               };
               readonly name: {
                 readonly nullable: true;
@@ -4079,7 +4078,7 @@ type ContractBase = Omit<
                 readonly emailVerified: { readonly column: 'emailVerified' };
                 readonly id: { readonly column: 'id' };
                 readonly isAdmin: { readonly column: 'isAdmin' };
-                readonly mfaConfigured: { readonly column: 'mfaConfigured' };
+                readonly mfaSecret: { readonly column: 'mfaSecret' };
                 readonly name: { readonly column: 'name' };
                 readonly passwordHash: { readonly column: 'passwordHash' };
                 readonly updatedAt: { readonly column: 'updatedAt' };

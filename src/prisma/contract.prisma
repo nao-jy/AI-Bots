@@ -31,7 +31,7 @@ namespace aibot {
     updatedAt     temporal.UpdatedAtString
     isAdmin       Boolean                  @default(false)
     emailVerified Boolean                  @default(false)
-    mfaConfigured Boolean                  @default(false)
+    mfaSecret     String?                  @unique
   }
 
   model AppSettings {
