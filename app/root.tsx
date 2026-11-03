@@ -27,7 +27,7 @@ import {
   type RequestContext,
 } from "./.server/request-context";
 import { getSessionUser } from "./.server/auth";
-import { startCronScheduler } from "./.server/scheduler";
+import { startCronScheduler } from "./.server/features/scheduler";
 
 export const links: Route.LinksFunction = () => [
   { rel: "icon", type: "image/png", href: "/favicon.png" },

@@ -5,7 +5,7 @@ import { renderToPipeableStream } from "react-dom/server";
 import { ServerRouter } from "react-router";
 import type { EntryContext } from "react-router";
 import { logger } from "./.server/logger";
-import { startCronScheduler } from "./.server/scheduler";
+import { startCronScheduler } from "./.server/features/scheduler";
 
 export const streamTimeout = 5_000;
 

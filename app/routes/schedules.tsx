@@ -10,7 +10,7 @@ import {
   listSchedules,
   saveSchedule,
 } from "../.server/repository/schedules";
-import { refreshCronJobs } from "../.server/scheduler";
+import { refreshCronJobs } from "../.server/features/scheduler";
 import { APP_NAME } from "~/const";
 
 const page: Omit<EntityPageDefinition, "records"> = {
@@ -108,7 +108,10 @@ export async function action({ request }: Route.ActionArgs) {
     await refreshCronJobs();
     return { ok: true, intent };
   } catch (error) {
-    logger.error("Failed to synchronize Cron jobs after schedule change", error);
+    logger.error(
+      "Failed to synchronize Cron jobs after schedule change",
+      error,
+    );
     return {
       ok: true,
       intent,

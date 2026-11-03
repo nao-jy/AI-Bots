@@ -2,11 +2,11 @@ import cron, { type ScheduledTask } from "node-cron";
 import {
   getScheduleForExecution,
   listSchedulePatterns,
-} from "./repository/schedules";
-import { runScheduledPrompt } from "./features/bot";
-import { getBotInfo } from "./features/chat-adapter";
-import { decryptAdapterEnvs } from "./utils";
-import { logger } from "./logger";
+} from "../repository/schedules";
+import { runScheduledPrompt } from "./bot";
+import { getBotInfo } from "./chat-adapter";
+import { decryptAdapterEnvs } from "../utils";
+import { logger } from "../logger";
 
 const jobs = new Map<
   number,
@@ -27,13 +27,12 @@ type SchedulerState = {
 const globalScheduler = globalThis as typeof globalThis & {
   __botManagerCronScheduler?: SchedulerState;
 };
-const schedulerState =
-  (globalScheduler.__botManagerCronScheduler ??= {
-    jobs,
-    refreshQueue: Promise.resolve(),
-    startupRevision: null,
-    startupPromise: undefined,
-  });
+const schedulerState = (globalScheduler.__botManagerCronScheduler ??= {
+  jobs,
+  refreshQueue: Promise.resolve(),
+  startupRevision: null,
+  startupPromise: undefined,
+});
 const moduleRevision = Symbol("scheduler-module-revision");
 
 async function refreshJobs() {
@@ -141,10 +140,7 @@ export function refreshCronJobs() {
 
 export function startCronScheduler() {
   let startupPromise = schedulerState.startupPromise;
-  if (
-    schedulerState.startupRevision !== moduleRevision ||
-    !startupPromise
-  ) {
+  if (schedulerState.startupRevision !== moduleRevision || !startupPromise) {
     schedulerState.startupRevision = moduleRevision;
     startupPromise = refreshCronJobs().catch((error: unknown) => {
       if (schedulerState.startupRevision === moduleRevision) {
