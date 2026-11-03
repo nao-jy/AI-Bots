@@ -53,7 +53,9 @@ export function ScheduleTargetsEditor({
             label={index === 0 ? "ボット / アダプタ" : undefined}
             placeholder="送信先を選択"
             data={targetOptions}
-            value={target.chatbotAdapterId ? String(target.chatbotAdapterId) : null}
+            value={
+              target.chatbotAdapterId ? String(target.chatbotAdapterId) : null
+            }
             onChange={(value) =>
               setTargets((current) =>
                 current.map((item, itemIndex) =>
@@ -73,6 +75,11 @@ export function ScheduleTargetsEditor({
           <TextInput
             label={index === 0 ? "スレッドID" : undefined}
             placeholder="例: slack:C123:1234567890.123456"
+            description={
+              index === 0
+                ? "対象のスレッドでAIに「このスレッドIDを教えて」と聞いてください。"
+                : undefined
+            }
             value={target.threadId}
             onChange={(event) => {
               const threadId = event.currentTarget.value;

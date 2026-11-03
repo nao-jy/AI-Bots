@@ -133,15 +133,28 @@ function AdvancedCronFields({
   onChange: (fields: string[]) => void;
 }) {
   const isSixFields = values.fields.length === 6;
-  const labels = isSixFields
-    ? ["秒", "分", "時", "日", "月", "曜日"]
-    : ["分", "時", "日", "月", "曜日"];
+  const displayFields = isSixFields
+    ? [
+        { index: 4, label: "月" },
+        { index: 3, label: "日" },
+        { index: 5, label: "曜日" },
+        { index: 2, label: "時" },
+        { index: 1, label: "分" },
+        { index: 0, label: "秒" },
+      ]
+    : [
+        { index: 3, label: "月" },
+        { index: 2, label: "日" },
+        { index: 4, label: "曜日" },
+        { index: 1, label: "時" },
+        { index: 0, label: "分" },
+      ];
   const maximums = isSixFields ? [59, 59, 23, 31, 12, 7] : [59, 23, 31, 12, 7];
   const minimums = isSixFields ? [0, 0, 0, 1, 1, 0] : [0, 0, 1, 1, 0];
   const weekdayIndex = isSixFields ? 5 : 4;
   return (
     <Group grow align="flex-end">
-      {labels.map((label, index) => {
+      {displayFields.map(({ index, label }) => {
         const options = [
           ...(index === (isSixFields ? 1 : 0)
             ? []
@@ -221,20 +234,6 @@ export function CronScheduleEditor({
       />
       {["daily", "weekly", "monthly"].includes(mode) && (
         <Group grow>
-          <Select
-            label="分"
-            data={choices(59)}
-            value={String(values.minute)}
-            onChange={(value) => value && setTime("minute", Number(value))}
-            searchable
-          />
-          <Select
-            label="時"
-            data={choices(23)}
-            value={String(values.hour)}
-            onChange={(value) => value && setTime("hour", Number(value))}
-            searchable
-          />
           {mode === "weekly" && (
             <Select
               label="曜日"
@@ -255,6 +254,20 @@ export function CronScheduleEditor({
               searchable
             />
           )}
+          <Select
+            label="時"
+            data={choices(23)}
+            value={String(values.hour)}
+            onChange={(value) => value && setTime("hour", Number(value))}
+            searchable
+          />
+          <Select
+            label="分"
+            data={choices(59)}
+            value={String(values.minute)}
+            onChange={(value) => value && setTime("minute", Number(value))}
+            searchable
+          />
         </Group>
       )}
       {mode === "advanced" && (
