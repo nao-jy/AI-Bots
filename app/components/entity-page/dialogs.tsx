@@ -201,6 +201,9 @@ export function EntityPageDialogs({
   onClose: () => void;
 }) {
   const canTest = ["adapters", "agents", "mcp"].includes(page.icon);
+  const changesAdmin = page.columns.some(
+    (column) => column.presentation === "admin-toggle",
+  );
   const fetcher = useFetcher<{
     ok?: boolean;
     error?: string;
@@ -451,14 +454,20 @@ export function EntityPageDialogs({
       <Modal
         opened={mode === "status-change"}
         onClose={onClose}
-        title="ステータス変更の確認"
+        title={
+          changesAdmin ? "管理者権限変更の確認" : "ステータス変更の確認"
+        }
         centered
         size="sm"
         radius="lg"
       >
         <Text className="delete-copy">
           「{selected?.[page.columns[0].key]}」を
-          {nextEnabled ? "稼働中" : "停止中"}に変更しますか？
+          {changesAdmin
+            ? nextEnabled
+              ? "管理者にしますか？"
+              : "管理者権限を解除しますか？"
+            : `${nextEnabled ? "稼働中" : "停止中"}に変更しますか？`}
         </Text>
         {fetcher.data?.error && (
           <Alert color="red" mt="md">
@@ -466,9 +475,17 @@ export function EntityPageDialogs({
           </Alert>
         )}
         <fetcher.Form method="post">
-          <input type="hidden" name="_intent" value="toggle-status" />
+          <input
+            type="hidden"
+            name="_intent"
+            value={changesAdmin ? "toggle-admin" : "toggle-status"}
+          />
           {selected && <input type="hidden" name="id" value={selected.id} />}
-          <input type="hidden" name="enabled" value={String(nextEnabled)} />
+          <input
+            type="hidden"
+            name={changesAdmin ? "isAdmin" : "enabled"}
+            value={String(nextEnabled)}
+          />
           <div className="modal-actions">
             <Button variant="default" type="button" onClick={onClose}>
               キャンセル
@@ -479,6 +496,41 @@ export function EntityPageDialogs({
               disabled={fetcher.state !== "idle"}
             >
               {fetcher.state !== "idle" ? "変更中..." : "変更する"}
+            </Button>
+          </div>
+        </fetcher.Form>
+      </Modal>
+
+      <Modal
+        opened={mode === "force-logout"}
+        onClose={onClose}
+        title="強制ログアウトの確認"
+        centered
+        size="sm"
+        radius="lg"
+      >
+        <Text className="delete-copy">
+          「{selected?.[page.columns[0].key]}」のすべてのセッションを終了し、
+          強制ログアウトさせますか？
+        </Text>
+        {fetcher.data?.error && (
+          <Alert color="red" mt="md">
+            {fetcher.data.error}
+          </Alert>
+        )}
+        <fetcher.Form method="post">
+          <input type="hidden" name="_intent" value="force-logout" />
+          {selected && <input type="hidden" name="id" value={selected.id} />}
+          <div className="modal-actions">
+            <Button variant="default" type="button" onClick={onClose}>
+              キャンセル
+            </Button>
+            <Button
+              type="submit"
+              color="orange"
+              disabled={fetcher.state !== "idle"}
+            >
+              {fetcher.state !== "idle" ? "ログアウト中..." : "強制ログアウト"}
             </Button>
           </div>
         </fetcher.Form>

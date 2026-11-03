@@ -61,6 +61,7 @@ export async function action({ request }: Route.ActionArgs) {
         email,
         name,
         passwordHash: await hashPassword(password),
+        isAdmin: true,
       });
     } catch {
       return data(

@@ -1,5 +1,4 @@
 import { Badge, Group, Switch } from "@mantine/core";
-import type { EntityRecord } from "../../types/entities";
 import type { EntityColumn } from "./types";
 
 export function EntityCell({
@@ -7,11 +6,13 @@ export function EntityCell({
   recordName,
   value,
   onStatusChange,
+  disabled = false,
 }: {
   column: EntityColumn;
   recordName: string | number;
   value: string | number;
   onStatusChange: (enabled: boolean) => void;
+  disabled?: boolean;
 }) {
   if (column.presentation === "webhook-count") {
     const endpoints = parseWebhookEndpoints(value);
@@ -26,6 +27,18 @@ export function EntityCell({
           checked={String(value) === "稼働中"}
           onChange={(event) => onStatusChange(event.currentTarget.checked)}
           aria-label={`${recordName}の稼働状態を変更`}
+        />
+        <span className="table-text">{value}</span>
+      </Group>
+    );
+  if (column.presentation === "admin-toggle")
+    return (
+      <Group gap="xs">
+        <Switch
+          checked={String(value) === "管理者"}
+          disabled={disabled}
+          onChange={(event) => onStatusChange(event.currentTarget.checked)}
+          aria-label={`${recordName}の管理者権限を変更`}
         />
         <span className="table-text">{value}</span>
       </Group>

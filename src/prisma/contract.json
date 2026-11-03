@@ -2385,6 +2385,13 @@
                   "kind": "scalar"
                 }
               },
+              "isAdmin": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/bool@1",
+                  "kind": "scalar"
+                }
+              },
               "name": {
                 "nullable": true,
                 "type": {
@@ -2494,6 +2501,9 @@
                 },
                 "id": {
                   "column": "id"
+                },
+                "isAdmin": {
+                  "column": "isAdmin"
                 },
                 "name": {
                   "column": "name"
@@ -4652,6 +4662,15 @@
                   },
                   "nullable": false
                 },
+                "isAdmin": {
+                  "codecId": "pg/bool@1",
+                  "dataType": "pg/bool",
+                  "default": {
+                    "kind": "literal",
+                    "value": false
+                  },
+                  "nullable": false
+                },
                 "name": {
                   "codecId": "pg/text@1",
                   "dataType": "pg/text",
@@ -4721,7 +4740,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "fb0fbd2e381004420b453aa3238e28ae97928fca440b31ccd7c556fe9cff8eca"
+    "storageHash": "291754cf813955716def4a7dc788512baa20acb61911400e7a4169f07b507c6c"
   },
   "execution": {
     "executionHash": "2edef0a9e649f7d4fec54fb6e1236cb304696ca7f4e909082a496d8d33430a90",

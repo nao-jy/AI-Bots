@@ -14,11 +14,13 @@ export function EntityTable({
   page,
   onEdit,
   onDelete,
+  onForceLogout,
   onStatusChange,
 }: {
   page: EntityPageDefinition;
   onEdit: (record: EntityRecord) => void;
   onDelete: (record: EntityRecord) => void;
+  onForceLogout: (record: EntityRecord) => void;
   onStatusChange: (record: EntityRecord, enabled: boolean) => void;
 }) {
   const [query, setQuery] = useState("");
@@ -94,6 +96,7 @@ export function EntityTable({
                   record={record}
                   onEdit={() => onEdit(record)}
                   onDelete={() => onDelete(record)}
+                  onForceLogout={() => onForceLogout(record)}
                   onStatusChange={(enabled) =>
                     onStatusChange(record, enabled)
                   }

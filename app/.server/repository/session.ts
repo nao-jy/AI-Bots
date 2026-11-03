@@ -12,16 +12,10 @@ export async function createSession(
   });
 }
 
-export async function deleteSessionByToken(tokenHash: string) {
+export async function expireSessionByToken(tokenHash: string) {
   await db.orm.aibot.Session.where({
     tokenHash: tokenHash,
-  }).delete();
-}
-
-export async function deleteSessionById(sessionId: number) {
-  await db.orm.aibot.Session.where({
-    id: sessionId,
-  }).delete();
+  }).update({ expiresAt: new Date().toISOString() });
 }
 
 export async function getSessionUser(tokehHash: string) {

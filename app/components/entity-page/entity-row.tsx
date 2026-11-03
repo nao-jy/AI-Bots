@@ -4,6 +4,7 @@ import {
   CaretDownIcon,
   CaretRightIcon,
   PencilSimpleIcon,
+  SignOutIcon,
   TrashIcon,
 } from "@phosphor-icons/react";
 import type { EntityRecord } from "../../types/entities";
@@ -22,6 +23,7 @@ export function EntityRow({
   record,
   onEdit,
   onDelete,
+  onForceLogout,
   onStatusChange,
   onOpenShell,
   onDeleteInstance,
@@ -30,6 +32,7 @@ export function EntityRow({
   record: EntityRecord;
   onEdit: () => void;
   onDelete: () => void;
+  onForceLogout: () => void;
   onStatusChange: (enabled: boolean) => void;
   onOpenShell: (instanceId: string) => void;
   onDeleteInstance: (instanceId: string) => void;
@@ -86,11 +89,39 @@ export function EntityRow({
               recordName={String(recordName ?? "")}
               value={record[column.key]}
               onStatusChange={onStatusChange}
+              disabled={
+                column.presentation === "admin-toggle" &&
+                record.id === page.protectedRecordId
+              }
             />
           </Table.Td>
         ))}
         <Table.Td>
           <Group gap={5} justify="flex-end">
+            {page.tableFeatures?.forceLogout && (
+              <ActionIcon
+                variant="subtle"
+                color="orange"
+                aria-label={
+                  cannotDelete
+                    ? "自分自身は強制ログアウトできません"
+                    : `${recordName}を強制ログアウト`
+                }
+                title={
+                  cannotDelete
+                    ? "自分自身は強制ログアウトできません"
+                    : record.loginStatus !== "ログイン中"
+                      ? "このユーザーはログインしていません"
+                      : "すべてのセッションを終了"
+                }
+                disabled={
+                  cannotDelete || record.loginStatus !== "ログイン中"
+                }
+                onClick={onForceLogout}
+              >
+                <SignOutIcon size={16} aria-hidden="true" />
+              </ActionIcon>
+            )}
             <ActionIcon
               variant="subtle"
               color="gray"

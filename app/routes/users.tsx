@@ -5,19 +5,25 @@ import {
 } from "../components/entity-page-view";
 import {
   deleteUser,
+  forceLogoutUser,
   listUsers,
   saveUser,
+  setUserAdmin,
 } from "../.server/repository/entities";
-import { requireUser } from "../.server/auth";
+import { requireAdmin } from "../.server/auth";
 import { APP_NAME } from "~/const";
 
 const page: Omit<EntityPageDefinition, "records"> = {
   title: "ユーザー",
   description: "ログインできるユーザーアカウントを管理します。",
   icon: "users",
+  tableFeatures: { forceLogout: true },
   columns: [
     { key: "name", label: "ユーザー" },
     { key: "email", label: "メールアドレス" },
+    { key: "isAdmin", label: "権限", presentation: "admin-toggle" },
+    { key: "loginStatus", label: "ログイン状態" },
+    { key: "lastLogin", label: "最終ログイン" },
     { key: "updated", label: "最終更新" },
   ],
   fields: [
@@ -43,21 +49,29 @@ export function meta() {
 }
 
 export async function loader({ request }: Route.LoaderArgs) {
-  const currentUser = await requireUser(request);
+  const currentUser = await requireAdmin(request);
   return { users: await listUsers(), currentUserId: currentUser.id };
 }
 
 export async function action({ request }: Route.ActionArgs) {
-  const actor = await requireUser(request);
+  const actor = await requireAdmin(request);
   const form = await request.formData();
   const intent = String(form.get("_intent") ?? "");
   const id = Number(form.get("id"));
   if (intent === "delete") {
-    if (id === actor.id) {
-      return { ok: false, error: "自分のアカウントは削除できません。" };
-    }
-    return Number.isInteger(id) && (await deleteUser(id, actor.id))
-      ? { ok: true }
+    return Number.isInteger(id)
+      ? deleteUser(id, actor.id)
+      : { ok: false, error: "ユーザーが見つかりません。" };
+  }
+  if (intent === "toggle-admin") {
+    const isAdminValue = String(form.get("isAdmin") ?? "");
+    if (!Number.isInteger(id) || !["true", "false"].includes(isAdminValue))
+      return { ok: false, error: "変更内容を確認してください。" };
+    return setUserAdmin(id, isAdminValue === "true", actor.id);
+  }
+  if (intent === "force-logout") {
+    return Number.isInteger(id)
+      ? forceLogoutUser(id, actor.id)
       : { ok: false, error: "ユーザーが見つかりません。" };
   }
   if (intent === "create") return saveUser(null, form);

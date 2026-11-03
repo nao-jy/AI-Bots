@@ -37,6 +37,11 @@ export function EntityPageView({ page }: { page: EntityPageDefinition }) {
     setDialog("delete");
   }
 
+  function openForceLogout(record: EntityRecord) {
+    setSelected(record);
+    setDialog("force-logout");
+  }
+
   function confirmStatusChange(record: EntityRecord, enabled: boolean) {
     setSelected(record);
     setNextEnabled(enabled);
@@ -54,6 +59,7 @@ export function EntityPageView({ page }: { page: EntityPageDefinition }) {
         page={page}
         onEdit={openEdit}
         onDelete={openDelete}
+        onForceLogout={openForceLogout}
         onStatusChange={confirmStatusChange}
       />
       <EntityPageDialogs

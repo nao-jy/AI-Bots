@@ -13,7 +13,7 @@
 - **MCP servers:** Configure MCP endpoints and HTTP headers, test connections, and make the servers available to bots.
 - **Sandboxes:** Configure E2B or OpenSandbox execution environments, including environment variables, allowed network domains, initialization commands, and sharing scope. Inspect persistent instances and use the built-in terminal.
 - **Scheduled prompts:** Run a prompt on selected bot/adapter threads using a five-field or six-field Cron expression and an IANA timezone. Schedule changes are synchronized with the running scheduler.
-- **OAuth and users:** Manage OAuth clients and authorize accounts for integrations. The first user is registered through the login page; authenticated users can manage workspace accounts.
+- **OAuth and users:** Manage OAuth clients and authorize accounts for integrations. The first user registered through the login page becomes an administrator; only administrators can manage workspace accounts and grant or revoke administrator privileges. At least one administrator is always required.
 
 ## Requirements
 

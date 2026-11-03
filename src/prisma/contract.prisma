@@ -29,6 +29,7 @@ namespace aibot {
     sessions     Session[]
     createdAt    TimestamptzString        @default(now())
     updatedAt    temporal.UpdatedAtString
+    isAdmin      Boolean                  @default(false)
   }
 
   model Session {

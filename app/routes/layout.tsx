@@ -24,11 +24,16 @@ const items: { path: string; id: EntitySection; label: string }[] = [
     id: "oauth_authentications",
     label: "OAuth認証情報",
   },
-  { path: "/users", id: "users", label: "ユーザー" },
 ];
 
 export async function loader({ request }: Route.LoaderArgs) {
-  return { user: await requireUser(request) };
+  const user = await requireUser(request);
+  return {
+    user,
+    items: user.isAdmin
+      ? [...items, { path: "/users", id: "users" as const, label: "ユーザー" }]
+      : items,
+  };
 }
 
 export default function Workspace({ loaderData }: Route.ComponentProps) {
@@ -36,7 +41,8 @@ export default function Workspace({ loaderData }: Route.ComponentProps) {
   const [mobileNavOpened, { toggle: toggleMobileNav, close: closeMobileNav }] =
     useDisclosure(false);
   const current =
-    items.find((item) => item.path === location.pathname) ?? items[0];
+    loaderData.items.find((item) => item.path === location.pathname) ??
+    loaderData.items[0];
 
   return (
     <AppShell
@@ -59,7 +65,7 @@ export default function Workspace({ loaderData }: Route.ComponentProps) {
 
         <div className="nav-label">管理</div>
         <nav className="side-nav" aria-label="エンティティ管理">
-          {items.map((item) => (
+          {loaderData.items.map((item) => (
             <NavLink
               key={item.id}
               to={item.path}

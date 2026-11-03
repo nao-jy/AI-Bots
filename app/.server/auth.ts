@@ -7,9 +7,8 @@ import {
 import { promisify } from "node:util";
 import { redirect } from "react-router";
 import {
-  deleteSessionByToken,
+  expireSessionByToken,
   getSessionUser as getSessionUserInner,
-  deleteSessionById,
   createSession as createSessionInner,
 } from "./repository/session";
 
@@ -21,6 +20,7 @@ export type AuthUser = {
   id: number;
   email: string;
   name: string | null;
+  isAdmin: boolean;
 };
 
 function hashSessionToken(token: string) {
@@ -56,7 +56,7 @@ export async function createSession(userId: number) {
 export async function deleteSession(request: Request) {
   const token = getSessionToken(request);
   if (!token) return;
-  await deleteSessionByToken(hashSessionToken(token));
+  await expireSessionByToken(hashSessionToken(token));
 }
 
 export async function getSessionUser(
@@ -67,21 +67,25 @@ export async function getSessionUser(
 
   const session = await getSessionUserInner(hashSessionToken(token));
   if (!session) return null;
-  if (Date.parse(session.expiresAt) <= Date.now()) {
-    await deleteSessionById(session.id);
-    return null;
-  }
+  if (Date.parse(session.expiresAt) <= Date.now()) return null;
 
   return {
     id: session.user.id,
     email: session.user.email,
     name: session.user.name,
+    isAdmin: session.user.isAdmin,
   };
 }
 
 export async function requireUser(request: Request) {
   const user = await getSessionUser(request);
   if (!user) throw redirect("/login");
+  return user;
+}
+
+export async function requireAdmin(request: Request) {
+  const user = await requireUser(request);
+  if (!user.isAdmin) throw new Response("Forbidden", { status: 403 });
   return user;
 }
 

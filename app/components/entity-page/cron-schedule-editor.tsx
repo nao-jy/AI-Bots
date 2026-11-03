@@ -209,13 +209,7 @@ export function CronScheduleEditor({
 
   return (
     <Stack gap="xs">
-      <Text size="sm" fw={500}>
-        {label}
-      </Text>
       <input type="hidden" name={name} value={expression} />
-      <Text size="sm" c="dimmed">
-        決まった日時に実行します。
-      </Text>
       <Select
         label="実行するタイミング"
         data={modes}
@@ -257,9 +251,7 @@ export function CronScheduleEditor({
               label="日"
               data={choices(31, 1)}
               value={String(values.monthday)}
-              onChange={(value) =>
-                value && setTime("monthday", Number(value))
-              }
+              onChange={(value) => value && setTime("monthday", Number(value))}
               searchable
             />
           )}
