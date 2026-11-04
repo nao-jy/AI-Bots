@@ -309,6 +309,7 @@ export function EntityPageDialogs({
                       name={field.key}
                       label={field.label}
                       initialValue={selected?.[field.key]}
+                      timezoneDescription={field.timezoneDescription}
                     />
                   ) : field.type === "schedule-targets" ? (
                     <ScheduleTargetsEditor
@@ -409,13 +410,18 @@ export function EntityPageDialogs({
                   {field.help && (
                     <Text size="xs" c="dimmed" mt={6}>
                       {field.help.text}{" "}
-                      <Anchor
-                        href={field.help.href}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        {field.help.linkText}
-                      </Anchor>
+                      {field.help.href && field.help.linkText && (
+                        <>
+                          {" "}
+                          <Anchor
+                            href={field.help.href}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            {field.help.linkText}
+                          </Anchor>
+                        </>
+                      )}
                     </Text>
                   )}
                 </div>

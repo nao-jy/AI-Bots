@@ -23,7 +23,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'0a78a6d847f4342bca069299635e0bc38e7f90975e6af19df419a06a109e2daf'>;
+  StorageHashBase<'dd59c15ad1f67c99c5b96e66e67961a4bb6fd1c8b14fdf1f86560112e30c26fa'>;
 export type ExecutionHash =
   ExecutionHashBase<'2edef0a9e649f7d4fec54fb6e1236cb304696ca7f4e909082a496d8d33430a90'>;
 export type ProfileHash =
@@ -284,8 +284,8 @@ type FieldTypeOverrides = {
       };
       readonly RateLimit: {
         readonly criteria: {
-          readonly output: 'thread' | 'bot' | 'agent' | 'provider';
-          readonly input: 'thread' | 'bot' | 'agent' | 'provider';
+          readonly output: 'bot' | 'agent' | 'provider';
+          readonly input: 'bot' | 'agent' | 'provider';
         };
       };
       readonly Sandbox: {
@@ -322,8 +322,8 @@ type ColumnTypeOverrides = {
     readonly McpServer: { readonly transport: { readonly output: 'http'; readonly input: 'http' } };
     readonly RateLimit: {
       readonly criteria: {
-        readonly output: 'thread' | 'bot' | 'agent' | 'provider';
-        readonly input: 'thread' | 'bot' | 'agent' | 'provider';
+        readonly output: 'bot' | 'agent' | 'provider';
+        readonly input: 'bot' | 'agent' | 'provider';
       };
     };
     readonly Sandbox: {
@@ -577,6 +577,7 @@ export namespace Models {
     limit: FieldOutputTypes['aibot']['RateLimit']['limit'];
     limitExceededMessage: FieldOutputTypes['aibot']['RateLimit']['limitExceededMessage'];
     ownerId: FieldOutputTypes['aibot']['RateLimit']['ownerId'];
+    perThread: FieldOutputTypes['aibot']['RateLimit']['perThread'];
     resetOnCron: FieldOutputTypes['aibot']['RateLimit']['resetOnCron'];
     owner: aibot_User;
     readonly [RelationKeys]?: 'owner';
@@ -2256,6 +2257,12 @@ type ContractBase = Omit<
                   readonly nullable: false;
                   readonly many: false;
                 };
+                readonly perThread: {
+                  readonly dataType: 'pg/bool';
+                  readonly codecId: 'pg/bool@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
                 readonly resetOnCron: {
                   readonly dataType: 'pg/text';
                   readonly codecId: 'pg/text@1';
@@ -2568,7 +2575,7 @@ type ContractBase = Omit<
             };
             readonly RateLimitCriteria: {
               readonly kind: 'valueSet';
-              readonly values: readonly ['thread', 'bot', 'agent', 'provider'];
+              readonly values: readonly ['bot', 'agent', 'provider'];
             };
             readonly SandboxScope: {
               readonly kind: 'valueSet';
@@ -4057,6 +4064,10 @@ type ContractBase = Omit<
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
               };
+              readonly perThread: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/bool@1' };
+              };
               readonly resetOnCron: {
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
@@ -4084,6 +4095,7 @@ type ContractBase = Omit<
                 readonly limit: { readonly column: 'limit' };
                 readonly limitExceededMessage: { readonly column: 'limitExceededMessage' };
                 readonly ownerId: { readonly column: 'ownerId' };
+                readonly perThread: { readonly column: 'perThread' };
                 readonly resetOnCron: { readonly column: 'resetOnCron' };
               };
             };
@@ -4366,7 +4378,6 @@ type ContractBase = Omit<
           readonly RateLimitCriteria: {
             readonly codecId: 'pg/text@1';
             readonly members: readonly [
-              { readonly name: 'thread'; readonly value: 'thread' },
               { readonly name: 'bot'; readonly value: 'bot' },
               { readonly name: 'agent'; readonly value: 'agent' },
               { readonly name: 'provider'; readonly value: 'provider' },
@@ -4390,7 +4401,6 @@ type ContractBase = Omit<
             { readonly name: 'second'; readonly value: 'second' },
           ];
           readonly RateLimitCriteria: readonly [
-            { readonly name: 'thread'; readonly value: 'thread' },
             { readonly name: 'bot'; readonly value: 'bot' },
             { readonly name: 'agent'; readonly value: 'agent' },
             { readonly name: 'provider'; readonly value: 'provider' },

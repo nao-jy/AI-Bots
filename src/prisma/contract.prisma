@@ -17,7 +17,6 @@ enum PublicIdSlot {
 }
 
 enum RateLimitCriteria {
-  thread = "thread"
   bot = "bot"
   agent = "agent"
   provider = "provider"
@@ -198,6 +197,7 @@ namespace aibot {
     id                   Int               @id @default(autoincrement())
     criteria             RateLimitCriteria
     criteriaId           Int?
+    perThread            Boolean
     coefficient          Jsonb // JSON of { variableNameFromAgentUsage: coefficient (decimal) }
     limit                Decimal
     limitExceededMessage String

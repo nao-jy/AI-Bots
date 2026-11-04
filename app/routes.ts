@@ -11,6 +11,7 @@ export default [
     route("oauth-authentications", "routes/oauth-authentications.tsx"),
     route(OAUTH_CALLBACK_PATH, "routes/oauth-callback.tsx"),
     route("agents", "routes/agents.tsx"),
+    route("rate-limits", "routes/rate-limits.tsx"),
     route("mcp-servers", "routes/mcp-servers.tsx"),
     route("sandboxes", "routes/sandboxes.tsx"),
     route("schedules", "routes/schedules.tsx"),

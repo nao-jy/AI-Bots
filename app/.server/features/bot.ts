@@ -19,6 +19,7 @@ import { getFileParseTools } from "./toolsets/file-parse";
 import { appLogger } from "../logger/app-logger";
 import { conversationLogger } from "../logger/conversation-logger";
 import { insertUsage } from "../repository/agents";
+import { getExceededRateLimit } from "../repository/rate-limits";
 import { SearXNGWebSearch } from "./toolsets/tools/web/search-searxng";
 import { getChatTools } from "./toolsets/chat-tools";
 import type { FileHandleReaderMap } from "./toolsets/helpers/file-handle";
@@ -171,6 +172,18 @@ async function processBotMessage(
       return;
     }
     onFailedMessage = chatbot.onFailedMessage;
+    const exceededMessage = await getExceededRateLimit(
+      chatbot.ownerId,
+      chatbot.id,
+      agent.id,
+      agent.providerId,
+      thread.id,
+    );
+    if (exceededMessage) {
+      await thread.post(exceededMessage);
+      replied = true;
+      return;
+    }
 
     const modelInfo = getModelInfo(
       agent.provider.providerName,
@@ -308,6 +321,18 @@ async function processBotMessage(
       );
     } catch (error) {
       appLogger.error(`Failed to insert usage for chatbot ${botId}`, error);
+    }
+
+    const postUsageExceededMessage = await getExceededRateLimit(
+      chatbot.ownerId,
+      chatbot.id,
+      agent.id,
+      agent.providerId,
+      thread.id,
+    );
+    if (postUsageExceededMessage && !replied) {
+      await thread.post(postUsageExceededMessage);
+      replied = true;
     }
 
     conversationLogger.info("conversation completed", {

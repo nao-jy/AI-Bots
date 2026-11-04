@@ -15,6 +15,7 @@ const items: { path: string; id: EntitySection; label: string }[] = [
   { path: "/adapters", id: "adapters", label: "アダプタ" },
   { path: "/providers", id: "providers", label: "プロバイダ" },
   { path: "/agents", id: "agents", label: "エージェント" },
+  { path: "/rate-limits", id: "rate_limits", label: "レートリミット" },
   { path: "/sandboxes", id: "sandboxes", label: "サンドボックス" },
   { path: "/schedules", id: "schedules", label: "スケジュール" },
   { path: "/mcp-servers", id: "mcp", label: "MCPサーバー" },

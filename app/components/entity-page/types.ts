@@ -24,13 +24,15 @@ export type EntityField = {
   wide?: boolean;
   createOnly?: boolean;
   valueType?: "string" | "json-scalar";
-  help?: { text: string; linkText: string; href: string };
+  timezoneDescription?: string;
+  help?: { text: string; linkText?: string; href?: string };
 };
 
 export type EntitySection =
   | "bots"
   | "adapters"
   | "agents"
+  | "rate_limits"
   | "providers"
   | "mcp"
   | "users"

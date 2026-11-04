@@ -32,6 +32,8 @@ export function SectionIcon({
       return <PlugsConnectedIcon {...props} />;
     case "agents":
       return <BrainIcon {...props} />;
+    case "rate_limits":
+      return <ClockIcon {...props} />;
     case "providers":
       return <CpuIcon {...props} />;
     case "mcp":

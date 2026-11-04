@@ -2,6 +2,7 @@ export * from "./bots";
 export * from "./adapters";
 export * from "./providers";
 export * from "./agents";
+export * from "./rate-limits";
 export * from "./mcp-servers";
 export * from "./oauth";
 export * from "./users";

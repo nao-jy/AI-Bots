@@ -2281,6 +2281,13 @@
                   "kind": "scalar"
                 }
               },
+              "perThread": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/bool@1",
+                  "kind": "scalar"
+                }
+              },
               "resetOnCron": {
                 "nullable": false,
                 "type": {
@@ -2329,6 +2336,9 @@
                 },
                 "ownerId": {
                   "column": "ownerId"
+                },
+                "perThread": {
+                  "column": "perThread"
                 },
                 "resetOnCron": {
                   "column": "resetOnCron"
@@ -2787,10 +2797,6 @@
           "RateLimitCriteria": {
             "codecId": "pg/text@1",
             "members": [
-              {
-                "name": "thread",
-                "value": "thread"
-              },
               {
                 "name": "bot",
                 "value": "bot"
@@ -4764,8 +4770,8 @@
             "RateLimit": {
               "checks": [
                 {
-                  "expression": "\"criteria\" IN ('thread', 'bot', 'agent', 'provider')",
-                  "name": "RateLimit_criteria_check_73e92978",
+                  "expression": "\"criteria\" IN ('bot', 'agent', 'provider')",
+                  "name": "RateLimit_criteria_check_e0dc3624",
                   "prefix": "RateLimit_criteria_check"
                 }
               ],
@@ -4813,6 +4819,11 @@
                 "ownerId": {
                   "codecId": "pg/int4@1",
                   "dataType": "pg/int4",
+                  "nullable": false
+                },
+                "perThread": {
+                  "codecId": "pg/bool@1",
+                  "dataType": "pg/bool",
                   "nullable": false
                 },
                 "resetOnCron": {
@@ -5211,7 +5222,6 @@
             "RateLimitCriteria": {
               "kind": "valueSet",
               "values": [
-                "thread",
                 "bot",
                 "agent",
                 "provider"
@@ -5233,7 +5243,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "0a78a6d847f4342bca069299635e0bc38e7f90975e6af19df419a06a109e2daf"
+    "storageHash": "dd59c15ad1f67c99c5b96e66e67961a4bb6fd1c8b14fdf1f86560112e30c26fa"
   },
   "execution": {
     "executionHash": "2edef0a9e649f7d4fec54fb6e1236cb304696ca7f4e909082a496d8d33430a90",

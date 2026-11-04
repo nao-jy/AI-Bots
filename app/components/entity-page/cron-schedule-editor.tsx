@@ -207,10 +207,12 @@ export function CronScheduleEditor({
   name,
   label,
   initialValue,
+  timezoneDescription = "実行時刻は「タイムゾーン」欄で選択した地域の時刻です。",
 }: {
   name: string;
   label: string;
   initialValue: unknown;
+  timezoneDescription?: string;
 }) {
   const [values, setValues] = useState(() => parseInitial(initialValue));
   const [mode, setMode] = useState<CronMode>(values.mode);
@@ -279,7 +281,7 @@ export function CronScheduleEditor({
         />
       )}
       <Text size="xs" c="dimmed">
-        実行時刻は「タイムゾーン」欄で選択した地域の時刻です。
+        {timezoneDescription}
       </Text>
     </Stack>
   );
