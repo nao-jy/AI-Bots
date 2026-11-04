@@ -17,7 +17,8 @@ const page: Omit<EntityPageDefinition, "records"> = {
     "利用量×係数の合計が上限以上になると、設定したメッセージを返します。スレッド単位で集計するか、全スレッドを横断して集計するか選択できます。",
   icon: "rate_limits",
   columns: [
-    { key: "scopeLabel", label: "対象" },
+    { key: "criteriaLabel", label: "対象種別" },
+    { key: "targetLabel", label: "対象" },
     { key: "perThreadLabel", label: "集計範囲" },
     { key: "limit", label: "上限" },
     { key: "resetOnCron", label: "リセットCron" },
@@ -25,12 +26,16 @@ const page: Omit<EntityPageDefinition, "records"> = {
   ],
   fields: [
     {
-      key: "scope",
-      label: "対象",
-      type: "select",
+      key: "criteria",
+      label: "対象種別",
+      type: "dependent-select",
       options: [],
-      placeholder: "対象を選択",
+      dependentKey: "criteriaId",
+      dependentLabel: "対象",
+      dependentOptions: {},
+      placeholder: "対象種別を選択",
       required: true,
+      wide: true,
     },
     {
       key: "perThread",
@@ -52,11 +57,28 @@ const page: Omit<EntityPageDefinition, "records"> = {
     {
       key: "coefficients",
       label: "利用量の係数",
-      type: "key-value",
-      valueType: "json-scalar",
+      type: "metric-coefficients",
+      options: [
+        { value: "inputTokens", label: "入力トークン合計" },
+        { value: "outputTokens", label: "出力トークン合計" },
+        {
+          value: "inputDetails.noCacheTokens",
+          label: "入力（キャッシュなし）",
+        },
+        {
+          value: "inputDetails.cacheReadTokens",
+          label: "入力（キャッシュ読み込み）",
+        },
+        {
+          value: "inputDetails.cacheWriteTokens",
+          label: "入力（キャッシュ書き込み）",
+        },
+        { value: "outputDetails.textTokens", label: "出力（テキスト）" },
+        { value: "outputDetails.reasoningTokens", label: "出力（推論）" },
+      ],
       wide: true,
       help: {
-        text: "利用項目ごとの係数を設定します（例: inputTokens=1, outputTokens=1）。利用項目は inputTokens、outputTokens、inputDetails.noCacheTokens、inputDetails.cacheReadTokens、inputDetails.cacheWriteTokens、outputDetails.textTokens、outputDetails.reasoningTokens です。",
+        text: "レートリミットは、利用量×係数の合計で判定されます。",
       },
     },
     {
@@ -64,7 +86,9 @@ const page: Omit<EntityPageDefinition, "records"> = {
       label: "リセットCron（UTC）",
       type: "cron",
       required: true,
-      timezoneDescription: "レートリミットは、このCron式の実行時刻（UTC）にリセットされます。",
+      timezoneDescription:
+        "レートリミットは、このCron式の実行時刻（UTC）にリセットされます。",
+      wide: true,
     },
     {
       key: "limitExceededMessage",
@@ -110,7 +134,13 @@ export default function RateLimits({ loaderData }: Route.ComponentProps) {
         fields: page.fields.map((field) => ({
           ...field,
           options:
-            field.key === "scope" ? loaderData.targetOptions : field.options,
+            field.key === "criteria"
+              ? loaderData.criteriaOptions
+              : field.options,
+          dependentOptions:
+            field.key === "criteria"
+              ? loaderData.dependentOptions
+              : field.dependentOptions,
         })),
       }}
     />

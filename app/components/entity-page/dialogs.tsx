@@ -26,6 +26,202 @@ import { ScheduleTargetsEditor } from "./schedule-targets-editor";
 
 type KeyValuePair = { key: string; value: string };
 
+function DependentSelectEditor({
+  name,
+  label,
+  dependentKey,
+  dependentLabel,
+  options,
+  dependentOptions,
+  initialValue,
+  initialDependentValue,
+  placeholder,
+}: {
+  name: string;
+  label: string;
+  dependentKey: string;
+  dependentLabel: string;
+  options: NonNullable<EntityPageDefinition["fields"][number]["options"]>;
+  dependentOptions: NonNullable<
+    EntityPageDefinition["fields"][number]["dependentOptions"]
+  >;
+  initialValue: unknown;
+  initialDependentValue: unknown;
+  placeholder?: string;
+}) {
+  const [value, setValue] = useState(
+    typeof initialValue === "string" || typeof initialValue === "number"
+      ? String(initialValue)
+      : "",
+  );
+  const [dependentValue, setDependentValue] = useState(
+    typeof initialDependentValue === "string" ||
+      typeof initialDependentValue === "number"
+      ? String(initialDependentValue)
+      : "",
+  );
+  const availableOptions = dependentOptions[value] ?? [];
+  const validDependentValue = availableOptions.some(
+    (option) => option.value === dependentValue,
+  )
+    ? dependentValue
+    : "";
+  return (
+    <div className="dependent-select-grid">
+      <Select
+        name={name}
+        label={label}
+        placeholder={placeholder ?? "選択してください"}
+        data={options}
+        value={value || null}
+        onChange={(nextValue) => {
+          setValue(nextValue ?? "");
+          setDependentValue("");
+        }}
+        required
+        style={{ width: "100%" }}
+      />
+      <input type="hidden" name={dependentKey} value={validDependentValue} />
+      <Select
+        label={dependentLabel}
+        placeholder={
+          value ? "対象を選択してください" : "先に対象種別を選択してください"
+        }
+        data={availableOptions}
+        value={validDependentValue || null}
+        onChange={(nextValue) => setDependentValue(nextValue ?? "")}
+        disabled={!value || availableOptions.length === 0}
+        required
+        style={{ width: "100%" }}
+      />
+    </div>
+  );
+}
+
+function MetricCoefficientsEditor({
+  name,
+  label,
+  options,
+  initialValue,
+}: {
+  name: string;
+  label: string;
+  options: NonNullable<EntityPageDefinition["fields"][number]["options"]>;
+  initialValue: unknown;
+}) {
+  const metricOptions = options.map((option) =>
+    typeof option === "string" ? { value: option, label: option } : option,
+  );
+  const [pairs, setPairs] = useState<KeyValuePair[]>(() => {
+    if (typeof initialValue !== "string" || !initialValue) return [];
+    try {
+      const parsed: unknown = JSON.parse(initialValue);
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed))
+        return [];
+      return Object.entries(parsed).map(([key, value]) => ({
+        key,
+        value: String(value),
+      }));
+    } catch {
+      return [];
+    }
+  });
+  const selectedMetrics = new Set(pairs.map((pair) => pair.key).filter(Boolean));
+  const availableMetrics = metricOptions.filter(
+    (option) => !selectedMetrics.has(option.value),
+  );
+  const serialized = JSON.stringify(
+    Object.fromEntries(
+      pairs
+        .filter((pair) => pair.key && pair.value !== "")
+        .map((pair) => [pair.key, Number(pair.value)]),
+    ),
+  );
+
+  return (
+    <div>
+      <Text size="sm" fw={500} mb={6}>
+        {label}
+      </Text>
+      <input type="hidden" name={name} value={serialized} />
+      {pairs.map((pair, index) => {
+        const optionsForPair = [
+          ...metricOptions.filter(
+            (option) =>
+              option.value === pair.key || !selectedMetrics.has(option.value),
+          ),
+        ];
+        return (
+          <Group key={index} align="flex-end" wrap="nowrap" mb="xs">
+            <Select
+              aria-label={`${label}の利用項目 ${index + 1}`}
+              placeholder="利用項目を選択"
+              data={optionsForPair}
+              value={pair.key || null}
+              onChange={(value) =>
+                setPairs((current) =>
+                  current.map((item, itemIndex) =>
+                    itemIndex === index
+                      ? { ...item, key: value ?? "" }
+                      : item,
+                  ),
+                )
+              }
+              required
+              style={{ flex: 1 }}
+            />
+            <TextInput
+              aria-label={`${label}の係数 ${index + 1}`}
+              type="number"
+              min={0}
+              step="any"
+              value={pair.value}
+              onChange={(event) => {
+                const value = event.currentTarget.value;
+                setPairs((current) =>
+                  current.map((item, itemIndex) =>
+                    itemIndex === index ? { ...item, value } : item,
+                  ),
+                );
+              }}
+              required
+              style={{ width: 120 }}
+            />
+            <Button
+              type="button"
+              variant="subtle"
+              color="red"
+              size="xs"
+              onClick={() =>
+                setPairs((current) => current.filter((_, i) => i !== index))
+              }
+              aria-label={`${label}の行 ${index + 1} を削除`}
+            >
+              削除
+            </Button>
+          </Group>
+        );
+      })}
+      <Button
+        type="button"
+        variant="light"
+        size="xs"
+        disabled={availableMetrics.length === 0}
+        onClick={() => {
+          const nextMetric = availableMetrics[0];
+          if (nextMetric)
+            setPairs((current) => [
+              ...current,
+              { key: nextMetric.value, value: "1" },
+            ]);
+        }}
+      >
+        ＋ 利用項目を追加
+      </Button>
+    </div>
+  );
+}
+
 function parsePairs(value: unknown): KeyValuePair[] {
   if (typeof value !== "string" || !value) return [];
   try {
@@ -353,6 +549,28 @@ export function EntityPageDialogs({
                       initialValue={selected?.[field.key]}
                       valueType={field.valueType}
                     />
+                  ) : field.type === "metric-coefficients" ? (
+                    <MetricCoefficientsEditor
+                      name={field.key}
+                      label={field.label}
+                      options={field.options ?? []}
+                      initialValue={selected?.[field.key]}
+                    />
+                  ) : field.type === "dependent-select" &&
+                    field.dependentKey &&
+                    field.dependentLabel &&
+                    field.dependentOptions ? (
+                    <DependentSelectEditor
+                      name={field.key}
+                      label={field.label}
+                      placeholder={field.placeholder}
+                      dependentKey={field.dependentKey}
+                      dependentLabel={field.dependentLabel}
+                      options={field.options ?? []}
+                      dependentOptions={field.dependentOptions}
+                      initialValue={selected?.[field.key]}
+                      initialDependentValue={selected?.[field.dependentKey]}
+                    />
                   ) : field.type === "select" ? (
                     <Select
                       name={field.key}
@@ -484,9 +702,7 @@ export function EntityPageDialogs({
       <Modal
         opened={mode === "status-change"}
         onClose={onClose}
-        title={
-          changesAdmin ? "管理者権限変更の確認" : "ステータス変更の確認"
-        }
+        title={changesAdmin ? "管理者権限変更の確認" : "ステータス変更の確認"}
         centered
         size="sm"
         radius="lg"

@@ -55,12 +55,8 @@ function parseCoefficients(value: string) {
   return Object.fromEntries(entries) as Partial<Record<UsageMetric, number>>;
 }
 
-function parseScope(value: string) {
-  const match = /^(bot|agent|provider):([1-9]\d*)$/.exec(value);
-  if (!match) return null;
-  const criteria = match[1] as RateLimitCriteria;
-  const criteriaId = Number(match[2]);
-  return Number.isSafeInteger(criteriaId) ? { criteria, criteriaId } : null;
+function isRateLimitCriteria(value: string): value is RateLimitCriteria {
+  return value === "bot" || value === "agent" || value === "provider";
 }
 
 function formatMetric(usage: UsageRow, metric: UsageMetric) {
@@ -169,43 +165,57 @@ export async function listRateLimits(user: AuthUser) {
     db.orm.aibot.AgentDefinition.where({ ownerId: user.id }).all(),
     db.orm.aibot.Provider.where({ ownerId: user.id }).all(),
   ]);
-  const targetOptions = [
-    ...bots.map((bot) => ({
-      value: `bot:${bot.id}`,
-      label: `ボット: ${bot.name}`,
-    })),
-    ...agents.map((agent) => ({
-      value: `agent:${agent.id}`,
-      label: `エージェント: ${agent.name}`,
-    })),
-    ...providers.map((provider) => ({
-      value: `provider:${provider.id}`,
-      label: `プロバイダー: ${provider.name}`,
-    })),
-    { value: "thread", label: "スレッドごと" },
+  const criteriaOptions = [
+    { value: "bot", label: "ボット" },
+    { value: "agent", label: "エージェント" },
+    { value: "provider", label: "プロバイダー" },
   ];
-  const targetLabels = new Map(
-    targetOptions.map(({ value, label }) => [value, label]),
+  const dependentOptions = {
+    bot: bots.map((bot) => ({ value: String(bot.id), label: bot.name })),
+    agent: agents.map((agent) => ({
+      value: String(agent.id),
+      label: agent.name,
+    })),
+    provider: providers.map((provider) => ({
+      value: String(provider.id),
+      label: provider.name,
+    })),
+  };
+  const criteriaLabels = new Map(
+    criteriaOptions.map(({ value, label }) => [value, label]),
   );
+  const targetLabels = {
+    bot: new Map(dependentOptions.bot.map(({ value, label }) => [value, label])),
+    agent: new Map(
+      dependentOptions.agent.map(({ value, label }) => [value, label]),
+    ),
+    provider: new Map(
+      dependentOptions.provider.map(({ value, label }) => [value, label]),
+    ),
+  };
   return {
     records: limits.map((limit) => {
       const coefficients =
         limit.coefficient && typeof limit.coefficient === "object"
           ? JSON.stringify(limit.coefficient)
           : "{}";
-        const scope = `${limit.criteria}:${limit.criteriaId}`;
-        return record(limit.id, "", {
-          scope,
-          scopeLabel: targetLabels.get(scope) ?? "対象が見つかりません",
-          perThread: String(limit.perThread),
-          perThreadLabel: limit.perThread ? "スレッドごと" : "全スレッド横断",
-          coefficients,
-          limit: Number(limit.limit),
-          resetOnCron: limit.resetOnCron,
+      const criteriaId = String(limit.criteriaId ?? "");
+      return record(limit.id, "", {
+        criteria: limit.criteria,
+        criteriaId,
+        criteriaLabel: criteriaLabels.get(limit.criteria) ?? limit.criteria,
+        targetLabel:
+          targetLabels[limit.criteria]?.get(criteriaId) ?? "対象が見つかりません",
+        perThread: String(limit.perThread),
+        perThreadLabel: limit.perThread ? "スレッドごと" : "全スレッド横断",
+        coefficients,
+        limit: Number(limit.limit),
+        resetOnCron: limit.resetOnCron,
         limitExceededMessage: limit.limitExceededMessage,
       });
     }),
-    targetOptions,
+    criteriaOptions,
+    dependentOptions,
   };
 }
 
@@ -214,8 +224,9 @@ export async function saveRateLimit(
   id: number | null,
   values: FormData,
 ) {
-  const scopeValue = String(values.get("scope") ?? "");
-  const scope = parseScope(scopeValue);
+  const criteriaValue = String(values.get("criteria") ?? "");
+  const criteriaId = Number(values.get("criteriaId"));
+  const criteria = isRateLimitCriteria(criteriaValue) ? criteriaValue : null;
   const perThreadValue = String(values.get("perThread") ?? "");
   const perThread = perThreadValue === "true";
   const limitValue = Number(values.get("limit"));
@@ -227,7 +238,8 @@ export async function saveRateLimit(
     String(values.get("coefficients") ?? ""),
   );
 
-  if (!scope) return { error: "対象を選択してください。" };
+  if (!criteria || !Number.isSafeInteger(criteriaId) || criteriaId < 1)
+    return { error: "対象種別と対象を選択してください。" };
   if (perThreadValue !== "true" && perThreadValue !== "false")
     return { error: "スレッドごとの集計方法を選択してください。" };
   if (!Number.isFinite(limitValue) || limitValue <= 0)
@@ -249,26 +261,26 @@ export async function saveRateLimit(
     });
     if (!existing) return { error: "レートリミットが見つかりません。" };
   }
-  if (scope.criteria === "bot") {
+  if (criteria === "bot") {
     if (
       !(await db.orm.aibot.ChatBot.first({
-        id: scope.criteriaId,
+        id: criteriaId,
         ownerId: user.id,
       }))
     )
       return { error: "選択したボットが見つかりません。" };
-  } else if (scope.criteria === "agent") {
+  } else if (criteria === "agent") {
     if (
       !(await db.orm.aibot.AgentDefinition.first({
-        id: scope.criteriaId,
+        id: criteriaId,
         ownerId: user.id,
       }))
     )
       return { error: "選択したエージェントが見つかりません。" };
-  } else if (scope.criteria === "provider") {
+  } else {
     if (
       !(await db.orm.aibot.Provider.first({
-        id: scope.criteriaId,
+        id: criteriaId,
         ownerId: user.id,
       }))
     )
@@ -282,15 +294,15 @@ export async function saveRateLimit(
     existingLimits.some(
       (existing) =>
         existing.id !== id &&
-        existing.criteria === scope.criteria &&
-        existing.criteriaId === scope.criteriaId,
+        existing.criteria === criteria &&
+        existing.criteriaId === criteriaId,
     )
   )
     return { error: "同じ対象のレートリミットが既にあります。" };
 
   const saved = {
-    criteria: scope.criteria,
-    criteriaId: scope.criteriaId,
+    criteria,
+    criteriaId,
     perThread,
     coefficient: jsonb(coefficients),
     limit: String(limitValue),

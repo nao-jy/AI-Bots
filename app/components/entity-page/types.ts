@@ -11,7 +11,9 @@ export type EntityField = {
     | "number"
     | "textarea"
     | "key-value"
+    | "metric-coefficients"
     | "select"
+    | "dependent-select"
     | "multiselect"
     | "mcp-servers"
     | "tags"
@@ -20,6 +22,9 @@ export type EntityField = {
     | "cron"
     | "schedule-targets";
   options?: string[] | EntityOption[];
+  dependentOptions?: Record<string, EntityOption[]>;
+  dependentKey?: string;
+  dependentLabel?: string;
   required?: boolean;
   wide?: boolean;
   createOnly?: boolean;
