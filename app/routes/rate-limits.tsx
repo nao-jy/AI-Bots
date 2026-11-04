@@ -22,6 +22,7 @@ const page: Omit<EntityPageDefinition, "records"> = {
     { key: "perThreadLabel", label: "集計範囲" },
     { key: "limit", label: "上限" },
     { key: "resetOnCron", label: "リセットCron" },
+    { key: "timezone", label: "タイムゾーン" },
     { key: "limitExceededMessage", label: "上限超過時のメッセージ" },
   ],
   fields: [
@@ -83,12 +84,21 @@ const page: Omit<EntityPageDefinition, "records"> = {
     },
     {
       key: "resetOnCron",
-      label: "リセットCron（UTC）",
+      label: "リセットCron",
       type: "cron",
       required: true,
       timezoneDescription:
-        "レートリミットは、このCron式の実行時刻（UTC）にリセットされます。",
+        "レートリミットは、選択したタイムゾーンのCron実行時刻にリセットされます。",
       wide: true,
+    },
+    {
+      key: "timezone",
+      label: "タイムゾーン",
+      type: "select",
+      options: [],
+      placeholder: "タイムゾーンを選択",
+      defaultValue: "Asia/Tokyo",
+      required: true,
     },
     {
       key: "limitExceededMessage",
@@ -105,7 +115,16 @@ export function meta() {
 }
 
 export async function loader({ request }: Route.LoaderArgs) {
-  return listRateLimits(await requireUser(request));
+  const [rateLimits, timezones] = await Promise.all([
+    listRateLimits(await requireUser(request)),
+    Promise.resolve([
+      "UTC",
+      ...Intl.supportedValuesOf("timeZone").filter(
+        (timezone) => timezone !== "UTC",
+      ),
+    ]),
+  ]);
+  return { ...rateLimits, timezones };
 }
 
 export async function action({ request }: Route.ActionArgs) {
@@ -136,7 +155,9 @@ export default function RateLimits({ loaderData }: Route.ComponentProps) {
           options:
             field.key === "criteria"
               ? loaderData.criteriaOptions
-              : field.options,
+              : field.key === "timezone"
+                ? loaderData.timezones
+                : field.options,
           dependentOptions:
             field.key === "criteria"
               ? loaderData.dependentOptions

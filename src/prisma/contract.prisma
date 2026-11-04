@@ -202,6 +202,7 @@ namespace aibot {
     limit                Decimal
     limitExceededMessage String
     resetOnCron          String // cron expression for when the limit should reset, e.g. "0 0 * * *" for daily reset at midnight
+    timezone             String
 
     owner                User              @relation(fields: [ownerId], references: [id], onDelete: Cascade)
     ownerId              Int

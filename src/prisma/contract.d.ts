@@ -23,7 +23,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'dd59c15ad1f67c99c5b96e66e67961a4bb6fd1c8b14fdf1f86560112e30c26fa'>;
+  StorageHashBase<'cb6bd65d225d85ca0bfe7932b85023bb2ac4b27685f9e6d5f7141319f7c17cc4'>;
 export type ExecutionHash =
   ExecutionHashBase<'2edef0a9e649f7d4fec54fb6e1236cb304696ca7f4e909082a496d8d33430a90'>;
 export type ProfileHash =
@@ -579,6 +579,7 @@ export namespace Models {
     ownerId: FieldOutputTypes['aibot']['RateLimit']['ownerId'];
     perThread: FieldOutputTypes['aibot']['RateLimit']['perThread'];
     resetOnCron: FieldOutputTypes['aibot']['RateLimit']['resetOnCron'];
+    timezone: FieldOutputTypes['aibot']['RateLimit']['timezone'];
     owner: aibot_User;
     readonly [RelationKeys]?: 'owner';
   };
@@ -2264,6 +2265,12 @@ type ContractBase = Omit<
                   readonly many: false;
                 };
                 readonly resetOnCron: {
+                  readonly dataType: 'pg/text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly timezone: {
                   readonly dataType: 'pg/text';
                   readonly codecId: 'pg/text@1';
                   readonly nullable: false;
@@ -4072,6 +4079,10 @@ type ContractBase = Omit<
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
               };
+              readonly timezone: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
             };
             readonly relations: {
               readonly owner: {
@@ -4097,6 +4108,7 @@ type ContractBase = Omit<
                 readonly ownerId: { readonly column: 'ownerId' };
                 readonly perThread: { readonly column: 'perThread' };
                 readonly resetOnCron: { readonly column: 'resetOnCron' };
+                readonly timezone: { readonly column: 'timezone' };
               };
             };
           };

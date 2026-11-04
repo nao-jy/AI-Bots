@@ -15,7 +15,9 @@ type UsageMetric =
   | "outputDetails.textTokens"
   | "outputDetails.reasoningTokens";
 type UsageRow = Awaited<ReturnType<typeof db.orm.aibot.AgentUsage.all>>[number];
-type RateLimitRow = Awaited<ReturnType<typeof db.orm.aibot.RateLimit.all>>[number];
+type RateLimitRow = Awaited<
+  ReturnType<typeof db.orm.aibot.RateLimit.all>
+>[number];
 
 const usageMetrics: UsageMetric[] = [
   "inputTokens",
@@ -63,18 +65,20 @@ function formatMetric(usage: UsageRow, metric: UsageMetric) {
   const [field, detail] = metric.split(".");
   const value =
     detail && field
-      ? (usage[field as "inputDetails" | "outputDetails"] as Record<
-          string,
-          unknown
-        > | null)?.[detail]
+      ? (
+          usage[field as "inputDetails" | "outputDetails"] as Record<
+            string,
+            unknown
+          > | null
+        )?.[detail]
       : usage[field as "inputTokens" | "outputTokens"];
   return typeof value === "number" && Number.isFinite(value) ? value : 0;
 }
 
-function resetBoundary(resetOnCron: string, now: Date) {
+function resetBoundary(resetOnCron: string, timezone: string, now: Date) {
   return CronExpressionParser.parse(resetOnCron, {
     currentDate: new Date(Math.floor(now.getTime() / 1_000) * 1_000 + 1),
-    tz: "UTC",
+    tz: timezone,
   })
     .prev()
     .toDate();
@@ -108,9 +112,17 @@ async function getUsageForLimit(
 }
 
 function isExceeded(limit: RateLimitRow, rows: UsageRow[], now: Date) {
-  const resetAt = resetBoundary(limit.resetOnCron, now).getTime();
+  const resetAt = resetBoundary(
+    limit.resetOnCron,
+    limit.timezone,
+    now,
+  ).getTime();
   const coefficients = limit.coefficient;
-  if (!coefficients || typeof coefficients !== "object" || Array.isArray(coefficients))
+  if (
+    !coefficients ||
+    typeof coefficients !== "object" ||
+    Array.isArray(coefficients)
+  )
     throw new Error(`Invalid coefficient JSON for rate limit ${limit.id}`);
 
   const total = rows.reduce((sum, usage) => {
@@ -185,7 +197,9 @@ export async function listRateLimits(user: AuthUser) {
     criteriaOptions.map(({ value, label }) => [value, label]),
   );
   const targetLabels = {
-    bot: new Map(dependentOptions.bot.map(({ value, label }) => [value, label])),
+    bot: new Map(
+      dependentOptions.bot.map(({ value, label }) => [value, label]),
+    ),
     agent: new Map(
       dependentOptions.agent.map(({ value, label }) => [value, label]),
     ),
@@ -205,12 +219,14 @@ export async function listRateLimits(user: AuthUser) {
         criteriaId,
         criteriaLabel: criteriaLabels.get(limit.criteria) ?? limit.criteria,
         targetLabel:
-          targetLabels[limit.criteria]?.get(criteriaId) ?? "対象が見つかりません",
+          targetLabels[limit.criteria]?.get(criteriaId) ??
+          "対象が見つかりません",
         perThread: String(limit.perThread),
         perThreadLabel: limit.perThread ? "スレッドごと" : "全スレッド横断",
         coefficients,
         limit: Number(limit.limit),
         resetOnCron: limit.resetOnCron,
+        timezone: limit.timezone,
         limitExceededMessage: limit.limitExceededMessage,
       });
     }),
@@ -231,6 +247,7 @@ export async function saveRateLimit(
   const perThread = perThreadValue === "true";
   const limitValue = Number(values.get("limit"));
   const resetOnCron = String(values.get("resetOnCron") ?? "").trim();
+  const timezone = String(values.get("timezone") ?? "").trim();
   const limitExceededMessage = String(
     values.get("limitExceededMessage") ?? "",
   ).trim();
@@ -246,11 +263,12 @@ export async function saveRateLimit(
     return { error: "上限には0より大きい数値を入力してください。" };
   if (!coefficients)
     return {
-      error:
-        "係数には利用量の項目と0より大きい係数を1つ以上設定してください。",
+      error: "係数には利用量の項目と0より大きい係数を1つ以上設定してください。",
     };
   if (!resetOnCron || !cron.validate(resetOnCron))
     return { error: "リセットCron式を正しく入力してください。" };
+  if (!timezone || !isValidTimezone(timezone))
+    return { error: "有効なタイムゾーンを選択してください。" };
   if (!limitExceededMessage)
     return { error: "上限超過時のメッセージを入力してください。" };
 
@@ -308,6 +326,7 @@ export async function saveRateLimit(
     limit: String(limitValue),
     limitExceededMessage,
     resetOnCron,
+    timezone,
     ownerId: user.id,
   };
   if (id === null) {
@@ -318,6 +337,15 @@ export async function saveRateLimit(
     logAuditEvent("rate_limit.updated", "rate_limit", id, user.id);
   }
   return { ok: true };
+}
+
+function isValidTimezone(timezone: string) {
+  try {
+    new Intl.DateTimeFormat("en", { timeZone: timezone });
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export async function deleteRateLimit(user: AuthUser, id: number) {

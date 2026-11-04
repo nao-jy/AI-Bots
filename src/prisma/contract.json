@@ -2294,6 +2294,13 @@
                   "codecId": "pg/text@1",
                   "kind": "scalar"
                 }
+              },
+              "timezone": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
               }
             },
             "relations": {
@@ -2342,6 +2349,9 @@
                 },
                 "resetOnCron": {
                   "column": "resetOnCron"
+                },
+                "timezone": {
+                  "column": "timezone"
                 }
               },
               "namespaceId": "aibot",
@@ -4830,6 +4840,11 @@
                   "codecId": "pg/text@1",
                   "dataType": "pg/text",
                   "nullable": false
+                },
+                "timezone": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "nullable": false
                 }
               },
               "foreignKeys": [
@@ -5243,7 +5258,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "dd59c15ad1f67c99c5b96e66e67961a4bb6fd1c8b14fdf1f86560112e30c26fa"
+    "storageHash": "cb6bd65d225d85ca0bfe7932b85023bb2ac4b27685f9e6d5f7141319f7c17cc4"
   },
   "execution": {
     "executionHash": "2edef0a9e649f7d4fec54fb6e1236cb304696ca7f4e909082a496d8d33430a90",
