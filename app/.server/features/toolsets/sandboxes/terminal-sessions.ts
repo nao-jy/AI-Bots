@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { logger } from "~/.server/logger";
+import { appLogger } from "~/.server/logger/app-logger";
 import {
   createSandboxTerminalSession,
   type SandboxTerminalSession,
@@ -44,13 +44,13 @@ function emitOutput(session: ManagedTerminal, data: Uint8Array) {
 
   for (const subscriber of session.subscribers) subscriber(chunk);
   refreshIdleTimeout(session);
-};
+}
 
 function refreshIdleTimeout(session: ManagedTerminal) {
   clearTimeout(session.idleTimer);
   session.idleTimer = setTimeout(() => {
     void closeSandboxTerminal(session.userId, session.id).catch((error) => {
-      logger.error("Failed to expire sandbox terminal", {
+      appLogger.error("Failed to expire sandbox terminal", {
         error,
         terminalId: session.id,
         instanceId: session.instanceId,
@@ -99,7 +99,7 @@ export async function openSandboxTerminal(
           return;
         }
         void closeSandboxTerminal(userId, id).catch((error) => {
-          logger.error("Failed to close exited sandbox terminal", {
+          appLogger.error("Failed to close exited sandbox terminal", {
             error,
             terminalId: id,
             instanceId,
@@ -197,8 +197,7 @@ export async function closeSandboxTerminalsForInstance(
   instanceId: string,
 ) {
   const instanceSessions = [...sessions.values()].filter(
-    (session) =>
-      session.userId === userId && session.instanceId === instanceId,
+    (session) => session.userId === userId && session.instanceId === instanceId,
   );
   for (const session of instanceSessions)
     await closeSandboxTerminal(userId, session.id);

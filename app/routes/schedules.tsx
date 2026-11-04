@@ -1,6 +1,6 @@
 import type { Route } from "./+types/schedules";
 import { requireUser } from "../.server/auth";
-import { logger } from "../.server/logger";
+import { appLogger } from "../.server/logger/app-logger";
 import {
   EntityPageView,
   type EntityPageDefinition,
@@ -108,7 +108,7 @@ export async function action({ request }: Route.ActionArgs) {
     await refreshCronJobs();
     return { ok: true, intent };
   } catch (error) {
-    logger.error(
+    appLogger.error(
       "Failed to synchronize Cron jobs after schedule change",
       error,
     );

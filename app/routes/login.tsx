@@ -26,7 +26,7 @@ import {
   sendEmailVerification,
 } from "../.server/features/email-verification";
 import { isPasswordResetEnabled } from "../.server/features/password-reset";
-import { logger } from "../.server/logger";
+import { appLogger } from "../.server/logger/app-logger";
 import { APP_NAME } from "~/const";
 
 export function meta() {
@@ -94,7 +94,7 @@ export async function action({ request }: Route.ActionArgs) {
       try {
         await sendEmailVerification(user, request.url);
       } catch (error) {
-        logger.error(
+        appLogger.error(
           "Failed to send initial administrator verification email",
           {
             userId: user.id,

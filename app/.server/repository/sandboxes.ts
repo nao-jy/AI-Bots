@@ -10,7 +10,7 @@ import {
   closeSandboxTerminalsForInstance,
   openSandboxTerminal,
 } from "../features/toolsets/sandboxes/terminal-sessions";
-import { logger } from "~/.server/logger";
+import { appLogger } from "~/.server/logger/app-logger";
 import { SANDBOX_SCOPES } from "~/const";
 export type SandboxScope = keyof typeof SANDBOX_SCOPES;
 
@@ -111,7 +111,7 @@ export async function runPersistentSandboxCommand(
       exitCode: result.exitCode,
     };
   } catch (error) {
-    logger.error("Persistent sandbox command failed", {
+    appLogger.error("Persistent sandbox command failed", {
       error,
       sandboxId,
       instanceId,
@@ -172,7 +172,7 @@ export async function startPersistentSandboxTerminal(
     );
     return { ok: true, terminalId };
   } catch (error) {
-    logger.error("Persistent sandbox terminal failed to start", {
+    appLogger.error("Persistent sandbox terminal failed to start", {
       error,
       sandboxId,
       instanceId,

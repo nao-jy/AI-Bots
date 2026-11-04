@@ -6,7 +6,7 @@ import {
 import { runScheduledPrompt } from "./bot";
 import { getBotInfo } from "./chat-adapter";
 import { decryptAdapterEnvs } from "../utils";
-import { logger } from "../logger";
+import { appLogger } from "../logger/app-logger";
 
 const jobs = new Map<
   number,
@@ -46,7 +46,9 @@ async function refreshJobs() {
 
   for (const [id, { cronParam, timezone }] of desired) {
     if (!cron.validate(cronParam)) {
-      logger.error(`Invalid Cron expression for schedule ${id}: ${cronParam}`);
+      appLogger.error(
+        `Invalid Cron expression for schedule ${id}: ${cronParam}`,
+      );
       const previous = schedulerState.jobs.get(id);
       if (previous) {
         await previous.task.destroy();
@@ -120,14 +122,14 @@ async function executeSchedule(id: number) {
           schedule.prompt,
         );
       } catch (error) {
-        logger.error(
+        appLogger.error(
           `Failed to execute schedule ${id} for thread ${target.threadId}`,
           error,
         );
       }
     }
   } catch (error) {
-    logger.error(`Failed to load or execute schedule ${id}`, error);
+    appLogger.error(`Failed to load or execute schedule ${id}`, error);
   }
 }
 

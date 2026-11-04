@@ -7,13 +7,15 @@ import {
   sendSandboxTerminalInput,
   subscribeSandboxTerminal,
 } from "../.server/features/toolsets/sandboxes/terminal-sessions";
-import { logger } from "~/.server/logger";
+import { appLogger } from "~/.server/logger/app-logger";
 
 const encoder = new TextEncoder();
 
-function encodeEvent(
-  event: { offset: number; data: Buffer; closed?: boolean },
-) {
+function encodeEvent(event: {
+  offset: number;
+  data: Buffer;
+  closed?: boolean;
+}) {
   if (event.closed) return encoder.encode("event: exit\ndata: {}\n\n");
   return encoder.encode(
     `id: ${event.offset + event.data.byteLength}\ndata: ${JSON.stringify({
@@ -46,7 +48,10 @@ export async function loader({ request, params }: Route.LoaderArgs) {
     try {
       streamController?.close();
     } catch (error) {
-      logger.debug("Terminal SSE stream already closed", { error, terminalId });
+      appLogger.debug("Terminal SSE stream already closed", {
+        error,
+        terminalId,
+      });
     }
   }
 
@@ -127,7 +132,7 @@ export async function action({ request, params }: Route.ActionArgs) {
       { status: 400 },
     );
   } catch (error) {
-    logger.error("Sandbox terminal operation failed", {
+    appLogger.error("Sandbox terminal operation failed", {
       error,
       terminalId,
       intent,
@@ -136,9 +141,7 @@ export async function action({ request, params }: Route.ActionArgs) {
       {
         ok: false,
         error:
-          error instanceof Error
-            ? error.message
-            : "シェル操作に失敗しました。",
+          error instanceof Error ? error.message : "シェル操作に失敗しました。",
       },
       { status: 400 },
     );

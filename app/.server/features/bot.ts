@@ -1,5 +1,5 @@
 import { createMCPClient } from "@ai-sdk/mcp";
-import { generateText, stepCountIs, type ToolSet } from "ai";
+import { generateText, stepCountIs, type ModelMessage, type ToolSet } from "ai";
 import { toAiMessages } from "chat/ai";
 import { Message, parseMarkdown, type Chat, type Thread } from "chat";
 import { randomUUID } from "node:crypto";
@@ -16,7 +16,8 @@ import { getMcpClient } from "./mcp";
 import { getSandboxTools } from "./toolsets/sandbox";
 import { getSandbox } from "./toolsets/sandboxes";
 import { getFileParseTools } from "./toolsets/file-parse";
-import { logger } from "../logger";
+import { appLogger } from "../logger/app-logger";
+import { conversationLogger } from "../logger/conversation-logger";
 import { insertUsage } from "../repository/agents";
 import { SearXNGWebSearch } from "./toolsets/tools/web/search-searxng";
 import { getChatTools } from "./toolsets/chat-tools";
@@ -263,23 +264,24 @@ async function processBotMessage(
           .filter((historicalMessage) => historicalMessage.id !== message.id)
           .slice(-chatbot.lookbackMessages);
       } catch (error) {
-        logger.warn(
+        appLogger.warn(
           `Failed to fetch message history for chatbot ${botId}`,
           error,
         );
       }
     }
+    const inputMessages: ModelMessage[] = [
+      ...(await toAiMessages([...history, message])),
+      {
+        role: "user",
+        content: `[実行時補足情報]\n現在のスレッドID: ${thread.id}\n現在日時 (UTC, ISO 8601): ${currentDateTime}`,
+      },
+    ];
     const result = await generateText({
       model: modelInfo.model,
       providerOptions: modelInfo.options,
       system: chatbot.instruction,
-      prompt: [
-        ...(await toAiMessages([...history, message])),
-        {
-          role: "user",
-          content: `[実行時補足情報]\n現在のスレッドID: ${thread.id}\n現在日時 (UTC, ISO 8601): ${currentDateTime}`,
-        },
-      ],
+      prompt: inputMessages,
       tools,
       stopWhen: stepCountIs(MAX_AGENT_STEPS),
       onStepFinish: ({ toolResults }) => {
@@ -293,27 +295,59 @@ async function processBotMessage(
       },
     });
 
-    await insertUsage(
-      chatbot.id,
-      agent.id,
-      agent.providerId,
-      result.usage,
-      result.toolResults,
+    let usageId = null;
+    try {
+      await insertUsage(
+        chatbot.id,
+        agent.id,
+        agent.providerId,
+        result.usage,
+        result.toolResults,
+        adapterPlatform,
+        thread.id,
+      );
+    } catch (error) {
+      appLogger.error(`Failed to insert usage for chatbot ${botId}`, error);
+    }
+
+    conversationLogger.info("conversation completed", {
+      input: inputMessages,
+      output: result.text,
+      toolResults: result.toolResults.map(({ toolName, input, output }) => ({
+        toolName,
+        input,
+        output,
+      })),
+      usageId: usageId,
+      threadId: thread.id,
       adapterPlatform,
-      thread.id,
-    );
+      chatbot: {
+        id: chatbot.id,
+        name: chatbot.name,
+      },
+      agent: {
+        id: agent.id,
+        name: agent.name,
+        options: agent.options,
+      },
+      provider: {
+        id: agent.provider.id,
+        name: agent.provider.name,
+        providerName: agent.provider.providerName,
+      },
+    });
 
     if (!replied && result.text.trim()) {
       await thread.post(result.text);
       replied = true;
     }
   } catch (error) {
-    logger.error(`Failed to handle mention for chatbot ${botId}`, error);
+    appLogger.error(`Failed to handle mention for chatbot ${botId}`, error);
     if (!replied) {
       try {
         await thread.post(onFailedMessage);
       } catch (replyError) {
-        logger.error(
+        appLogger.error(
           `Failed to post mention error for chatbot ${botId}`,
           replyError,
         );
@@ -326,7 +360,7 @@ async function processBotMessage(
           turnSandbox.instanceId,
         );
       } catch (error) {
-        logger.error(
+        appLogger.error(
           `Failed to destroy turn sandbox for chatbot ${botId}`,
           error,
         );
@@ -337,7 +371,7 @@ async function processBotMessage(
         try {
           await client.close();
         } catch (error) {
-          logger.error(
+          appLogger.error(
             `Failed to close MCP client for chatbot ${botId}`,
             error,
           );
@@ -394,11 +428,11 @@ export function registerBotHandlers(
     processBotMessage(chat, botId, adapterId, adapterPlatform, thread, message);
 
   chat.onDirectMessage(async (thread, message) => {
-    logger.info("[ON_DIRECT_MESSAGE]");
+    appLogger.info("[ON_DIRECT_MESSAGE]");
     return await process(thread, message);
   });
   chat.onNewMention(async (thread, message) => {
-    logger.info("[ON_NEW_MENTION]");
+    appLogger.info("[ON_NEW_MENTION]");
     return await process(thread, message);
   });
 }

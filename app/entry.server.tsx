@@ -4,13 +4,13 @@ import { isbot } from "isbot";
 import { renderToPipeableStream } from "react-dom/server";
 import { ServerRouter } from "react-router";
 import type { EntryContext } from "react-router";
-import { logger } from "./.server/logger";
+import { appLogger } from "./.server/logger/app-logger";
 import { startCronScheduler } from "./.server/features/scheduler";
 
 export const streamTimeout = 5_000;
 
 void startCronScheduler().catch((error: unknown) => {
-  logger.error("Failed to load scheduled jobs during server startup", error);
+  appLogger.error("Failed to load scheduled jobs during server startup", error);
 });
 
 export default function handleRequest(
@@ -65,7 +65,7 @@ export default function handleRequest(
         },
         onError(error: unknown) {
           responseStatusCode = 500;
-          if (shellRendered) logger.error("Server rendering failed", error);
+          if (shellRendered) appLogger.error("Server rendering failed", error);
         },
       },
     );

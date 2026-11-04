@@ -21,7 +21,7 @@ import {
   mantineHtmlProps,
 } from "@mantine/core";
 import { Notifications } from "@mantine/notifications";
-import { logger } from "./.server/logger";
+import { httpLogger } from "./.server/logger/http-logger";
 import { randomUUID } from "node:crypto";
 import {
   requestContext,
@@ -145,14 +145,14 @@ export const middleware: Route.MiddlewareFunction[] = [
     context.set(requestContext, ctx);
 
     return requestStorage.run(ctx, async () => {
-      logger.info("request.received", {
+      httpLogger.http("request.received", {
         method: request.method,
         path: new URL(request.url).pathname,
       });
 
       const response = await next();
 
-      logger.info("request.completed", {
+      httpLogger.http("request.completed", {
         method: request.method,
         statusCode: response.status,
       });

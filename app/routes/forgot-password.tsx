@@ -1,7 +1,7 @@
 import { Alert, Button, TextInput, Title } from "@mantine/core";
 import { data, Form, Link, useActionData } from "react-router";
 import type { Route } from "./+types/forgot-password";
-import { logger } from "../.server/logger";
+import { appLogger } from "../.server/logger/app-logger";
 import {
   isPasswordResetEnabled,
   sendPasswordResetEmail,
@@ -24,13 +24,12 @@ export async function action({ request }: Route.ActionArgs) {
   const email = String(form.get("email") ?? "")
     .trim()
     .toLowerCase();
-  if (!/^\S+@\S+\.\S+$/.test(email))
-    return data({ message: REQUEST_MESSAGE });
+  if (!/^\S+@\S+\.\S+$/.test(email)) return data({ message: REQUEST_MESSAGE });
 
   try {
     await sendPasswordResetEmail(email, request.url);
   } catch (error) {
-    logger.error("Failed to send password reset email", { error });
+    appLogger.error("Failed to send password reset email", { error });
   }
   return data({ message: REQUEST_MESSAGE });
 }
@@ -69,7 +68,13 @@ export default function ForgotPassword({ loaderData }: Route.ComponentProps) {
               メール送信が利用できません。管理者にお問い合わせください。
             </Alert>
           )}
-          <Button component={Link} to="/login" variant="subtle" fullWidth mt="sm">
+          <Button
+            component={Link}
+            to="/login"
+            variant="subtle"
+            fullWidth
+            mt="sm"
+          >
             ログイン画面へ戻る
           </Button>
         </section>

@@ -20,7 +20,7 @@ import {
   sendEmailVerification,
 } from "../.server/features/email-verification";
 import { requireAdmin } from "../.server/auth";
-import { logger } from "../.server/logger";
+import { appLogger } from "../.server/logger/app-logger";
 import { APP_NAME } from "~/const";
 
 const page: Omit<EntityPageDefinition, "records"> = {
@@ -125,7 +125,7 @@ export async function action({ request }: Route.ActionArgs) {
         ? { ok: true }
         : { ok: false, error: "メールプロバイダが設定されていません。" };
     } catch (error) {
-      logger.error("Failed to send user verification email", {
+      appLogger.error("Failed to send user verification email", {
         userId: user.id,
         error:
           error instanceof Error
@@ -135,33 +135,30 @@ export async function action({ request }: Route.ActionArgs) {
       });
       return {
         ok: false,
-        error: "検証メールを送信できませんでした。設定を確認して再試行してください。",
+        error:
+          "検証メールを送信できませんでした。設定を確認して再試行してください。",
       };
     }
   }
   if (intent === "create") {
-    const result = await saveUser(
-      null,
-      form,
-      isEmailVerificationEnabled(),
-    );
+    const result = await saveUser(null, form, isEmailVerificationEnabled());
     if ("error" in result || !result.verificationRequired) return result;
     return sendNewUserVerification(
-      String(form.get("email") ?? "").trim().toLowerCase(),
+      String(form.get("email") ?? "")
+        .trim()
+        .toLowerCase(),
       request.url,
     );
   }
   if (intent === "update") {
     if (!Number.isInteger(id))
       return { ok: false, error: "ユーザーが見つかりません。" };
-    const result = await saveUser(
-      id,
-      form,
-      isEmailVerificationEnabled(),
-    );
+    const result = await saveUser(id, form, isEmailVerificationEnabled());
     if ("error" in result || !result.verificationRequired) return result;
     return sendNewUserVerification(
-      String(form.get("email") ?? "").trim().toLowerCase(),
+      String(form.get("email") ?? "")
+        .trim()
+        .toLowerCase(),
       request.url,
     );
   }
@@ -174,13 +171,14 @@ async function sendNewUserVerification(email: string, requestUrl: string) {
     return {
       ok: false,
       notification: "verification-email" as const,
-      error: "ユーザーを保存しましたが検証メールを送信できませんでした。ユーザー一覧から再送してください。",
+      error:
+        "ユーザーを保存しましたが検証メールを送信できませんでした。ユーザー一覧から再送してください。",
     };
   try {
     await sendEmailVerification(user, requestUrl);
     return { ok: true, notification: "verification-email" as const };
   } catch (error) {
-    logger.error("Failed to send user verification email", {
+    appLogger.error("Failed to send user verification email", {
       userId: user.id,
       error:
         error instanceof Error
@@ -191,7 +189,8 @@ async function sendNewUserVerification(email: string, requestUrl: string) {
     return {
       ok: false,
       notification: "verification-email" as const,
-      error: "ユーザーを保存しましたが検証メールを送信できませんでした。ユーザー一覧から再送してください。",
+      error:
+        "ユーザーを保存しましたが検証メールを送信できませんでした。ユーザー一覧から再送してください。",
     };
   }
 }

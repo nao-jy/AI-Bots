@@ -161,7 +161,7 @@ export async function insertUsage(
   platform: string,
   threadId: string,
 ) {
-  await db.orm.aibot.AgentUsage.create({
+  const created = await db.orm.aibot.AgentUsage.create({
     chatbotId: chatbotId,
     agentId: agentId,
     providerId: providerId,
@@ -186,4 +186,5 @@ export async function insertUsage(
     platform: platform,
     threadId: threadId,
   });
+  return created.id;
 }

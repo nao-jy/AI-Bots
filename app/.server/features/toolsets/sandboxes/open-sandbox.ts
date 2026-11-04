@@ -1,4 +1,4 @@
-import { logger } from "~/.server/logger";
+import { appLogger } from "~/.server/logger/app-logger";
 import { type BashSandboxExtended, type Sandbox, type TerminalSize } from ".";
 import {
   ConnectionConfig,
@@ -283,7 +283,7 @@ export const OPEN_SANDBOX: Sandbox = {
               onExit(message.exit_code);
             }
           } catch (error) {
-            logger.warn("Invalid OpenSandbox PTY message", {
+            appLogger.warn("Invalid OpenSandbox PTY message", {
               error,
               instanceId,
             });
@@ -375,7 +375,7 @@ export const OPEN_SANDBOX: Sandbox = {
           egress: [],
         },
       });
-      logger.info("instance created", { instanceId: sandbox.id });
+      appLogger.info("instance created", { instanceId: sandbox.id });
       createdInstanceId = sandbox.id;
     }
 
