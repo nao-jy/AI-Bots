@@ -11,6 +11,7 @@ import {
   openSandboxTerminal,
 } from "../features/toolsets/sandboxes/terminal-sessions";
 import { appLogger } from "~/.server/logger/app-logger";
+import { logAuditEvent } from "../logger/audit-logger";
 import { SANDBOX_SCOPES } from "~/const";
 export type SandboxScope = keyof typeof SANDBOX_SCOPES;
 
@@ -103,6 +104,12 @@ export async function runPersistentSandboxCommand(
       [...sandbox.allowedDomainList],
       command,
     );
+    logAuditEvent(
+      "sandbox.command.executed",
+      "sandbox_instance",
+      instanceId,
+      user.id,
+    );
     return {
       ok: true,
       command,
@@ -169,6 +176,12 @@ export async function startPersistentSandboxTerminal(
       jsonbToStringRecord(sandbox.envs),
       [...sandbox.allowedDomainList],
       { cols, rows },
+    );
+    logAuditEvent(
+      "sandbox.terminal.opened",
+      "sandbox_instance",
+      instanceId,
+      user.id,
     );
     return { ok: true, terminalId };
   } catch (error) {
@@ -243,9 +256,16 @@ export async function saveSandbox(
     initCommands,
     name: sandboxName,
   };
-  if (id === null)
-    await db.orm.aibot.Sandbox.create({ ...saved, ownerId: user.id });
-  else await db.orm.aibot.Sandbox.where({ id, ownerId: user.id }).update(saved);
+  if (id === null) {
+    const sandbox = await db.orm.aibot.Sandbox.create({
+      ...saved,
+      ownerId: user.id,
+    });
+    logAuditEvent("sandbox.created", "sandbox", sandbox.id, user.id);
+  } else {
+    await db.orm.aibot.Sandbox.where({ id, ownerId: user.id }).update(saved);
+    logAuditEvent("sandbox.updated", "sandbox", id, user.id);
+  }
   return { ok: true };
 }
 
@@ -263,6 +283,7 @@ export async function deleteSandbox(user: AuthUser, id: number) {
     await destroySandboxInstance(sandbox.sandboxType, instance.instanceId);
 
   await db.orm.aibot.Sandbox.where({ id, ownerId: user.id }).delete();
+  logAuditEvent("sandbox.deleted", "sandbox", id, user.id);
   return true;
 }
 
@@ -337,7 +358,14 @@ export async function createPersistentSandboxInstance(values: {
   adapterId: number | null;
   threadId: string | null;
 }) {
-  return db.orm.aibot.PersistentSandboxInstance.create(values);
+  const instance =
+    await db.orm.aibot.PersistentSandboxInstance.create(values);
+  logAuditEvent(
+    "sandbox_instance.created",
+    "sandbox_instance",
+    instance.instanceId,
+  );
+  return instance;
 }
 
 export async function deleteSandboxInstance(
@@ -362,6 +390,12 @@ export async function deleteSandboxInstance(
   await closeSandboxTerminalsForInstance(user.id, instanceId);
   await destroySandboxInstance(instance.sandbox.sandboxType, instanceId);
   await db.orm.aibot.PersistentSandboxInstance.where({ instanceId }).delete();
+  logAuditEvent(
+    "sandbox_instance.deleted",
+    "sandbox_instance",
+    instanceId,
+    user.id,
+  );
   return true;
 }
 

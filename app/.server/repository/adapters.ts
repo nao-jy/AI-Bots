@@ -9,6 +9,7 @@ import {
   record,
 } from "../utils";
 import { toDisplayNameAdapter } from "../features/chat-adapter";
+import { logAuditEvent } from "../logger/audit-logger";
 
 export async function listAdapters(user: AuthUser) {
   const [adapters, authentications] = await Promise.all([
@@ -101,7 +102,7 @@ export async function saveAdapter(
   }
   const storedEnvs = jsonb(encryptedConfig);
   if (id === null) {
-    await db.transaction(async (tx) => {
+    const adapterId = await db.transaction(async (tx) => {
       const adapter = await tx.orm.aibot.ChatAdapter.create({
         name,
         platform,
@@ -116,7 +117,9 @@ export async function saveAdapter(
           adapterId: adapter.id,
         });
       }
+      return adapter.id;
     });
+    logAuditEvent("adapter.created", "adapter", adapterId, user.id);
   } else {
     await db.orm.aibot.ChatAdapter.where({ id, ownerId: user.id }).update({
       name,
@@ -124,6 +127,7 @@ export async function saveAdapter(
       config: storedEnvs,
       authId,
     });
+    logAuditEvent("adapter.updated", "adapter", id, user.id);
   }
   return { ok: true };
 }
@@ -132,6 +136,7 @@ export async function deleteAdapter(user: AuthUser, id: number) {
   if (!(await db.orm.aibot.ChatAdapter.first({ id, ownerId: user.id })))
     return false;
   await db.orm.aibot.ChatAdapter.where({ id, ownerId: user.id }).delete();
+  logAuditEvent("adapter.deleted", "adapter", id, user.id);
   return true;
 }
 
@@ -140,7 +145,7 @@ export async function regenerateAdapterPublicIds(
   id: number,
   slot: PublicIdSlot,
 ) {
-  return db.transaction(async (tx) => {
+  const updated = await db.transaction(async (tx) => {
     const adapter = await tx.orm.aibot.ChatAdapter.first({
       id,
       ownerId: user.id,
@@ -166,4 +171,7 @@ export async function regenerateAdapterPublicIds(
     }
     return true;
   });
+  if (updated)
+    logAuditEvent("adapter.public_id.regenerated", "adapter", id, user.id);
+  return updated;
 }

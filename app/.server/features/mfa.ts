@@ -200,7 +200,7 @@ export async function finishMfaSetup(
   if (!session || session.user.id !== userId || session.user.mfaSecret)
     return null;
 
-  await saveMfaSecret(userId, encryptCredential(secret));
+  await saveMfaSecret(userId, encryptCredential(secret), userId);
   return finishMfaLogin(token, userId);
 }
 

@@ -27,6 +27,7 @@ import {
 } from "../.server/features/email-verification";
 import { isPasswordResetEnabled } from "../.server/features/password-reset";
 import { appLogger } from "../.server/logger/app-logger";
+import { logAuditEvent } from "../.server/logger/audit-logger";
 import { APP_NAME } from "~/const";
 
 export function meta() {
@@ -52,6 +53,7 @@ export async function action({ request }: Route.ActionArgs) {
   const password = String(form.get("password") ?? "");
   const name = String(form.get("name") ?? "").trim();
   if (!/^\S+@\S+\.\S+$/.test(email) || !password) {
+    logAuditEvent("auth.login.rejected", "account", email || null);
     return data(
       { error: "メールアドレスとパスワードを入力してください。" },
       { status: 400 },
@@ -61,6 +63,7 @@ export async function action({ request }: Route.ActionArgs) {
   let user = await findUserByEmail(email);
   if (!user) {
     if (await hasUsers()) {
+      logAuditEvent("auth.login.rejected", "account", email);
       return data(
         { error: "メールアドレスまたはパスワードが正しくありません。" },
         { status: 401 },
@@ -113,6 +116,7 @@ export async function action({ request }: Route.ActionArgs) {
   } else {
     const maxLoginAttempts = (await getAppSettings()).maxLoginAttempts;
     if (user.loginAttempts >= maxLoginAttempts) {
+      logAuditEvent("auth.login.rejected", "user", user.id);
       return data(
         {
           error:
@@ -136,6 +140,7 @@ export async function action({ request }: Route.ActionArgs) {
     }
 
     if (!(await resetLoginAttemptsForLogin(user.id, maxLoginAttempts))) {
+      logAuditEvent("auth.login.rejected", "user", user.id);
       return data(
         {
           error:
@@ -162,6 +167,7 @@ export async function action({ request }: Route.ActionArgs) {
   }
 
   const session = await createSession(user.id);
+  logAuditEvent("auth.login.succeeded", "user", user.id, user.id);
   return redirect("/bots", {
     headers: { "Set-Cookie": sessionCookie(session.token, session.expiresAt) },
   });

@@ -1,6 +1,7 @@
 import { db } from "./db";
 import type { AuthUser } from "../auth";
 import { decryptMcpHeaders, encryptStringMap, jsonb, record } from "../utils";
+import { logAuditEvent } from "../logger/audit-logger";
 
 export async function listProviders(user: AuthUser) {
   const providers = await db.orm.aibot.Provider.where({ ownerId: user.id })
@@ -79,12 +80,14 @@ export async function saveProvider(
     headers: jsonb(encryptedHeaders),
   };
   if (id === null) {
-    await db.orm.aibot.Provider.create({
+    const provider = await db.orm.aibot.Provider.create({
       ...saved,
       ownerId: user.id,
     });
+    logAuditEvent("provider.created", "provider", provider.id, user.id);
   } else {
     await db.orm.aibot.Provider.where({ id, ownerId: user.id }).update(saved);
+    logAuditEvent("provider.updated", "provider", id, user.id);
   }
   return { ok: true };
 }
@@ -95,6 +98,7 @@ export async function deleteProvider(user: AuthUser, id: number) {
   if (await db.orm.aibot.AgentDefinition.first({ providerId: id }))
     return false;
   await db.orm.aibot.Provider.where({ id, ownerId: user.id }).delete();
+  logAuditEvent("provider.deleted", "provider", id, user.id);
   return true;
 }
 

@@ -1,6 +1,7 @@
 import { db } from "./db";
 import type { AuthUser } from "../auth";
 import { idList, jsonb, record } from "../utils";
+import { logAuditEvent } from "../logger/audit-logger";
 import type {
   LanguageModelUsage,
   ToolSet,
@@ -130,14 +131,21 @@ export async function saveAgent(
     options: jsonb(options),
     ownerId: user.id,
   };
-  await db.transaction(async (tx) => {
+  const agentId = await db.transaction(async (tx) => {
     const agentId =
       id === null
         ? (await tx.orm.aibot.AgentDefinition.create(valuesToSave)).id
         : id;
     if (id !== null)
       await tx.orm.aibot.AgentDefinition.where({ id }).update(valuesToSave);
+    return agentId;
   });
+  logAuditEvent(
+    id === null ? "agent.created" : "agent.updated",
+    "agent",
+    agentId,
+    user.id,
+  );
   return { ok: true };
 }
 
@@ -149,6 +157,7 @@ export async function deleteAgent(user: AuthUser, id: number) {
   const bot = await db.orm.aibot.ChatBot.first({ agentId: id });
   if (bot) return false;
   await db.orm.aibot.AgentDefinition.where({ id }).delete();
+  logAuditEvent("agent.deleted", "agent", id, user.id);
   return true;
 }
 
@@ -186,5 +195,6 @@ export async function insertUsage(
     platform: platform,
     threadId: threadId,
   });
+  logAuditEvent("agent.usage_recorded", "bot", chatbotId);
   return created.id;
 }

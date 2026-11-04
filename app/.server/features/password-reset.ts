@@ -147,6 +147,7 @@ export async function completePasswordReset(token: string, password: string) {
     resolved.userId,
     resolved.passwordHashDigest,
     await hashPassword(password),
+    resolved.userId,
   );
   return updated
     ? { status: "reset" as const }

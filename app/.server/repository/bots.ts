@@ -3,6 +3,7 @@ import type { AuthUser } from "../auth";
 import type { PublicIdSlot } from "../../types/entities";
 import { generatePublicId, idList, jsonb, record } from "../utils";
 import { ToolSetFactoryRegistry } from "../features/toolsets";
+import { logAuditEvent } from "../logger/audit-logger";
 
 type ToolSetContextEntry = {
   toolSetName: string;
@@ -371,7 +372,7 @@ export async function saveBot(
   )
     return { error: "ボットが見つかりません。" };
 
-  await db.transaction(async (tx) => {
+  const botId = await db.transaction(async (tx) => {
     let botId = id;
     if (botId === null) {
       const created = await tx.orm.aibot.ChatBot.create({
@@ -432,7 +433,14 @@ export async function saveBot(
         toolSetName,
         toolSetContext: jsonb(context),
       });
+    return botId;
   });
+  logAuditEvent(
+    id === null ? "bot.created" : "bot.updated",
+    "bot",
+    botId,
+    user.id,
+  );
   return { ok: true };
 }
 
@@ -440,6 +448,7 @@ export async function deleteBot(user: AuthUser, id: number) {
   const bot = await db.orm.aibot.ChatBot.first({ id, ownerId: user.id });
   if (!bot) return false;
   await db.orm.aibot.ChatBot.where({ id, ownerId: user.id }).delete();
+  logAuditEvent("bot.deleted", "bot", id, user.id);
   return true;
 }
 
@@ -448,7 +457,7 @@ export async function regenerateBotPublicIds(
   id: number,
   slot: PublicIdSlot,
 ) {
-  return db.transaction(async (tx) => {
+  const regenerated = await db.transaction(async (tx) => {
     const bot = await tx.orm.aibot.ChatBot.first({ id, ownerId: user.id });
     if (!bot) return false;
 
@@ -469,6 +478,14 @@ export async function regenerateBotPublicIds(
     }
     return true;
   });
+  if (regenerated)
+    logAuditEvent(
+      "bot.public_id.regenerated",
+      "bot",
+      id,
+      user.id,
+    );
+  return regenerated;
 }
 
 export async function setBotEnabled(
@@ -481,6 +498,12 @@ export async function setBotEnabled(
   await db.orm.aibot.ChatBot.where({ id, ownerId: user.id }).update({
     isEnabled,
   });
+  logAuditEvent(
+    isEnabled ? "bot.enabled" : "bot.disabled",
+    "bot",
+    id,
+    user.id,
+  );
   return true;
 }
 

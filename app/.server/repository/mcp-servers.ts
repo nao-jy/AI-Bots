@@ -1,6 +1,7 @@
 import { db } from "./db";
 import type { AuthUser } from "../auth";
 import { decryptMcpHeaders, encryptStringMap, jsonb, record } from "../utils";
+import { logAuditEvent } from "../logger/audit-logger";
 
 export const TRANSPORTS = {
   http: "Streamable HTTP",
@@ -79,10 +80,16 @@ export async function saveMcpServer(
     endpoint: endpoint || null,
     headers: jsonb(encryptedHeaders),
   };
-  if (id === null)
-    await db.orm.aibot.McpServer.create({ ...saved, ownerId: user.id });
-  else
+  if (id === null) {
+    const server = await db.orm.aibot.McpServer.create({
+      ...saved,
+      ownerId: user.id,
+    });
+    logAuditEvent("mcp_server.created", "mcp_server", server.id, user.id);
+  } else {
     await db.orm.aibot.McpServer.where({ id, ownerId: user.id }).update(saved);
+    logAuditEvent("mcp_server.updated", "mcp_server", id, user.id);
+  }
   return { ok: true };
 }
 
@@ -90,5 +97,6 @@ export async function deleteMcpServer(user: AuthUser, id: number) {
   if (!(await db.orm.aibot.McpServer.first({ id, ownerId: user.id })))
     return false;
   await db.orm.aibot.McpServer.where({ id, ownerId: user.id }).delete();
+  logAuditEvent("mcp_server.deleted", "mcp_server", id, user.id);
   return true;
 }

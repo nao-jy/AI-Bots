@@ -1,4 +1,5 @@
 import { db } from "./db";
+import { logAuditEvent } from "../logger/audit-logger";
 
 const DEFAULT_SESSION_DURATION_SECONDS = 60 * 60 * 24 * 30;
 const DEFAULT_MAX_LOGIN_ATTEMPTS = 5;
@@ -35,4 +36,5 @@ export async function saveAppSettings(values: {
   } else {
     await db.orm.aibot.AppSettings.create({ id: "global", ...values });
   }
+  logAuditEvent("app_settings.updated", "app_settings", "global");
 }

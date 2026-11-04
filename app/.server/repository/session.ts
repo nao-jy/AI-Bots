@@ -1,4 +1,5 @@
 import { db } from "./db";
+import { logAuditEvent } from "../logger/audit-logger";
 
 export async function createSession(
   tokenHash: string,
@@ -12,6 +13,12 @@ export async function createSession(
     expiresAt: expiresAt.toISOString(),
     mfaVerified,
   });
+  logAuditEvent(
+    "auth.session.created",
+    "user",
+    userId,
+    mfaVerified ? userId : undefined,
+  );
 }
 
 export async function createPendingSession(
@@ -35,7 +42,7 @@ export async function completePendingSession(
   userId: number,
   expiresAt: Date,
 ) {
-  return db.transaction(async (tx) => {
+  const completed = await db.transaction(async (tx) => {
     const session = await tx.orm.aibot.Session.where({
       tokenHash,
       userId,
@@ -50,17 +57,19 @@ export async function completePendingSession(
     });
     return true;
   });
+  if (completed) logAuditEvent("auth.login.succeeded", "user", userId, userId);
+  return completed;
 }
 
 export async function recordPendingMfaFailure(tokenHash: string) {
-  return db.transaction(async (tx) => {
+  const outcome = await db.transaction(async (tx) => {
     const session = await tx.orm.aibot.Session.where({
       tokenHash,
       mfaVerified: false,
     })
       .forUpdate()
       .first();
-    if (!session) return true;
+    if (!session) return { locked: true, userId: null };
 
     const mfaAttempts = session.mfaAttempts + 1;
     await tx.orm.aibot.Session.where({ id: session.id }).update({
@@ -69,14 +78,20 @@ export async function recordPendingMfaFailure(tokenHash: string) {
         ? { expiresAt: new Date().toISOString() }
         : {}),
     });
-    return mfaAttempts >= 5;
+    return { locked: mfaAttempts >= 5, userId: session.userId };
   });
+  if (outcome.userId !== null)
+    logAuditEvent("auth.mfa.failed", "user", outcome.userId);
+  return outcome.locked;
 }
 
 export async function expireSessionByToken(tokenHash: string) {
-  await db.orm.aibot.Session.where({
-    tokenHash: tokenHash,
-  }).update({ expiresAt: new Date().toISOString() });
+  const session = await db.orm.aibot.Session.first({ tokenHash });
+  if (!session) return;
+  await db.orm.aibot.Session.where({ tokenHash }).update({
+    expiresAt: new Date().toISOString(),
+  });
+  logAuditEvent("auth.session.expired", "user", session.userId);
 }
 
 export async function getSessionUser(tokehHash: string) {

@@ -7,6 +7,7 @@ import {
   parseStringList,
   record,
 } from "../utils";
+import { logAuditEvent } from "../logger/audit-logger";
 
 const TOKEN_REFRESH_WINDOW_MS = 60_000;
 
@@ -129,6 +130,11 @@ export async function getAccessToken(authId: number) {
     refreshToken,
     expiresAt: refreshedExpiresAt,
   });
+  logAuditEvent(
+    "oauth.access_token.refreshed",
+    "oauth_authentication",
+    authId,
+  );
 
   return { name: authentication.name, accessToken: tokens.access_token };
 }
@@ -144,9 +150,24 @@ export async function saveOAuthAuthentication(
     expiresAt: string | null;
   },
 ) {
-  if (id === null)
-    return db.orm.aibot.OAuthAuthentication.create({ ...values, ownerId });
-  return db.orm.aibot.OAuthAuthentication.where({ id, ownerId }).update(values);
+  if (id === null) {
+    const authentication = await db.orm.aibot.OAuthAuthentication.create({
+      ...values,
+      ownerId,
+    });
+    logAuditEvent(
+      "oauth.authentication.created",
+      "oauth_authentication",
+      authentication.id,
+    );
+    return authentication;
+  }
+  const updated = await db.orm.aibot.OAuthAuthentication.where({
+    id,
+    ownerId,
+  }).update(values);
+  logAuditEvent("oauth.authentication.updated", "oauth_authentication", id);
+  return updated;
 }
 
 function validHttpUrl(value: string) {
@@ -246,12 +267,18 @@ export async function saveOAuthClient(
     revocationEndpoint: revocationEndpoint || null,
     scopes,
   };
-  if (id === null)
-    await db.orm.aibot.OAuthClient.create({ ...saved, ownerId: user.id });
-  else
+  if (id === null) {
+    const client = await db.orm.aibot.OAuthClient.create({
+      ...saved,
+      ownerId: user.id,
+    });
+    logAuditEvent("oauth.client.created", "oauth_client", client.id, user.id);
+  } else {
     await db.orm.aibot.OAuthClient.where({ id, ownerId: user.id }).update(
       saved,
     );
+    logAuditEvent("oauth.client.updated", "oauth_client", id, user.id);
+  }
   return { ok: true };
 }
 
@@ -259,6 +286,7 @@ export async function deleteOAuthClient(user: AuthUser, id: number) {
   if (!(await db.orm.aibot.OAuthClient.first({ id, ownerId: user.id })))
     return false;
   await db.orm.aibot.OAuthClient.where({ id, ownerId: user.id }).delete();
+  logAuditEvent("oauth.client.deleted", "oauth_client", id, user.id);
   return true;
 }
 
@@ -324,6 +352,12 @@ export async function renameOAuthAuthentication(
     id,
     ownerId: user.id,
   }).update({ name });
+  logAuditEvent(
+    "oauth.authentication.renamed",
+    "oauth_authentication",
+    id,
+    user.id,
+  );
   return { ok: true };
 }
 
@@ -334,5 +368,11 @@ export async function deleteOAuthAuthentication(user: AuthUser, id: number) {
     id,
     ownerId: user.id,
   }).delete();
+  logAuditEvent(
+    "oauth.authentication.deleted",
+    "oauth_authentication",
+    id,
+    user.id,
+  );
   return true;
 }

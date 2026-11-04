@@ -125,6 +125,6 @@ export async function verifyEmail(token: string) {
   const resolved = await resolveVerification(token);
   if (resolved.status !== "ready") return resolved.status;
 
-  await markEmailVerified(resolved.userId);
+  await markEmailVerified(resolved.userId, resolved.userId);
   return "verified" as const;
 }

@@ -2,6 +2,7 @@ import cron from "node-cron";
 import { db } from "./db";
 import type { AuthUser } from "../auth";
 import { record } from "../utils";
+import { logAuditEvent } from "../logger/audit-logger";
 
 export type ScheduleTargetInput = {
   chatbotAdapterId: number;
@@ -169,7 +170,7 @@ export async function saveSchedule(
   )
     return { error: "スケジュールが見つかりません。" };
 
-  await db.transaction(async (tx) => {
+  const scheduleId = await db.transaction(async (tx) => {
     let scheduleId = id;
     if (scheduleId === null) {
       const schedule = await tx.orm.aibot.ChatBotSchedule.create({
@@ -195,7 +196,14 @@ export async function saveSchedule(
         threadId: target.threadId,
       });
     }
+    return scheduleId;
   });
+  logAuditEvent(
+    id === null ? "schedule.created" : "schedule.updated",
+    "schedule",
+    scheduleId,
+    user.id,
+  );
   return { ok: true };
 }
 
@@ -209,5 +217,6 @@ export async function deleteSchedule(user: AuthUser, id: number) {
     id,
     ownerId: user.id,
   }).delete();
+  logAuditEvent("schedule.deleted", "schedule", id, user.id);
   return true;
 }
