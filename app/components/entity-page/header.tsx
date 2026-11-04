@@ -13,7 +13,6 @@ export function EntityPageHeader({
   return (
     <div className="page-heading">
       <div>
-        <div className="eyebrow">WORKSPACE SETTINGS</div>
         <Title order={1}>{title}</Title>
         <Text>{description}</Text>
       </div>
