@@ -76,6 +76,10 @@
       "model": "Provider",
       "namespace": "aibot"
     },
+    "RateLimit": {
+      "model": "RateLimit",
+      "namespace": "aibot"
+    },
     "Sandbox": {
       "model": "Sandbox",
       "namespace": "aibot"
@@ -264,6 +268,13 @@
                   "kind": "scalar"
                 }
               },
+              "createdAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              },
               "id": {
                 "nullable": false,
                 "type": {
@@ -385,6 +396,9 @@
                 },
                 "chatbotId": {
                   "column": "chatbotId"
+                },
+                "createdAt": {
+                  "column": "createdAt"
                 },
                 "id": {
                   "column": "id"
@@ -2210,6 +2224,120 @@
               "table": "Provider"
             }
           },
+          "RateLimit": {
+            "fields": {
+              "coefficient": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/jsonb@1",
+                  "kind": "scalar"
+                }
+              },
+              "criteria": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                },
+                "valueSet": {
+                  "entityKind": "enum",
+                  "entityName": "RateLimitCriteria",
+                  "namespaceId": "public",
+                  "plane": "domain"
+                }
+              },
+              "criteriaId": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "limit": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/numeric@1",
+                  "kind": "scalar"
+                }
+              },
+              "limitExceededMessage": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "ownerId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "resetOnCron": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "owner": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "ownerId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "User",
+                  "namespace": "aibot"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "coefficient": {
+                  "column": "coefficient"
+                },
+                "criteria": {
+                  "column": "criteria"
+                },
+                "criteriaId": {
+                  "column": "criteriaId"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "limit": {
+                  "column": "limit"
+                },
+                "limitExceededMessage": {
+                  "column": "limitExceededMessage"
+                },
+                "ownerId": {
+                  "column": "ownerId"
+                },
+                "resetOnCron": {
+                  "column": "resetOnCron"
+                }
+              },
+              "namespaceId": "aibot",
+              "table": "RateLimit"
+            }
+          },
           "Sandbox": {
             "fields": {
               "allowedDomainList": {
@@ -2656,6 +2784,27 @@
               }
             ]
           },
+          "RateLimitCriteria": {
+            "codecId": "pg/text@1",
+            "members": [
+              {
+                "name": "thread",
+                "value": "thread"
+              },
+              {
+                "name": "bot",
+                "value": "bot"
+              },
+              {
+                "name": "agent",
+                "value": "agent"
+              },
+              {
+                "name": "provider",
+                "value": "provider"
+              }
+            ]
+          },
           "SandboxScope": {
             "codecId": "pg/text@1",
             "members": [
@@ -2820,6 +2969,15 @@
                   "codecId": "pg/int4@1",
                   "dataType": "pg/int4",
                   "nullable": true
+                },
+                "createdAt": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "dataType": "pg/timestamptz",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nullable": false
                 },
                 "id": {
                   "codecId": "pg/int4@1",
@@ -4603,6 +4761,112 @@
                 }
               ]
             },
+            "RateLimit": {
+              "checks": [
+                {
+                  "expression": "\"criteria\" IN ('thread', 'bot', 'agent', 'provider')",
+                  "name": "RateLimit_criteria_check_73e92978",
+                  "prefix": "RateLimit_criteria_check"
+                }
+              ],
+              "columns": {
+                "coefficient": {
+                  "codecId": "pg/jsonb@1",
+                  "dataType": "pg/jsonb",
+                  "nullable": false
+                },
+                "criteria": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "nullable": false,
+                  "valueSet": {
+                    "entityKind": "valueSet",
+                    "entityName": "RateLimitCriteria",
+                    "namespaceId": "public",
+                    "plane": "storage"
+                  }
+                },
+                "criteriaId": {
+                  "codecId": "pg/int4@1",
+                  "dataType": "pg/int4",
+                  "nullable": true
+                },
+                "id": {
+                  "codecId": "pg/int4@1",
+                  "dataType": "pg/int4",
+                  "default": {
+                    "expression": "autoincrement()",
+                    "kind": "function"
+                  },
+                  "nullable": false
+                },
+                "limit": {
+                  "codecId": "pg/numeric@1",
+                  "dataType": "pg/numeric",
+                  "nullable": false
+                },
+                "limitExceededMessage": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "nullable": false
+                },
+                "ownerId": {
+                  "codecId": "pg/int4@1",
+                  "dataType": "pg/int4",
+                  "nullable": false
+                },
+                "resetOnCron": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [
+                {
+                  "index": {
+                    "name": "RateLimit_ownerId_idx_e2d0c1ef"
+                  },
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "ownerId"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "RateLimit"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "User"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "ownerId"
+                  ],
+                  "name": "RateLimit_ownerId_idx_e2d0c1ef",
+                  "prefix": "RateLimit_ownerId_idx",
+                  "unique": false
+                }
+              ],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "uniques": [
+                {
+                  "columns": [
+                    "criteria",
+                    "criteriaId"
+                  ]
+                }
+              ]
+            },
             "Sandbox": {
               "checks": [
                 {
@@ -4944,6 +5208,15 @@
                 "second"
               ]
             },
+            "RateLimitCriteria": {
+              "kind": "valueSet",
+              "values": [
+                "thread",
+                "bot",
+                "agent",
+                "provider"
+              ]
+            },
             "SandboxScope": {
               "kind": "valueSet",
               "values": [
@@ -4960,7 +5233,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "2861d88fa5a349f335fa8a753af266ec667012523fc428b81d911cfb8c9241fb"
+    "storageHash": "0a78a6d847f4342bca069299635e0bc38e7f90975e6af19df419a06a109e2daf"
   },
   "execution": {
     "executionHash": "2edef0a9e649f7d4fec54fb6e1236cb304696ca7f4e909082a496d8d33430a90",

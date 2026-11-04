@@ -16,6 +16,13 @@ enum PublicIdSlot {
   second = "second"
 }
 
+enum RateLimitCriteria {
+  thread = "thread"
+  bot = "bot"
+  agent = "agent"
+  provider = "provider"
+}
+
 namespace aibot {
   model User {
     id            Int                      @id @default(autoincrement())
@@ -166,24 +173,40 @@ namespace aibot {
   }
 
   model AgentUsage {
-    id            Int              @id @default(autoincrement())
+    id            Int               @id @default(autoincrement())
     agentId       Int?
-    agent         AgentDefinition? @relation(fields: [agentId], references: [id], onDelete: SetNull)
+    agent         AgentDefinition?  @relation(fields: [agentId], references: [id], onDelete: SetNull)
     chatbotId     Int?
-    chatbot       ChatBot?         @relation(fields: [chatbotId], references: [id], onDelete: SetNull)
+    chatbot       ChatBot?          @relation(fields: [chatbotId], references: [id], onDelete: SetNull)
     providerId    Int?
-    provider      Provider?        @relation(fields: [providerId], references: [id], onDelete: SetNull)
+    provider      Provider?         @relation(fields: [providerId], references: [id], onDelete: SetNull)
     inputTokens   Int
     inputDetails  Jsonb
     outputTokens  Int
     outputDetails Jsonb
     toolHistory   Jsonb
+    createdAt     TimestamptzString @default(now())
 
     platform      String
     threadId      String
 
     @@index([agentId])
     @@index([chatbotId])
+  }
+
+  model RateLimit {
+    id                   Int               @id @default(autoincrement())
+    criteria             RateLimitCriteria
+    criteriaId           Int?
+    coefficient          Jsonb // JSON of { variableNameFromAgentUsage: coefficient (decimal) }
+    limit                Decimal
+    limitExceededMessage String
+    resetOnCron          String // cron expression for when the limit should reset, e.g. "0 0 * * *" for daily reset at midnight
+
+    owner                User              @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+    ownerId              Int
+
+    @@unique([criteria, criteriaId])
   }
 
   model McpServer {

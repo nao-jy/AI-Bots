@@ -23,7 +23,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'2861d88fa5a349f335fa8a753af266ec667012523fc428b81d911cfb8c9241fb'>;
+  StorageHashBase<'0a78a6d847f4342bca069299635e0bc38e7f90975e6af19df419a06a109e2daf'>;
 export type ExecutionHash =
   ExecutionHashBase<'2edef0a9e649f7d4fec54fb6e1236cb304696ca7f4e909082a496d8d33430a90'>;
 export type ProfileHash =
@@ -282,6 +282,12 @@ type FieldTypeOverrides = {
       readonly McpServer: {
         readonly transport: { readonly output: 'http'; readonly input: 'http' };
       };
+      readonly RateLimit: {
+        readonly criteria: {
+          readonly output: 'thread' | 'bot' | 'agent' | 'provider';
+          readonly input: 'thread' | 'bot' | 'agent' | 'provider';
+        };
+      };
       readonly Sandbox: {
         readonly sandboxScope: {
           readonly output: 'turn' | 'thread' | 'adapter' | 'bot' | 'all';
@@ -314,6 +320,12 @@ type ColumnTypeOverrides = {
       readonly slot: { readonly output: 'first' | 'second'; readonly input: 'first' | 'second' };
     };
     readonly McpServer: { readonly transport: { readonly output: 'http'; readonly input: 'http' } };
+    readonly RateLimit: {
+      readonly criteria: {
+        readonly output: 'thread' | 'bot' | 'agent' | 'provider';
+        readonly input: 'thread' | 'bot' | 'agent' | 'provider';
+      };
+    };
     readonly Sandbox: {
       readonly sandboxScope: {
         readonly output: 'turn' | 'thread' | 'adapter' | 'bot' | 'all';
@@ -356,6 +368,7 @@ export namespace Models {
   export type aibot_AgentUsage = {
     agentId: FieldOutputTypes['aibot']['AgentUsage']['agentId'];
     chatbotId: FieldOutputTypes['aibot']['AgentUsage']['chatbotId'];
+    createdAt: FieldOutputTypes['aibot']['AgentUsage']['createdAt'];
     id: FieldOutputTypes['aibot']['AgentUsage']['id'];
     inputDetails: FieldOutputTypes['aibot']['AgentUsage']['inputDetails'];
     inputTokens: FieldOutputTypes['aibot']['AgentUsage']['inputTokens'];
@@ -556,6 +569,18 @@ export namespace Models {
     owner: aibot_User;
     readonly [RelationKeys]?: 'agents' | 'owner';
   };
+  export type aibot_RateLimit = {
+    coefficient: FieldOutputTypes['aibot']['RateLimit']['coefficient'];
+    criteria: FieldOutputTypes['aibot']['RateLimit']['criteria'];
+    criteriaId: FieldOutputTypes['aibot']['RateLimit']['criteriaId'];
+    id: FieldOutputTypes['aibot']['RateLimit']['id'];
+    limit: FieldOutputTypes['aibot']['RateLimit']['limit'];
+    limitExceededMessage: FieldOutputTypes['aibot']['RateLimit']['limitExceededMessage'];
+    ownerId: FieldOutputTypes['aibot']['RateLimit']['ownerId'];
+    resetOnCron: FieldOutputTypes['aibot']['RateLimit']['resetOnCron'];
+    owner: aibot_User;
+    readonly [RelationKeys]?: 'owner';
+  };
   export type aibot_Sandbox = {
     allowedDomainList: FieldOutputTypes['aibot']['Sandbox']['allowedDomainList'];
     envs: FieldOutputTypes['aibot']['Sandbox']['envs'];
@@ -620,6 +645,7 @@ export declare const models: {
     OAuthClient: Models.aibot_OAuthClient;
     PersistentSandboxInstance: Models.aibot_PersistentSandboxInstance;
     Provider: Models.aibot_Provider;
+    RateLimit: Models.aibot_RateLimit;
     Sandbox: Models.aibot_Sandbox;
     Session: Models.aibot_Session;
     User: Models.aibot_User;
@@ -756,6 +782,13 @@ type ContractBase = Omit<
                   readonly dataType: 'pg/int4';
                   readonly codecId: 'pg/int4@1';
                   readonly nullable: true;
+                  readonly many: false;
+                };
+                readonly createdAt: {
+                  readonly dataType: 'pg/timestamptz';
+                  readonly codecId: 'pg/timestamptz-string@1';
+                  readonly nullable: false;
+                  readonly default: { readonly kind: 'function'; readonly expression: 'now()' };
                   readonly many: false;
                 };
                 readonly id: {
@@ -2175,6 +2208,86 @@ type ContractBase = Omit<
                 },
               ];
             };
+            readonly RateLimit: {
+              columns: {
+                readonly coefficient: {
+                  readonly dataType: 'pg/jsonb';
+                  readonly codecId: 'pg/jsonb@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly criteria: {
+                  readonly dataType: 'pg/text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly criteriaId: {
+                  readonly dataType: 'pg/int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: true;
+                  readonly many: false;
+                };
+                readonly id: {
+                  readonly dataType: 'pg/int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'function';
+                    readonly expression: 'autoincrement()';
+                  };
+                  readonly many: false;
+                };
+                readonly limit: {
+                  readonly dataType: 'pg/numeric';
+                  readonly codecId: 'pg/numeric@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly limitExceededMessage: {
+                  readonly dataType: 'pg/text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly ownerId: {
+                  readonly dataType: 'pg/int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly resetOnCron: {
+                  readonly dataType: 'pg/text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+              };
+              primaryKey: { readonly columns: readonly ['id'] };
+              uniques: readonly [{ readonly columns: readonly ['criteria', 'criteriaId'] }];
+              indexes: readonly [
+                {
+                  readonly name: 'RateLimit_ownerId_idx_e2d0c1ef';
+                  readonly prefix: 'RateLimit_ownerId_idx';
+                  readonly columns: readonly ['ownerId'];
+                  readonly unique: false;
+                },
+              ];
+              foreignKeys: readonly [
+                {
+                  readonly source: {
+                    readonly namespaceId: 'aibot' & NamespaceId;
+                    readonly tableName: 'RateLimit';
+                    readonly columns: readonly ['ownerId'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'aibot' & NamespaceId;
+                    readonly tableName: 'User';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+              ];
+            };
             readonly Sandbox: {
               columns: {
                 readonly allowedDomainList: {
@@ -2453,6 +2566,10 @@ type ContractBase = Omit<
               readonly kind: 'valueSet';
               readonly values: readonly ['first', 'second'];
             };
+            readonly RateLimitCriteria: {
+              readonly kind: 'valueSet';
+              readonly values: readonly ['thread', 'bot', 'agent', 'provider'];
+            };
             readonly SandboxScope: {
               readonly kind: 'valueSet';
               readonly values: readonly ['turn', 'thread', 'adapter', 'bot', 'all'];
@@ -2531,6 +2648,7 @@ type ContractBase = Omit<
       readonly model: 'PersistentSandboxInstance';
     };
     readonly Provider: { readonly namespace: 'aibot' & NamespaceId; readonly model: 'Provider' };
+    readonly RateLimit: { readonly namespace: 'aibot' & NamespaceId; readonly model: 'RateLimit' };
     readonly Sandbox: { readonly namespace: 'aibot' & NamespaceId; readonly model: 'Sandbox' };
     readonly Session: { readonly namespace: 'aibot' & NamespaceId; readonly model: 'Session' };
     readonly User: { readonly namespace: 'aibot' & NamespaceId; readonly model: 'User' };
@@ -2651,6 +2769,13 @@ type ContractBase = Omit<
                 readonly nullable: true;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
               };
+              readonly createdAt: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-string@1';
+                };
+              };
               readonly id: {
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
@@ -2732,6 +2857,7 @@ type ContractBase = Omit<
               readonly fields: {
                 readonly agentId: { readonly column: 'agentId' };
                 readonly chatbotId: { readonly column: 'chatbotId' };
+                readonly createdAt: { readonly column: 'createdAt' };
                 readonly id: { readonly column: 'id' };
                 readonly inputDetails: { readonly column: 'inputDetails' };
                 readonly inputTokens: { readonly column: 'inputTokens' };
@@ -3901,6 +4027,67 @@ type ContractBase = Omit<
               };
             };
           };
+          readonly RateLimit: {
+            readonly fields: {
+              readonly coefficient: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/jsonb@1' };
+              };
+              readonly criteria: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly criteriaId: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+              readonly id: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+              readonly limit: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/numeric@1' };
+              };
+              readonly limitExceededMessage: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly ownerId: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+              readonly resetOnCron: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+            };
+            readonly relations: {
+              readonly owner: {
+                readonly to: { readonly namespace: 'aibot' & NamespaceId; readonly model: 'User' };
+                readonly cardinality: 'N:1';
+                readonly nullable: false;
+                readonly on: {
+                  readonly localFields: readonly ['ownerId'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
+            };
+            readonly storage: {
+              readonly table: 'RateLimit';
+              readonly namespaceId: 'aibot';
+              readonly fields: {
+                readonly coefficient: { readonly column: 'coefficient' };
+                readonly criteria: { readonly column: 'criteria' };
+                readonly criteriaId: { readonly column: 'criteriaId' };
+                readonly id: { readonly column: 'id' };
+                readonly limit: { readonly column: 'limit' };
+                readonly limitExceededMessage: { readonly column: 'limitExceededMessage' };
+                readonly ownerId: { readonly column: 'ownerId' };
+                readonly resetOnCron: { readonly column: 'resetOnCron' };
+              };
+            };
+          };
           readonly Sandbox: {
             readonly fields: {
               readonly allowedDomainList: {
@@ -4176,6 +4363,15 @@ type ContractBase = Omit<
               { readonly name: 'second'; readonly value: 'second' },
             ];
           };
+          readonly RateLimitCriteria: {
+            readonly codecId: 'pg/text@1';
+            readonly members: readonly [
+              { readonly name: 'thread'; readonly value: 'thread' },
+              { readonly name: 'bot'; readonly value: 'bot' },
+              { readonly name: 'agent'; readonly value: 'agent' },
+              { readonly name: 'provider'; readonly value: 'provider' },
+            ];
+          };
           readonly SandboxScope: {
             readonly codecId: 'pg/text@1';
             readonly members: readonly [
@@ -4192,6 +4388,12 @@ type ContractBase = Omit<
           readonly PublicIdSlot: readonly [
             { readonly name: 'first'; readonly value: 'first' },
             { readonly name: 'second'; readonly value: 'second' },
+          ];
+          readonly RateLimitCriteria: readonly [
+            { readonly name: 'thread'; readonly value: 'thread' },
+            { readonly name: 'bot'; readonly value: 'bot' },
+            { readonly name: 'agent'; readonly value: 'agent' },
+            { readonly name: 'provider'; readonly value: 'provider' },
           ];
           readonly SandboxScope: readonly [
             { readonly name: 'turn'; readonly value: 'turn' },
