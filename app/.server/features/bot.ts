@@ -296,6 +296,7 @@ async function processBotMessage(
     await insertUsage(
       chatbot.id,
       agent.id,
+      agent.providerId,
       result.usage,
       result.toolResults,
       adapterPlatform,

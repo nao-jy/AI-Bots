@@ -109,13 +109,6 @@
                   "kind": "scalar"
                 }
               },
-              "isDeleted": {
-                "nullable": false,
-                "type": {
-                  "codecId": "pg/bool@1",
-                  "kind": "scalar"
-                }
-              },
               "modelId": {
                 "nullable": false,
                 "type": {
@@ -232,9 +225,6 @@
                 "id": {
                   "column": "id"
                 },
-                "isDeleted": {
-                  "column": "isDeleted"
-                },
                 "modelId": {
                   "column": "modelId"
                 },
@@ -261,14 +251,14 @@
           "AgentUsage": {
             "fields": {
               "agentId": {
-                "nullable": false,
+                "nullable": true,
                 "type": {
                   "codecId": "pg/int4@1",
                   "kind": "scalar"
                 }
               },
               "chatbotId": {
-                "nullable": false,
+                "nullable": true,
                 "type": {
                   "codecId": "pg/int4@1",
                   "kind": "scalar"
@@ -316,6 +306,13 @@
                   "kind": "scalar"
                 }
               },
+              "providerId": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
               "threadId": {
                 "nullable": false,
                 "type": {
@@ -334,7 +331,7 @@
             "relations": {
               "agent": {
                 "cardinality": "N:1",
-                "nullable": false,
+                "nullable": true,
                 "on": {
                   "localFields": [
                     "agentId"
@@ -350,7 +347,7 @@
               },
               "chatbot": {
                 "cardinality": "N:1",
-                "nullable": false,
+                "nullable": true,
                 "on": {
                   "localFields": [
                     "chatbotId"
@@ -361,6 +358,22 @@
                 },
                 "to": {
                   "model": "ChatBot",
+                  "namespace": "aibot"
+                }
+              },
+              "provider": {
+                "cardinality": "N:1",
+                "nullable": true,
+                "on": {
+                  "localFields": [
+                    "providerId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Provider",
                   "namespace": "aibot"
                 }
               }
@@ -390,6 +403,9 @@
                 },
                 "platform": {
                   "column": "platform"
+                },
+                "providerId": {
+                  "column": "providerId"
                 },
                 "threadId": {
                   "column": "threadId"
@@ -718,13 +734,6 @@
                   "kind": "scalar"
                 }
               },
-              "isDeleted": {
-                "nullable": false,
-                "type": {
-                  "codecId": "pg/bool@1",
-                  "kind": "scalar"
-                }
-              },
               "isEnabled": {
                 "nullable": false,
                 "type": {
@@ -893,9 +902,6 @@
                 },
                 "instruction": {
                   "column": "instruction"
-                },
-                "isDeleted": {
-                  "column": "isDeleted"
                 },
                 "isEnabled": {
                   "column": "isEnabled"
@@ -2705,15 +2711,6 @@
                   },
                   "nullable": false
                 },
-                "isDeleted": {
-                  "codecId": "pg/bool@1",
-                  "dataType": "pg/bool",
-                  "default": {
-                    "kind": "literal",
-                    "value": false
-                  },
-                  "nullable": false
-                },
                 "modelId": {
                   "codecId": "pg/text@1",
                   "dataType": "pg/text",
@@ -2817,12 +2814,12 @@
                 "agentId": {
                   "codecId": "pg/int4@1",
                   "dataType": "pg/int4",
-                  "nullable": false
+                  "nullable": true
                 },
                 "chatbotId": {
                   "codecId": "pg/int4@1",
                   "dataType": "pg/int4",
-                  "nullable": false
+                  "nullable": true
                 },
                 "id": {
                   "codecId": "pg/int4@1",
@@ -2858,6 +2855,11 @@
                   "dataType": "pg/text",
                   "nullable": false
                 },
+                "providerId": {
+                  "codecId": "pg/int4@1",
+                  "dataType": "pg/int4",
+                  "nullable": true
+                },
                 "threadId": {
                   "codecId": "pg/text@1",
                   "dataType": "pg/text",
@@ -2874,7 +2876,7 @@
                   "index": {
                     "name": "AgentUsage_agentId_idx_8d0ba4f0"
                   },
-                  "onDelete": "restrict",
+                  "onDelete": "setNull",
                   "source": {
                     "columns": [
                       "agentId"
@@ -2894,7 +2896,7 @@
                   "index": {
                     "name": "AgentUsage_chatbotId_idx_52db07ea"
                   },
-                  "onDelete": "restrict",
+                  "onDelete": "setNull",
                   "source": {
                     "columns": [
                       "chatbotId"
@@ -2908,6 +2910,26 @@
                     ],
                     "namespaceId": "aibot",
                     "tableName": "ChatBot"
+                  }
+                },
+                {
+                  "index": {
+                    "name": "AgentUsage_providerId_idx_d1904c54"
+                  },
+                  "onDelete": "setNull",
+                  "source": {
+                    "columns": [
+                      "providerId"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "AgentUsage"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "Provider"
                   }
                 }
               ],
@@ -2926,6 +2948,14 @@
                   ],
                   "name": "AgentUsage_chatbotId_idx_52db07ea",
                   "prefix": "AgentUsage_chatbotId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "providerId"
+                  ],
+                  "name": "AgentUsage_providerId_idx_d1904c54",
+                  "prefix": "AgentUsage_providerId_idx",
                   "unique": false
                 }
               ],
@@ -3229,15 +3259,6 @@
                 "instruction": {
                   "codecId": "pg/text@1",
                   "dataType": "pg/text",
-                  "nullable": false
-                },
-                "isDeleted": {
-                  "codecId": "pg/bool@1",
-                  "dataType": "pg/bool",
-                  "default": {
-                    "kind": "literal",
-                    "value": false
-                  },
                   "nullable": false
                 },
                 "isEnabled": {
@@ -4939,7 +4960,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "c7c241480cdbd0a5eb582eb0411944060dab7b300489f24b07eeec615bb11458"
+    "storageHash": "2861d88fa5a349f335fa8a753af266ec667012523fc428b81d911cfb8c9241fb"
   },
   "execution": {
     "executionHash": "2edef0a9e649f7d4fec54fb6e1236cb304696ca7f4e909082a496d8d33430a90",

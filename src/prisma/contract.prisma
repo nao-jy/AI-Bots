@@ -84,7 +84,6 @@ namespace aibot {
     createdAt        TimestamptzString        @default(now())
     updatedAt        temporal.UpdatedAtString
 
-    isDeleted        Boolean                  @default(false)
     publicIds        ChatBotPublicId[]
     usage            AgentUsage[]
 
@@ -162,17 +161,18 @@ namespace aibot {
     createdAt  TimestamptzString        @default(now())
     updatedAt  temporal.UpdatedAtString
     usage      AgentUsage[]
-    isDeleted  Boolean                  @default(false)
 
     @@index([providerId])
   }
 
   model AgentUsage {
-    id            Int             @id @default(autoincrement())
-    agentId       Int
-    agent         AgentDefinition @relation(fields: [agentId], references: [id], onDelete: Restrict)
-    chatbotId     Int
-    chatbot       ChatBot         @relation(fields: [chatbotId], references: [id], onDelete: Restrict)
+    id            Int              @id @default(autoincrement())
+    agentId       Int?
+    agent         AgentDefinition? @relation(fields: [agentId], references: [id], onDelete: SetNull)
+    chatbotId     Int?
+    chatbot       ChatBot?         @relation(fields: [chatbotId], references: [id], onDelete: SetNull)
+    providerId    Int?
+    provider      Provider?        @relation(fields: [providerId], references: [id], onDelete: SetNull)
     inputTokens   Int
     inputDetails  Jsonb
     outputTokens  Int

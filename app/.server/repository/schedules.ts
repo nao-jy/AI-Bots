@@ -49,9 +49,7 @@ export async function listSchedules(user: AuthUser) {
       )
       .orderBy((schedule) => schedule.createdAt.desc())
       .all(),
-    db.orm.aibot.ChatBotAdapter.include("chatbot")
-      .include("adapter")
-      .all(),
+    db.orm.aibot.ChatBotAdapter.include("chatbot").include("adapter").all(),
   ]);
   return {
     records: schedules.map((schedule) => {
@@ -90,12 +88,11 @@ export async function listSchedules(user: AuthUser) {
     targetOptions: chatbotAdapters
       .filter(
         (link) =>
-          link.chatbot.ownerId === user.id &&
-          link.adapter.ownerId === user.id,
+          link.chatbot.ownerId === user.id && link.adapter.ownerId === user.id,
       )
       .map((link) => ({
         label: `${link.chatbot.name} / ${link.adapter.name}${
-          link.chatbot.isEnabled && !link.chatbot.isDeleted ? "" : " (停止中)"
+          link.chatbot.isEnabled ? "" : " (停止中)"
         }`,
         value: String(link.id),
       })),

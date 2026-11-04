@@ -97,8 +97,7 @@ async function executeSchedule(id: number) {
         !link ||
         link.chatbot.ownerId !== schedule.ownerId ||
         link.adapter.ownerId !== schedule.ownerId ||
-        !link.chatbot.isEnabled ||
-        link.chatbot.isDeleted
+        !link.chatbot.isEnabled
       )
         continue;
 

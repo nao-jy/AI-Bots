@@ -4,7 +4,10 @@ import type { PublicIdSlot } from "../../types/entities";
 import { generatePublicId, idList, jsonb, record } from "../utils";
 import { ToolSetFactoryRegistry } from "../features/toolsets";
 
-type ToolSetContextEntry = { toolSetName: string; context: Record<string, unknown> };
+type ToolSetContextEntry = {
+  toolSetName: string;
+  context: Record<string, unknown>;
+};
 
 function positiveId(value: unknown): number {
   const id =
@@ -31,7 +34,6 @@ function stableJson(value: unknown): string {
 export async function listBots(user: AuthUser, publicOrigin: string) {
   const bots = await db.orm.aibot.ChatBot.where({
     ownerId: user.id,
-    isDeleted: false,
   })
     .include("agent")
     .include("adapters", (links) =>
@@ -264,16 +266,14 @@ export async function saveBot(
         };
       });
     } else if (parsed && typeof parsed === "object") {
-      toolSetContexts = Object.entries(parsed).map(
-        ([toolSetName, context]) => {
-          if (!context || typeof context !== "object" || Array.isArray(context))
-            throw new Error();
-          return {
-            toolSetName,
-            context: context as Record<string, unknown>,
-          };
-        },
-      );
+      toolSetContexts = Object.entries(parsed).map(([toolSetName, context]) => {
+        if (!context || typeof context !== "object" || Array.isArray(context))
+          throw new Error();
+        return {
+          toolSetName,
+          context: context as Record<string, unknown>,
+        };
+      });
     } else {
       throw new Error();
     }
@@ -335,8 +335,7 @@ export async function saveBot(
   );
   if (
     mcpConnections.some(
-      ({ authId }) =>
-        authId !== null && !allowedAuthenticationIds.has(authId),
+      ({ authId }) => authId !== null && !allowedAuthenticationIds.has(authId),
     )
   )
     return {
@@ -351,9 +350,8 @@ export async function saveBot(
   );
   if (sandboxId !== null && !allowedSandboxIds.has(sandboxId))
     return { error: "選択したサンドボックスを使用できません。" };
-  const toolSetContextKeys = toolSetContexts.map(
-    ({ toolSetName, context }) =>
-      JSON.stringify([toolSetName, stableJson(context)]),
+  const toolSetContextKeys = toolSetContexts.map(({ toolSetName, context }) =>
+    JSON.stringify([toolSetName, stableJson(context)]),
   );
   if (new Set(toolSetContextKeys).size !== toolSetContextKeys.length)
     return { error: "同じToolSet名とcontextの組み合わせは重複できません。" };
@@ -441,9 +439,7 @@ export async function saveBot(
 export async function deleteBot(user: AuthUser, id: number) {
   const bot = await db.orm.aibot.ChatBot.first({ id, ownerId: user.id });
   if (!bot) return false;
-  await db.orm.aibot.ChatBot.where({ id, ownerId: user.id }).update({
-    isDeleted: true,
-  });
+  await db.orm.aibot.ChatBot.where({ id, ownerId: user.id }).delete();
   return true;
 }
 

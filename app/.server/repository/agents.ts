@@ -11,7 +11,6 @@ import type {
 export async function listAgents(user: AuthUser) {
   const agents = await db.orm.aibot.AgentDefinition.where({
     ownerId: user.id,
-    isDeleted: false,
   })
     .include("chatbot")
     .include("provider")
@@ -149,15 +148,14 @@ export async function deleteAgent(user: AuthUser, id: number) {
   if (!agent || agent.provider.ownerId !== user.id) return false;
   const bot = await db.orm.aibot.ChatBot.first({ agentId: id });
   if (bot) return false;
-  await db.orm.aibot.AgentDefinition.where({ id }).update({
-    isDeleted: true,
-  });
+  await db.orm.aibot.AgentDefinition.where({ id }).delete();
   return true;
 }
 
 export async function insertUsage(
   chatbotId: number,
   agentId: number,
+  providerId: number,
   usage: LanguageModelUsage,
   toolResults: Array<TypedToolResult<ToolSet>>,
   platform: string,
@@ -166,6 +164,7 @@ export async function insertUsage(
   await db.orm.aibot.AgentUsage.create({
     chatbotId: chatbotId,
     agentId: agentId,
+    providerId: providerId,
     inputTokens: usage.inputTokens ?? 0,
     inputDetails: jsonb({
       noCacheTokens: usage.inputTokenDetails.noCacheTokens ?? null,
