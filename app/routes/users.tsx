@@ -1,3 +1,4 @@
+import { t } from "~/i18n";
 import type { Route } from "./+types/users";
 import {
   EntityPageView,
@@ -24,8 +25,8 @@ import { appLogger } from "../.server/logger/app-logger";
 import { APP_NAME } from "~/const";
 
 const page: Omit<EntityPageDefinition, "records"> = {
-  title: "ユーザー",
-  description: "ログインできるユーザーアカウントを管理します。",
+  title: t("pages.users.title"),
+  description: t("pages.users.description"),
   icon: "users",
   tableFeatures: {
     expandableActions: true,
@@ -35,40 +36,40 @@ const page: Omit<EntityPageDefinition, "records"> = {
     loginUnlock: true,
   },
   columns: [
-    { key: "name", label: "ユーザー" },
-    { key: "email", label: "メールアドレス" },
+    { key: "name", label: t("pages.users.title") },
+    { key: "email", label: t("pages.users.emailLabel") },
     {
       key: "emailVerification",
-      label: "メールアドレス検証",
+      label: t("pages.users.emailVerificationLabel"),
       presentation: "verification-status",
     },
-    { key: "mfaStatus", label: "MFA", presentation: "mfa-status" },
-    { key: "isAdmin", label: "権限", presentation: "admin-toggle" },
-    { key: "loginLockStatus", label: "ログイン制限" },
-    { key: "loginStatus", label: "ログイン状態" },
-    { key: "lastLogin", label: "最終ログイン" },
-    { key: "updated", label: "最終更新" },
+    { key: "mfaStatus", label: t("pages.users.mfaLabel"), presentation: "mfa-status" },
+    { key: "isAdmin", label: t("pages.users.roleLabel"), presentation: "admin-toggle" },
+    { key: "loginLockStatus", label: t("pages.users.loginLockLabel") },
+    { key: "loginStatus", label: t("pages.users.loginStatusLabel") },
+    { key: "lastLogin", label: t("pages.users.lastLoginLabel") },
+    { key: "updated", label: t("pages.users.updatedLabel") },
   ],
   fields: [
-    { key: "name", label: "表示名", placeholder: "例：山田 花子" },
+    { key: "name", label: t("pages.users.displayNameLabel"), placeholder: t("pages.users.displayNamePlaceholder") },
     {
       key: "email",
-      label: "メールアドレス",
+      label: t("pages.users.emailLabel"),
       type: "email",
-      placeholder: "name@example.com",
+      placeholder: t("pages.users.emailPlaceholder"),
     },
     {
       key: "password",
-      label: "パスワード",
+      label: t("pages.users.passwordLabel"),
       type: "password",
       required: true,
-      placeholder: "作成時は12文字以上、編集時は変更する場合のみ入力",
+      placeholder: t("pages.users.passwordHint"),
     },
   ],
 };
 
 export function meta() {
-  return [{ title: `ユーザー | ${APP_NAME}` }];
+  return [{ title: t("pages.users.documentTitle", { 0: APP_NAME }) }];
 }
 
 export async function loader({ request }: Route.LoaderArgs) {
@@ -91,39 +92,39 @@ export async function action({ request }: Route.ActionArgs) {
   if (intent === "delete") {
     return Number.isInteger(id)
       ? deleteUser(id, actor.id)
-      : { ok: false, error: "ユーザーが見つかりません。" };
+      : { ok: false, error: t("pages.users.notFound") };
   }
   if (intent === "toggle-admin") {
     const isAdminValue = String(form.get("isAdmin") ?? "");
     if (!Number.isInteger(id) || !["true", "false"].includes(isAdminValue))
-      return { ok: false, error: "変更内容を確認してください。" };
+      return { ok: false, error: t("pages.users.invalidChanges") };
     return setUserAdmin(id, isAdminValue === "true", actor.id);
   }
   if (intent === "force-logout") {
     return Number.isInteger(id)
       ? forceLogoutUser(id, actor.id)
-      : { ok: false, error: "ユーザーが見つかりません。" };
+      : { ok: false, error: t("pages.users.notFound") };
   }
   if (intent === "reset-mfa")
     return Number.isInteger(id)
       ? resetUserMfa(id)
-      : { ok: false, error: "ユーザーが見つかりません。" };
+      : { ok: false, error: t("pages.users.notFound") };
   if (intent === "unlock-login")
     return Number.isInteger(id)
       ? unlockUserLogin(id)
-      : { ok: false, error: "ユーザーが見つかりません。" };
+      : { ok: false, error: t("pages.users.notFound") };
   if (intent === "send-verification") {
     if (!Number.isInteger(id))
-      return { ok: false, error: "ユーザーが見つかりません。" };
+      return { ok: false, error: t("pages.users.notFound") };
     const user = await findUserById(id);
-    if (!user) return { ok: false, error: "ユーザーが見つかりません。" };
+    if (!user) return { ok: false, error: t("pages.users.notFound") };
     if (user.emailVerified)
-      return { ok: false, error: "このメールアドレスは検証済みです。" };
+      return { ok: false, error: t("pages.users.emailAlreadyVerified") };
     try {
       const sent = await sendEmailVerification(user, request.url);
       return sent
         ? { ok: true }
-        : { ok: false, error: "メールプロバイダが設定されていません。" };
+        : { ok: false, error: t("pages.users.emailProviderUnavailable") };
     } catch (error) {
       appLogger.error("Failed to send user verification email", {
         userId: user.id,
@@ -136,7 +137,7 @@ export async function action({ request }: Route.ActionArgs) {
       return {
         ok: false,
         error:
-          "検証メールを送信できませんでした。設定を確認して再試行してください。",
+          t("pages.users.verificationEmailSendFailed"),
       };
     }
   }
@@ -152,7 +153,7 @@ export async function action({ request }: Route.ActionArgs) {
   }
   if (intent === "update") {
     if (!Number.isInteger(id))
-      return { ok: false, error: "ユーザーが見つかりません。" };
+      return { ok: false, error: t("pages.users.notFound") };
     const result = await saveUser(id, form, isEmailVerificationEnabled());
     if ("error" in result || !result.verificationRequired) return result;
     return sendNewUserVerification(
@@ -162,7 +163,7 @@ export async function action({ request }: Route.ActionArgs) {
       request.url,
     );
   }
-  return { ok: false, error: "操作を判定できませんでした。" };
+  return { ok: false, error: t("pages.users.unknownAction") };
 }
 
 async function sendNewUserVerification(email: string, requestUrl: string) {
@@ -172,7 +173,7 @@ async function sendNewUserVerification(email: string, requestUrl: string) {
       ok: false,
       notification: "verification-email" as const,
       error:
-        "ユーザーを保存しましたが検証メールを送信できませんでした。ユーザー一覧から再送してください。",
+        t("pages.users.savedButEmailFailed"),
     };
   try {
     await sendEmailVerification(user, requestUrl);
@@ -190,7 +191,7 @@ async function sendNewUserVerification(email: string, requestUrl: string) {
       ok: false,
       notification: "verification-email" as const,
       error:
-        "ユーザーを保存しましたが検証メールを送信できませんでした。ユーザー一覧から再送してください。",
+        t("pages.users.savedButEmailFailed"),
     };
   }
 }

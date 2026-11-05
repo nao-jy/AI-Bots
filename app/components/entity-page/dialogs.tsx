@@ -1,3 +1,4 @@
+import { t, tMessage } from "~/i18n";
 import { useEffect, useState } from "react";
 import {
   Alert,
@@ -71,7 +72,7 @@ function DependentSelectEditor({
       <Select
         name={name}
         label={label}
-        placeholder={placeholder ?? "選択してください"}
+        placeholder={placeholder ?? t("components.entityPage.dialogs.selectOption")}
         data={options}
         value={value || null}
         onChange={(nextValue) => {
@@ -85,7 +86,7 @@ function DependentSelectEditor({
       <Select
         label={dependentLabel}
         placeholder={
-          value ? "対象を選択してください" : "先に対象種別を選択してください"
+          value ? t("components.entityPage.dialogs.selectTarget") : t("components.entityPage.dialogs.selectTargetTypeFirst")
         }
         data={availableOptions}
         value={validDependentValue || null}
@@ -154,8 +155,8 @@ function MetricCoefficientsEditor({
         return (
           <Group key={index} align="flex-end" wrap="nowrap" mb="xs">
             <Select
-              aria-label={`${label}の利用項目 ${index + 1}`}
-              placeholder="利用項目を選択"
+              aria-label={t("components.entityPage.dialogs.usageItemLabel", { 0: label, 1: index + 1 })}
+              placeholder={t("components.entityPage.dialogs.selectUsageItem")}
               data={optionsForPair}
               value={pair.key || null}
               onChange={(value) =>
@@ -171,7 +172,7 @@ function MetricCoefficientsEditor({
               style={{ flex: 1 }}
             />
             <TextInput
-              aria-label={`${label}の係数 ${index + 1}`}
+              aria-label={t("components.entityPage.dialogs.usageMultiplierLabel", { 0: label, 1: index + 1 })}
               type="number"
               min={0}
               step="any"
@@ -195,10 +196,9 @@ function MetricCoefficientsEditor({
               onClick={() =>
                 setPairs((current) => current.filter((_, i) => i !== index))
               }
-              aria-label={`${label}の行 ${index + 1} を削除`}
+              aria-label={t("components.entityPage.dialogs.deleteRowLabel", { 0: label, 1: index + 1 })}
             >
-              削除
-            </Button>
+              {t("components.entityPage.dialogs.delete")}</Button>
           </Group>
         );
       })}
@@ -216,8 +216,7 @@ function MetricCoefficientsEditor({
             ]);
         }}
       >
-        ＋ 利用項目を追加
-      </Button>
+        {t("components.entityPage.dialogs.addUsageItem")}</Button>
     </div>
   );
 }
@@ -289,8 +288,8 @@ function KeyValueEditor({
       {pairs.map((pair, index) => (
         <Group key={index} align="flex-end" wrap="nowrap" mb="xs">
           <TextInput
-            aria-label={`${label}のキー ${index + 1}`}
-            placeholder="キー"
+            aria-label={t("components.entityPage.dialogs.keyLabel", { 0: label, 1: index + 1 })}
+            placeholder={t("components.entityPage.dialogs.key")}
             value={pair.key}
             onChange={(event) => {
               const value = event.currentTarget.value;
@@ -303,8 +302,8 @@ function KeyValueEditor({
             style={{ flex: 1 }}
           />
           <TextInput
-            aria-label={`${label}の値 ${index + 1}`}
-            placeholder="値"
+            aria-label={t("components.entityPage.dialogs.valueLabel", { 0: label, 1: index + 1 })}
+            placeholder={t("components.entityPage.dialogs.value")}
             value={pair.value}
             onChange={(event) => {
               const value = event.currentTarget.value;
@@ -324,10 +323,9 @@ function KeyValueEditor({
             onClick={() =>
               setPairs((current) => current.filter((_, i) => i !== index))
             }
-            aria-label={`${label}の行 ${index + 1} を削除`}
+            aria-label={t("components.entityPage.dialogs.deleteRowLabel", { 0: label, 1: index + 1 })}
           >
-            削除
-          </Button>
+            {t("components.entityPage.dialogs.delete")}</Button>
         </Group>
       ))}
       <Button
@@ -338,8 +336,7 @@ function KeyValueEditor({
           setPairs((current) => [...current, { key: "", value: "" }])
         }
       >
-        ＋ ペアを追加
-      </Button>
+        {t("components.entityPage.dialogs.addPair")}</Button>
     </div>
   );
 }
@@ -430,11 +427,13 @@ export function EntityPageDialogs({
 
     notifications.show({
       title: fetcher.data.ok
-        ? "検証メールを送信しました"
-        : "検証メールの送信に失敗しました",
+        ? t("components.entityPage.dialogs.verificationEmailSent")
+        : t("components.entityPage.dialogs.verificationEmailSendFailed"),
       message: fetcher.data.ok
-        ? "ユーザーを保存し、検証メールを送信しました。"
-        : (fetcher.data.error ?? "検証メールを送信できませんでした。"),
+        ? t("components.entityPage.dialogs.userSavedAndEmailSent")
+        : tMessage(
+            fetcher.data.error ?? t("components.entityPage.dialogs.verificationEmailCouldNotBeSent"),
+          ),
       color: fetcher.data.ok ? "green" : "red",
     });
     onClose();
@@ -448,10 +447,10 @@ export function EntityPageDialogs({
         title={
           <div>
             <Text className="modal-kicker">
-              {mode === "edit" ? "設定を更新" : "新しい設定"}
+              {mode === "edit" ? t("components.entityPage.dialogs.updateSettings") : t("components.entityPage.dialogs.newSettings")}
             </Text>
             <Title order={3}>
-              {mode === "edit" ? `${page.title}を編集` : `${page.title}を作成`}
+              {mode === "edit" ? t("components.entityPage.dialogs.editRecord", { 0: page.title }) : t("components.entityPage.dialogs.createRecord", { 0: page.title })}
             </Title>
           </div>
         }
@@ -471,8 +470,7 @@ export function EntityPageDialogs({
           />
           {selected && <input type="hidden" name="id" value={selected.id} />}
           <Text className="modal-intro">
-            {page.description} 必要な情報を入力してください。
-          </Text>
+            {page.description} {t("components.entityPage.dialogs.requiredDetails")}</Text>
           {fetcher.data?.notification !== "verification-email" &&
             (fetcher.data?.error || fetcher.data?.message) && (
               <Alert
@@ -486,7 +484,7 @@ export function EntityPageDialogs({
                 role="status"
                 icon={<InfoIcon />}
               >
-                {fetcher.data.message ?? fetcher.data.error}
+                {tMessage(fetcher.data.message ?? fetcher.data.error ?? "")}
               </Alert>
             )}
           <div className="form-grid">
@@ -575,7 +573,7 @@ export function EntityPageDialogs({
                     <Select
                       name={field.key}
                       label={field.label}
-                      placeholder={field.placeholder ?? "選択してください"}
+                      placeholder={field.placeholder ?? t("components.entityPage.dialogs.selectOption")}
                       data={field.options ?? []}
                       defaultValue={
                         String(
@@ -591,7 +589,7 @@ export function EntityPageDialogs({
                     <MultiSelect
                       name={field.key}
                       label={field.label}
-                      placeholder={field.placeholder ?? "選択してください"}
+                      placeholder={field.placeholder ?? t("components.entityPage.dialogs.selectOption")}
                       data={field.options ?? []}
                       required={field.required}
                       defaultValue={String(selected?.[field.key] ?? "")
@@ -601,7 +599,7 @@ export function EntityPageDialogs({
                       hiddenInputValuesDivider=", "
                       searchable
                       clearable
-                      nothingFoundMessage="該当するオプションがありません"
+                      nothingFoundMessage={t("components.entityPage.dialogs.noOptions")}
                     />
                   ) : field.type === "password" ? (
                     <PasswordInput
@@ -627,10 +625,10 @@ export function EntityPageDialogs({
                   )}
                   {field.help && (
                     <Text size="xs" c="dimmed" mt={6}>
-                      {field.help.text}{" "}
+                      {field.help.text}{t("components.entityPage.dialogs.spacing")}
                       {field.help.href && field.help.linkText && (
                         <>
-                          {" "}
+                          {t("components.entityPage.dialogs.spacing")}
                           <Anchor
                             href={field.help.href}
                             target="_blank"
@@ -647,8 +645,7 @@ export function EntityPageDialogs({
           </div>
           <div className="modal-actions">
             <Button variant="default" type="button" onClick={onClose}>
-              キャンセル
-            </Button>
+              {t("components.entityPage.dialogs.cancel")}</Button>
             {canTest && (
               <Button
                 type="button"
@@ -664,8 +661,8 @@ export function EntityPageDialogs({
               >
                 {fetcher.state !== "idle" &&
                 fetcher.formData?.get("_intent") === "test"
-                  ? "テスト中..."
-                  : "テスト"}
+                  ? t("components.entityPage.dialogs.testing")
+                  : t("components.entityPage.dialogs.test")}
               </Button>
             )}
             {page.launchIntent && mode === "edit" && (
@@ -681,7 +678,7 @@ export function EntityPageDialogs({
                   fetcher.submit(data, { method: "post" });
                 }}
               >
-                {page.launchLabel ?? "認証を開始"}
+                {page.launchLabel ?? t("components.entityPage.dialogs.startAuthentication")}
               </Button>
             )}
             <Button
@@ -690,10 +687,10 @@ export function EntityPageDialogs({
               disabled={fetcher.state !== "idle"}
             >
               {fetcher.state !== "idle"
-                ? "保存中..."
+                ? t("components.entityPage.dialogs.saving")
                 : mode === "edit"
-                  ? "変更を保存"
-                  : (page.createSubmitLabel ?? "作成する")}
+                  ? t("components.entityPage.dialogs.saveChanges")
+                  : (page.createSubmitLabel ?? t("components.entityPage.dialogs.create"))}
             </Button>
           </div>
         </fetcher.Form>
@@ -702,22 +699,25 @@ export function EntityPageDialogs({
       <Modal
         opened={mode === "status-change"}
         onClose={onClose}
-        title={changesAdmin ? "管理者権限変更の確認" : "ステータス変更の確認"}
+        title={changesAdmin ? t("components.entityPage.dialogs.confirmAdminChange") : t("components.entityPage.dialogs.confirmStatusChange")}
         centered
         size="sm"
         radius="lg"
       >
         <Text className="delete-copy">
-          「{selected?.[page.columns[0].key]}」を
-          {changesAdmin
+          {t("components.entityPage.dialogs.quoteOpen")}{selected?.[page.columns[0].key]}{t("components.entityPage.dialogs.quoteAction")}{changesAdmin
             ? nextEnabled
-              ? "管理者にしますか？"
-              : "管理者権限を解除しますか？"
-            : `${nextEnabled ? "稼働中" : "停止中"}に変更しますか？`}
+              ? t("components.entityPage.dialogs.confirmGrantAdmin")
+              : t("components.entityPage.dialogs.confirmRevokeAdmin")
+            : t("components.entityPage.dialogs.confirmStatusValue", {
+                0: nextEnabled
+                  ? t("components.entityPage.dialogs.activeStatus")
+                  : t("components.entityPage.dialogs.inactiveStatus"),
+              })}
         </Text>
         {fetcher.data?.error && (
           <Alert color="red" mt="md">
-            {fetcher.data.error}
+            {tMessage(fetcher.data.error)}
           </Alert>
         )}
         <fetcher.Form method="post">
@@ -734,14 +734,13 @@ export function EntityPageDialogs({
           />
           <div className="modal-actions">
             <Button variant="default" type="button" onClick={onClose}>
-              キャンセル
-            </Button>
+              {t("components.entityPage.dialogs.cancel")}</Button>
             <Button
               type="submit"
               className="primary-button"
               disabled={fetcher.state !== "idle"}
             >
-              {fetcher.state !== "idle" ? "変更中..." : "変更する"}
+              {fetcher.state !== "idle" ? t("components.entityPage.dialogs.changing") : t("components.entityPage.dialogs.applyChange")}
             </Button>
           </div>
         </fetcher.Form>
@@ -750,18 +749,16 @@ export function EntityPageDialogs({
       <Modal
         opened={mode === "force-logout"}
         onClose={onClose}
-        title="強制ログアウトの確認"
+        title={t("components.entityPage.dialogs.confirmForceLogout")}
         centered
         size="sm"
         radius="lg"
       >
         <Text className="delete-copy">
-          「{selected?.[page.columns[0].key]}」のすべてのセッションを終了し、
-          強制ログアウトさせますか？
-        </Text>
+          {t("components.entityPage.dialogs.quoteOpen")}{selected?.[page.columns[0].key]}{t("components.entityPage.dialogs.confirmEndSessions")}</Text>
         {fetcher.data?.error && (
           <Alert color="red" mt="md">
-            {fetcher.data.error}
+            {tMessage(fetcher.data.error)}
           </Alert>
         )}
         <fetcher.Form method="post">
@@ -769,14 +766,13 @@ export function EntityPageDialogs({
           {selected && <input type="hidden" name="id" value={selected.id} />}
           <div className="modal-actions">
             <Button variant="default" type="button" onClick={onClose}>
-              キャンセル
-            </Button>
+              {t("components.entityPage.dialogs.cancel")}</Button>
             <Button
               type="submit"
               color="orange"
               disabled={fetcher.state !== "idle"}
             >
-              {fetcher.state !== "idle" ? "ログアウト中..." : "強制ログアウト"}
+              {fetcher.state !== "idle" ? t("components.entityPage.dialogs.loggingOut") : t("components.entityPage.dialogs.forceLogout")}
             </Button>
           </div>
         </fetcher.Form>
@@ -785,18 +781,17 @@ export function EntityPageDialogs({
       <Modal
         opened={mode === "delete"}
         onClose={onClose}
-        title="削除の確認"
+        title={t("components.entityPage.dialogs.confirmDelete")}
         centered
         size="sm"
         radius="lg"
       >
         <Text className="delete-copy">
-          「{selected?.[page.columns[0].key]}
-          」を削除します。この操作は取り消せません。
-        </Text>
+          {t("components.entityPage.dialogs.quoteOpen")}{selected?.[page.columns[0].key]}
+          {t("components.entityPage.dialogs.confirmIrreversibleDelete")}</Text>
         {fetcher.data?.error && (
           <Alert color="red" mt="md">
-            {fetcher.data.error}
+            {tMessage(fetcher.data.error)}
           </Alert>
         )}
         <fetcher.Form method="post">
@@ -804,14 +799,13 @@ export function EntityPageDialogs({
           {selected && <input type="hidden" name="id" value={selected.id} />}
           <div className="modal-actions">
             <Button variant="default" type="button" onClick={onClose}>
-              キャンセル
-            </Button>
+              {t("components.entityPage.dialogs.cancel")}</Button>
             <Button
               type="submit"
               color="red"
               disabled={fetcher.state !== "idle"}
             >
-              {fetcher.state !== "idle" ? "削除中..." : "削除する"}
+              {fetcher.state !== "idle" ? t("components.entityPage.dialogs.deleting") : t("components.entityPage.dialogs.deleteAction")}
             </Button>
           </div>
         </fetcher.Form>

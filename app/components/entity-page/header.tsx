@@ -1,3 +1,4 @@
+import { t } from "~/i18n";
 import { Button, Text, Title } from "@mantine/core";
 import { PlusIcon } from "@phosphor-icons/react";
 
@@ -21,8 +22,7 @@ export function EntityPageHeader({
         onClick={onCreate}
         leftSection={<PlusIcon size={16} weight="bold" aria-hidden="true" />}
       >
-        {title}を追加
-      </Button>
+        {title}{t("components.entityPage.header.addSuffix")}</Button>
     </div>
   );
 }

@@ -1,3 +1,4 @@
+import { t } from "~/i18n";
 import type { Route } from "./+types/rate-limits";
 import {
   EntityPageView,
@@ -12,97 +13,96 @@ import { requireUser } from "../.server/auth";
 import { APP_NAME } from "~/const";
 
 const page: Omit<EntityPageDefinition, "records"> = {
-  title: "レートリミット",
+  title: t("pages.rateLimits.title"),
   description:
-    "利用量×係数の合計が上限以上になると、設定したメッセージを返します。スレッド単位で集計するか、全スレッドを横断して集計するか選択できます。",
+    t("pages.rateLimits.description"),
   icon: "rate_limits",
   columns: [
-    { key: "criteriaLabel", label: "対象種別" },
-    { key: "targetLabel", label: "対象" },
-    { key: "perThreadLabel", label: "集計範囲" },
-    { key: "limit", label: "上限" },
-    { key: "resetOnCron", label: "リセットCron" },
-    { key: "timezone", label: "タイムゾーン" },
-    { key: "limitExceededMessage", label: "上限超過時のメッセージ" },
+    { key: "criteriaLabel", label: t("pages.rateLimits.targetTypeLabel") },
+    { key: "targetLabel", label: t("pages.rateLimits.targetLabel") },
+    { key: "perThreadLabel", label: t("pages.rateLimits.aggregationScopeLabel") },
+    { key: "limit", label: t("pages.rateLimits.limitLabel") },
+    { key: "resetOnCron", label: t("pages.rateLimits.resetCronLabel") },
+    { key: "timezone", label: t("pages.rateLimits.timezoneLabel") },
+    { key: "limitExceededMessage", label: t("pages.rateLimits.exceededMessageLabel") },
   ],
   fields: [
     {
       key: "criteria",
-      label: "対象種別",
+      label: t("pages.rateLimits.targetTypeLabel"),
       type: "dependent-select",
       options: [],
       dependentKey: "criteriaId",
-      dependentLabel: "対象",
+      dependentLabel: t("pages.rateLimits.targetLabel"),
       dependentOptions: {},
-      placeholder: "対象種別を選択",
+      placeholder: t("pages.rateLimits.targetTypePlaceholder"),
       required: true,
       wide: true,
     },
     {
       key: "perThread",
-      label: "集計範囲",
+      label: t("pages.rateLimits.aggregationScopeLabel"),
       type: "select",
       options: [
-        { value: "true", label: "スレッドごと" },
-        { value: "false", label: "全スレッド横断" },
+        { value: "true", label: t("pages.rateLimits.perThreadOption") },
+        { value: "false", label: t("pages.rateLimits.allThreadsOption") },
       ],
       required: true,
     },
     {
       key: "limit",
-      label: "上限値",
+      label: t("pages.rateLimits.limitValueLabel"),
       type: "number",
-      placeholder: "例: 100000",
+      placeholder: t("pages.rateLimits.limitValuePlaceholder"),
       required: true,
     },
     {
       key: "coefficients",
-      label: "利用量の係数",
+      label: t("pages.rateLimits.usageWeightsLabel"),
       type: "metric-coefficients",
       options: [
-        { value: "inputTokens", label: "入力トークン合計" },
-        { value: "outputTokens", label: "出力トークン合計" },
+        { value: "inputTokens", label: t("pages.rateLimits.inputTokensOption") },
+        { value: "outputTokens", label: t("pages.rateLimits.outputTokensOption") },
         {
           value: "inputDetails.noCacheTokens",
-          label: "入力（キャッシュなし）",
+          label: t("pages.rateLimits.inputUncachedTokensOption"),
         },
         {
           value: "inputDetails.cacheReadTokens",
-          label: "入力（キャッシュ読み込み）",
+          label: t("pages.rateLimits.inputCacheReadTokensOption"),
         },
         {
           value: "inputDetails.cacheWriteTokens",
-          label: "入力（キャッシュ書き込み）",
+          label: t("pages.rateLimits.inputCacheWriteTokensOption"),
         },
-        { value: "outputDetails.textTokens", label: "出力（テキスト）" },
-        { value: "outputDetails.reasoningTokens", label: "出力（推論）" },
+        { value: "outputDetails.textTokens", label: t("pages.rateLimits.outputTextTokensOption") },
+        { value: "outputDetails.reasoningTokens", label: t("pages.rateLimits.outputReasoningTokensOption") },
       ],
       wide: true,
       help: {
-        text: "レートリミットは、利用量×係数の合計で判定されます。",
+        text: t("pages.rateLimits.usageWeightsHelp"),
       },
     },
     {
       key: "resetOnCron",
-      label: "リセットCron",
+      label: t("pages.rateLimits.resetCronLabel"),
       type: "cron",
       required: true,
-      timezoneDescription:
-        "レートリミットは、選択したタイムゾーンのCron実行時刻にリセットされます。",
+      timezoneDescription: t("pages.rateLimits.resetCronHelp"),
       wide: true,
     },
     {
       key: "timezone",
-      label: "タイムゾーン",
+      label: t("pages.rateLimits.timezoneLabel"),
       type: "select",
       options: [],
-      placeholder: "タイムゾーンを選択",
+      placeholder: t("pages.rateLimits.timezonePlaceholder"),
       defaultValue: "Asia/Tokyo",
       required: true,
     },
     {
       key: "limitExceededMessage",
-      label: "上限超過時のメッセージ",
+      label: t("pages.rateLimits.exceededMessageLabel"),
       type: "textarea",
       required: true,
       wide: true,
@@ -111,7 +111,7 @@ const page: Omit<EntityPageDefinition, "records"> = {
 };
 
 export function meta() {
-  return [{ title: `レートリミット | ${APP_NAME}` }];
+  return [{ title: t("pages.rateLimits.documentTitle", { 0: APP_NAME }) }];
 }
 
 export async function loader({ request }: Route.LoaderArgs) {
@@ -135,13 +135,13 @@ export async function action({ request }: Route.ActionArgs) {
   if (intent === "delete")
     return Number.isInteger(id) && (await deleteRateLimit(user, id))
       ? { ok: true }
-      : { ok: false, error: "レートリミットが見つかりません。" };
+      : { ok: false, error: t("pages.rateLimits.notFound") };
   if (intent === "create") return saveRateLimit(user, null, form);
   if (intent === "update")
     return Number.isInteger(id)
       ? saveRateLimit(user, id, form)
-      : { ok: false, error: "レートリミットが見つかりません。" };
-  return { ok: false, error: "操作を判定できませんでした。" };
+      : { ok: false, error: t("pages.rateLimits.notFound") };
+  return { ok: false, error: t("pages.rateLimits.unknownAction") };
 }
 
 export default function RateLimits({ loaderData }: Route.ComponentProps) {

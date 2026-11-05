@@ -1,3 +1,4 @@
+import { t } from "~/i18n";
 import type { Route } from "./+types/schedules";
 import { requireUser } from "../.server/auth";
 import { appLogger } from "../.server/logger/app-logger";
@@ -14,49 +15,49 @@ import { refreshCronJobs } from "../.server/features/scheduler";
 import { APP_NAME } from "~/const";
 
 const page: Omit<EntityPageDefinition, "records"> = {
-  title: "スケジュール",
-  description: "Cron式に従って指定したスレッドでボットを実行します。",
+  title: t("pages.schedules.title"),
+  description: t("pages.schedules.description"),
   icon: "schedules",
   columns: [
-    { key: "name", label: "スケジュール名" },
-    { key: "cronParam", label: "実行頻度" },
-    { key: "timezone", label: "タイムゾーン" },
-    { key: "targets", label: "送信先" },
-    { key: "updated", label: "作成日" },
+    { key: "name", label: t("pages.schedules.nameLabel") },
+    { key: "cronParam", label: t("pages.schedules.frequencyLabel") },
+    { key: "timezone", label: t("pages.schedules.timezoneLabel") },
+    { key: "targets", label: t("pages.schedules.targetsLabel") },
+    { key: "updated", label: t("pages.schedules.createdAtLabel") },
   ],
   fields: [
     {
       key: "name",
-      label: "スケジュール名",
-      placeholder: "例：平日の朝会",
+      label: t("pages.schedules.nameLabel"),
+      placeholder: t("pages.schedules.namePlaceholder"),
       required: true,
     },
     {
       key: "prompt",
-      label: "プロンプト",
+      label: t("pages.schedules.promptLabel"),
       type: "textarea",
       wide: true,
-      placeholder: "定期実行時にボットへ入力する内容",
+      placeholder: t("pages.schedules.promptPlaceholder"),
       required: true,
     },
     {
       key: "cronParam",
-      label: "実行頻度",
+      label: t("pages.schedules.frequencyLabel"),
       type: "cron",
       wide: true,
     },
     {
       key: "timezone",
-      label: "タイムゾーン",
+      label: t("pages.schedules.timezoneLabel"),
       type: "select",
       options: [],
-      placeholder: "タイムゾーンを選択",
+      placeholder: t("pages.schedules.timezonePlaceholder"),
       defaultValue: "Asia/Tokyo",
       required: true,
     },
     {
       key: "targetsJson",
-      label: "送信先",
+      label: t("pages.schedules.targetsLabel"),
       type: "schedule-targets",
       options: [],
       wide: true,
@@ -65,7 +66,7 @@ const page: Omit<EntityPageDefinition, "records"> = {
 };
 
 export function meta() {
-  return [{ title: `スケジュール | ${APP_NAME}` }];
+  return [{ title: t("pages.schedules.documentTitle", { 0: APP_NAME }) }];
 }
 
 export async function loader({ request }: Route.LoaderArgs) {
@@ -93,14 +94,14 @@ export async function action({ request }: Route.ActionArgs) {
     result = await saveSchedule(user, null, form);
   } else if (intent === "update") {
     if (!Number.isInteger(id) || id < 1)
-      return { ok: false, error: "スケジュールが見つかりません。" };
+      return { ok: false, error: t("pages.schedules.notFound") };
     result = await saveSchedule(user, id, form);
   } else if (intent === "delete") {
     if (!Number.isInteger(id) || id < 1 || !(await deleteSchedule(user, id)))
-      return { ok: false, error: "スケジュールが見つかりません。" };
+      return { ok: false, error: t("pages.schedules.notFound") };
     result = { ok: true };
   } else {
-    return { ok: false, error: "操作を判定できませんでした。" };
+    return { ok: false, error: t("pages.schedules.unknownAction") };
   }
 
   if (!result.ok) return { ...result, intent };
@@ -116,7 +117,7 @@ export async function action({ request }: Route.ActionArgs) {
       ok: true,
       intent,
       message:
-        "DBには保存しましたがCronの再読み込みに失敗しました。サーバーログを確認してください。",
+        t("pages.schedules.cronReloadFailedAfterSave"),
     };
   }
 }

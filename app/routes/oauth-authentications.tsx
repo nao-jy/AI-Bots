@@ -1,3 +1,4 @@
+import { t } from "~/i18n";
 import type { Route } from "./+types/oauth-authentications";
 import { requireUser } from "../.server/auth";
 import {
@@ -13,28 +14,28 @@ import {
 import { APP_NAME } from "~/const";
 
 const page: Omit<EntityPageDefinition, "records"> = {
-  title: "OAuth認証情報",
+  title: t("pages.oauthAuthentications.title"),
   description:
-    "OAuthクライアントを選択して認証し、取得したトークンを保存します。",
+    t("pages.oauthAuthentications.description"),
   icon: "oauth_authentications",
   createIntent: "authorize",
-  createSubmitLabel: "OAuth認証を開始",
+  createSubmitLabel: t("pages.oauthAuthentications.createSubmitLabel"),
   launchIntent: "authorize",
-  launchLabel: "OAuth認証をやり直す",
+  launchLabel: t("pages.oauthAuthentications.launchLabel"),
   columns: [
-    { key: "name", label: "認証情報名" },
-    { key: "oauthName", label: "OAuthクライアント" },
-    { key: "expiresAt", label: "有効期限" },
-    { key: "refreshTokenConfigured", label: "リフレッシュトークン" },
-    { key: "updated", label: "最終更新" },
+    { key: "name", label: t("pages.oauthAuthentications.nameLabel") },
+    { key: "oauthName", label: t("pages.oauthAuthentications.oauthClientLabel") },
+    { key: "expiresAt", label: t("pages.oauthAuthentications.expiresAtLabel") },
+    { key: "refreshTokenConfigured", label: t("pages.oauthAuthentications.refreshTokenLabel") },
+    { key: "updated", label: t("pages.oauthAuthentications.updatedLabel") },
   ],
   fields: [
-    { key: "name", label: "認証情報名", required: true },
+    { key: "name", label: t("pages.oauthAuthentications.nameLabel"), required: true },
     {
       key: "oauthId",
-      label: "OAuthクライアント",
+      label: t("pages.oauthAuthentications.oauthClientLabel"),
       type: "select",
-      placeholder: "クライアントを選択",
+      placeholder: t("pages.oauthAuthentications.oauthClientPlaceholder"),
       options: [],
       required: true,
       createOnly: true,
@@ -43,7 +44,7 @@ const page: Omit<EntityPageDefinition, "records"> = {
 };
 
 export function meta() {
-  return [{ title: `OAuth認証情報 | ${APP_NAME}` }];
+  return [{ title: t("pages.oauthAuthentications.documentTitle", { 0: APP_NAME }) }];
 }
 
 export async function loader({ request }: Route.LoaderArgs) {
@@ -53,11 +54,11 @@ export async function loader({ request }: Route.LoaderArgs) {
     ...result,
     oauthMessage:
       oauthStatus === "success"
-        ? "OAuth認証が完了し、認証情報を保存しました。"
+        ? t("pages.oauthAuthentications.authorizationSucceeded")
         : oauthStatus === "denied"
-          ? "OAuth認証がキャンセルされました。"
+          ? t("pages.oauthAuthentications.authorizationCanceled")
           : oauthStatus === "error"
-            ? "OAuth認証に失敗しました。クライアント設定とコールバックURLを確認してください。"
+            ? t("pages.oauthAuthentications.authorizationFailed")
             : null,
     oauthMessageType: oauthStatus === "success" ? "success" : "error",
   };
@@ -72,17 +73,17 @@ export async function action({ request }: Route.ActionArgs) {
   if (intent === "delete")
     return Number.isInteger(id) && (await deleteOAuthAuthentication(user, id))
       ? { ok: true }
-      : { ok: false, error: "OAuth認証情報が見つかりません。" };
+      : { ok: false, error: t("pages.oauthAuthentications.notFound") };
   if (intent === "update")
     return Number.isInteger(id)
       ? renameOAuthAuthentication(user, id, form)
-      : { ok: false, error: "OAuth認証情報が見つかりません。" };
+      : { ok: false, error: t("pages.oauthAuthentications.notFound") };
   if (intent === "create")
     return {
       ok: false,
-      error: "OAuth認証はOAuth認証を開始から実行してください。",
+      error: t("pages.oauthAuthentications.invalidLaunch"),
     };
-  return { ok: false, error: "操作を判定できませんでした。" };
+  return { ok: false, error: t("pages.oauthAuthentications.unknownAction") };
 }
 
 export default function OAuthAuthentications({

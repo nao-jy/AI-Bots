@@ -1,3 +1,4 @@
+import { t } from "~/i18n";
 import type { Route } from "./+types/agents";
 import {
   EntityPageView,
@@ -13,36 +14,36 @@ import { APP_NAME } from "~/const";
 import { testAgent } from "~/.server/test";
 
 const page: Omit<EntityPageDefinition, "records"> = {
-  title: "エージェント",
-  description: "利用するプロバイダー、モデルID、オプションを設定します。",
+  title: t("pages.agents.title"),
+  description: t("pages.agents.description"),
   icon: "agents",
   columns: [
-    { key: "name", label: "エージェント" },
-    { key: "model", label: "モデル" },
-    { key: "mcpAuthentications", label: "MCP OAuth認証" },
-    { key: "status", label: "利用状況" },
+    { key: "name", label: t("pages.agents.title") },
+    { key: "model", label: t("pages.agents.modelLabel") },
+    { key: "mcpAuthentications", label: t("pages.agents.mcpOauthAuthenticationLabel") },
+    { key: "status", label: t("pages.agents.usageLabel") },
   ],
   fields: [
     {
       key: "name",
-      label: "エージェント名",
-      placeholder: "例：カスタマーサポート",
+      label: t("pages.agents.nameLabel"),
+      placeholder: t("pages.agents.namePlaceholder"),
     },
     {
       key: "providerId",
-      label: "プロバイダー",
+      label: t("pages.agents.providerLabel"),
       type: "select",
       options: [],
-      placeholder: "プロバイダーを選択",
+      placeholder: t("pages.agents.providerPlaceholder"),
     },
     {
       key: "modelId",
-      label: "モデルID",
-      placeholder: "例：gpt-4.1",
+      label: t("pages.agents.modelIdLabel"),
+      placeholder: t("pages.agents.modelIdPlaceholder"),
     },
     {
       key: "options",
-      label: "モデルオプション",
+      label: t("pages.agents.modelOptionsLabel"),
       type: "key-value",
       valueType: "json-scalar",
       wide: true,
@@ -51,7 +52,7 @@ const page: Omit<EntityPageDefinition, "records"> = {
 };
 
 export function meta() {
-  return [{ title: `エージェント | ${APP_NAME}` }];
+  return [{ title: t("pages.agents.documentTitle", { 0: APP_NAME }) }];
 }
 
 export async function loader({ request }: Route.LoaderArgs) {
@@ -68,13 +69,13 @@ export async function action({ request }: Route.ActionArgs) {
   if (intent === "delete")
     return Number.isInteger(id) && (await deleteAgent(user, id))
       ? { ok: true }
-      : { ok: false, error: "エージェントが見つかりません。" };
+      : { ok: false, error: t("pages.agents.notFound") };
   if (intent === "create") return saveAgent(user, null, form);
   if (intent === "update")
     return Number.isInteger(id)
       ? saveAgent(user, id, form)
-      : { ok: false, error: "エージェントが見つかりません。" };
-  return { ok: false, error: "操作を判定できませんでした。" };
+      : { ok: false, error: t("pages.agents.notFound") };
+  return { ok: false, error: t("pages.agents.unknownAction") };
 }
 
 export default function Agents({ loaderData }: Route.ComponentProps) {

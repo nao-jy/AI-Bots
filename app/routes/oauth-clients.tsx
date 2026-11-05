@@ -1,3 +1,4 @@
+import { t } from "~/i18n";
 import type { Route } from "./+types/oauth-clients";
 import { requireUser } from "../.server/auth";
 import {
@@ -12,54 +13,54 @@ import {
 import { APP_NAME } from "~/const";
 
 const page: Omit<EntityPageDefinition, "records"> = {
-  title: "OAuthクライアント",
-  description: "OAuth認可サーバーのクライアント設定を管理します。",
+  title: t("pages.oauthClients.title"),
+  description: t("pages.oauthClients.description"),
   icon: "oauth_clients",
   columns: [
-    { key: "name", label: "クライアント名" },
-    { key: "clientId", label: "クライアントID" },
-    { key: "authorizationEndpoint", label: "認可エンドポイント" },
-    { key: "secretConfigured", label: "シークレット" },
-    { key: "updated", label: "最終更新" },
+    { key: "name", label: t("pages.oauthClients.nameLabel") },
+    { key: "clientId", label: t("pages.oauthClients.clientIdLabel") },
+    { key: "authorizationEndpoint", label: t("pages.oauthClients.authorizationEndpointLabel") },
+    { key: "secretConfigured", label: t("pages.oauthClients.secretLabel") },
+    { key: "updated", label: t("pages.oauthClients.updatedLabel") },
   ],
   fields: [
-    { key: "name", label: "クライアント名", required: true },
-    { key: "clientId", label: "クライアントID", required: true },
+    { key: "name", label: t("pages.oauthClients.nameLabel"), required: true },
+    { key: "clientId", label: t("pages.oauthClients.clientIdLabel"), required: true },
     {
       key: "clientSecret",
-      label: "クライアントシークレット",
+      label: t("pages.oauthClients.clientSecretLabel"),
       type: "password",
-      placeholder: "編集時は空欄で現在の値を維持",
+      placeholder: t("pages.oauthClients.secretKeepCurrentHint"),
     },
     {
       key: "authorizationEndpoint",
-      label: "認可エンドポイント",
-      placeholder: "https://example.com/oauth/authorize",
+      label: t("pages.oauthClients.authorizationEndpointLabel"),
+      placeholder: t("pages.oauthClients.authorizationEndpointPlaceholder"),
       required: true,
       wide: true,
     },
     {
       key: "tokenEndpoint",
-      label: "トークンエンドポイント",
-      placeholder: "https://example.com/oauth/token",
+      label: t("pages.oauthClients.tokenEndpointLabel"),
+      placeholder: t("pages.oauthClients.tokenEndpointPlaceholder"),
       required: true,
       wide: true,
     },
     {
       key: "refreshEndpoint",
-      label: "トークン更新エンドポイント",
-      placeholder: "未指定の場合はトークンエンドポイントを使用",
+      label: t("pages.oauthClients.refreshEndpointLabel"),
+      placeholder: t("pages.oauthClients.refreshEndpointHint"),
       wide: true,
     },
     {
       key: "revocationEndpoint",
-      label: "トークン失効エンドポイント",
+      label: t("pages.oauthClients.revokeEndpointLabel"),
       wide: true,
     },
     {
       key: "scopes",
-      label: "スコープ",
-      placeholder: "openid profile email",
+      label: t("pages.oauthClients.scopesLabel"),
+      placeholder: t("pages.oauthClients.scopesPlaceholder"),
       type: "tags",
       wide: true,
     },
@@ -67,7 +68,7 @@ const page: Omit<EntityPageDefinition, "records"> = {
 };
 
 export function meta() {
-  return [{ title: `OAuthクライアント | ${APP_NAME}` }];
+  return [{ title: t("pages.oauthClients.documentTitle", { 0: APP_NAME }) }];
 }
 
 export async function loader({ request }: Route.LoaderArgs) {
@@ -82,13 +83,13 @@ export async function action({ request }: Route.ActionArgs) {
   if (intent === "delete")
     return Number.isInteger(id) && (await deleteOAuthClient(user, id))
       ? { ok: true }
-      : { ok: false, error: "OAuthクライアントが見つかりません。" };
+      : { ok: false, error: t("pages.oauthClients.notFound") };
   if (intent === "create") return saveOAuthClient(user, null, form);
   if (intent === "update")
     return Number.isInteger(id)
       ? saveOAuthClient(user, id, form)
-      : { ok: false, error: "OAuthクライアントが見つかりません。" };
-  return { ok: false, error: "操作を判定できませんでした。" };
+      : { ok: false, error: t("pages.oauthClients.notFound") };
+  return { ok: false, error: t("pages.oauthClients.unknownAction") };
 }
 
 export default function OAuthClients({ loaderData }: Route.ComponentProps) {

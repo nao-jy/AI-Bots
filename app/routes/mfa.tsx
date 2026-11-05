@@ -1,3 +1,4 @@
+import { t } from "~/i18n";
 import { Alert, Button, Image, PasswordInput, Text, Title } from "@mantine/core";
 import QRCode from "qrcode";
 import { data, Form, redirect, useActionData } from "react-router";
@@ -19,7 +20,7 @@ import {
 import { APP_NAME } from "~/const";
 
 export function meta() {
-  return [{ title: `多要素認証 | ${APP_NAME}` }];
+  return [{ title: t("pages.mfa.documentTitle", { 0: APP_NAME }) }];
 }
 
 export async function loader({ request }: Route.LoaderArgs) {
@@ -60,7 +61,7 @@ export async function action({ request }: Route.ActionArgs) {
     for (const cookie of clearMfaSetupCookies())
       headers.append("Set-Cookie", cookie);
     return data(
-      { error: "認証手続きの有効期限が切れました。もう一度ログインしてください。" },
+      { error: t("pages.mfa.expiredSession") },
       { status: 401, headers },
     );
   }
@@ -78,8 +79,8 @@ export async function action({ request }: Route.ActionArgs) {
     return data(
       {
         error: locked
-          ? "認証に複数回失敗したため、もう一度ログインしてください。"
-          : "認証コードが正しくありません。",
+          ? t("pages.mfa.tooManyFailures")
+          : t("pages.mfa.invalidCode"),
       },
       { status: locked ? 429 : 400, headers },
     );
@@ -93,7 +94,7 @@ export async function action({ request }: Route.ActionArgs) {
       : await finishMfaLogin(token, challenge.user.id);
   if (!completed)
     return data(
-      { error: "認証状態が変更されました。もう一度ログインしてください。" },
+      { error: t("pages.mfa.stateChanged") },
       { status: 409, headers: { "Cache-Control": "no-store" } },
     );
 
@@ -115,17 +116,17 @@ export default function Mfa({ loaderData }: Route.ComponentProps) {
         <section className="login-card">
           <div className="eyebrow">{APP_NAME}</div>
           <Title order={1}>
-            {isSetup ? "多要素認証を設定" : "追加認証"}
+            {isSetup ? t("pages.mfa.setupTitle") : t("pages.mfa.challengeTitle")}
           </Title>
           <Text className="login-subtitle">
             {isSetup
-              ? "認証アプリでQRコードを読み取り、表示された6桁のコードを入力してください。設定を完了するまでログインできません。"
-              : "認証アプリに表示された6桁のコードを入力してください。"}
+              ? t("pages.mfa.setupInstructions")
+              : t("pages.mfa.challengeInstructions")}
           </Text>
           {isSetup && loaderData.qrCode && (
             <Image
               src={loaderData.qrCode}
-              alt="認証アプリで読み取るためのQRコード"
+              alt={t("pages.mfa.qrCodeAlt")}
               maw={220}
               mx="auto"
             />
@@ -138,7 +139,7 @@ export default function Mfa({ loaderData }: Route.ComponentProps) {
           <Form method="post" className="login-form">
             <PasswordInput
               name="code"
-              label="認証コード"
+              label={t("pages.mfa.codeLabel")}
               inputMode="numeric"
               autoComplete="one-time-code"
               maxLength={6}
@@ -146,7 +147,7 @@ export default function Mfa({ loaderData }: Route.ComponentProps) {
               autoFocus
             />
             <Button type="submit" fullWidth>
-              {isSetup ? "設定してログイン" : "認証してログイン"}
+              {isSetup ? t("pages.mfa.setupAndLogin") : t("pages.mfa.verifyAndLogin")}
             </Button>
           </Form>
         </section>

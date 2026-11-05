@@ -1,3 +1,4 @@
+import { t, tMessage } from "~/i18n";
 import { useFetcher } from "react-router";
 import {
   ActionIcon,
@@ -30,25 +31,25 @@ export function PublicIdDetails({
 
   return (
     <div className="entity-details">
-      <strong className="entity-details-title">パブリックID</strong>
+      <strong className="entity-details-title">{t("components.entityPage.publicIdDetails.title")}</strong>
       <div className="public-id-grid">
         {(["first", "second"] as const).map((slot, index) => {
           const publicId = publicIds.find((item) => item.slot === slot)?.id;
           return (
             <div className="public-id-card" key={slot}>
-              <div className="public-id-label">{index + 1}つ目</div>
+              <div className="public-id-label">{index + 1}{t("components.entityPage.publicIdDetails.ordinalSuffix")}</div>
               <div className="public-id-value">
-                <code>{publicId ?? "未発行"}</code>
+                <code>{publicId ?? t("components.entityPage.publicIdDetails.notIssued")}</code>
                 {publicId && (
                   <CopyButton value={publicId} timeout={1500}>
                     {({ copied, copy }) => (
                       <Tooltip
-                        label={copied ? "コピーしました" : "IDをコピー"}
+                        label={copied ? t("components.entityPage.publicIdDetails.copied") : t("components.entityPage.publicIdDetails.copyId")}
                       >
                         <ActionIcon
                           variant="subtle"
                           color={copied ? "teal" : "gray"}
-                          aria-label={`${index + 1}つ目のパブリックIDをコピー`}
+                          aria-label={t("components.entityPage.publicIdDetails.copyPublicIdAriaLabel", { 0: index + 1 })}
                           onClick={copy}
                         >
                           {copied ? (
@@ -77,7 +78,7 @@ export function PublicIdDetails({
                   onClick={(event) => {
                     if (
                       !window.confirm(
-                        `${index + 1}つ目のパブリックIDを再生成すると、このIDを使うWebhook URLは使えなくなります。続けますか？`,
+                        t("components.entityPage.publicIdDetails.confirmRegeneratePublicId", { 0: index + 1 }),
                       )
                     ) {
                       event.preventDefault();
@@ -85,8 +86,7 @@ export function PublicIdDetails({
                   }}
                 >
                   <ArrowsClockwiseIcon size={15} aria-hidden="true" />
-                  {index + 1}つ目を再生成
-                </button>
+                  {index + 1}{t("components.entityPage.publicIdDetails.regeneratePublicId")}</button>
               </fetcher.Form>
             </div>
           );
@@ -94,12 +94,12 @@ export function PublicIdDetails({
       </div>
       {fetcher.data?.error && (
         <span className="public-id-error" role="alert">
-          {fetcher.data.error}
+          {tMessage(fetcher.data.error)}
         </span>
       )}
       {showWebhooks && (
         <div className="webhook-details">
-          <strong className="entity-details-title">Webhook URL</strong>
+          <strong className="entity-details-title">{t("components.entityPage.publicIdDetails.webhookUrlTitle")}</strong>
           {webhookEndpoints.length > 0 ? (
             <div className="webhook-endpoints">
               {webhookEndpoints.map(({ adapterName, url }) => (
@@ -112,12 +112,12 @@ export function PublicIdDetails({
                   <CopyButton value={url} timeout={1500}>
                     {({ copied, copy }) => (
                       <Tooltip
-                        label={copied ? "コピーしました" : "URLをコピー"}
+                        label={copied ? t("components.entityPage.publicIdDetails.copied") : t("components.entityPage.publicIdDetails.copyUrl")}
                       >
                         <ActionIcon
                           variant="subtle"
                           color={copied ? "teal" : "gray"}
-                          aria-label={`${adapterName} の Webhook URL をコピー`}
+                          aria-label={t("components.entityPage.publicIdDetails.copyWebhookUrlAriaLabel", { 0: adapterName })}
                           onClick={copy}
                         >
                           {copied ? (
@@ -133,7 +133,7 @@ export function PublicIdDetails({
               ))}
             </div>
           ) : (
-            <span className="table-text">Webhook URLはありません</span>
+            <span className="table-text">{t("components.entityPage.publicIdDetails.webhookUrlUnavailable")}</span>
           )}
         </div>
       )}

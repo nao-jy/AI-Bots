@@ -5,25 +5,35 @@ import { Form, Link, NavLink, Outlet, useLocation } from "react-router";
 import type { Route } from "./+types/layout";
 import { requireUser } from "../.server/auth";
 import { APP_NAME } from "~/const";
+import { type NavigationLabelKey } from "~/i18n";
+import { useTranslation } from "react-i18next";
 import {
   SectionIcon,
   type EntitySection,
 } from "../components/entity-page-view";
 
-const items: { path: string; id: EntitySection; label: string }[] = [
-  { path: "/bots", id: "bots", label: "チャットボット" },
-  { path: "/adapters", id: "adapters", label: "アダプタ" },
-  { path: "/providers", id: "providers", label: "プロバイダ" },
-  { path: "/agents", id: "agents", label: "エージェント" },
-  { path: "/rate-limits", id: "rate_limits", label: "レートリミット" },
-  { path: "/sandboxes", id: "sandboxes", label: "サンドボックス" },
-  { path: "/schedules", id: "schedules", label: "スケジュール" },
-  { path: "/mcp-servers", id: "mcp", label: "MCPサーバー" },
-  { path: "/oauth-clients", id: "oauth_clients", label: "OAuthクライアント" },
+const items: {
+  path: string;
+  id: EntitySection;
+  labelKey: NavigationLabelKey;
+}[] = [
+  { path: "/bots", id: "bots", labelKey: "navigation.chatbots" },
+  { path: "/adapters", id: "adapters", labelKey: "navigation.adapters" },
+  { path: "/providers", id: "providers", labelKey: "navigation.providers" },
+  { path: "/agents", id: "agents", labelKey: "navigation.agents" },
+  { path: "/rate-limits", id: "rate_limits", labelKey: "navigation.rateLimits" },
+  { path: "/sandboxes", id: "sandboxes", labelKey: "navigation.sandboxes" },
+  { path: "/schedules", id: "schedules", labelKey: "navigation.schedules" },
+  { path: "/mcp-servers", id: "mcp", labelKey: "navigation.mcpServers" },
+  {
+    path: "/oauth-clients",
+    id: "oauth_clients",
+    labelKey: "navigation.oauthClients",
+  },
   {
     path: "/oauth-authentications",
     id: "oauth_authentications",
-    label: "OAuth認証情報",
+    labelKey: "navigation.oauthAuthentications",
   },
 ];
 
@@ -34,14 +44,23 @@ export async function loader({ request }: Route.LoaderArgs) {
     items: user.isAdmin
       ? [
           ...items,
-          { path: "/users", id: "users" as const, label: "ユーザー" },
-          { path: "/settings", id: "settings" as const, label: "設定" },
+          {
+            path: "/users",
+            id: "users" as const,
+            labelKey: "navigation.users",
+          },
+          {
+            path: "/settings",
+            id: "settings" as const,
+            labelKey: "navigation.settings",
+          },
         ]
       : items,
   };
 }
 
 export default function Workspace({ loaderData }: Route.ComponentProps) {
+  const { t } = useTranslation();
   const location = useLocation();
   const [mobileNavOpened, { toggle: toggleMobileNav, close: closeMobileNav }] =
     useDisclosure(false);
@@ -68,8 +87,11 @@ export default function Workspace({ loaderData }: Route.ComponentProps) {
           </span>
         </Link>
 
-        <div className="nav-label">管理</div>
-        <nav className="side-nav" aria-label="エンティティ管理">
+        <div className="nav-label">{t("navigation.management")}</div>
+        <nav
+          className="side-nav"
+          aria-label={t("navigation.entityManagement")}
+        >
           {loaderData.items.map((item) => (
             <NavLink
               key={item.id}
@@ -82,7 +104,7 @@ export default function Workspace({ loaderData }: Route.ComponentProps) {
               <span className="nav-icon">
                 <SectionIcon section={item.id} size={17} />
               </span>
-              <span>{item.label}</span>
+              <span>{t(item.labelKey)}</span>
             </NavLink>
           ))}
         </nav>
@@ -91,7 +113,7 @@ export default function Workspace({ loaderData }: Route.ComponentProps) {
         <Form method="post" action="/logout" className="logout-form">
           <button type="submit" className="logout-link">
             <SignOutIcon size={16} aria-hidden="true" />
-            ログアウト
+            {t("actions.logout")}
           </button>
         </Form>
         <div className="profile">
@@ -101,7 +123,9 @@ export default function Workspace({ loaderData }: Route.ComponentProps) {
               .toUpperCase()}
           </Avatar>
           <div className="profile-meta">
-            <strong>{loaderData.user.name ?? "ユーザー"}</strong>
+            <strong>
+              {loaderData.user.name ?? t("navigation.users")}
+            </strong>
             <span>{loaderData.user.email}</span>
           </div>
           <span className="profile-menu">
@@ -117,12 +141,12 @@ export default function Workspace({ loaderData }: Route.ComponentProps) {
             opened={mobileNavOpened}
             onClick={toggleMobileNav}
             size="sm"
-            aria-label="メニューを開閉"
+            aria-label={t("navigation.menuToggle")}
           />
           <div className="breadcrumbs">
             <span>{APP_NAME}</span>
             <b>/</b>
-            <strong>{current.label}</strong>
+            <strong>{t(current.labelKey)}</strong>
           </div>
           <div className="top-actions">
             <Avatar color="violet" radius="xl" size={34}>

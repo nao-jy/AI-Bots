@@ -1,23 +1,24 @@
+import { t } from "~/i18n";
 import { Group, Select, Stack, Text } from "@mantine/core";
 import { useState } from "react";
 
 type CronMode = "daily" | "weekly" | "monthly" | "advanced";
 
 const modes: { label: string; value: CronMode }[] = [
-  { label: "毎日", value: "daily" },
-  { label: "毎週", value: "weekly" },
-  { label: "毎月", value: "monthly" },
-  { label: "詳細設定", value: "advanced" },
+  { label: t("components.entityPage.cronScheduleEditor.daily"), value: "daily" },
+  { label: t("components.entityPage.cronScheduleEditor.weekly"), value: "weekly" },
+  { label: t("components.entityPage.cronScheduleEditor.monthly"), value: "monthly" },
+  { label: t("components.entityPage.cronScheduleEditor.advanced"), value: "advanced" },
 ];
 
 const weekdays = [
-  { label: "日曜日", value: "0" },
-  { label: "月曜日", value: "1" },
-  { label: "火曜日", value: "2" },
-  { label: "水曜日", value: "3" },
-  { label: "木曜日", value: "4" },
-  { label: "金曜日", value: "5" },
-  { label: "土曜日", value: "6" },
+  { label: t("components.entityPage.cronScheduleEditor.sunday"), value: "0" },
+  { label: t("components.entityPage.cronScheduleEditor.monday"), value: "1" },
+  { label: t("components.entityPage.cronScheduleEditor.tuesday"), value: "2" },
+  { label: t("components.entityPage.cronScheduleEditor.wednesday"), value: "3" },
+  { label: t("components.entityPage.cronScheduleEditor.thursday"), value: "4" },
+  { label: t("components.entityPage.cronScheduleEditor.friday"), value: "5" },
+  { label: t("components.entityPage.cronScheduleEditor.saturday"), value: "6" },
 ];
 
 function choices(max: number, min = 0) {
@@ -135,19 +136,19 @@ function AdvancedCronFields({
   const isSixFields = values.fields.length === 6;
   const displayFields = isSixFields
     ? [
-        { index: 4, label: "月" },
-        { index: 3, label: "日" },
-        { index: 5, label: "曜日" },
-        { index: 2, label: "時" },
-        { index: 1, label: "分" },
-        { index: 0, label: "秒" },
+        { index: 4, label: t("components.entityPage.cronScheduleEditor.monthUnit") },
+        { index: 3, label: t("components.entityPage.cronScheduleEditor.dayUnit") },
+        { index: 5, label: t("components.entityPage.cronScheduleEditor.weekdayUnit") },
+        { index: 2, label: t("components.entityPage.cronScheduleEditor.hourUnit") },
+        { index: 1, label: t("components.entityPage.cronScheduleEditor.minuteUnit") },
+        { index: 0, label: t("components.entityPage.cronScheduleEditor.secondUnit") },
       ]
     : [
-        { index: 3, label: "月" },
-        { index: 2, label: "日" },
-        { index: 4, label: "曜日" },
-        { index: 1, label: "時" },
-        { index: 0, label: "分" },
+        { index: 3, label: t("components.entityPage.cronScheduleEditor.monthUnit") },
+        { index: 2, label: t("components.entityPage.cronScheduleEditor.dayUnit") },
+        { index: 4, label: t("components.entityPage.cronScheduleEditor.weekdayUnit") },
+        { index: 1, label: t("components.entityPage.cronScheduleEditor.hourUnit") },
+        { index: 0, label: t("components.entityPage.cronScheduleEditor.minuteUnit") },
       ];
   const maximums = isSixFields ? [59, 59, 23, 31, 12, 7] : [59, 23, 31, 12, 7];
   const minimums = isSixFields ? [0, 0, 0, 1, 1, 0] : [0, 0, 1, 1, 0];
@@ -158,7 +159,7 @@ function AdvancedCronFields({
         const options = [
           ...(index === (isSixFields ? 1 : 0)
             ? []
-            : [{ label: "毎" + label, value: "*" }]),
+            : [{ label: t("components.entityPage.cronScheduleEditor.everyPrefix") + label, value: "*" }]),
           ...(index === weekdayIndex
             ? weekdays
             : choices(maximums[index]!, minimums[index]!)),
@@ -171,13 +172,13 @@ function AdvancedCronFields({
               : null;
           const weekdayName =
             weekdayValue === 7
-              ? "日曜日"
+              ? t("components.entityPage.cronScheduleEditor.sunday")
               : weekdays.find((day) => day.value === existing)?.label;
           options.push({
             label:
               weekdayName && weekdayValue !== null
                 ? `${weekdayName}（${existing}）`
-                : `${existing}（現在の値）`,
+                : t("components.entityPage.cronScheduleEditor.currentValue", { 0: existing }),
             value: existing,
           });
         }
@@ -207,7 +208,7 @@ export function CronScheduleEditor({
   name,
   label,
   initialValue,
-  timezoneDescription = "実行時刻は「タイムゾーン」欄で選択した地域の時刻です。",
+  timezoneDescription = t("components.entityPage.cronScheduleEditor.timezoneHelp"),
 }: {
   name: string;
   label: string;
@@ -226,7 +227,7 @@ export function CronScheduleEditor({
     <Stack gap="xs">
       <input type="hidden" name={name} value={expression} />
       <Select
-        label="実行するタイミング"
+        label={t("components.entityPage.cronScheduleEditor.timingLabel")}
         data={modes}
         value={mode}
         onChange={(value) => {
@@ -238,7 +239,7 @@ export function CronScheduleEditor({
         <Group grow>
           {mode === "weekly" && (
             <Select
-              label="曜日"
+              label={t("components.entityPage.cronScheduleEditor.weekdayUnit")}
               data={weekdays}
               value={values.weekday}
               onChange={(value) =>
@@ -249,7 +250,7 @@ export function CronScheduleEditor({
           )}
           {mode === "monthly" && (
             <Select
-              label="日"
+              label={t("components.entityPage.cronScheduleEditor.dayUnit")}
               data={choices(31, 1)}
               value={String(values.monthday)}
               onChange={(value) => value && setTime("monthday", Number(value))}
@@ -257,14 +258,14 @@ export function CronScheduleEditor({
             />
           )}
           <Select
-            label="時"
+            label={t("components.entityPage.cronScheduleEditor.hourUnit")}
             data={choices(23)}
             value={String(values.hour)}
             onChange={(value) => value && setTime("hour", Number(value))}
             searchable
           />
           <Select
-            label="分"
+            label={t("components.entityPage.cronScheduleEditor.minuteUnit")}
             data={choices(59)}
             value={String(values.minute)}
             onChange={(value) => value && setTime("minute", Number(value))}

@@ -1,3 +1,4 @@
+import { t } from "~/i18n";
 import { useState } from "react";
 import {
   Button,
@@ -90,7 +91,7 @@ export function ToolSetContextEditor({
 
   return (
     <Stack gap="sm">
-      <strong className="entity-details-title">ツールセット</strong>
+      <strong className="entity-details-title">{t("components.entityPage.toolsetContextEditor.title")}</strong>
       <input
         type="hidden"
         name={name}
@@ -108,8 +109,8 @@ export function ToolSetContextEditor({
           <div key={instance.id}>
             <Group align="flex-end" wrap="nowrap">
               <Select
-                label={`ツールセット ${index + 1}`}
-                placeholder="ツールセットを選択"
+                label={t("components.entityPage.toolsetContextEditor.toolsetLabel", { 0: index + 1 })}
+                placeholder={t("components.entityPage.toolsetContextEditor.selectToolset")}
                 data={schemas.map(({ name: value, displayName: label }) => ({
                   value,
                   label,
@@ -133,7 +134,7 @@ export function ToolSetContextEditor({
                 }
                 searchable
                 clearable
-                nothingFoundMessage="該当するオプションがありません"
+                nothingFoundMessage={t("components.entityPage.toolsetContextEditor.noOptions")}
                 style={{ flex: 1 }}
               />
               <Button
@@ -151,7 +152,7 @@ export function ToolSetContextEditor({
                   })
                 }
               >
-                {expanded ? "コンテクストを閉じる" : "コンテクストを設定"}
+                {expanded ? t("components.entityPage.toolsetContextEditor.closeContext") : t("components.entityPage.toolsetContextEditor.configureContext")}
               </Button>
               <Button
                 type="button"
@@ -168,8 +169,7 @@ export function ToolSetContextEditor({
                   });
                 }}
               >
-                削除
-              </Button>
+                {t("components.entityPage.toolsetContextEditor.delete")}</Button>
             </Group>
             {toolSet && (
               <Collapse id={panelId} expanded={expanded}>
@@ -217,12 +217,10 @@ export function ToolSetContextEditor({
           ])
         }
       >
-        ＋ ツールセットを追加
-      </Button>
+        {t("components.entityPage.toolsetContextEditor.addToolset")}</Button>
       {schemas.length === 0 && (
         <Text size="sm" c="dimmed">
-          利用可能な ToolSet がありません。
-        </Text>
+          {t("components.entityPage.toolsetContextEditor.noToolsetsAvailable")}</Text>
       )}
     </Stack>
   );

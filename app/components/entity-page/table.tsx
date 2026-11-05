@@ -1,3 +1,4 @@
+import { t } from "~/i18n";
 import { useCallback, useState } from "react";
 import { Table, TextInput } from "@mantine/core";
 import { MagnifyingGlassIcon } from "@phosphor-icons/react";
@@ -46,7 +47,7 @@ export function EntityTable({
         parsePersistentInstances(record.instances).map((instance) => ({
           ...instance,
           sandboxId: record.id,
-          sandboxName: String(record.name ?? "名称未設定"),
+          sandboxName: String(record.name ?? t("components.entityPage.table.unnamedRecord")),
         })),
       )
     : [];
@@ -64,13 +65,13 @@ export function EntityTable({
         <div className="entity-toolbar">
           <TextInput
             className="search-field"
-            placeholder={`${page.title}を検索...`}
+            placeholder={t("components.entityPage.table.searchPlaceholder", { 0: page.title })}
             value={query}
             onChange={(event) => setQuery(event.currentTarget.value)}
             leftSection={<MagnifyingGlassIcon size={16} aria-hidden="true" />}
-            aria-label={`${page.title}を検索`}
+            aria-label={t("components.entityPage.table.searchAriaLabel", { 0: page.title })}
           />
-          <span className="record-count">{page.records.length} 件</span>
+          <span className="record-count">{page.records.length} {t("components.entityPage.table.countUnit")}</span>
         </div>
 
         <div className="table-wrap">
@@ -84,7 +85,7 @@ export function EntityTable({
                 {page.columns.map((column) => (
                   <Table.Th key={column.key}>{column.label}</Table.Th>
                 ))}
-                <Table.Th className="actions-header">操作</Table.Th>
+                <Table.Th className="actions-header">{t("components.entityPage.table.actionsLabel")}</Table.Th>
               </Table.Tr>
             </Table.Thead>
             <Table.Tbody>
@@ -108,10 +109,9 @@ export function EntityTable({
                   <Table.Td colSpan={page.columns.length + 1}>
                     <div className="empty-state">
                       <MagnifyingGlassIcon size={22} aria-hidden="true" />
-                      <strong>該当するデータがありません</strong>
+                      <strong>{t("components.entityPage.table.emptyStateTitle")}</strong>
                       <small>
-                        検索条件を変えるか、新しく作成してください。
-                      </small>
+                        {t("components.entityPage.table.emptyStateDescription")}</small>
                     </div>
                   </Table.Td>
                 </Table.Tr>
@@ -121,9 +121,8 @@ export function EntityTable({
         </div>
         <div className="table-footer">
           <span>
-            {visibleRecords.length} 件中{" "}
-            <strong>1–{visibleRecords.length}</strong> 件を表示
-          </span>
+            {visibleRecords.length} {t("components.entityPage.table.totalCountSuffix")}{t("components.entityPage.table.spacing")}
+            <strong>{t("components.entityPage.table.rangeStart")}{visibleRecords.length}</strong> {t("components.entityPage.table.rangeSuffix")}</span>
         </div>
       </section>
       {page.tableFeatures?.sandboxShell && shellOpen && (

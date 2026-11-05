@@ -1,3 +1,4 @@
+import { t, tMessage } from "~/i18n";
 import { Badge, Group, Switch } from "@mantine/core";
 import type { EntityColumn } from "./types";
 
@@ -16,8 +17,8 @@ export function EntityCell({
 }) {
   if (column.presentation === "webhook-count") {
     const endpoints = parseWebhookEndpoints(value);
-    if (endpoints.length === 0) return <span className="table-text">—</span>;
-    return <span className="table-text">{endpoints.length} 件</span>;
+    if (endpoints.length === 0) return <span className="table-text">{t("components.entityPage.entityCell.emptyValue")}</span>;
+    return <span className="table-text">{endpoints.length} {t("components.entityPage.entityCell.countUnit")}</span>;
   }
 
   if (column.presentation === "verification-status") {
@@ -29,7 +30,7 @@ export function EntityCell({
         radius="sm"
         leftSection={<span className="status-dot" />}
       >
-        {value}
+        {tMessage(String(value))}
       </Badge>
     );
   }
@@ -43,7 +44,7 @@ export function EntityCell({
         radius="sm"
         leftSection={<span className="status-dot" />}
       >
-        {value}
+        {tMessage(String(value))}
       </Badge>
     );
   }
@@ -54,9 +55,9 @@ export function EntityCell({
         <Switch
           checked={String(value) === "稼働中"}
           onChange={(event) => onStatusChange(event.currentTarget.checked)}
-          aria-label={`${recordName}の稼働状態を変更`}
+          aria-label={t("components.entityPage.entityCell.toggleStatusAriaLabel", { 0: recordName })}
         />
-        <span className="table-text">{value}</span>
+        <span className="table-text">{tMessage(String(value))}</span>
       </Group>
     );
   if (column.presentation === "admin-toggle")
@@ -66,9 +67,9 @@ export function EntityCell({
           checked={String(value) === "管理者"}
           disabled={disabled}
           onChange={(event) => onStatusChange(event.currentTarget.checked)}
-          aria-label={`${recordName}の管理者権限を変更`}
+          aria-label={t("components.entityPage.entityCell.toggleAdminAriaLabel", { 0: recordName })}
         />
-        <span className="table-text">{value}</span>
+        <span className="table-text">{tMessage(String(value))}</span>
       </Group>
     );
   if (column.key === "status") return <Status value={String(value ?? "")} />;
@@ -84,7 +85,7 @@ export function EntityCell({
 
   return (
     <span className={column.key === "endpoint" ? "mono" : "table-text"}>
-      {value || "—"}
+      {value || t("components.entityPage.entityCell.emptyValue")}
     </span>
   );
 }
@@ -118,7 +119,7 @@ function Status({ value }: { value: string }) {
       radius="sm"
       leftSection={<span className="status-dot" />}
     >
-      {value}
+      {tMessage(String(value))}
     </Badge>
   );
 }

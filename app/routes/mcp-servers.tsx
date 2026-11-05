@@ -1,3 +1,4 @@
+import { t } from "~/i18n";
 import type { Route } from "./+types/mcp-servers";
 import {
   EntityPageView,
@@ -15,22 +16,22 @@ import { testMcpServer } from "~/.server/test";
 
 function getPage(transport: Record<string, string>) {
   const page: Omit<EntityPageDefinition, "records"> = {
-    title: "MCPサーバー",
-    description: "MCPサーバーの接続先と利用可能なツール情報を管理します。",
+    title: t("pages.mcpServers.title"),
+    description: t("pages.mcpServers.description"),
     icon: "mcp",
     tableFeatures: { subtitleKeys: ["description", "endpoint"] },
     columns: [
-      { key: "name", label: "サーバー名" },
-      { key: "transport", label: "トランスポート" },
-      { key: "endpoint", label: "エンドポイント" },
-      { key: "status", label: "ステータス" },
-      { key: "updated", label: "最終更新" },
+      { key: "name", label: t("pages.mcpServers.nameLabel") },
+      { key: "transport", label: t("pages.mcpServers.transportLabel") },
+      { key: "endpoint", label: t("pages.mcpServers.endpointLabel") },
+      { key: "status", label: t("pages.mcpServers.statusLabel") },
+      { key: "updated", label: t("pages.mcpServers.updatedLabel") },
     ],
     fields: [
-      { key: "name", label: "サーバー名", placeholder: "例：社内ナレッジ" },
+      { key: "name", label: t("pages.mcpServers.nameLabel"), placeholder: t("pages.mcpServers.namePlaceholder") },
       {
         key: "transportId",
-        label: "トランスポート",
+        label: t("pages.mcpServers.transportLabel"),
         type: "select",
         options: Object.entries(transport).map((v) => ({
           label: v[1],
@@ -39,13 +40,13 @@ function getPage(transport: Record<string, string>) {
       },
       {
         key: "endpoint",
-        label: "エンドポイント",
+        label: t("pages.mcpServers.endpointLabel"),
         wide: true,
-        placeholder: "https://mcp.example.com/mcp",
+        placeholder: t("pages.mcpServers.endpointPlaceholder"),
       },
       {
         key: "headers",
-        label: "HTTPヘッダー",
+        label: t("pages.mcpServers.httpHeadersLabel"),
         type: "key-value",
         valueType: "string",
         wide: true,
@@ -56,7 +57,7 @@ function getPage(transport: Record<string, string>) {
 }
 
 export function meta() {
-  return [{ title: `MCPサーバー | ${APP_NAME}` }];
+  return [{ title: t("pages.mcpServers.documentTitle", { 0: APP_NAME }) }];
 }
 
 export async function loader({ request }: Route.LoaderArgs) {
@@ -76,13 +77,13 @@ export async function action({ request }: Route.ActionArgs) {
   if (intent === "delete")
     return Number.isInteger(id) && (await deleteMcpServer(user, id))
       ? { ok: true }
-      : { ok: false, error: "MCPサーバーが見つかりません。" };
+      : { ok: false, error: t("pages.mcpServers.notFound") };
   if (intent === "create") return saveMcpServer(user, null, form);
   if (intent === "update")
     return Number.isInteger(id)
       ? saveMcpServer(user, id, form)
-      : { ok: false, error: "MCPサーバーが見つかりません。" };
-  return { ok: false, error: "操作を判定できませんでした。" };
+      : { ok: false, error: t("pages.mcpServers.notFound") };
+  return { ok: false, error: t("pages.mcpServers.unknownAction") };
 }
 
 export default function McpServers({ loaderData }: Route.ComponentProps) {

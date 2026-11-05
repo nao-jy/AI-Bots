@@ -1,3 +1,4 @@
+import { t, tMessage } from "~/i18n";
 import { useEffect, useRef, useState } from "react";
 import { useFetcher } from "react-router";
 import "@xterm/xterm/css/xterm.css";
@@ -88,15 +89,19 @@ export function SandboxShell({
         typeof result === "object" &&
         "error" in result &&
         typeof result.error === "string"
-          ? result.error
-          : `シェル操作に失敗しました (HTTP ${response.status})`;
+          ? tMessage(result.error)
+          : t("components.entityPage.sandboxShell.shellActionFailedWithStatus", { 0: response.status });
       throw new Error(error);
     }
   }
 
   function reportTerminalError(error: unknown) {
     const message =
-      error instanceof Error ? error.message : "シェル操作に失敗しました。";
+      tMessage(
+        error instanceof Error
+          ? error.message
+          : t("components.entityPage.sandboxShell.shellActionFailed"),
+      );
     setTerminalError(message);
     terminal.current?.write(`\r\n\x1b[31m${message}\x1b[0m\r\n`);
   }
@@ -186,15 +191,15 @@ export function SandboxShell({
         }
       });
       instanceTerminal.write(
-        "\x1b[90mSandbox terminal · interactive PTY\x1b[0m\r\n",
+        `\x1b[90m${t("components.entityPage.sandboxShell.terminalDescription")}\x1b[0m\r\n`,
       );
       if (selectedInstanceId) {
         instanceTerminal.write(
-          `\x1b[90mConnecting to ${selectedSandboxNameRef.current} (${selectedInstanceId})…\x1b[0m\r\n`,
+          `\x1b[90m${t("components.entityPage.sandboxShell.connecting", { 0: selectedSandboxNameRef.current, 1: selectedInstanceId })}\x1b[0m\r\n`,
         );
       } else {
         instanceTerminal.write(
-          "\x1b[90mSelect an instance to start a shell session.\x1b[0m\r\n",
+          `\x1b[90m${t("components.entityPage.sandboxShell.selectInstancePrompt")}\x1b[0m\r\n`,
         );
       }
       setTerminalReady(true);
@@ -204,8 +209,8 @@ export function SandboxShell({
       if (!disposed) {
         setTerminalError(
           error instanceof Error
-            ? error.message
-            : "端末を初期化できませんでした。",
+            ? tMessage(error.message)
+            : t("components.entityPage.sandboxShell.terminalInitializationFailed"),
         );
       }
     });
@@ -232,11 +237,11 @@ export function SandboxShell({
     activeTerminal.write("\x1b[2J\x1b[H");
     if (selectedInstanceId) {
       activeTerminal.write(
-        `\x1b[90mConnecting to ${selectedSandboxNameRef.current} (${selectedInstanceId})…\x1b[0m\r\n`,
+        `\x1b[90m${t("components.entityPage.sandboxShell.connecting", { 0: selectedSandboxNameRef.current, 1: selectedInstanceId })}\x1b[0m\r\n`,
       );
     } else {
       activeTerminal.write(
-        "\x1b[90mSelect an instance to start a shell session.\x1b[0m\r\n",
+        `\x1b[90m${t("components.entityPage.sandboxShell.selectInstancePrompt")}\x1b[0m\r\n`,
       );
     }
     fitAddon.current?.fit();
@@ -278,7 +283,11 @@ export function SandboxShell({
       return;
     }
     if (!response.ok || !response.terminalId) {
-      setTerminalError(response.error ?? "シェルを開始できませんでした。");
+      setTerminalError(
+        response.error
+          ? tMessage(response.error)
+          : t("components.entityPage.sandboxShell.shellStartFailed"),
+      );
       return;
     }
     setTerminalId(response.terminalId);
@@ -301,7 +310,7 @@ export function SandboxShell({
           !("data" in payload) ||
           typeof payload.data !== "string"
         ) {
-          throw new Error("端末出力の形式が不正です。");
+          throw new Error(t("components.entityPage.sandboxShell.invalidTerminalOutput"));
         }
         const decoded = atob(payload.data);
         const bytes = Uint8Array.from(decoded, (character) =>
@@ -370,7 +379,7 @@ export function SandboxShell({
       <div
         className="sandbox-shell-resize"
         role="separator"
-        aria-label="シェル領域の高さを変更"
+        aria-label={t("components.entityPage.sandboxShell.resizeShellRegion")}
         aria-orientation="horizontal"
         aria-valuenow={height}
         aria-valuemin={180}
@@ -396,11 +405,10 @@ export function SandboxShell({
       />
       <div className="sandbox-shell-toolbar">
         <strong>
-          <TerminalWindowIcon size={16} aria-hidden="true" /> シェル
-        </strong>
+          <TerminalWindowIcon size={16} aria-hidden="true" /> {t("components.entityPage.sandboxShell.shellSuffix")}</strong>
         <Select
-          aria-label="実行するインスタンス"
-          placeholder="シェルを選択"
+          aria-label={t("components.entityPage.sandboxShell.instanceLabel")}
+          placeholder={t("components.entityPage.sandboxShell.selectShell")}
           data={instances.map((instance) => ({
             value: instance.instanceId,
             label: `${instance.sandboxName} · ${instance.scopeLabel} · ${instance.instanceId}`,
@@ -408,7 +416,7 @@ export function SandboxShell({
           value={selectedInstanceId}
           onChange={onSelectInstance}
           searchable
-          nothingFoundMessage="該当するインスタンスがありません"
+          nothingFoundMessage={t("components.entityPage.sandboxShell.noInstancesFound")}
           disabled={terminalFetcher.state !== "idle"}
           className="sandbox-shell-instance-select"
         />
@@ -416,28 +424,27 @@ export function SandboxShell({
           type="button"
           className="sandbox-shell-close"
           onClick={onClose}
-          aria-label="シェルを閉じる"
+          aria-label={t("components.entityPage.sandboxShell.closeShell")}
         >
-          ×
-        </button>
+          {t("components.entityPage.sandboxShell.closeSymbol")}</button>
       </div>
       <p className="sandbox-shell-warning">
-        シェル実行中はすべてのドメインへの通信が許可されます。
-        {(terminalFetcher.state !== "idle" || terminalId) && (
+        {t("components.entityPage.sandboxShell.networkAccessNotice")}{(terminalFetcher.state !== "idle" || terminalId) && (
           <span className="sandbox-shell-running" role="status">
-            ● {terminalId ? "接続中" : "起動中"}
+            {t("components.entityPage.sandboxShell.connectedStatusSymbol")}{terminalId ? t("components.entityPage.sandboxShell.connectedStatus") : t("components.entityPage.sandboxShell.startingStatus")}
           </span>
         )}
       </p>
       {terminalError && (
         <p className="sandbox-shell-error" role="alert">
-          端末を読み込めませんでした: {terminalError}
+          {t("components.entityPage.sandboxShell.terminalLoadFailedPrefix")}
+          {tMessage(terminalError)}
         </p>
       )}
       <div
         className="sandbox-shell-terminal"
         ref={terminalHost}
-        aria-label="サンドボックスシェル端末"
+        aria-label={t("components.entityPage.sandboxShell.terminalAriaLabel")}
         onClick={() => terminal.current?.focus()}
       />
     </section>

@@ -1,3 +1,4 @@
+import { t, tMessage } from "~/i18n";
 import { useEffect, useState } from "react";
 import { ActionIcon, Button, Group, Table, Tooltip } from "@mantine/core";
 import {
@@ -72,8 +73,7 @@ export function EntityRow({
           }
           onClick={onForceLogout}
         >
-          強制ログアウト
-        </Button>
+          {t("components.entityPage.entityRow.forceLogout")}</Button>
       )}
       {supportsEmailVerification &&
         record.emailVerification !== "検証済み" && (
@@ -101,17 +101,17 @@ export function EntityRow({
         <Tooltip
           label={
             cannotDelete
-              ? "自分自身は強制ログアウトできません"
+              ? t("components.entityPage.entityRow.cannotForceLogoutSelf")
               : record.loginStatus !== "ログイン中"
-                ? "このユーザーはログインしていません"
-                : "すべてのセッションを終了"
+                ? t("components.entityPage.entityRow.userNotLoggedIn")
+                : t("components.entityPage.entityRow.endAllSessions")
           }
         >
           <span style={{ display: "inline-flex" }}>
             <ActionIcon
               variant="subtle"
               color="orange"
-              aria-label={`${recordName}を強制ログアウト`}
+              aria-label={t("components.entityPage.entityRow.forceLogoutRecord", { 0: recordName })}
               disabled={
                 cannotDelete || record.loginStatus !== "ログイン中"
               }
@@ -141,11 +141,11 @@ export function EntityRow({
           recordName={String(recordName ?? "")}
         />
       )}
-      <Tooltip label={`${recordName}を編集`}>
+      <Tooltip label={t("components.entityPage.entityRow.editRecord", { 0: recordName })}>
         <ActionIcon
           variant="subtle"
           color="gray"
-          aria-label={`${recordName}を編集`}
+          aria-label={t("components.entityPage.entityRow.editRecord", { 0: recordName })}
           onClick={onEdit}
         >
           <PencilSimpleIcon size={16} aria-hidden="true" />
@@ -154,8 +154,8 @@ export function EntityRow({
       <Tooltip
         label={
           cannotDelete
-            ? "自分のアカウントは削除できません"
-            : `${recordName}を削除`
+            ? t("components.entityPage.entityRow.cannotDeleteSelf")
+            : t("components.entityPage.entityRow.deleteRecord", { 0: recordName })
         }
       >
         <span style={{ display: "inline-flex" }}>
@@ -164,8 +164,8 @@ export function EntityRow({
             color="gray"
             aria-label={
               cannotDelete
-                ? "自分のアカウントは削除できません"
-                : `${recordName}を削除`
+                ? t("components.entityPage.entityRow.cannotDeleteSelf")
+                : t("components.entityPage.entityRow.deleteRecord", { 0: recordName })
             }
             disabled={cannotDelete}
             onClick={onDelete}
@@ -186,10 +186,25 @@ export function EntityRow({
               <Tooltip
                 label={
                   supportsActions
-                    ? `${recordName}の操作を${expanded ? "閉じる" : "表示"}`
+                    ? t("components.entityPage.entityRow.toggleRecordAction", {
+                        0: recordName,
+                        1: expanded
+                          ? t("components.entityPage.entityRow.close")
+                          : t("components.entityPage.entityRow.show"),
+                      })
                     : supportsSandboxShell
-                      ? `${recordName}のPersistent Instanceを${expanded ? "閉じる" : "表示"}`
-                      : `${recordName}のパブリックIDを${expanded ? "閉じる" : "表示"}`
+                      ? t("components.entityPage.entityRow.togglePersistentInstance", {
+                          0: recordName,
+                          1: expanded
+                            ? t("components.entityPage.entityRow.close")
+                            : t("components.entityPage.entityRow.show"),
+                        })
+                      : t("components.entityPage.entityRow.togglePublicId", {
+                          0: recordName,
+                          1: expanded
+                            ? t("components.entityPage.entityRow.close")
+                            : t("components.entityPage.entityRow.show"),
+                        })
                 }
               >
                 <ActionIcon
@@ -197,10 +212,25 @@ export function EntityRow({
                   color="gray"
                   aria-label={
                     supportsActions
-                      ? `${recordName}の操作を${expanded ? "閉じる" : "表示"}`
+                      ? t("components.entityPage.entityRow.toggleRecordAction", {
+                          0: recordName,
+                          1: expanded
+                            ? t("components.entityPage.entityRow.close")
+                            : t("components.entityPage.entityRow.show"),
+                        })
                       : supportsSandboxShell
-                        ? `${recordName}のPersistent Instanceを${expanded ? "閉じる" : "表示"}`
-                        : `${recordName}のパブリックIDを${expanded ? "閉じる" : "表示"}`
+                        ? t("components.entityPage.entityRow.togglePersistentInstance", {
+                            0: recordName,
+                            1: expanded
+                              ? t("components.entityPage.entityRow.close")
+                              : t("components.entityPage.entityRow.show"),
+                          })
+                        : t("components.entityPage.entityRow.togglePublicId", {
+                            0: recordName,
+                            1: expanded
+                              ? t("components.entityPage.entityRow.close")
+                              : t("components.entityPage.entityRow.show"),
+                          })
                   }
                   aria-expanded={expanded}
                   onClick={() => setExpanded((current) => !current)}
@@ -217,7 +247,7 @@ export function EntityRow({
               <SectionIcon section={page.icon} size={17} />
             </span>
             <div>
-              <strong>{recordName ?? "名称未設定"}</strong>
+              <strong>{recordName ?? t("components.entityPage.entityRow.unnamedRecord")}</strong>
               {subtitle != null && <small>{String(subtitle)}</small>}
             </div>
           </div>
@@ -239,11 +269,11 @@ export function EntityRow({
         <Table.Td>
           {supportsActions ? (
             <Group gap={5} justify="flex-end">
-              <Tooltip label={`${recordName}を編集`}>
+              <Tooltip label={t("components.entityPage.entityRow.editRecord", { 0: recordName })}>
                 <ActionIcon
                   variant="subtle"
                   color="gray"
-                  aria-label={`${recordName}を編集`}
+                  aria-label={t("components.entityPage.entityRow.editRecord", { 0: recordName })}
                   onClick={onEdit}
                 >
                   <PencilSimpleIcon size={16} aria-hidden="true" />
@@ -252,8 +282,8 @@ export function EntityRow({
               <Tooltip
                 label={
                   cannotDelete
-                    ? "自分のアカウントは削除できません"
-                    : `${recordName}を削除`
+                    ? t("components.entityPage.entityRow.cannotDeleteSelf")
+                    : t("components.entityPage.entityRow.deleteRecord", { 0: recordName })
                 }
               >
                 <span style={{ display: "inline-flex" }}>
@@ -262,8 +292,8 @@ export function EntityRow({
                     color="gray"
                     aria-label={
                       cannotDelete
-                        ? "自分のアカウントは削除できません"
-                        : `${recordName}を削除`
+                        ? t("components.entityPage.entityRow.cannotDeleteSelf")
+                        : t("components.entityPage.entityRow.deleteRecord", { 0: recordName })
                     }
                     disabled={cannotDelete}
                     onClick={onDelete}
@@ -300,7 +330,7 @@ export function EntityRow({
               )}
               {supportsActions && (
                 <>
-                  <strong className="entity-details-title">操作</strong>
+                  <strong className="entity-details-title">{t("components.entityPage.entityRow.actionsLabel")}</strong>
                   {actions}
                 </>
               )}
@@ -324,14 +354,14 @@ function EmailVerificationAction({
   useEffect(() => {
     if (fetcher.data?.error) {
       notifications.show({
-        title: "検証メールの送信に失敗しました",
-        message: fetcher.data.error,
+        title: t("components.entityPage.entityRow.verificationEmailSendFailed"),
+        message: tMessage(fetcher.data.error),
         color: "red",
       });
     } else if (fetcher.data?.ok) {
       notifications.show({
-        title: "検証メールを送信しました",
-        message: `${recordName}宛に検証メールを送信しました。`,
+        title: t("components.entityPage.entityRow.verificationEmailSent"),
+        message: t("components.entityPage.entityRow.verificationEmailSentTo", { 0: recordName }),
         color: "green",
       });
     }
@@ -350,8 +380,7 @@ function EmailVerificationAction({
           leftSection={<EnvelopeSimpleIcon size={15} aria-hidden="true" />}
           disabled={fetcher.state !== "idle"}
         >
-          検証メールを再送
-        </Button>
+          {t("components.entityPage.entityRow.resendVerificationEmail")}</Button>
       </fetcher.Form>
     </>
   );
@@ -369,14 +398,14 @@ function MfaResetAction({
   useEffect(() => {
     if (fetcher.data?.error) {
       notifications.show({
-        title: "MFAをリセットできませんでした",
-        message: fetcher.data.error,
+        title: t("components.entityPage.entityRow.mfaResetFailed"),
+        message: tMessage(fetcher.data.error),
         color: "red",
       });
     } else if (fetcher.data?.ok) {
       notifications.show({
-        title: "MFAをリセットしました",
-        message: `${recordName}のMFA設定をリセットしました。`,
+        title: t("components.entityPage.entityRow.mfaResetSucceeded"),
+        message: t("components.entityPage.entityRow.mfaResetForRecord", { 0: recordName }),
         color: "green",
       });
     }
@@ -388,7 +417,7 @@ function MfaResetAction({
         method="post"
         action="/users"
         onSubmit={(event) => {
-          if (!window.confirm(`${recordName}のMFA設定をリセットしますか？`))
+          if (!window.confirm(t("components.entityPage.entityRow.confirmMfaReset", { 0: recordName })))
             event.preventDefault();
         }}
       >
@@ -404,8 +433,7 @@ function MfaResetAction({
           }
           disabled={fetcher.state !== "idle"}
         >
-          MFAをリセット
-        </Button>
+          {t("components.entityPage.entityRow.resetMfa")}</Button>
       </fetcher.Form>
     </>
   );
@@ -423,14 +451,14 @@ function LoginUnlockAction({
   useEffect(() => {
     if (fetcher.data?.error) {
       notifications.show({
-        title: "ログインロックを解除できませんでした",
-        message: fetcher.data.error,
+        title: t("components.entityPage.entityRow.unlockFailed"),
+        message: tMessage(fetcher.data.error),
         color: "red",
       });
     } else if (fetcher.data?.ok) {
       notifications.show({
-        title: "ログインロックを解除しました",
-        message: `${recordName}がログインできるようになりました。`,
+        title: t("components.entityPage.entityRow.unlockSucceeded"),
+        message: t("components.entityPage.entityRow.userCanLogin", { 0: recordName }),
         color: "green",
       });
     }
@@ -451,8 +479,7 @@ function LoginUnlockAction({
           }
           disabled={fetcher.state !== "idle"}
         >
-          ログインロックを解除
-        </Button>
+          {t("components.entityPage.entityRow.unlockLogin")}</Button>
       </fetcher.Form>
     </>
   );

@@ -1,3 +1,4 @@
+import { t } from "~/i18n";
 import type { Route } from "./+types/bots";
 import {
   EntityPageView,
@@ -14,9 +15,9 @@ import { requireUser } from "../.server/auth";
 import { APP_NAME } from "~/const";
 
 const page: Omit<EntityPageDefinition, "records"> = {
-  title: "チャットボット",
+  title: t("pages.bots.title"),
   description:
-    "チャットボットの設定と接続アダプタを管理し、各アダプタの Webhook URL を確認・コピーできます。",
+    t("pages.bots.description"),
   icon: "bots",
   tableFeatures: {
     subtitleKeys: ["description"],
@@ -24,88 +25,88 @@ const page: Omit<EntityPageDefinition, "records"> = {
     webhookDetails: true,
   },
   columns: [
-    { key: "name", label: "ボット名" },
-    { key: "agent", label: "エージェント" },
-    { key: "adapters", label: "接続アダプタ" },
-    { key: "sandboxes", label: "サンドボックス" },
-    { key: "toolsets", label: "ToolSet" },
+    { key: "name", label: t("pages.bots.nameLabel") },
+    { key: "agent", label: t("pages.bots.agentLabel") },
+    { key: "adapters", label: t("pages.bots.adaptersLabel") },
+    { key: "sandboxes", label: t("pages.bots.sandboxLabel") },
+    { key: "toolsets", label: t("pages.bots.toolsetsLabel") },
     {
       key: "webhooks",
-      label: "Webhook エンドポイント",
+      label: t("pages.bots.webhookEndpointLabel"),
       presentation: "webhook-count",
     },
-    { key: "status", label: "ステータス", presentation: "status-toggle" },
-    { key: "updated", label: "最終更新" },
+    { key: "status", label: t("pages.bots.statusLabel"), presentation: "status-toggle" },
+    { key: "updated", label: t("pages.bots.updatedLabel") },
   ],
   fields: [
-    { key: "name", label: "ボット名", placeholder: "例：サポートアシスタント" },
+    { key: "name", label: t("pages.bots.nameLabel"), placeholder: t("pages.bots.namePlaceholder") },
     {
       key: "description",
-      label: "説明",
+      label: t("pages.bots.descriptionLabel"),
       type: "textarea",
       wide: true,
-      placeholder: "ボットの説明",
+      placeholder: t("pages.bots.descriptionPlaceholder"),
     },
     {
       key: "instruction",
-      label: "指示プロンプト",
+      label: t("pages.bots.instructionsLabel"),
       type: "textarea",
       wide: true,
-      placeholder: "ボットAIへの指示プロンプト",
+      placeholder: t("pages.bots.instructionsPlaceholder"),
     },
     {
       key: "onFailedMessage",
-      label: "失敗時メッセージ",
+      label: t("pages.bots.failureMessageLabel"),
       type: "textarea",
       wide: true,
-      placeholder: "Sorry, failed to generate answer.",
+      placeholder: t("pages.bots.failureMessagePlaceholder"),
     },
     {
       key: "lookbackMessages",
-      label: "見返すメッセージ数",
+      label: t("pages.bots.historyMessageCountLabel"),
       type: "number",
-      placeholder: "0",
+      placeholder: t("pages.bots.zeroHistoryMessages"),
     },
     {
       key: "agentId",
-      label: "エージェント",
+      label: t("pages.bots.agentLabel"),
       type: "select",
       options: [],
-      placeholder: "指定しない",
+      placeholder: t("pages.bots.noLimitOption"),
     },
     {
       key: "adapterIds",
-      label: "接続アダプタ",
+      label: t("pages.bots.adaptersLabel"),
       type: "multiselect",
       options: [],
-      placeholder: "接続するアダプタを選択",
+      placeholder: t("pages.bots.adaptersPlaceholder"),
     },
     {
       key: "sandboxId",
-      label: "サンドボックス",
+      label: t("pages.bots.sandboxLabel"),
       type: "select",
       options: [],
-      placeholder: "利用するサンドボックスを選択",
+      placeholder: t("pages.bots.sandboxPlaceholder"),
     },
     {
       key: "toolSetContexts",
-      label: "ToolSet context",
+      label: t("pages.bots.toolsetContextLabel"),
       type: "toolset-contexts",
       wide: true,
     },
     {
       key: "mcpServerIds",
-      label: "MCPサーバー",
+      label: t("pages.bots.mcpServersLabel"),
       type: "mcp-servers",
       options: [],
-      placeholder: "接続するMCPサーバーを選択",
+      placeholder: t("pages.bots.mcpServersPlaceholder"),
       wide: true,
     },
   ],
 };
 
 export function meta() {
-  return [{ title: `チャットボット | ${APP_NAME}` }];
+  return [{ title: t("pages.bots.documentTitle", { 0: APP_NAME }) }];
 }
 
 export async function loader({ request }: Route.LoaderArgs) {
@@ -123,28 +124,28 @@ export async function action({ request }: Route.ActionArgs) {
   if (intent === "regenerate-public-ids") {
     const slot = String(form.get("slot") ?? "");
     if (slot !== "first" && slot !== "second")
-      return { ok: false, error: "再生成するパブリックIDを指定してください。" };
+      return { ok: false, error: t("pages.bots.publicIdRegenerationRequired") };
     return Number.isInteger(id) &&
       (await regenerateBotPublicIds(user, id, slot))
       ? { ok: true }
-      : { ok: false, error: "ボットが見つかりません。" };
+      : { ok: false, error: t("pages.bots.notFound") };
   }
   if (intent === "delete")
     return Number.isInteger(id) && (await deleteBot(user, id))
       ? { ok: true }
-      : { ok: false, error: "ボットが見つかりません。" };
+      : { ok: false, error: t("pages.bots.notFound") };
   if (intent === "toggle-status") {
     const enabled = String(form.get("enabled")) === "true";
     return Number.isInteger(id) && (await setBotEnabled(user, id, enabled))
       ? { ok: true }
-      : { ok: false, error: "ボットが見つかりません。" };
+      : { ok: false, error: t("pages.bots.notFound") };
   }
   if (intent === "create") return saveBot(user, null, form);
   if (intent === "update")
     return Number.isInteger(id)
       ? saveBot(user, id, form)
-      : { ok: false, error: "ボットが見つかりません。" };
-  return { ok: false, error: "操作を判定できませんでした。" };
+      : { ok: false, error: t("pages.bots.notFound") };
+  return { ok: false, error: t("pages.bots.unknownAction") };
 }
 
 export default function Bots({ loaderData }: Route.ComponentProps) {

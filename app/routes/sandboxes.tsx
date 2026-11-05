@@ -1,3 +1,4 @@
+import { t } from "~/i18n";
 import type { Route } from "./+types/sandboxes";
 import type { ShouldRevalidateFunctionArgs } from "react-router";
 import { requireUser } from "../.server/auth";
@@ -16,56 +17,56 @@ import {
 import { APP_NAME, SANDBOX_SCOPES } from "~/const";
 
 const page: Omit<EntityPageDefinition, "records"> = {
-  title: "サンドボックス",
+  title: t("pages.sandboxes.title"),
   description:
-    "チャットボットが利用する実行環境、環境変数、ネットワーク制限を管理します。特権コマンドは新規生成時に許可ドメイン制限を一時的に解除して実行します。",
+    t("pages.sandboxes.description"),
   icon: "sandboxes",
   tableFeatures: { sandboxShell: true },
   columns: [
-    { key: "name", label: "サンドボックス" },
-    { key: "type", label: "タイプ" },
-    { key: "scope", label: "適用範囲" },
-    { key: "allowedDomainList", label: "許可ドメイン" },
-    { key: "initCommands", label: "生成時特権コマンド" },
+    { key: "name", label: t("pages.sandboxes.title") },
+    { key: "type", label: t("pages.sandboxes.typeLabel") },
+    { key: "scope", label: t("pages.sandboxes.scopeLabel") },
+    { key: "allowedDomainList", label: t("pages.sandboxes.allowedDomainsLabel") },
+    { key: "initCommands", label: t("pages.sandboxes.initCommandsLabel") },
   ],
   fields: [
-    { key: "sandboxName", label: "名前", type: "text" },
-    { key: "sandboxType", label: "タイプ", type: "select", options: [] },
+    { key: "sandboxName", label: t("pages.sandboxes.nameLabel"), type: "text" },
+    { key: "sandboxType", label: t("pages.sandboxes.typeLabel"), type: "select", options: [] },
     {
       key: "sandboxScope",
-      label: "適用範囲",
+      label: t("pages.sandboxes.scopeLabel"),
       type: "select",
-      options: Object.entries(SANDBOX_SCOPES).map(([value, label]) => ({
+      options: Object.entries(SANDBOX_SCOPES).map(([value, labelKey]) => ({
         value,
-        label,
+        label: t(labelKey),
       })),
     },
     {
       key: "envs",
-      label: "環境変数",
+      label: t("pages.sandboxes.environmentVariablesLabel"),
       type: "key-value",
       valueType: "string",
       wide: true,
     },
     {
       key: "allowedDomainList",
-      label: "許可ドメイン",
+      label: t("pages.sandboxes.allowedDomainsLabel"),
       type: "tags",
-      placeholder: "example.com を入力して Enter",
+      placeholder: t("pages.sandboxes.allowedDomainPlaceholder"),
       wide: true,
     },
     {
       key: "initCommands",
-      label: "生成時特権コマンド",
+      label: t("pages.sandboxes.initCommandsLabel"),
       type: "textarea",
-      placeholder: "新規生成時のみ。1行に1コマンド (例: pip install package)",
+      placeholder: t("pages.sandboxes.initCommandsPlaceholder"),
       wide: true,
     },
   ],
 };
 
 export function meta() {
-  return [{ title: `サンドボックス | ${APP_NAME}` }];
+  return [{ title: t("pages.sandboxes.documentTitle", { 0: APP_NAME }) }];
 }
 
 export async function loader({ request }: Route.LoaderArgs) {
@@ -99,18 +100,18 @@ export async function action({ request }: Route.ActionArgs) {
     const deleted = await deleteSandboxInstance(user, id, instanceId);
     return deleted
       ? { ok: true, instanceId }
-      : { ok: false, error: "Persistent Instanceが見つかりません。" };
+      : { ok: false, error: t("pages.sandboxes.persistentInstanceNotFound") };
   }
   if (intent === "delete")
     return Number.isInteger(id) && (await deleteSandbox(user, id))
       ? { ok: true }
-      : { ok: false, error: "サンドボックスが見つかりません。" };
+      : { ok: false, error: t("pages.sandboxes.notFound") };
   if (intent === "create") return saveSandbox(user, null, form);
   if (intent === "update")
     return Number.isInteger(id)
       ? saveSandbox(user, id, form)
-      : { ok: false, error: "サンドボックスが見つかりません。" };
-  return { ok: false, error: "操作を判定できませんでした。" };
+      : { ok: false, error: t("pages.sandboxes.notFound") };
+  return { ok: false, error: t("pages.sandboxes.unknownAction") };
 }
 
 export function shouldRevalidate({

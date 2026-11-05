@@ -1,3 +1,4 @@
+import { t } from "~/i18n";
 import { Alert, Button, Title } from "@mantine/core";
 import { Form, Link, useActionData } from "react-router";
 import type { Route } from "./+types/verify-email";
@@ -8,7 +9,7 @@ import {
 import { APP_NAME } from "~/const";
 
 export function meta() {
-  return [{ title: `メールアドレスの確認 | ${APP_NAME}` }];
+  return [{ title: t("pages.verifyEmail.documentTitle", { 0: APP_NAME }) }];
 }
 
 export async function loader({ request }: Route.LoaderArgs) {
@@ -28,28 +29,28 @@ export default function VerifyEmail({ loaderData }: Route.ComponentProps) {
   const status = actionData?.status ?? loaderData.status;
   const messages = {
     ready: {
-      title: "メールアドレスを確認",
-      message: "検証を完了するには、以下のボタンを押してください。",
+      title: t("pages.verifyEmail.title"),
+      message: t("pages.verifyEmail.instructions"),
       color: "blue",
     },
     verified: {
-      title: "メールアドレスを確認しました",
-      message: "メールアドレスの検証が完了しました。",
+      title: t("pages.verifyEmail.successTitle"),
+      message: t("pages.verifyEmail.successMessage"),
       color: "green",
     },
     "already-verified": {
-      title: "検証済みです",
-      message: "このメールアドレスはすでに検証されています。",
+      title: t("pages.verifyEmail.alreadyVerifiedTitle"),
+      message: t("pages.verifyEmail.alreadyVerifiedMessage"),
       color: "green",
     },
     expired: {
-      title: "リンクの有効期限が切れています",
-      message: "管理者に検証メールの再送を依頼してください。",
+      title: t("pages.verifyEmail.expiredLinkTitle"),
+      message: t("pages.verifyEmail.expiredLinkInstructions"),
       color: "yellow",
     },
     invalid: {
-      title: "リンクを確認できません",
-      message: "検証リンクが無効です。管理者に再送を依頼してください。",
+      title: t("pages.verifyEmail.invalidLinkTitle"),
+      message: t("pages.verifyEmail.invalidLinkInstructions"),
       color: "red",
     },
   }[status];
@@ -71,13 +72,11 @@ export default function VerifyEmail({ loaderData }: Route.ComponentProps) {
                 value={loaderData.token}
               />
               <Button type="submit" fullWidth>
-                検証を完了する
-              </Button>
+                {t("pages.verifyEmail.submit")}</Button>
             </Form>
           ) : (
             <Button component={Link} to="/login" fullWidth>
-              ログイン画面へ
-            </Button>
+              {t("pages.verifyEmail.backToLogin")}</Button>
           )}
         </section>
       </div>

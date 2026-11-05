@@ -1,3 +1,4 @@
+import { t } from "~/i18n";
 import { Alert, Button, PasswordInput, TextInput } from "@mantine/core";
 import { ArrowRightIcon } from "@phosphor-icons/react";
 import { data, Form, Link, redirect, useActionData } from "react-router";
@@ -32,8 +33,8 @@ import { APP_NAME } from "~/const";
 
 export function meta() {
   return [
-    { title: `ログイン | ${APP_NAME}` },
-    { name: "description", content: `${APP_NAME} ワークスペースにログイン` },
+    { title: t("pages.login.documentTitle", { 0: APP_NAME }) },
+    { name: "description", content: t("pages.login.workspaceTitle", { 0: APP_NAME }) },
   ];
 }
 
@@ -55,7 +56,7 @@ export async function action({ request }: Route.ActionArgs) {
   if (!/^\S+@\S+\.\S+$/.test(email) || !password) {
     logAuditEvent("auth.login.rejected", "account", email || null);
     return data(
-      { error: "メールアドレスとパスワードを入力してください。" },
+      { error: t("pages.login.loginInstructions") },
       { status: 400 },
     );
   }
@@ -65,13 +66,13 @@ export async function action({ request }: Route.ActionArgs) {
     if (await hasUsers()) {
       logAuditEvent("auth.login.rejected", "account", email);
       return data(
-        { error: "メールアドレスまたはパスワードが正しくありません。" },
+        { error: t("pages.login.invalidCredentials") },
         { status: 401 },
       );
     }
     if (name.length < 1 || password.length < 12) {
       return data(
-        { error: "初回登録では表示名と12文字以上のパスワードが必要です。" },
+        { error: t("pages.login.firstAccountRequirements") },
         { status: 400 },
       );
     }
@@ -88,7 +89,7 @@ export async function action({ request }: Route.ActionArgs) {
       return data(
         {
           error:
-            "初回アカウントを作成できませんでした。もう一度お試しください。",
+            t("pages.login.firstAccountCreationFailed"),
         },
         { status: 400 },
       );
@@ -107,7 +108,7 @@ export async function action({ request }: Route.ActionArgs) {
         return data(
           {
             error:
-              "アカウントを作成しましたが、検証メールを送信できませんでした。ログイン後、ユーザー一覧から再送してください。",
+              t("pages.login.verificationEmailSendFailedAfterSignup"),
           },
           { status: 502 },
         );
@@ -120,7 +121,7 @@ export async function action({ request }: Route.ActionArgs) {
       return data(
         {
           error:
-            "ログイン試行回数の上限に達しました。管理者にお問い合わせください。",
+            t("pages.login.loginAttemptsLocked"),
         },
         { status: 423 },
       );
@@ -132,8 +133,8 @@ export async function action({ request }: Route.ActionArgs) {
         {
           error:
             result === "locked"
-              ? "ログイン試行回数の上限に達しました。管理者にお問い合わせください。"
-              : "メールアドレスまたはパスワードが正しくありません。",
+              ? t("pages.login.loginAttemptsLocked")
+              : t("pages.login.invalidCredentials"),
         },
         { status: result === "locked" ? 423 : 401 },
       );
@@ -144,7 +145,7 @@ export async function action({ request }: Route.ActionArgs) {
       return data(
         {
           error:
-            "ログイン試行回数の上限に達しました。管理者にお問い合わせください。",
+            t("pages.login.loginAttemptsLocked"),
         },
         { status: 423 },
       );
@@ -192,32 +193,32 @@ export default function Login({ loaderData }: Route.ComponentProps) {
           <div className="login-welcome-mark">
             <img src="/logo.png" alt={APP_NAME} />
           </div>
-          <h1>{setupRequired ? "最初のアカウントを作成" : "おかえりなさい"}</h1>
+          <h1>{setupRequired ? t("pages.login.createFirstAccount") : t("pages.login.welcomeBack")}</h1>
           <p className="login-subtitle">
             {setupRequired
-              ? "最初のアカウントを登録して、ワークスペースを始めましょう。"
-              : "アカウントにログインして、ワークスペースを開きましょう。"}
+              ? t("pages.login.firstAccountIntroduction")
+              : t("pages.login.loginIntroduction")}
           </p>
           <Form method="post" className="login-form">
             {setupRequired && (
               <TextInput
                 name="name"
-                label="表示名"
+                label={t("pages.login.displayNameLabel")}
                 autoComplete="name"
                 required
               />
             )}
             <TextInput
               name="email"
-              label="メールアドレス"
-              placeholder="name@company.com"
+              label={t("pages.login.emailLabel")}
+              placeholder={t("pages.login.emailPlaceholder")}
               type="email"
               autoComplete="email"
               required
             />
             <PasswordInput
               name="password"
-              label={setupRequired ? "パスワード（12文字以上）" : "パスワード"}
+              label={setupRequired ? t("pages.login.passwordMinimumLabel") : t("pages.login.passwordLabel")}
               autoComplete={setupRequired ? "new-password" : "current-password"}
               minLength={setupRequired ? 12 : undefined}
               required
@@ -225,15 +226,14 @@ export default function Login({ loaderData }: Route.ComponentProps) {
             {actionData?.error && <Alert color="red">{actionData.error}</Alert>}
             {loaderData.passwordResetEnabled && !setupRequired && (
               <Link to="/forgot-password" className="forgot-password-link">
-                パスワードをお忘れですか？
-              </Link>
+                {t("pages.login.forgotPasswordLink")}</Link>
             )}
             <Button
               type="submit"
               fullWidth
               rightSection={<ArrowRightIcon size={16} aria-hidden="true" />}
             >
-              {setupRequired ? "アカウントを作成" : "ログイン"}
+              {setupRequired ? t("pages.login.createAccount") : t("pages.login.submitLogin")}
             </Button>
           </Form>
         </section>

@@ -1,3 +1,4 @@
+import { t } from "~/i18n";
 import { Alert, Button, TextInput, Title } from "@mantine/core";
 import { data, Form, Link, useActionData } from "react-router";
 import type { Route } from "./+types/forgot-password";
@@ -9,10 +10,10 @@ import {
 import { APP_NAME } from "~/const";
 
 const REQUEST_MESSAGE =
-  "該当するアカウントがあり、メールを送信できる場合は、再設定用のメールをお送りします。";
+  t("pages.forgotPassword.requestSentNotice");
 
 export function meta() {
-  return [{ title: `パスワード再設定 | ${APP_NAME}` }];
+  return [{ title: t("pages.forgotPassword.documentTitle", { 0: APP_NAME }) }];
 }
 
 export async function loader() {
@@ -42,10 +43,9 @@ export default function ForgotPassword({ loaderData }: Route.ComponentProps) {
       <div className="login-card-wrap">
         <section className="login-card">
           <div className="eyebrow">{APP_NAME}</div>
-          <Title order={1}>パスワードを再設定</Title>
+          <Title order={1}>{t("pages.forgotPassword.title")}</Title>
           <p className="login-subtitle">
-            登録したメールアドレスを入力してください。
-          </p>
+            {t("pages.forgotPassword.instructions")}</p>
           {actionData?.message ? (
             <Alert color="blue" role="status">
               {actionData.message}
@@ -54,19 +54,17 @@ export default function ForgotPassword({ loaderData }: Route.ComponentProps) {
             <Form method="post" className="login-form">
               <TextInput
                 name="email"
-                label="メールアドレス"
+                label={t("pages.forgotPassword.emailLabel")}
                 type="email"
                 autoComplete="email"
                 required
               />
               <Button type="submit" fullWidth>
-                再設定メールを送信
-              </Button>
+                {t("pages.forgotPassword.submit")}</Button>
             </Form>
           ) : (
             <Alert color="yellow" role="status">
-              メール送信が利用できません。管理者にお問い合わせください。
-            </Alert>
+              {t("pages.forgotPassword.emailUnavailable")}</Alert>
           )}
           <Button
             component={Link}
@@ -75,8 +73,7 @@ export default function ForgotPassword({ loaderData }: Route.ComponentProps) {
             fullWidth
             mt="sm"
           >
-            ログイン画面へ戻る
-          </Button>
+            {t("pages.forgotPassword.backToLogin")}</Button>
         </section>
       </div>
     </main>

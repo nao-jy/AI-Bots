@@ -1,3 +1,4 @@
+import { t } from "~/i18n";
 import { Button, Group, Select, Stack, Text, TextInput } from "@mantine/core";
 import { PlusIcon, TrashIcon } from "@phosphor-icons/react";
 import { useState } from "react";
@@ -50,8 +51,8 @@ export function ScheduleTargetsEditor({
       {targets.map((target, index) => (
         <Group key={index} align="flex-end" wrap="nowrap">
           <Select
-            label={index === 0 ? "ボット / アダプタ" : undefined}
-            placeholder="送信先を選択"
+            label={index === 0 ? t("components.entityPage.scheduleTargetsEditor.targetTypeLabel") : undefined}
+            placeholder={t("components.entityPage.scheduleTargetsEditor.targetPlaceholder")}
             data={targetOptions}
             value={
               target.chatbotAdapterId ? String(target.chatbotAdapterId) : null
@@ -73,11 +74,11 @@ export function ScheduleTargetsEditor({
             required
           />
           <TextInput
-            label={index === 0 ? "スレッドID" : undefined}
-            placeholder="例: slack:C123:1234567890.123456"
+            label={index === 0 ? t("components.entityPage.scheduleTargetsEditor.threadIdLabel") : undefined}
+            placeholder={t("components.entityPage.scheduleTargetsEditor.threadIdPlaceholder")}
             description={
               index === 0
-                ? "対象のスレッドでAIに「このスレッドIDを教えて」と聞いてください。"
+                ? t("components.entityPage.scheduleTargetsEditor.threadIdHelp")
                 : undefined
             }
             value={target.threadId}
@@ -96,7 +97,7 @@ export function ScheduleTargetsEditor({
             type="button"
             variant="subtle"
             color="red"
-            aria-label={`送信先 ${index + 1} を削除`}
+            aria-label={t("components.entityPage.scheduleTargetsEditor.removeTargetAriaLabel", { 0: index + 1 })}
             onClick={() =>
               setTargets((current) =>
                 current.filter((_, itemIndex) => itemIndex !== index),
@@ -120,12 +121,10 @@ export function ScheduleTargetsEditor({
           ])
         }
       >
-        送信先を追加
-      </Button>
+        {t("components.entityPage.scheduleTargetsEditor.addTarget")}</Button>
       {targetOptions.length === 0 && (
         <Text size="xs" c="dimmed">
-          ボットとアダプタの組み合わせがありません。
-        </Text>
+          {t("components.entityPage.scheduleTargetsEditor.noTargetsAvailable")}</Text>
       )}
     </Stack>
   );

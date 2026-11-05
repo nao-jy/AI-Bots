@@ -1,3 +1,4 @@
+import { t, tMessage } from "~/i18n";
 import { useEffect, useRef } from "react";
 import { ActionIcon, Alert, Group } from "@mantine/core";
 import {
@@ -43,7 +44,7 @@ export function SandboxInstanceDetails({
 
   return (
     <div className="entity-details">
-      <strong className="entity-details-title">Persistent Instance</strong>
+      <strong className="entity-details-title">{t("components.entityPage.sandboxInstanceDetails.title")}</strong>
       {instances.length > 0 ? (
         <div className="sandbox-instance-list">
           {instances.map((instance) => (
@@ -56,7 +57,7 @@ export function SandboxInstanceDetails({
                 <ActionIcon
                   variant="subtle"
                   color="gray"
-                  aria-label={`${instance.instanceId}のシェルを開く`}
+                  aria-label={t("components.entityPage.sandboxInstanceDetails.openShell", { 0: instance.instanceId })}
                   onClick={() => onOpenShell(instance.instanceId)}
                 >
                   <TerminalWindowIcon size={16} aria-hidden="true" />
@@ -67,7 +68,7 @@ export function SandboxInstanceDetails({
                   onSubmit={(event) => {
                     if (
                       !window.confirm(
-                        `Persistent Instance「${instance.instanceId}」を削除しますか？`,
+                        t("components.entityPage.sandboxInstanceDetails.confirmDeleteInstance", { 0: instance.instanceId }),
                       )
                     ) {
                       event.preventDefault();
@@ -89,7 +90,7 @@ export function SandboxInstanceDetails({
                     type="submit"
                     variant="subtle"
                     color="red"
-                    aria-label={`${instance.instanceId}を削除`}
+                    aria-label={t("components.entityPage.sandboxInstanceDetails.deleteInstance", { 0: instance.instanceId })}
                     disabled={fetcher.state !== "idle"}
                   >
                     <TrashIcon size={16} aria-hidden="true" />
@@ -100,11 +101,11 @@ export function SandboxInstanceDetails({
           ))}
         </div>
       ) : (
-        <span className="table-text">Persistent Instanceはありません</span>
+        <span className="table-text">{t("components.entityPage.sandboxInstanceDetails.noInstances")}</span>
       )}
       {fetcher.data?.error && (
         <Alert color="red" role="alert" icon={<InfoIcon />}>
-          {fetcher.data.error}
+          {tMessage(fetcher.data.error)}
         </Alert>
       )}
     </div>

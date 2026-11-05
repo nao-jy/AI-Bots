@@ -1,3 +1,4 @@
+import { t } from "~/i18n";
 import { Alert, Button, PasswordInput, Title } from "@mantine/core";
 import { data, Form, Link, useActionData } from "react-router";
 import type { Route } from "./+types/reset-password";
@@ -22,7 +23,7 @@ function noStoreHeaders() {
 }
 
 export function meta() {
-  return [{ title: `パスワード再設定 | ${APP_NAME}` }];
+  return [{ title: t("pages.resetPassword.documentTitle", { 0: APP_NAME }) }];
 }
 
 export async function loader({ request }: Route.LoaderArgs) {
@@ -52,18 +53,18 @@ export default function ResetPassword({ loaderData }: Route.ComponentProps) {
     { title: string; message: string; color: string }
   > = {
     reset: {
-      title: "パスワードを再設定しました",
-      message: "新しいパスワードでログインしてください。",
+      title: t("pages.resetPassword.successTitle"),
+      message: t("pages.resetPassword.successInstructions"),
       color: "green",
     },
     expired: {
-      title: "リンクの有効期限が切れています",
-      message: "再設定メールをもう一度リクエストしてください。",
+      title: t("pages.resetPassword.expiredLinkTitle"),
+      message: t("pages.resetPassword.expiredLinkInstructions"),
       color: "yellow",
     },
     invalid: {
-      title: "リンクを確認できません",
-      message: "リンクが無効か、すでに使用されています。",
+      title: t("pages.resetPassword.invalidLinkTitle"),
+      message: t("pages.resetPassword.invalidLinkMessage"),
       color: "red",
     },
   };
@@ -75,12 +76,11 @@ export default function ResetPassword({ loaderData }: Route.ComponentProps) {
           <div className="eyebrow">{APP_NAME}</div>
           {status === "ready" || status === "weak-password" ? (
             <>
-              <Title order={1}>新しいパスワードを設定</Title>
-              <p className="login-subtitle">12文字以上で入力してください。</p>
+              <Title order={1}>{t("pages.resetPassword.formTitle")}</Title>
+              <p className="login-subtitle">{t("pages.resetPassword.passwordHint")}</p>
               {status === "weak-password" && (
                 <Alert color="red" role="alert">
-                  パスワードは12文字以上で入力してください。
-                </Alert>
+                  {t("pages.resetPassword.passwordValidationError")}</Alert>
               )}
               <Form method="post" className="login-form">
                 <input
@@ -90,14 +90,13 @@ export default function ResetPassword({ loaderData }: Route.ComponentProps) {
                 />
                 <PasswordInput
                   name="password"
-                  label="新しいパスワード"
+                  label={t("pages.resetPassword.newPasswordLabel")}
                   autoComplete="new-password"
                   minLength={12}
                   required
                 />
                 <Button type="submit" fullWidth>
-                  パスワードを再設定
-                </Button>
+                  {t("pages.resetPassword.submit")}</Button>
               </Form>
             </>
           ) : (
@@ -109,8 +108,7 @@ export default function ResetPassword({ loaderData }: Route.ComponentProps) {
             </>
           )}
           <Button component={Link} to="/login" variant="subtle" fullWidth mt="sm">
-            ログイン画面へ
-          </Button>
+            {t("pages.resetPassword.backToLogin")}</Button>
         </section>
       </div>
     </main>

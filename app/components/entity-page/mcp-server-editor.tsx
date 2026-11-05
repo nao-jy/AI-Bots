@@ -1,3 +1,4 @@
+import { t } from "~/i18n";
 import { useState } from "react";
 import { Button, Group, Input, Select, Stack, Text } from "@mantine/core";
 import type { EntityOption } from "../../types/entities";
@@ -105,7 +106,7 @@ export function McpServerEditor({
       {connections.map((connection, index) => (
         <Group key={index} align="flex-end" wrap="nowrap">
           <Select
-            label={`接続 ${index + 1} のMCPサーバー`}
+            label={t("components.entityPage.mcpServerEditor.serverConnectionLabel", { 0: index + 1 })}
             placeholder={placeholder}
             data={serverData}
             value={connection.serverId || null}
@@ -120,12 +121,12 @@ export function McpServerEditor({
             }
             searchable
             clearable
-            nothingFoundMessage="該当するオプションがありません"
+            nothingFoundMessage={t("components.entityPage.mcpServerEditor.noOptions")}
             style={{ flex: 1 }}
           />
           <Select
-            label="OAuth認証"
-            placeholder="使用しない"
+            label={t("components.entityPage.mcpServerEditor.oauthAuthenticationLabel")}
+            placeholder={t("components.entityPage.mcpServerEditor.noOauthOption")}
             data={authenticationOptions}
             value={connection.authId}
             onChange={(authId) =>
@@ -137,7 +138,7 @@ export function McpServerEditor({
             }
             searchable
             clearable
-            nothingFoundMessage="該当するオプションがありません"
+            nothingFoundMessage={t("components.entityPage.mcpServerEditor.noOptions")}
             style={{ flex: 1 }}
           />
           <Button
@@ -150,8 +151,7 @@ export function McpServerEditor({
               )
             }
           >
-            削除
-          </Button>
+            {t("components.entityPage.mcpServerEditor.delete")}</Button>
         </Group>
       ))}
       <Button
@@ -165,8 +165,7 @@ export function McpServerEditor({
           ])
         }
       >
-        ＋ 接続を追加
-      </Button>
+        {t("components.entityPage.mcpServerEditor.addConnection")}</Button>
     </Stack>
   );
 }

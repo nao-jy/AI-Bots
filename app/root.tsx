@@ -9,6 +9,7 @@ import {
   ScrollRestoration,
   useNavigation,
 } from "react-router";
+import { I18nextProvider, useTranslation } from "react-i18next";
 
 import type { Route } from "./+types/root";
 import "@mantine/core/styles.css";
@@ -30,6 +31,7 @@ import {
 } from "./.server/request-context";
 import { getSessionUser } from "./.server/auth";
 import { startCronScheduler } from "./.server/features/scheduler";
+import i18n, { type NavigationLabelKey } from "./i18n";
 
 export const links: Route.LinksFunction = () => [
   { rel: "icon", type: "image/png", href: "/favicon.png" },
@@ -56,10 +58,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Links />
       </head>
       <body>
-        <MantineProvider>
-          <Notifications />
-          {children}
-        </MantineProvider>
+        <I18nextProvider i18n={i18n}>
+          <MantineProvider>
+            <Notifications />
+            {children}
+          </MantineProvider>
+        </I18nextProvider>
         <ScrollRestoration />
         <Scripts />
       </body>
@@ -68,6 +72,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
+  const { t } = useTranslation();
   const navigation = useNavigation();
   const isPending = navigation.state !== "idle";
   const [showPending, setShowPending] = useState(false);
@@ -84,15 +89,15 @@ export default function App() {
 
   const destination = navigation.location?.pathname;
   const destinationLabel = destination
-    ? getNavigationLabel(destination)
+    ? t(getNavigationLabel(destination))
     : navigation.formAction === "/logout"
-      ? "ログアウト"
-      : "処理";
+      ? t("navigation.logout")
+      : t("loading.processing");
   const pendingMessage = destination
-    ? `${destinationLabel}を読み込んでいます`
-    : destinationLabel === "ログアウト"
-      ? "ログアウトしています"
-      : "送信しています";
+    ? t("loading.destination", { label: destinationLabel })
+    : navigation.formAction === "/logout"
+      ? t("loading.logout")
+      : t("loading.submitting");
 
   return (
     <>
@@ -109,24 +114,24 @@ export default function App() {
   );
 }
 
-function getNavigationLabel(pathname: string) {
-  if (pathname === "/") return "ダッシュボード";
+function getNavigationLabel(pathname: string): NavigationLabelKey {
+  if (pathname === "/") return "navigation.dashboard";
 
-  const labels: Record<string, string> = {
-    "/bots": "チャットボット",
-    "/adapters": "アダプタ",
-    "/providers": "プロバイダ",
-    "/oauth-clients": "OAuthクライアント",
-    "/oauth-authentications": "OAuth認証情報",
-    "/agents": "エージェント",
-    "/mcp-servers": "MCPサーバー",
-    "/schedules": "スケジュール",
-    "/users": "ユーザー",
-    "/login": "ログイン画面",
-    "/logout": "ログアウト",
+  const labels: Record<string, NavigationLabelKey> = {
+    "/bots": "navigation.chatbots",
+    "/adapters": "navigation.adapters",
+    "/providers": "navigation.providers",
+    "/oauth-clients": "navigation.oauthClients",
+    "/oauth-authentications": "navigation.oauthAuthentications",
+    "/agents": "navigation.agents",
+    "/mcp-servers": "navigation.mcpServers",
+    "/schedules": "navigation.schedules",
+    "/users": "navigation.users",
+    "/login": "navigation.login",
+    "/logout": "navigation.logout",
   };
 
-  return labels[pathname] ?? "ページ";
+  return labels[pathname] ?? "navigation.page";
 }
 
 export const middleware: Route.MiddlewareFunction[] = [
@@ -163,15 +168,18 @@ export const middleware: Route.MiddlewareFunction[] = [
 ];
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
-  let message = "Oops!";
-  let details = "An unexpected error occurred.";
+  let message = i18n.t("errors.fallbackTitle");
+  let details = i18n.t("errors.unexpected");
   let stack: string | undefined;
 
   if (isRouteErrorResponse(error)) {
-    message = error.status === 404 ? "404" : "Error";
+    message =
+      error.status === 404
+        ? i18n.t("errors.notFoundCode")
+        : i18n.t("errors.title");
     details =
       error.status === 404
-        ? "The requested page could not be found."
+        ? i18n.t("errors.pageNotFound")
         : error.statusText || details;
   } else if (import.meta.env.DEV && error && error instanceof Error) {
     details = error.message;

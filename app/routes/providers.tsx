@@ -1,3 +1,4 @@
+import { t } from "~/i18n";
 import type { Route } from "./+types/providers";
 import {
   EntityPageView,
@@ -13,42 +14,42 @@ import { APP_NAME } from "~/const";
 import { listProviderNames } from "~/.server/features/provider";
 
 const page: Omit<EntityPageDefinition, "records"> = {
-  title: "プロバイダー",
-  description: "AI SDKプロバイダー接続とリクエスト設定を管理します。",
+  title: t("pages.providers.title"),
+  description: t("pages.providers.description"),
   icon: "providers",
   columns: [
-    { key: "name", label: "接続名" },
-    { key: "providerName", label: "プロバイダー" },
-    { key: "headersConfigured", label: "HTTPヘッダー" },
-    { key: "updated", label: "最終更新" },
+    { key: "name", label: t("pages.providers.connectionNameLabel") },
+    { key: "providerName", label: t("pages.providers.providerNameLabel") },
+    { key: "headersConfigured", label: t("pages.providers.httpHeadersLabel") },
+    { key: "updated", label: t("pages.providers.updatedLabel") },
   ],
   fields: [
     {
       key: "name",
-      label: "接続名",
-      placeholder: "例：社内OpenAI",
+      label: t("pages.providers.connectionNameLabel"),
+      placeholder: t("pages.providers.connectionNamePlaceholder"),
     },
     {
       key: "providerName",
-      label: "プロバイダー識別子",
+      label: t("pages.providers.providerIdLabel"),
       type: "select",
-      placeholder: "プロバイダーを選択",
+      placeholder: t("pages.providers.providerPlaceholder"),
       help: {
-        text: "各プロバイダーのモデル名や利用可能なオプションを確認できます。",
-        linkText: "AI SDK プロバイダードキュメント",
+        text: t("pages.providers.documentationHelp"),
+        linkText: t("pages.providers.documentationLink"),
         href: "https://ai-sdk.dev/providers/ai-sdk-providers",
       },
     },
     {
       key: "args",
-      label: "プロバイダー引数",
+      label: t("pages.providers.providerArgumentsLabel"),
       type: "key-value",
       valueType: "json-scalar",
       wide: true,
     },
     {
       key: "headers",
-      label: "HTTPヘッダー",
+      label: t("pages.providers.httpHeadersLabel"),
       type: "key-value",
       valueType: "string",
       wide: true,
@@ -57,7 +58,7 @@ const page: Omit<EntityPageDefinition, "records"> = {
 };
 
 export function meta() {
-  return [{ title: `プロバイダー | ${APP_NAME}` }];
+  return [{ title: t("pages.providers.documentTitle", { 0: APP_NAME }) }];
 }
 
 export async function loader({ request }: Route.LoaderArgs) {
@@ -85,15 +86,15 @@ export async function action({ request }: Route.ActionArgs) {
       ? { ok: true }
       : {
           ok: false,
-          error: "プロバイダーが見つからないか、エージェントで使用中です。",
+          error: t("pages.providers.inUseOrNotFound"),
         };
   }
   if (intent === "create") return saveProvider(user, null, form);
   if (intent === "update")
     return Number.isInteger(id)
       ? saveProvider(user, id, form)
-      : { ok: false, error: "プロバイダーが見つかりません。" };
-  return { ok: false, error: "操作を判定できませんでした。" };
+      : { ok: false, error: t("pages.providers.notFound") };
+  return { ok: false, error: t("pages.providers.unknownAction") };
 }
 
 export default function Models({ loaderData }: Route.ComponentProps) {
