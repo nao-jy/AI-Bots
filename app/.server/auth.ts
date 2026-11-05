@@ -6,6 +6,7 @@ import {
 } from "node:crypto";
 import { promisify } from "node:util";
 import { redirect } from "react-router";
+import { clearCookie, getCookieValue, serializeCookie } from "../cookie";
 import {
   expireSessionByToken,
   getSessionUser as getSessionUserInner,
@@ -29,22 +30,18 @@ export function hashSessionToken(token: string) {
 }
 
 export function getSessionToken(request: Request) {
-  const cookieHeader = request.headers.get("Cookie") ?? "";
-  const cookie = cookieHeader
-    .split(";")
-    .map((part) => part.trim())
-    .find((part) => part.startsWith(`${SESSION_COOKIE}=`));
-  return cookie?.slice(SESSION_COOKIE.length + 1) ?? null;
+  return getCookieValue(request.headers.get("Cookie"), SESSION_COOKIE);
 }
 
 export function sessionCookie(token: string, expiresAt: Date) {
-  const secure = process.env.NODE_ENV === "production" ? "; Secure" : "";
-  return `${SESSION_COOKIE}=${token}; Path=/; HttpOnly; SameSite=Lax; Expires=${expiresAt.toUTCString()}${secure}`;
+  return serializeCookie(SESSION_COOKIE, token, {
+    httpOnly: true,
+    expires: expiresAt,
+  });
 }
 
 export function clearSessionCookie() {
-  const secure = process.env.NODE_ENV === "production" ? "; Secure" : "";
-  return `${SESSION_COOKIE}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0${secure}`;
+  return clearCookie(SESSION_COOKIE, { httpOnly: true });
 }
 
 export async function createSession(userId: number) {

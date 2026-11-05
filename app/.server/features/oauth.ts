@@ -1,6 +1,7 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import * as oidc from "openid-client";
 import { redirect } from "react-router";
+import { clearCookie, getCookieValue, serializeCookie } from "../../cookie";
 import { OAUTH_CALLBACK_PATH } from "../../const";
 import type { AuthUser } from "../auth";
 import {
@@ -40,24 +41,20 @@ function sign(payload: string) {
     .digest("base64url");
 }
 
-function secureCookie() {
-  return process.env.NODE_ENV === "production" ? "; Secure" : "";
-}
-
 function flowCookie(value: string) {
-  return `${FLOW_COOKIE}=${value}; Path=${CALLBACK_PATH}; Max-Age=${FLOW_TTL_SECONDS}; HttpOnly; SameSite=Lax${secureCookie()}`;
+  return serializeCookie(FLOW_COOKIE, value, {
+    path: CALLBACK_PATH,
+    maxAge: FLOW_TTL_SECONDS,
+    httpOnly: true,
+  });
 }
 
 function clearFlowCookie() {
-  return `${FLOW_COOKIE}=; Path=${CALLBACK_PATH}; Max-Age=0; HttpOnly; SameSite=Lax${secureCookie()}`;
+  return clearCookie(FLOW_COOKIE, { path: CALLBACK_PATH, httpOnly: true });
 }
 
 function readCookie(request: Request, name: string) {
-  return (request.headers.get("Cookie") ?? "")
-    .split(";")
-    .map((part) => part.trim())
-    .find((part) => part.startsWith(`${name}=`))
-    ?.slice(name.length + 1);
+  return getCookieValue(request.headers.get("Cookie"), name) ?? undefined;
 }
 
 function decodeFlow(request: Request): OAuthFlow | null {
@@ -199,7 +196,9 @@ export async function startOAuthAuthorization(user: AuthUser, form: FormData) {
       code_challenge_method: "S256",
     });
     return redirect(authorizationUrl.href, {
-      headers: { "Set-Cookie": flowCookie(`${payload}.${sign(payload)}`) },
+      headers: {
+      "Set-Cookie": flowCookie(`${payload}.${sign(payload)}`),
+      },
     });
   } catch (error) {
     return {
@@ -221,14 +220,14 @@ export async function completeOAuthAuthorization(
   const authorizationResponseUrl = new URL(callbackUrl);
   authorizationResponseUrl.search = requestUrl.search;
   const flow = decodeFlow(request);
-  const clearCookie = clearFlowCookie();
+  const clearCookieHeader = clearFlowCookie();
   if (!flow || flow.userId !== user.id || params.get("state") !== flow.state)
     return redirect("/oauth-authentications?oauth=error", {
-      headers: { "Set-Cookie": clearCookie },
+      headers: { "Set-Cookie": clearCookieHeader },
     });
   if (params.has("error"))
     return redirect("/oauth-authentications?oauth=denied", {
-      headers: { "Set-Cookie": clearCookie },
+      headers: { "Set-Cookie": clearCookieHeader },
     });
 
   try {
@@ -266,11 +265,11 @@ export async function completeOAuthAuthorization(
     };
     await saveOAuthAuthentication(user.id, existing?.id ?? null, saved);
     return redirect("/oauth-authentications?oauth=success", {
-      headers: { "Set-Cookie": clearCookie },
+      headers: { "Set-Cookie": clearCookieHeader },
     });
   } catch {
     return redirect("/oauth-authentications?oauth=error", {
-      headers: { "Set-Cookie": clearCookie },
+      headers: { "Set-Cookie": clearCookieHeader },
     });
   }
 }

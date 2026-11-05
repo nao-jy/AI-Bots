@@ -1,6 +1,7 @@
 import { redirect } from "react-router";
 import type { Route } from "./+types/locale";
 import { isLocale, LOCALE_COOKIE } from "~/i18n";
+import { serializeCookie } from "~/cookie";
 
 export function loader({ request }: Route.LoaderArgs) {
   const requestUrl = new URL(request.url);
@@ -31,10 +32,13 @@ export async function action({ request }: Route.ActionArgs) {
 
   if (!locale) return redirect(destination);
 
-  const secure = new URL(request.url).protocol === "https:" ? "; Secure" : "";
+  const secure = new URL(request.url).protocol === "https:";
   return redirect(destination, {
     headers: {
-      "Set-Cookie": `${LOCALE_COOKIE}=${locale}; Path=/; Max-Age=31536000; SameSite=Lax${secure}`,
+      "Set-Cookie": serializeCookie(LOCALE_COOKIE, locale, {
+        maxAge: 31536000,
+        secure,
+      }),
     },
   });
 }

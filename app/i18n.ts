@@ -1,5 +1,6 @@
 import i18next, { type i18n as I18nInstance } from "i18next";
 import { initReactI18next } from "react-i18next";
+import { getCookieValue } from "./cookie";
 import { en } from "./locales/en";
 import { ja } from "./locales/ja";
 
@@ -17,18 +18,9 @@ export function isLocale(value: string): value is Locale {
 }
 
 export function getLocaleFromCookie(cookieHeader: string | null): Locale {
-  const localeCookie = cookieHeader
-    ?.split(";")
-    .map((part) => part.trim())
-    .find((part) => part.startsWith(`${LOCALE_COOKIE}=`));
-  const value = localeCookie?.slice(LOCALE_COOKIE.length + 1);
+  const value = getCookieValue(cookieHeader, LOCALE_COOKIE);
   if (!value) return DEFAULT_LOCALE;
-  try {
-    const decoded = decodeURIComponent(value);
-    return isLocale(decoded) ? decoded : DEFAULT_LOCALE;
-  } catch {
-    return DEFAULT_LOCALE;
-  }
+  return isLocale(value) ? value : DEFAULT_LOCALE;
 }
 
 function getInitialLocale(): Locale {

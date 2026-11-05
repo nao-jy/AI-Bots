@@ -11,6 +11,7 @@ import {
 } from "../repository/session";
 import { decryptCredential, encryptCredential } from "../utils";
 import { getSessionToken, hashSessionToken } from "../auth";
+import { clearCookie, getCookieValue, serializeCookie } from "../../cookie";
 
 const MFA_SETUP_COOKIE = "bot_manager_mfa_setup";
 const LEGACY_MFA_SETUP_COOKIE_PATH = "/mfa";
@@ -26,31 +27,17 @@ export function createMfaSecret() {
   return generateSecret();
 }
 
-function secureCookie() {
-  return process.env.NODE_ENV === "production" ? "; Secure" : "";
-}
-
-function serializeCookie(
-  name: string,
-  value: string,
-  maxAge: number,
-  path = "/",
-) {
-  return `${name}=${value}; Path=${path}; Max-Age=${maxAge}; HttpOnly; SameSite=Strict${secureCookie()}`;
-}
-
 function clearLegacyMfaSetupCookie() {
-  return serializeCookie(
-    MFA_SETUP_COOKIE,
-    "",
-    0,
-    LEGACY_MFA_SETUP_COOKIE_PATH,
-  );
+  return clearCookie(MFA_SETUP_COOKIE, {
+    path: LEGACY_MFA_SETUP_COOKIE_PATH,
+    httpOnly: true,
+    sameSite: "strict",
+  });
 }
 
 export function clearMfaSetupCookies() {
   return [
-    serializeCookie(MFA_SETUP_COOKIE, "", 0),
+    clearCookie(MFA_SETUP_COOKIE, { httpOnly: true, sameSite: "strict" }),
     clearLegacyMfaSetupCookie(),
   ];
 }
@@ -71,16 +58,16 @@ function createSetupCookie(
       secret,
       expiresAt: expiresAt.getTime(),
     }),
-    Math.max(1, Math.ceil((expiresAt.getTime() - Date.now()) / 1000)),
+    {
+      maxAge: Math.max(1, Math.ceil((expiresAt.getTime() - Date.now()) / 1000)),
+      httpOnly: true,
+      sameSite: "strict",
+    },
   );
 }
 
 function decodeSetupChallenge(request: Request): SetupChallenge | null {
-  const value = (request.headers.get("Cookie") ?? "")
-    .split(";")
-    .map((part) => part.trim())
-    .find((part) => part.startsWith(`${MFA_SETUP_COOKIE}=`))
-    ?.slice(MFA_SETUP_COOKIE.length + 1);
+  const value = getCookieValue(request.headers.get("Cookie"), MFA_SETUP_COOKIE);
   if (!value) return null;
 
   try {
@@ -113,10 +100,7 @@ export async function createMfaLoginChallenge(
     token,
     expiresAt,
     setupCookies: secret
-      ? [
-          createSetupCookie(userId, secret, expiresAt),
-          clearLegacyMfaSetupCookie(),
-        ]
+      ? [createSetupCookie(userId, secret, expiresAt), clearLegacyMfaSetupCookie()]
       : clearMfaSetupCookies(),
   };
 }

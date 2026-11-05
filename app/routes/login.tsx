@@ -3,6 +3,7 @@ import { Alert, Button, PasswordInput, TextInput } from "@mantine/core";
 import { ArrowRightIcon } from "@phosphor-icons/react";
 import { data, Form, Link, redirect, useActionData } from "react-router";
 import type { Route } from "./+types/login";
+import { appendSetCookies } from "~/cookie";
 import {
   createSession,
   getSessionUser,
@@ -159,19 +160,20 @@ export async function action({ request }: Route.ActionArgs) {
       user.mfaSecret ? undefined : createMfaSecret(),
     );
     const headers = new Headers();
-    headers.append(
-      "Set-Cookie",
+    appendSetCookies(
+      headers,
       sessionCookie(challenge.token, challenge.expiresAt),
+      ...challenge.setupCookies,
     );
-    for (const cookie of challenge.setupCookies)
-      headers.append("Set-Cookie", cookie);
     return redirect("/mfa", { headers });
   }
 
   const session = await createSession(user.id);
   logAuditEvent("auth.login.succeeded", "user", user.id, user.id);
   return redirect("/bots", {
-    headers: { "Set-Cookie": sessionCookie(session.token, session.expiresAt) },
+    headers: {
+      "Set-Cookie": sessionCookie(session.token, session.expiresAt),
+    },
   });
 }
 

@@ -18,6 +18,7 @@ import {
   sessionCookie,
 } from "../.server/auth";
 import { APP_NAME } from "~/const";
+import { appendSetCookies } from "~/cookie";
 
 export function meta() {
   return [{ title: t("pages.mfa.documentTitle", { 0: APP_NAME }) }];
@@ -27,16 +28,17 @@ export async function loader({ request }: Route.LoaderArgs) {
   const challenge = await getMfaChallenge(request);
   if (!challenge) {
     const headers = new Headers({ "Cache-Control": "no-store" });
-    headers.append("Set-Cookie", clearSessionCookie());
-    for (const cookie of clearMfaSetupCookies())
-      headers.append("Set-Cookie", cookie);
+    appendSetCookies(
+      headers,
+      clearSessionCookie(),
+      ...clearMfaSetupCookies(),
+    );
     throw redirect("/login", { headers });
   }
 
   const headers = new Headers({ "Cache-Control": "no-store" });
   if ("setupCookies" in challenge)
-    for (const cookie of challenge.setupCookies ?? [])
-      headers.append("Set-Cookie", cookie);
+    appendSetCookies(headers, ...(challenge.setupCookies ?? []));
 
   return data(
     {
@@ -57,9 +59,11 @@ export async function action({ request }: Route.ActionArgs) {
   const challenge = await getMfaChallenge(request);
   if (!challenge) {
     const headers = new Headers({ "Cache-Control": "no-store" });
-    headers.append("Set-Cookie", clearSessionCookie());
-    for (const cookie of clearMfaSetupCookies())
-      headers.append("Set-Cookie", cookie);
+    appendSetCookies(
+      headers,
+      clearSessionCookie(),
+      ...clearMfaSetupCookies(),
+    );
     return data(
       { error: t("pages.mfa.expiredSession") },
       { status: 401, headers },
@@ -72,9 +76,11 @@ export async function action({ request }: Route.ActionArgs) {
     const locked = await recordMfaFailure(request);
     const headers = new Headers({ "Cache-Control": "no-store" });
     if (locked) {
-      headers.append("Set-Cookie", clearSessionCookie());
-      for (const cookie of clearMfaSetupCookies())
-        headers.append("Set-Cookie", cookie);
+      appendSetCookies(
+        headers,
+        clearSessionCookie(),
+        ...clearMfaSetupCookies(),
+      );
     }
     return data(
       {
@@ -100,9 +106,11 @@ export async function action({ request }: Route.ActionArgs) {
 
   const headers = new Headers();
   headers.append("Cache-Control", "no-store");
-  headers.append("Set-Cookie", sessionCookie(token, completed.expiresAt));
-  for (const cookie of clearMfaSetupCookies())
-    headers.append("Set-Cookie", cookie);
+  appendSetCookies(
+    headers,
+    sessionCookie(token, completed.expiresAt),
+    ...clearMfaSetupCookies(),
+  );
   return redirect("/bots", { headers });
 }
 
