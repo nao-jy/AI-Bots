@@ -34,6 +34,7 @@ export type EntityField = {
 };
 
 export type EntitySection =
+  | "dashboard"
   | "bots"
   | "adapters"
   | "agents"

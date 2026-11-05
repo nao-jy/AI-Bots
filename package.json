@@ -61,6 +61,7 @@
     "react-dom": "^19.2.8",
     "react-i18next": "^17.1.12",
     "react-router": "^8.4.0",
+    "recharts": "^3.10.1",
     "resend": "^6.37.0",
     "winston": "^3.19.0",
     "winston-daily-rotate-file": "^5.0.0",

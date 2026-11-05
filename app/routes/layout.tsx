@@ -21,6 +21,7 @@ const items: {
   id: EntitySection;
   labelKey: NavigationLabelKey;
 }[] = [
+  { path: "/", id: "dashboard", labelKey: "navigation.dashboard" },
   { path: "/bots", id: "bots", labelKey: "navigation.chatbots" },
   { path: "/adapters", id: "adapters", labelKey: "navigation.adapters" },
   { path: "/providers", id: "providers", labelKey: "navigation.providers" },

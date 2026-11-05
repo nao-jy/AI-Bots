@@ -9,6 +9,7 @@ import {
   HardDrivesIcon,
   ClockIcon,
   GearIcon,
+  ChartLineIcon,
 } from "@phosphor-icons/react";
 import type { EntitySection } from "./types";
 
@@ -26,6 +27,8 @@ export function SectionIcon({
   };
 
   switch (section) {
+    case "dashboard":
+      return <ChartLineIcon {...props} />;
     case "bots":
       return <RobotIcon {...props} />;
     case "adapters":
