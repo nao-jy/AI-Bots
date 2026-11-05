@@ -234,11 +234,11 @@ export async function completeOAuthAuthorization(request: Request) {
   const flow = decodeFlow(request);
   const clearCookieHeader = clearFlowCookie();
   if (!flow || params.get("state") !== flow.state)
-    return redirect("/oauth-authentications?oauth=error", {
+    return redirect("/oauth/complete?status=error", {
       headers: { "Set-Cookie": clearCookieHeader },
     });
   if (params.has("error"))
-    return redirect("/oauth-authentications?oauth=denied", {
+    return redirect("/oauth/complete?status=denied", {
       headers: { "Set-Cookie": clearCookieHeader },
     });
 
@@ -278,11 +278,11 @@ export async function completeOAuthAuthorization(request: Request) {
       expiresAt,
     };
     await saveOAuthAuthentication(flow.userId, existing?.id ?? null, saved);
-    return redirect("/oauth-authentications?oauth=success", {
+    return redirect("/oauth/complete?status=success", {
       headers: { "Set-Cookie": clearCookieHeader },
     });
   } catch {
-    return redirect("/oauth-authentications?oauth=error", {
+    return redirect("/oauth/complete?status=error", {
       headers: { "Set-Cookie": clearCookieHeader },
     });
   }

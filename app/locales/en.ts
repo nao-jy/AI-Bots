@@ -776,6 +776,14 @@ export const en = {
       startDescription:
         "Continue to the selected OAuth provider to authorize this account.",
       startButton: "Continue to OAuth provider",
+      completionDocumentTitle: "OAuth authorization complete | {{0}}",
+      completionTitle: "OAuth authorization result",
+      completionSucceeded:
+        "OAuth authorization completed and the credentials were saved.",
+      completionCanceled: "OAuth authorization was canceled.",
+      completionFailed:
+        "OAuth authorization could not be completed. Check the client settings and callback URL.",
+      completionCloseTab: "Close this tab to return to the previous page.",
       nameLabel: "Credential name",
       oauthClientLabel: "OAuth client",
       expiresAtLabel: "Expires at",

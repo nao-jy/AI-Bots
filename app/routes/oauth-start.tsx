@@ -50,7 +50,7 @@ export default function OAuthStart({ loaderData }: Route.ComponentProps) {
             <input type="hidden" name="payload" value={loaderData.payload} />
             <Button
               type="submit"
-              className="primary-button login-submit"
+              className="primary-button oauth-start-submit"
               fullWidth
             >
               {translate("pages.oauthAuthentications.startButton")}

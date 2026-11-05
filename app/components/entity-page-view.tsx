@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { EntityOption, EntityRecord } from "../types/entities";
 import { EntityPageDialogs } from "./entity-page/dialogs";
 import { EntityPageHeader } from "./entity-page/header";
@@ -22,10 +22,29 @@ function localizeOptions(options?: string[] | EntityOption[]) {
     label: tMessage(option.label),
   }));
 }
-export function EntityPageView({ page }: { page: EntityPageDefinition }) {
+export function EntityPageView({
+  page,
+  dialogResetKey,
+}: {
+  page: EntityPageDefinition;
+  dialogResetKey?: number;
+}) {
   const [dialog, setDialog] = useState<EntityDialogMode>(null);
   const [selected, setSelected] = useState<EntityRecord | null>(null);
   const [nextEnabled, setNextEnabled] = useState(false);
+  const previousDialogResetKey = useRef(dialogResetKey);
+
+  useEffect(() => {
+    if (
+      dialogResetKey === undefined ||
+      dialogResetKey === previousDialogResetKey.current
+    )
+      return;
+    previousDialogResetKey.current = dialogResetKey;
+    setDialog(null);
+    setSelected(null);
+    setNextEnabled(false);
+  }, [dialogResetKey]);
 
   const localizedPage: EntityPageDefinition = {
     ...page,

@@ -1,4 +1,6 @@
 import { t } from "~/i18n";
+import { useEffect, useState } from "react";
+import { useRevalidator } from "react-router";
 import type { Route } from "./+types/oauth-authentications";
 import { requireUser } from "../.server/auth";
 import {
@@ -111,6 +113,23 @@ export async function action({ request }: Route.ActionArgs) {
 export default function OAuthAuthentications({
   loaderData,
 }: Route.ComponentProps) {
+  const { revalidate } = useRevalidator();
+  const [dialogResetKey, setDialogResetKey] = useState(0);
+
+  useEffect(() => {
+    function handleOAuthMessage(event: MessageEvent) {
+      if (
+        event.origin === window.location.origin &&
+        event.data?.type === "oauth:complete"
+      ) {
+        revalidate();
+        setDialogResetKey((key) => key + 1);
+      }
+    }
+    window.addEventListener("message", handleOAuthMessage);
+    return () => window.removeEventListener("message", handleOAuthMessage);
+  }, [revalidate]);
+
   return (
     <>
       {loaderData.oauthMessage && (
@@ -122,6 +141,7 @@ export default function OAuthAuthentications({
         </div>
       )}
       <EntityPageView
+        dialogResetKey={dialogResetKey}
         page={{
           ...page,
           records: loaderData.records,

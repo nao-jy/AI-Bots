@@ -18,6 +18,7 @@ export default [
     route("settings", "routes/settings.tsx"),
   ]),
   route("oauth/start", "routes/oauth-start.tsx"),
+  route("oauth/complete", "routes/oauth-complete.tsx"),
   route(OAUTH_CALLBACK_PATH, "routes/oauth-callback.tsx"),
   route("login", "routes/login.tsx"),
   route("forgot-password", "routes/forgot-password.tsx"),

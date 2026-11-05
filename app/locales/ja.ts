@@ -233,6 +233,13 @@ export const ja = {
       startTitle: "OAuth認証を続ける",
       startDescription: "選択したOAuthプロバイダーに移動して認証します。",
       startButton: "OAuthプロバイダーへ進む",
+      completionDocumentTitle: "OAuth認証完了 | {{0}}",
+      completionTitle: "OAuth認証の結果",
+      completionSucceeded: "OAuth認証が完了し、認証情報を保存しました。",
+      completionCanceled: "OAuth認証がキャンセルされました。",
+      completionFailed:
+        "OAuth認証を完了できませんでした。クライアント設定とコールバックURLを確認してください。",
+      completionCloseTab: "このタブを閉じて、元の画面に戻ってください。",
       nameLabel: "認証情報名",
       oauthClientLabel: "OAuthクライアント",
       expiresAtLabel: "有効期限",
