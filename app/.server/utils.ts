@@ -72,7 +72,7 @@ export function decryptCredential(value: string) {
     );
   const [ivValue, authTagValue, ciphertextValue] = value.split(".");
   if (!ivValue || !authTagValue || ciphertextValue === undefined)
-    throw new Error("保存された認証情報を読み込めません。");
+    throw new Error("server.savedCredentialsUnreadable");
   const decipher = createDecipheriv(
     "aes-256-gcm",
     key,

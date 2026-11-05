@@ -4,6 +4,7 @@ import type { PublicIdSlot } from "../../types/entities";
 import { generatePublicId, idList, jsonb, record } from "../utils";
 import { ToolSetFactoryRegistry } from "../features/toolsets";
 import { logAuditEvent } from "../logger/audit-logger";
+import { localizedMessage } from "../../i18n";
 
 type ToolSetContextEntry = {
   toolSetName: string;
@@ -145,7 +146,7 @@ export async function listBots(user: AuthUser, publicOrigin: string) {
             );
           }),
         ),
-        status: bot.isEnabled ? "稼働中" : "停止中",
+        status: bot.isEnabled ? "server.active" : "server.inactive",
       }),
     ),
     agentOptions: agents
@@ -238,7 +239,7 @@ export async function saveBot(
       }));
     }
   } catch {
-    return { error: "MCP接続の設定形式を確認してください。" };
+    return { error: "server.invalidMcpConnectionSettings" };
   }
   const mcpServerIds = mcpConnections.map(({ serverId }) => serverId);
   const sandboxIdRaw = values.get("sandboxId")?.toString() ?? null;
@@ -279,7 +280,7 @@ export async function saveBot(
       throw new Error();
     }
   } catch {
-    return { error: "ToolSet context は有効な配列で入力してください。" };
+    return { error: "server.toolsetContextMustBeArray" };
   }
   const toolSetRegistry = new ToolSetFactoryRegistry(user.id);
   const supportedToolSetNames = await toolSetRegistry.listToolSetNames();
@@ -289,17 +290,19 @@ export async function saveBot(
     )
   )
     return {
-      error: `利用できないToolSet名が含まれています。利用可能: ${supportedToolSetNames.join("、") || "なし"}`,
+      error: localizedMessage("server.unavailableToolsetNames", {
+        0: supportedToolSetNames.join("、") || "なし",
+      }),
     };
-  if (!name) return { error: "ボット名を入力してください。" };
+  if (!name) return { error: "server.botNameRequired" };
   if (agentId !== null && !Number.isInteger(agentId))
-    return { error: "エージェントを選択してください。" };
+    return { error: "server.agentRequired" };
   if (agentId !== null) {
     const agent = await db.orm.aibot.AgentDefinition.where({ id: agentId })
       .include("provider")
       .first();
     if (!agent || agent.provider.ownerId !== user.id)
-      return { error: "選択したエージェントが見つかりません。" };
+      return { error: "server.selectedAgentNotFound" };
   }
   if (agentId !== null) {
     const assignedBot = await db.orm.aibot.ChatBot.first({ agentId });
@@ -307,27 +310,27 @@ export async function saveBot(
       assignedBot &&
       (assignedBot.ownerId !== user.id || assignedBot.id !== id)
     )
-      return { error: "選択したエージェントは別のボットで使用されています。" };
+      return { error: "server.selectedAgentAlreadyUsed" };
   }
   const adapters = await db.orm.aibot.ChatAdapter.where({
     ownerId: user.id,
   }).all();
   const allowedAdapterIds = new Set(adapters.map((adapter) => adapter.id));
   if (adapterIds.some((adapterId) => !allowedAdapterIds.has(adapterId))) {
-    return { error: "選択したアダプタを使用できません。" };
+    return { error: "server.selectedAdapterUnavailable" };
   }
   const mcpServers = await db.orm.aibot.McpServer.where({
     ownerId: user.id,
   }).all();
   const allowedMcpServerIds = new Set(mcpServers.map((data) => data.id));
   if (mcpServerIds.some((id) => !allowedMcpServerIds.has(id))) {
-    return { error: "選択したMCPサーバーを使用できません。" };
+    return { error: "server.selectedMcpServerUnavailable" };
   }
   const mcpConnectionKeys = mcpConnections.map(
     ({ serverId, authId }) => `${serverId}:${authId ?? "none"}`,
   );
   if (new Set(mcpConnectionKeys).size !== mcpConnectionKeys.length)
-    return { error: "同じMCPサーバーとOAuth認証の接続は重複できません。" };
+    return { error: "server.duplicateMcpOauthConnection" };
   const authentications = await db.orm.aibot.OAuthAuthentication.where({
     ownerId: user.id,
   }).all();
@@ -340,8 +343,7 @@ export async function saveBot(
     )
   )
     return {
-      error:
-        "MCP OAuth認証には選択済みサーバーと自分の認証情報を指定してください。",
+      error: "server.mcpOauthRequiresSelectedServerAndOwnCredentials",
     };
   const ownedSandboxes = await db.orm.aibot.Sandbox.where({
     ownerId: user.id,
@@ -350,12 +352,12 @@ export async function saveBot(
     ownedSandboxes.map((sandbox) => sandbox.id),
   );
   if (sandboxId !== null && !allowedSandboxIds.has(sandboxId))
-    return { error: "選択したサンドボックスを使用できません。" };
+    return { error: "server.selectedSandboxUnavailable" };
   const toolSetContextKeys = toolSetContexts.map(({ toolSetName, context }) =>
     JSON.stringify([toolSetName, stableJson(context)]),
   );
   if (new Set(toolSetContextKeys).size !== toolSetContextKeys.length)
-    return { error: "同じToolSet名とcontextの組み合わせは重複できません。" };
+    return { error: "server.duplicateToolsetContext" };
   for (const { toolSetName, context } of toolSetContexts) {
     const isValidContext = await toolSetRegistry.validateToolSetContext(
       toolSetName,
@@ -363,14 +365,16 @@ export async function saveBot(
     );
     if (!isValidContext)
       return {
-        error: `${toolSetName}: ToolSet context の設定を確認してください。`,
+        error: localizedMessage("server.invalidToolsetContextForItem", {
+          0: toolSetName,
+        }),
       };
   }
   if (
     id !== null &&
     !(await db.orm.aibot.ChatBot.first({ id, ownerId: user.id }))
   )
-    return { error: "ボットが見つかりません。" };
+    return { error: "server.botNotFound" };
 
   const botId = await db.transaction(async (tx) => {
     let botId = id;
@@ -479,12 +483,7 @@ export async function regenerateBotPublicIds(
     return true;
   });
   if (regenerated)
-    logAuditEvent(
-      "bot.public_id.regenerated",
-      "bot",
-      id,
-      user.id,
-    );
+    logAuditEvent("bot.public_id.regenerated", "bot", id, user.id);
   return regenerated;
 }
 
@@ -498,12 +497,7 @@ export async function setBotEnabled(
   await db.orm.aibot.ChatBot.where({ id, ownerId: user.id }).update({
     isEnabled,
   });
-  logAuditEvent(
-    isEnabled ? "bot.enabled" : "bot.disabled",
-    "bot",
-    id,
-    user.id,
-  );
+  logAuditEvent(isEnabled ? "bot.enabled" : "bot.disabled", "bot", id, user.id);
   return true;
 }
 

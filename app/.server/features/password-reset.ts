@@ -23,7 +23,7 @@ function hashValue(value: string) {
 function signingKey() {
   const encoded = process.env.CREDENTIALS_ENCRYPTION_KEY;
   if (!encoded)
-    throw new Error("CREDENTIALS_ENCRYPTION_KEYを設定してください。");
+    throw new Error("server.credentialsEncryptionKeyRequired");
   const key = Buffer.from(encoded, "base64");
   if (key.length !== 32)
     throw new Error(

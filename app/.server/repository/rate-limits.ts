@@ -178,9 +178,9 @@ export async function listRateLimits(user: AuthUser) {
     db.orm.aibot.Provider.where({ ownerId: user.id }).all(),
   ]);
   const criteriaOptions = [
-    { value: "bot", label: "ボット" },
-    { value: "agent", label: "エージェント" },
-    { value: "provider", label: "プロバイダー" },
+    { value: "bot", label: "server.bot" },
+    { value: "agent", label: "server.agent" },
+    { value: "provider", label: "server.provider" },
   ];
   const dependentOptions = {
     bot: bots.map((bot) => ({ value: String(bot.id), label: bot.name })),
@@ -222,7 +222,7 @@ export async function listRateLimits(user: AuthUser) {
           targetLabels[limit.criteria]?.get(criteriaId) ??
           "対象が見つかりません",
         perThread: String(limit.perThread),
-        perThreadLabel: limit.perThread ? "スレッドごと" : "全スレッド横断",
+        perThreadLabel: limit.perThread ? "server.perThread" : "server.acrossAllThreads",
         coefficients,
         limit: Number(limit.limit),
         resetOnCron: limit.resetOnCron,
@@ -256,28 +256,28 @@ export async function saveRateLimit(
   );
 
   if (!criteria || !Number.isSafeInteger(criteriaId) || criteriaId < 1)
-    return { error: "対象種別と対象を選択してください。" };
+    return { error: "server.targetTypeAndTargetRequired" };
   if (perThreadValue !== "true" && perThreadValue !== "false")
-    return { error: "スレッドごとの集計方法を選択してください。" };
+    return { error: "server.threadAggregationMethodRequired" };
   if (!Number.isFinite(limitValue) || limitValue <= 0)
-    return { error: "上限には0より大きい数値を入力してください。" };
+    return { error: "server.limitMustBePositive" };
   if (!coefficients)
     return {
-      error: "係数には利用量の項目と0より大きい係数を1つ以上設定してください。",
+      error: "server.usageWeightsRequired",
     };
   if (!resetOnCron || !cron.validate(resetOnCron))
-    return { error: "リセットCron式を正しく入力してください。" };
+    return { error: "server.invalidResetCron" };
   if (!timezone || !isValidTimezone(timezone))
-    return { error: "有効なタイムゾーンを選択してください。" };
+    return { error: "server.validTimezoneRequired" };
   if (!limitExceededMessage)
-    return { error: "上限超過時のメッセージを入力してください。" };
+    return { error: "server.limitExceededMessageRequired" };
 
   if (id !== null) {
     const existing = await db.orm.aibot.RateLimit.first({
       id,
       ownerId: user.id,
     });
-    if (!existing) return { error: "レートリミットが見つかりません。" };
+    if (!existing) return { error: "server.rateLimitNotFound" };
   }
   if (criteria === "bot") {
     if (
@@ -286,7 +286,7 @@ export async function saveRateLimit(
         ownerId: user.id,
       }))
     )
-      return { error: "選択したボットが見つかりません。" };
+      return { error: "server.selectedBotNotFound" };
   } else if (criteria === "agent") {
     if (
       !(await db.orm.aibot.AgentDefinition.first({
@@ -294,7 +294,7 @@ export async function saveRateLimit(
         ownerId: user.id,
       }))
     )
-      return { error: "選択したエージェントが見つかりません。" };
+      return { error: "server.selectedAgentNotFound" };
   } else {
     if (
       !(await db.orm.aibot.Provider.first({
@@ -302,7 +302,7 @@ export async function saveRateLimit(
         ownerId: user.id,
       }))
     )
-      return { error: "選択したプロバイダーが見つかりません。" };
+      return { error: "server.selectedProviderNotFound" };
   }
 
   const existingLimits = await db.orm.aibot.RateLimit.where({
@@ -316,7 +316,7 @@ export async function saveRateLimit(
         existing.criteriaId === criteriaId,
     )
   )
-    return { error: "同じ対象のレートリミットが既にあります。" };
+    return { error: "server.duplicateRateLimitTarget" };
 
   const saved = {
     criteria,

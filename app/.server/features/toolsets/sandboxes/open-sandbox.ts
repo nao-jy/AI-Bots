@@ -59,7 +59,7 @@ async function withOpenNetwork<T>(
     );
   const previousPolicy = current.data.policy;
   if (!previousPolicy)
-    throw new Error("現在のネットワークポリシーを取得できませんでした。");
+    throw new Error("server.currentNetworkPolicyFetchFailed");
 
   const opened = await lifecycle.PUT("/sandboxes/{sandboxId}/networkpolicy", {
     params: { path },
@@ -220,7 +220,7 @@ export const OPEN_SANDBOX: Sandbox = {
         !("session_id" in created) ||
         typeof created.session_id !== "string"
       ) {
-        throw new Error("PTYセッションの応答形式が不正です。");
+        throw new Error("server.invalidPtySessionResponse");
       }
       ptySessionId = created.session_id;
 
@@ -231,7 +231,7 @@ export const OPEN_SANDBOX: Sandbox = {
         );
         const timeout = setTimeout(() => {
           ws.terminate();
-          reject(new Error("PTY WebSocket接続がタイムアウトしました。"));
+          reject(new Error("server.ptyWebsocketTimedOut"));
         }, 15_000);
         const handleInitialMessage = (data: RawData, isBinary: boolean) => {
           if (isBinary) return;
@@ -300,14 +300,14 @@ export const OPEN_SANDBOX: Sandbox = {
       return {
         sendInput: async (data: string) => {
           if (activeSocket.readyState !== WebSocket.OPEN)
-            throw new Error("PTY接続が閉じています。");
+            throw new Error("server.ptyConnectionNotOpen");
           activeSocket.send(
             Buffer.concat([Buffer.from([0x00]), Buffer.from(data)]),
           );
         },
         resize: async (nextSize: TerminalSize) => {
           if (activeSocket.readyState !== WebSocket.OPEN)
-            throw new Error("PTY接続が閉じています。");
+            throw new Error("server.ptyConnectionNotOpen");
           activeSocket.send(JSON.stringify({ type: "resize", ...nextSize }));
         },
         close: async () => {

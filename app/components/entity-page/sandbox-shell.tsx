@@ -90,18 +90,20 @@ export function SandboxShell({
         "error" in result &&
         typeof result.error === "string"
           ? tMessage(result.error)
-          : t("components.entityPage.sandboxShell.shellActionFailedWithStatus", { 0: response.status });
+          : t(
+              "components.entityPage.sandboxShell.shellActionFailedWithStatus",
+              { 0: response.status },
+            );
       throw new Error(error);
     }
   }
 
   function reportTerminalError(error: unknown) {
-    const message =
-      tMessage(
-        error instanceof Error
-          ? error.message
-          : t("components.entityPage.sandboxShell.shellActionFailed"),
-      );
+    const message = tMessage(
+      error instanceof Error
+        ? error.message
+        : t("components.entityPage.sandboxShell.shellActionFailed"),
+    );
     setTerminalError(message);
     terminal.current?.write(`\r\n\x1b[31m${message}\x1b[0m\r\n`);
   }
@@ -210,7 +212,9 @@ export function SandboxShell({
         setTerminalError(
           error instanceof Error
             ? tMessage(error.message)
-            : t("components.entityPage.sandboxShell.terminalInitializationFailed"),
+            : t(
+                "components.entityPage.sandboxShell.terminalInitializationFailed",
+              ),
         );
       }
     });
@@ -310,7 +314,9 @@ export function SandboxShell({
           !("data" in payload) ||
           typeof payload.data !== "string"
         ) {
-          throw new Error(t("components.entityPage.sandboxShell.invalidTerminalOutput"));
+          throw new Error(
+            t("components.entityPage.sandboxShell.invalidTerminalOutput"),
+          );
         }
         const decoded = atob(payload.data);
         const bytes = Uint8Array.from(decoded, (character) =>
@@ -405,18 +411,22 @@ export function SandboxShell({
       />
       <div className="sandbox-shell-toolbar">
         <strong>
-          <TerminalWindowIcon size={16} aria-hidden="true" /> {t("components.entityPage.sandboxShell.shellSuffix")}</strong>
+          <TerminalWindowIcon size={16} aria-hidden="true" />{" "}
+          {t("components.entityPage.sandboxShell.shellSuffix")}
+        </strong>
         <Select
           aria-label={t("components.entityPage.sandboxShell.instanceLabel")}
           placeholder={t("components.entityPage.sandboxShell.selectShell")}
           data={instances.map((instance) => ({
             value: instance.instanceId,
-            label: `${instance.sandboxName} · ${instance.scopeLabel} · ${instance.instanceId}`,
+            label: `${instance.sandboxName} · ${tMessage(instance.scopeLabel)} · ${instance.instanceId}`,
           }))}
           value={selectedInstanceId}
           onChange={onSelectInstance}
           searchable
-          nothingFoundMessage={t("components.entityPage.sandboxShell.noInstancesFound")}
+          nothingFoundMessage={t(
+            "components.entityPage.sandboxShell.noInstancesFound",
+          )}
           disabled={terminalFetcher.state !== "idle"}
           className="sandbox-shell-instance-select"
         />
@@ -426,12 +436,17 @@ export function SandboxShell({
           onClick={onClose}
           aria-label={t("components.entityPage.sandboxShell.closeShell")}
         >
-          {t("components.entityPage.sandboxShell.closeSymbol")}</button>
+          {t("components.entityPage.sandboxShell.closeSymbol")}
+        </button>
       </div>
       <p className="sandbox-shell-warning">
-        {t("components.entityPage.sandboxShell.networkAccessNotice")}{(terminalFetcher.state !== "idle" || terminalId) && (
+        {t("components.entityPage.sandboxShell.networkAccessNotice")}
+        {(terminalFetcher.state !== "idle" || terminalId) && (
           <span className="sandbox-shell-running" role="status">
-            {t("components.entityPage.sandboxShell.connectedStatusSymbol")}{terminalId ? t("components.entityPage.sandboxShell.connectedStatus") : t("components.entityPage.sandboxShell.startingStatus")}
+            {t("components.entityPage.sandboxShell.connectedStatusSymbol")}
+            {terminalId
+              ? t("components.entityPage.sandboxShell.connectedStatus")
+              : t("components.entityPage.sandboxShell.startingStatus")}
           </span>
         )}
       </p>

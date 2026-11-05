@@ -15,7 +15,7 @@ export async function listProviders(user: AuthUser) {
         providerName: provider.providerName,
         args: JSON.stringify(provider.args ?? {}, null, 2),
         headers: JSON.stringify(headers, null, 2),
-        headersConfigured: Object.keys(headers).length ? "設定済み" : "未設定",
+        headersConfigured: Object.keys(headers).length ? "server.configured" : "server.notConfigured",
       });
     }),
   };
@@ -31,37 +31,37 @@ export async function saveProvider(
   const argsValue = String(values.get("args") ?? "{}").trim();
   const headersValue = String(values.get("headers") ?? "{}").trim();
   if (!name || !providerName)
-    return { error: "接続名とプロバイダーを入力してください。" };
+    return { error: "server.providerConnectionNameAndProviderRequired" };
   let args: unknown;
   let headers: Record<string, string>;
   try {
     args = JSON.parse(argsValue || "{}");
     if (!args || typeof args !== "object" || Array.isArray(args))
-      return { error: "プロバイダー引数にはオブジェクトを入力してください。" };
+      return { error: "server.providerArgumentsMustBeObject" };
   } catch {
-    return { error: "プロバイダー引数JSONの形式を確認してください。" };
+    return { error: "server.invalidProviderArgumentsJson" };
   }
   try {
     const parsed: unknown = JSON.parse(headersValue || "{}");
     if (!parsed || typeof parsed !== "object" || Array.isArray(parsed))
-      return { error: "HTTPヘッダーにはオブジェクトを入力してください。" };
+      return { error: "server.providerHttpHeadersMustBeObject" };
     if (Object.values(parsed).some((value) => typeof value !== "string"))
-      return { error: "HTTPヘッダーの値は文字列で入力してください。" };
+      return { error: "server.providerHttpHeaderValuesMustBeStrings" };
     headers = parsed as Record<string, string>;
   } catch {
-    return { error: "HTTPヘッダーJSONの形式を確認してください。" };
+    return { error: "server.invalidProviderHttpHeadersJson" };
   }
   if (
     id !== null &&
     !(await db.orm.aibot.Provider.first({ id, ownerId: user.id }))
   )
-    return { error: "プロバイダーが見つかりません。" };
+    return { error: "server.providerNotFound" };
   const duplicate = await db.orm.aibot.Provider.first({
     ownerId: user.id,
     name,
   });
   if (duplicate && duplicate.id !== id)
-    return { error: "同じ接続名のプロバイダーが既にあります。" };
+    return { error: "server.duplicateProviderName" };
   let encryptedHeaders: ReturnType<typeof encryptStringMap>;
   try {
     encryptedHeaders = encryptStringMap(headers);
@@ -70,7 +70,7 @@ export async function saveProvider(
       error:
         error instanceof Error
           ? error.message
-          : "HTTPヘッダーを暗号化できませんでした。",
+          : "server.httpHeadersEncryptionFailed",
     };
   }
   const saved = {

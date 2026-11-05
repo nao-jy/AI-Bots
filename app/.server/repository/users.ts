@@ -98,12 +98,12 @@ export async function listUsers(
     return record(user.id, user.updatedAt, {
       name: user.name ?? "",
       email: user.email,
-      isAdmin: user.isAdmin ? "管理者" : "一般ユーザー",
-      emailVerification: user.emailVerified ? "検証済み" : "未検証",
-      mfaStatus: user.mfaSecret ? "設定済み" : "未設定",
+      isAdmin: user.isAdmin ? "server.administrator" : "server.regularUser",
+      emailVerification: user.emailVerified ? "server.verified" : "server.unverified",
+      mfaStatus: user.mfaSecret ? "server.configured" : "server.notConfigured",
       loginLockStatus:
-        user.loginAttempts >= maxLoginAttempts ? "ロック中" : "—",
-      loginStatus: active ? "ログイン中" : "ログアウト",
+        user.loginAttempts >= maxLoginAttempts ? "server.locked" : "—",
+      loginStatus: active ? "server.loggedIn" : "server.loggedOut",
       lastLogin: sessions[0] ? timestamp(sessions[0].createdAt) : "—",
     });
   });
@@ -145,7 +145,7 @@ export async function resetLoginAttemptsForLogin(
 
 export async function unlockUserLogin(id: number) {
   const user = await db.orm.aibot.User.first({ id });
-  if (!user) return { error: "ユーザーが見つかりません。" };
+  if (!user) return { error: "server.userNotFound" };
   await db.orm.aibot.User.where({ id }).update({ loginAttempts: 0 });
   logAuditEvent("user.login_unlocked", "user", id);
   return { ok: true };
@@ -162,10 +162,10 @@ export async function saveUser(
     .toLowerCase();
   const password = String(values.get("password") ?? "");
   if (!name || !/^\S+@\S+\.\S+$/.test(email))
-    return { error: "表示名と有効なメールアドレスを入力してください。" };
+    return { error: "server.displayNameAndValidEmailRequired" };
   if (id === null) {
     if (password.length < 12)
-      return { error: "パスワードは12文字以上で入力してください。" };
+      return { error: "server.passwordTooShort" };
     const emailVerified = !emailVerificationEnabled;
     const user = await db.orm.aibot.User.create({
       name,
@@ -179,9 +179,9 @@ export async function saveUser(
   } else {
     const user = await db.orm.aibot.User.first({ id });
     if (!user)
-      return { error: "ユーザーが見つかりません。" };
+      return { error: "server.userNotFound" };
     if (password && password.length < 12)
-      return { error: "パスワードは12文字以上で入力してください。" };
+      return { error: "server.passwordTooShort" };
     const emailChanged = user.email !== email;
     const emailVerified = emailChanged
       ? !emailVerificationEnabled
@@ -209,7 +209,7 @@ export async function setUserAdmin(
   currentUserId: number,
 ) {
   if (id === currentUserId && !isAdmin)
-    return { error: "自分の管理者権限は解除できません。" };
+    return { error: "server.cannotRevokeOwnAdmin" };
 
   let changed = false;
   const result = await db.transaction(async (tx) => {
@@ -218,10 +218,10 @@ export async function setUserAdmin(
       .forUpdate()
       .all();
     const user = await tx.orm.aibot.User.first({ id });
-    if (!user) return { error: "ユーザーが見つかりません。" };
+    if (!user) return { error: "server.userNotFound" };
     if (user.isAdmin === isAdmin) return { ok: true };
     if (!isAdmin && administrators.length <= 1)
-      return { error: "管理者は最低1人必要です。" };
+      return { error: "server.atLeastOneAdminRequired" };
 
     await tx.orm.aibot.User.where({ id }).update({ isAdmin });
     changed = true;
@@ -239,7 +239,7 @@ export async function setUserAdmin(
 
 export async function deleteUser(id: number, currentUserId: number) {
   if (id === currentUserId)
-    return { error: "自分のアカウントは削除できません。" };
+    return { error: "server.cannotDeleteOwnAccount" };
 
   const deleted = await db.transaction(async (tx) => {
     const administrators = await tx.orm.aibot.User.where({ isAdmin: true })
@@ -247,9 +247,9 @@ export async function deleteUser(id: number, currentUserId: number) {
       .forUpdate()
       .all();
     const user = await tx.orm.aibot.User.first({ id });
-    if (!user) return { error: "ユーザーが見つかりません。" };
+    if (!user) return { error: "server.userNotFound" };
     if (user.isAdmin && administrators.length <= 1)
-      return { error: "管理者は最低1人必要です。" };
+      return { error: "server.atLeastOneAdminRequired" };
 
     await tx.orm.aibot.User.where({ id }).delete();
     return { ok: true };
@@ -261,14 +261,14 @@ export async function deleteUser(id: number, currentUserId: number) {
 
 export async function forceLogoutUser(id: number, currentUserId: number) {
   if (id === currentUserId)
-    return { error: "自分を強制ログアウトさせることはできません。" };
+    return { error: "server.cannotForceLogoutSelf" };
   const result = await db.transaction(async (tx) => {
     const user = await tx.orm.aibot.User.include("sessions").first({ id });
-    if (!user) return { error: "ユーザーが見つかりません。" };
+    if (!user) return { error: "server.userNotFound" };
     const isLoggedIn = user.sessions.some(
       (session) => Date.parse(session.expiresAt) > Date.now(),
     );
-    if (!isLoggedIn) return { error: "このユーザーはログインしていません。" };
+    if (!isLoggedIn) return { error: "server.userNotLoggedIn" };
 
     await tx.orm.aibot.Session.where({ userId: id }).update({
       expiresAt: new Date().toISOString(),
@@ -282,8 +282,8 @@ export async function forceLogoutUser(id: number, currentUserId: number) {
 
 export async function resetUserMfa(id: number) {
   const user = await db.orm.aibot.User.first({ id });
-  if (!user) return { error: "ユーザーが見つかりません。" };
-  if (!user.mfaSecret) return { error: "このユーザーはMFAを設定していません。" };
+  if (!user) return { error: "server.userNotFound" };
+  if (!user.mfaSecret) return { error: "server.userMfaNotConfigured" };
 
   await db.transaction(async (tx) => {
     await tx.orm.aibot.User.where({ id }).update({ mfaSecret: null });

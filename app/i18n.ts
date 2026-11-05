@@ -65,7 +65,8 @@ export const resources = {
           oauthCredentialsLabel: "OAuth認証情報",
           noOauthOption: "使用しない",
           documentTitle: "アダプタ | {{0}}",
-          publicIdRegenerationRequired: "再生成するパブリックIDを指定してください。",
+          publicIdRegenerationRequired:
+            "再生成するパブリックIDを指定してください。",
           notFound: "アダプタが見つかりません。",
           unknownAction: "操作を判定できませんでした。",
         },
@@ -115,7 +116,8 @@ export const resources = {
           mcpServersLabel: "MCPサーバー",
           mcpServersPlaceholder: "接続するMCPサーバーを選択",
           documentTitle: "チャットボット | {{0}}",
-          publicIdRegenerationRequired: "再生成するパブリックIDを指定してください。",
+          publicIdRegenerationRequired:
+            "再生成するパブリックIDを指定してください。",
           notFound: "ボットが見つかりません。",
           unknownAction: "操作を判定できませんでした。",
         },
@@ -135,7 +137,8 @@ export const resources = {
           documentTitle: "ログイン | {{0}}",
           workspaceTitle: "{{0}} ワークスペースにログイン",
           loginInstructions: "メールアドレスとパスワードを入力してください。",
-          invalidCredentials: "メールアドレスまたはパスワードが正しくありません。",
+          invalidCredentials:
+            "メールアドレスまたはパスワードが正しくありません。",
           firstAccountRequirements:
             "初回登録では表示名と12文字以上のパスワードが必要です。",
           firstAccountCreationFailed:
@@ -226,7 +229,8 @@ export const resources = {
           updatedLabel: "最終更新",
           clientSecretLabel: "クライアントシークレット",
           secretKeepCurrentHint: "編集時は空欄で現在の値を維持",
-          authorizationEndpointPlaceholder: "https://example.com/oauth/authorize",
+          authorizationEndpointPlaceholder:
+            "https://example.com/oauth/authorize",
           tokenEndpointLabel: "トークンエンドポイント",
           tokenEndpointPlaceholder: "https://example.com/oauth/token",
           refreshEndpointLabel: "トークン更新エンドポイント",
@@ -282,7 +286,8 @@ export const resources = {
           inputCacheWriteTokensOption: "入力（キャッシュ書き込み）",
           outputTextTokensOption: "出力（テキスト）",
           outputReasoningTokensOption: "出力（推論）",
-          usageWeightsHelp: "レートリミットは、利用量×係数の合計で判定されます。",
+          usageWeightsHelp:
+            "レートリミットは、利用量×係数の合計で判定されます。",
           resetCronHelp:
             "レートリミットは、選択したタイムゾーンのCron実行時刻にリセットされます。",
           timezonePlaceholder: "タイムゾーンを選択",
@@ -295,7 +300,8 @@ export const resources = {
           successTitle: "パスワードを再設定しました",
           successInstructions: "新しいパスワードでログインしてください。",
           expiredLinkTitle: "リンクの有効期限が切れています",
-          expiredLinkInstructions: "再設定メールをもう一度リクエストしてください。",
+          expiredLinkInstructions:
+            "再設定メールをもう一度リクエストしてください。",
           invalidLinkTitle: "リンクを確認できません",
           invalidLinkMessage: "リンクが無効か、すでに使用されています。",
           formTitle: "新しいパスワードを設定",
@@ -350,7 +356,8 @@ export const resources = {
           documentTitle: "設定 | {{0}}",
           invalidSessionDuration:
             "セッション持続時間は1〜365日の整数で指定してください。",
-          invalidLoginAttemptLimit: "ログイン失敗の上限は1以上の整数で指定してください。",
+          invalidLoginAttemptLimit:
+            "ログイン失敗の上限は1以上の整数で指定してください。",
           title: "設定",
           saved: "設定を保存しました。",
           requireMfaLabel: "多要素認証を必須にする",
@@ -400,15 +407,17 @@ export const resources = {
           successTitle: "メールアドレスを確認しました",
           successMessage: "メールアドレスの検証が完了しました。",
           alreadyVerifiedTitle: "検証済みです",
-          alreadyVerifiedMessage: "このメールアドレスはすでに検証されています。",
+          alreadyVerifiedMessage:
+            "このメールアドレスはすでに検証されています。",
           expiredLinkTitle: "リンクの有効期限が切れています",
-          expiredLinkInstructions: "管理者に検証メールの再送を依頼してください。",
+          expiredLinkInstructions:
+            "管理者に検証メールの再送を依頼してください。",
           invalidLinkTitle: "リンクを確認できません",
           invalidLinkInstructions:
             "検証リンクが無効です。管理者に再送を依頼してください。",
           submit: "検証を完了する",
           backToLogin: "ログイン画面へ",
-      },
+        },
       },
       components: {
         entityPage: {
@@ -453,8 +462,10 @@ export const resources = {
             addPair: "＋ ペアを追加",
             verificationEmailSent: "検証メールを送信しました",
             verificationEmailSendFailed: "検証メールの送信に失敗しました",
-            userSavedAndEmailSent: "ユーザーを保存し、検証メールを送信しました。",
-            verificationEmailCouldNotBeSent: "検証メールを送信できませんでした。",
+            userSavedAndEmailSent:
+              "ユーザーを保存し、検証メールを送信しました。",
+            verificationEmailCouldNotBeSent:
+              "検証メールを送信できませんでした。",
             updateSettings: "設定を更新",
             newSettings: "新しい設定",
             editRecord: "{{0}}を編集",
@@ -486,7 +497,8 @@ export const resources = {
             loggingOut: "ログアウト中...",
             forceLogout: "強制ログアウト",
             confirmDelete: "削除の確認",
-            confirmIrreversibleDelete: "」を削除します。この操作は取り消せません。",
+            confirmIrreversibleDelete:
+              "」を削除します。この操作は取り消せません。",
             deleting: "削除中...",
             deleteAction: "削除する",
           },
@@ -555,16 +567,19 @@ export const resources = {
           sandboxInstanceDetails: {
             title: "Persistent Instance",
             openShell: "{{0}}のシェルを開く",
-            confirmDeleteInstance: "Persistent Instance「{{0}}」を削除しますか？",
+            confirmDeleteInstance:
+              "Persistent Instance「{{0}}」を削除しますか？",
             deleteInstance: "{{0}}を削除",
             noInstances: "Persistent Instanceはありません",
           },
           sandboxShell: {
-            shellActionFailedWithStatus: "シェル操作に失敗しました (HTTP {{0}})",
+            shellActionFailedWithStatus:
+              "シェル操作に失敗しました (HTTP {{0}})",
             shellActionFailed: "シェル操作に失敗しました。",
             terminalDescription: "サンドボックスの対話型ターミナル",
             connecting: "{{0}}（{{1}}）に接続しています…",
-            selectInstancePrompt: "シェルセッションを開始するインスタンスを選択してください。",
+            selectInstancePrompt:
+              "シェルセッションを開始するインスタンスを選択してください。",
             terminalInitializationFailed: "端末を初期化できませんでした。",
             shellStartFailed: "シェルを開始できませんでした。",
             invalidTerminalOutput: "端末出力の形式が不正です。",
@@ -601,7 +616,8 @@ export const resources = {
             countUnit: " 件",
             actionsLabel: "操作",
             emptyStateTitle: "該当するデータがありません",
-            emptyStateDescription: "検索条件を変えるか、新しく作成してください。",
+            emptyStateDescription:
+              "検索条件を変えるか、新しく作成してください。",
             totalCountSuffix: " 件中",
             spacing: " ",
             rangeStart: "1–",
@@ -617,7 +633,7 @@ export const resources = {
             delete: "削除",
             addToolset: "＋ ツールセットを追加",
             noToolsetsAvailable: "利用可能な ToolSet がありません。",
-        },
+          },
         },
       },
 
@@ -626,7 +642,8 @@ export const resources = {
         connectionTestSucceeded: "{{0}}への接続と認証に成功しました。",
         adapterConnectionFailed: "アダプタへの接続に失敗しました。",
         endpointRequired: "エンドポイントを入力してください。",
-        transportTestUnsupported: "このトランスポートの接続テストには対応していません。",
+        transportTestUnsupported:
+          "このトランスポートの接続テストには対応していません。",
         httpHeaders: "HTTPヘッダー",
         mcpConnectionTestSucceeded:
           "{{0}}とのMCP接続に成功しました。({{1}}個のツールが利用可能)",
@@ -647,7 +664,8 @@ export const resources = {
           "認証情報を復号するには CREDENTIALS_ENCRYPTION_KEY を設定してください。",
         savedCredentialsUnreadable: "保存された認証情報を読み込めません。",
         invalidJson: "{{0}}のJSON形式を確認してください。",
-        expectedKeyValueObject: "{{0}}はキー・値のオブジェクトで入力してください。",
+        expectedKeyValueObject:
+          "{{0}}はキー・値のオブジェクトで入力してください。",
         expectedStringValue: "{{0}}の値は文字列で入力してください。",
         expectedObject: "{{0}}にはオブジェクトを入力してください。",
         expectedJsonArray: "{{0}}はJSON配列で入力してください。",
@@ -655,7 +673,8 @@ export const resources = {
         runtimeThreadContext:
           "[実行時補足情報]\n現在のスレッドID: {{0}}\n現在日時 (UTC, ISO 8601): {{1}}",
         schedule: "スケジュール",
-        credentialsEncryptionKeyRequired: "CREDENTIALS_ENCRYPTION_KEYを設定してください。",
+        credentialsEncryptionKeyRequired:
+          "CREDENTIALS_ENCRYPTION_KEYを設定してください。",
         credentialsEncryptionKeyInvalidForStorage:
           "CREDENTIALS_ENCRYPTION_KEYは32バイトのbase64値にしてください。",
         oauthBaseUrlRequired: "OAUTH_BASE_URLを設定してください。",
@@ -666,7 +685,8 @@ export const resources = {
         oauthAuthenticationNameRequired: "認証情報名を入力してください。",
         oauthAuthenticationNotFound: "OAuth認証情報が見つかりません。",
         oauthClientRequired: "OAuthクライアントを選択してください。",
-        selectedOauthClientNotFound: "選択したOAuthクライアントが見つかりません。",
+        selectedOauthClientNotFound:
+          "選択したOAuthクライアントが見つかりません。",
         oauthAuthorizationStartFailed: "OAuth認証を開始できませんでした。",
         oauthClientNotFound: "OAuthクライアントが見つかりません。",
         oauthAccessTokenMissing:
@@ -674,18 +694,23 @@ export const resources = {
         notConfigured: "未設定",
         unknown: "不明",
         configured: "設定済み",
-        adapterNameAndPlatformRequired: "接続名とプラットフォームを入力してください。",
-        environmentVariablesMustBeStringPairs: "環境変数は文字列のキー・値ペアで入力してください。",
+        adapterNameAndPlatformRequired:
+          "接続名とプラットフォームを入力してください。",
+        environmentVariablesMustBeStringPairs:
+          "環境変数は文字列のキー・値ペアで入力してください。",
         invalidEnvironmentVariables: "環境変数の形式を確認してください。",
         adapterNotFound: "アダプタが見つかりません。",
-        selectedOauthAuthenticationNotFound: "選択したOAuth認証情報が見つかりません。",
-        environmentVariablesEncryptionFailed: "環境変数を暗号化できませんでした。",
+        selectedOauthAuthenticationNotFound:
+          "選択したOAuth認証情報が見つかりません。",
+        environmentVariablesEncryptionFailed:
+          "環境変数を暗号化できませんでした。",
         usedByBot: "ボット「{{0}}」で利用中",
         unused: "未使用",
         invalidMcpOauthConfiguration:
           "MCP OAuth認証の設定はサーバーIDと認証IDのJSONオブジェクトで入力してください。",
         agentNameRequired: "エージェント名を入力してください。",
-        optionsMustBeObject: "オプションにはJSONオブジェクトを入力してください。",
+        optionsMustBeObject:
+          "オプションにはJSONオブジェクトを入力してください。",
         invalidOptionsJson: "オプションJSONの形式を確認してください。",
         selectedMcpServerUnavailable: "選択したMCPサーバーを使用できません。",
         mcpOauthRequiresSelectedServerAndOwnCredentials:
@@ -695,25 +720,34 @@ export const resources = {
         active: "稼働中",
         inactive: "停止中",
         invalidMcpConnectionSettings: "MCP接続の設定形式を確認してください。",
-        toolsetContextMustBeArray: "ToolSet context は有効な配列で入力してください。",
-        unavailableToolsetNames: "利用できないToolSet名が含まれています。利用可能: {{0}}",
+        toolsetContextMustBeArray:
+          "ToolSet context は有効な配列で入力してください。",
+        unavailableToolsetNames:
+          "利用できないToolSet名が含まれています。利用可能: {{0}}",
         none: "なし",
         botNameRequired: "ボット名を入力してください。",
         agentRequired: "エージェントを選択してください。",
         selectedAgentNotFound: "選択したエージェントが見つかりません。",
-        selectedAgentAlreadyUsed: "選択したエージェントは別のボットで使用されています。",
+        selectedAgentAlreadyUsed:
+          "選択したエージェントは別のボットで使用されています。",
         selectedAdapterUnavailable: "選択したアダプタを使用できません。",
-        duplicateMcpOauthConnection: "同じMCPサーバーとOAuth認証の接続は重複できません。",
+        duplicateMcpOauthConnection:
+          "同じMCPサーバーとOAuth認証の接続は重複できません。",
         selectedSandboxUnavailable: "選択したサンドボックスを使用できません。",
-        duplicateToolsetContext: "同じToolSet名とcontextの組み合わせは重複できません。",
-        invalidToolsetContextForItem: "{{0}}: ToolSet context の設定を確認してください。",
+        duplicateToolsetContext:
+          "同じToolSet名とcontextの組み合わせは重複できません。",
+        invalidToolsetContextForItem:
+          "{{0}}: ToolSet context の設定を確認してください。",
         botNotFound: "ボットが見つかりません。",
         endpointConfigured: "接続先登録済み",
         endpointMissing: "接続先未設定",
-        serverNameAndTransportRequired: "サーバー名とトランスポートを入力してください。",
+        serverNameAndTransportRequired:
+          "サーバー名とトランスポートを入力してください。",
         unsupportedTransport: "対応していないトランスポートです。",
-        httpHeadersMustBeObject: "ヘッダーJSONにはオブジェクトを入力してください。",
-        httpHeaderValuesMustBeStrings: "ヘッダーの値は文字列で入力してください。",
+        httpHeadersMustBeObject:
+          "ヘッダーJSONにはオブジェクトを入力してください。",
+        httpHeaderValuesMustBeStrings:
+          "ヘッダーの値は文字列で入力してください。",
         invalidHttpHeadersJson: "ヘッダーJSONの形式を確認してください。",
         mcpServerNotFound: "MCPサーバーが見つかりません。",
         httpHeadersEncryptionFailed: "HTTPヘッダーを暗号化できませんでした。",
@@ -726,15 +760,23 @@ export const resources = {
           "名前、クライアントID、認可エンドポイント、トークンエンドポイントを入力してください。",
         oauthEndpointsMustBeHttpUrls:
           "認可・トークンエンドポイントにはHTTPまたはHTTPSのURLを入力してください。",
-        invalidOauthRefreshOrRevokeUrl: "更新・失効エンドポイントのURL形式を確認してください。",
-        oauthClientSecretEncryptionFailed: "クライアントシークレットを暗号化できませんでした。",
+        invalidOauthRefreshOrRevokeUrl:
+          "更新・失効エンドポイントのURL形式を確認してください。",
+        oauthClientSecretEncryptionFailed:
+          "クライアントシークレットを暗号化できませんでした。",
         unknownClient: "不明なクライアント",
-        providerConnectionNameAndProviderRequired: "接続名とプロバイダーを入力してください。",
-        providerArgumentsMustBeObject: "プロバイダー引数にはオブジェクトを入力してください。",
-        invalidProviderArgumentsJson: "プロバイダー引数JSONの形式を確認してください。",
-        providerHttpHeadersMustBeObject: "HTTPヘッダーにはオブジェクトを入力してください。",
-        providerHttpHeaderValuesMustBeStrings: "HTTPヘッダーの値は文字列で入力してください。",
-        invalidProviderHttpHeadersJson: "HTTPヘッダーJSONの形式を確認してください。",
+        providerConnectionNameAndProviderRequired:
+          "接続名とプロバイダーを入力してください。",
+        providerArgumentsMustBeObject:
+          "プロバイダー引数にはオブジェクトを入力してください。",
+        invalidProviderArgumentsJson:
+          "プロバイダー引数JSONの形式を確認してください。",
+        providerHttpHeadersMustBeObject:
+          "HTTPヘッダーにはオブジェクトを入力してください。",
+        providerHttpHeaderValuesMustBeStrings:
+          "HTTPヘッダーの値は文字列で入力してください。",
+        invalidProviderHttpHeadersJson:
+          "HTTPヘッダーJSONの形式を確認してください。",
         providerNotFound: "プロバイダーが見つかりません。",
         duplicateProviderName: "同じ接続名のプロバイダーが既にあります。",
         bot: "ボット",
@@ -743,13 +785,15 @@ export const resources = {
         perThread: "スレッドごと",
         acrossAllThreads: "全スレッド横断",
         targetTypeAndTargetRequired: "対象種別と対象を選択してください。",
-        threadAggregationMethodRequired: "スレッドごとの集計方法を選択してください。",
+        threadAggregationMethodRequired:
+          "スレッドごとの集計方法を選択してください。",
         limitMustBePositive: "上限には0より大きい数値を入力してください。",
         usageWeightsRequired:
           "係数には利用量の項目と0より大きい係数を1つ以上設定してください。",
         invalidResetCron: "リセットCron式を正しく入力してください。",
         validTimezoneRequired: "有効なタイムゾーンを選択してください。",
-        limitExceededMessageRequired: "上限超過時のメッセージを入力してください。",
+        limitExceededMessageRequired:
+          "上限超過時のメッセージを入力してください。",
         rateLimitNotFound: "レートリミットが見つかりません。",
         selectedBotNotFound: "選択したボットが見つかりません。",
         duplicateRateLimitTarget: "同じ対象のレートリミットが既にあります。",
@@ -763,10 +807,13 @@ export const resources = {
         commandRequired: "コマンドを入力してください。",
         commandTooLong: "コマンドは4,000文字以内で入力してください。",
         selectedInstanceNotFound: "選択したインスタンスが見つかりません。",
-        sandboxCommandFailed: "サンドボックスでコマンドを実行できませんでした。",
+        sandboxCommandFailed:
+          "サンドボックスでコマンドを実行できませんでした。",
         invalidTerminalSize: "端末サイズが不正です。",
-        sandboxShellStartFailed: "サンドボックスのシェルを開始できませんでした。",
-        unsupportedSandboxType: "サポートされていないサンドボックスタイプです。",
+        sandboxShellStartFailed:
+          "サンドボックスのシェルを開始できませんでした。",
+        unsupportedSandboxType:
+          "サポートされていないサンドボックスタイプです。",
         sandboxScopeRequired: "サンドボックスの適用範囲を選択してください。",
         sandboxEnvironmentVariablesMustBeStringObject:
           "環境変数は文字列のキー・値オブジェクトで入力してください。",
@@ -776,9 +823,12 @@ export const resources = {
         scheduleNameRequired: "スケジュール名を入力してください。",
         schedulePromptRequired: "プロンプトを入力してください。",
         invalidCronExpression: "Cron式を正しく入力してください。",
-        scheduleTargetAndThreadRequired: "送信先とスレッドIDを1件以上指定してください。",
-        duplicateScheduleTarget: "同じ送信先とスレッドIDを重複して指定できません。",
-        invalidBotAdapterPair: "選択したボットとアダプタの組み合わせが無効です。",
+        scheduleTargetAndThreadRequired:
+          "送信先とスレッドIDを1件以上指定してください。",
+        duplicateScheduleTarget:
+          "同じ送信先とスレッドIDを重複して指定できません。",
+        invalidBotAdapterPair:
+          "選択したボットとアダプタの組み合わせが無効です。",
         scheduleNotFound: "スケジュールが見つかりません。",
         administrator: "管理者",
         regularUser: "一般ユーザー",
@@ -788,7 +838,8 @@ export const resources = {
         loggedIn: "ログイン中",
         loggedOut: "ログアウト",
         userNotFound: "ユーザーが見つかりません。",
-        displayNameAndValidEmailRequired: "表示名と有効なメールアドレスを入力してください。",
+        displayNameAndValidEmailRequired:
+          "表示名と有効なメールアドレスを入力してください。",
         passwordTooShort: "パスワードは12文字以上で入力してください。",
         cannotRevokeOwnAdmin: "自分の管理者権限は解除できません。",
         atLeastOneAdminRequired: "管理者は最低1人必要です。",
@@ -797,9 +848,11 @@ export const resources = {
         userNotLoggedIn: "このユーザーはログインしていません。",
         userMfaNotConfigured: "このユーザーはMFAを設定していません。",
         emailVerificationSubject: "メールアドレスの確認",
-        emailVerificationBody: "{{0}}AI Bots のメールアドレスを確認してください。",
+        emailVerificationBody:
+          "{{0}}AI Bots のメールアドレスを確認してください。",
         emailGreeting: "{{0}} さん、",
-        emailVerificationLinkInstructions: "次のリンクを24時間以内に開いてください。",
+        emailVerificationLinkInstructions:
+          "次のリンクを24時間以内に開いてください。",
         emailDeliveryFailed: "Resendでメールを送信できませんでした: {{0}}",
         passwordResetSubject: "パスワードの再設定",
         passwordResetBody: "{{0}}パスワードの再設定がリクエストされました。",
@@ -809,7 +862,8 @@ export const resources = {
           "このメールに心当たりがない場合は、何も操作する必要はありません。",
         messageId: "メッセージID",
         attachmentIndex: "アタッチメントのインデックス",
-        webContentFetchToolDescription: "Webコンテンツをフェッチしてパースします",
+        webContentFetchToolDescription:
+          "Webコンテンツをフェッチしてパースします",
         googleDriveRemoteFileTools: "Googleドライブ用リモートファイルツール",
         googleDriveListFilesDescription:
           "Googleドライブ上のフォルダのファイル・フォルダを一覧します。再帰的に取得することも可能です。",
@@ -819,7 +873,8 @@ export const resources = {
         googleDrivePageToken: "このパスより後から一覧を続ける場合の開始位置",
         googleDriveSharedFilesDescription:
           "Googleドライブで自分と共有されているファイル・フォルダを一覧します。共有フォルダの中身は通常の一覧ツールで取得してください。",
-        googleDriveNamePageToken: "この名前より後から一覧を続ける場合の開始位置",
+        googleDriveNamePageToken:
+          "この名前より後から一覧を続ける場合の開始位置",
         googleDriveSearchDescription:
           "Google Drive APIの検索クエリ（q）でファイル・フォルダを検索します。Drive APIのq構文を使い、name contains、fullText contains、'<folderId>' in parents、modifiedTime、mimeType、sharedWithMeなどの条件を指定してください。複数条件はand/orで組み合わせられます。詳細な構文はGoogle Drive APIの仕様に従います。",
         googleDriveSearchQuery: "Google Drive APIの検索クエリ",
@@ -829,7 +884,8 @@ export const resources = {
         googleDriveFileIdForHandle: "ハンドルを作成するファイルのID",
         googleDriveMetadataDescription:
           "Googleドライブ上のファイルまたはフォルダのメタデータを取得します。",
-        googleDriveMetadataFileId: "メタデータを取得するファイルまたはフォルダのID",
+        googleDriveMetadataFileId:
+          "メタデータを取得するファイルまたはフォルダのID",
         googleDriveExistsDescription:
           "Googleドライブ上のファイルまたはフォルダの存在を確認します。",
         googleDriveExistsFileId: "存在を確認するファイルまたはフォルダのID",
@@ -857,12 +913,14 @@ export const resources = {
         openDalListPathDescription:
           "リモートファイルソースの指定したパス直下または配下のファイル・ディレクトリを一覧します。",
         openDalPathToList: "一覧を取得するパス",
-        openDalFileHandleDescription: "リモートファイルのハンドルを取得します。",
+        openDalFileHandleDescription:
+          "リモートファイルのハンドルを取得します。",
         openDalFilePathForHandle: "ハンドルを作成するファイルのパス",
         openDalMetadataDescription:
           "リモートファイルまたはディレクトリのメタデータを取得します。",
         openDalMetadataPath: "メタデータを取得するパス",
-        openDalPathExistsDescription: "リモートソース上のパスが存在するかを確認します。",
+        openDalPathExistsDescription:
+          "リモートソース上のパスが存在するかを確認します。",
         openDalPathToCheck: "確認するパス",
         oauthAuthentication: "OAuth認証情報",
         initCommandFailed:
@@ -873,7 +931,8 @@ export const resources = {
           "ネットワークポリシーを設定できませんでした (HTTP {{0}})",
         networkPolicyFetchFailed:
           "ネットワークポリシーを取得できませんでした (HTTP {{0}})",
-        currentNetworkPolicyFetchFailed: "現在のネットワークポリシーを取得できませんでした。",
+        currentNetworkPolicyFetchFailed:
+          "現在のネットワークポリシーを取得できませんでした。",
         commandNetworkPolicyUpdateFailed:
           "コマンド実行用のネットワークポリシーを設定できませんでした (HTTP {{0}})",
         networkPolicyRestoreFailed:
@@ -881,26 +940,29 @@ export const resources = {
         invalidEnvironmentVariableName: "無効な環境変数名です: {{0}}",
         shellNetworkPolicyUpdateFailed:
           "シェル用のネットワークポリシーを設定できませんでした (HTTP {{0}})",
-        ptySessionCreateFailed: "PTYセッションを作成できませんでした (HTTP {{0}})",
+        ptySessionCreateFailed:
+          "PTYセッションを作成できませんでした (HTTP {{0}})",
         invalidPtySessionResponse: "PTYセッションの応答形式が不正です。",
         ptyWebsocketTimedOut: "PTY WebSocket接続がタイムアウトしました。",
         ptyConnectionFailed: "PTY接続に失敗しました。",
         ptyConnectionClosed: "PTY接続が閉じられました (code: {{0}})",
         ptyConnectionNotOpen: "PTY接続が閉じています。",
-        ptySessionCloseFailed: "PTYセッションを終了できませんでした (HTTP {{0}})",
+        ptySessionCloseFailed:
+          "PTYセッションを終了できませんでした (HTTP {{0}})",
         shellExitedOnStartup: "シェルプロセスが起動直後に終了しました。",
-        shellSessionUnavailable: "シェルセッションが見つからないか、終了しています。",
+        shellSessionUnavailable:
+          "シェルセッションが見つからないか、終了しています。",
         inputLimitExceeded: "一度に送信できる入力は16,000文字までです。",
         webSearchToolDescription:
           "Webを検索し、タイトル・URL・抜粋の一覧を返す。最新情報や知らない事柄を調べるときに使う。",
         webSearchQuery: "検索クエリ",
-    },
+      },
     },
   },
 } as const;
 
 type Join<K extends string, V> = V extends string ? `${K}.${V}` : never;
-type TranslationKey<T = typeof resources.ja.translation> = {
+export type TranslationKey<T = typeof resources.ja.translation> = {
   [K in keyof T & string]: T[K] extends string
     ? K
     : Join<K, TranslationKey<T[K]>>;
@@ -911,239 +973,17 @@ export type NavigationLabelKey = Extract<
   `navigation.${string}`
 >;
 
-const serverMessageKeys = new Map<string, TranslationKey>([
-  ["コンフィグ", "server.config"],
-  ["{{0}}への接続と認証に成功しました。", "server.connectionTestSucceeded"],
-  ["アダプタへの接続に失敗しました。", "server.adapterConnectionFailed"],
-  ["エンドポイントを入力してください。", "server.endpointRequired"],
-  ["このトランスポートの接続テストには対応していません。", "server.transportTestUnsupported"],
-  ["HTTPヘッダー", "server.httpHeaders"],
-  ["{{0}}とのMCP接続に成功しました。({{1}}個のツールが利用可能)", "server.mcpConnectionTestSucceeded"],
-  ["MCPサーバー", "server.mcpServer"],
-  ["MCPサーバーへの接続に失敗しました。", "server.mcpConnectionFailed"],
-  ["プロバイダーとモデルIDを入力してください。", "server.providerAndModelRequired"],
-  ["選択したプロバイダーが見つかりません。", "server.selectedProviderNotFound"],
-  ["オプション", "server.options"],
-  ["モデルが取得できませんでした。", "server.modelsUnavailable"],
-  ["{{0}}のモデル「{{1}}」に接続できました。", "server.modelConnectionSucceeded"],
-  ["エージェント", "server.agent"],
-  ["エージェントの接続テストに失敗しました。", "server.agentConnectionFailed"],
-  ["認証情報を暗号化するには CREDENTIALS_ENCRYPTION_KEY を設定してください。", "server.credentialsEncryptionKeyRequiredForEncrypt"],
-  ["CREDENTIALS_ENCRYPTION_KEY は32バイトのbase64値にしてください。", "server.credentialsEncryptionKeyInvalid"],
-  ["認証情報を復号するには CREDENTIALS_ENCRYPTION_KEY を設定してください。", "server.credentialsEncryptionKeyRequiredForDecrypt"],
-  ["保存された認証情報を読み込めません。", "server.savedCredentialsUnreadable"],
-  ["{{0}}のJSON形式を確認してください。", "server.invalidJson"],
-  ["{{0}}はキー・値のオブジェクトで入力してください。", "server.expectedKeyValueObject"],
-  ["{{0}}の値は文字列で入力してください。", "server.expectedStringValue"],
-  ["{{0}}にはオブジェクトを入力してください。", "server.expectedObject"],
-  ["{{0}}はJSON配列で入力してください。", "server.expectedJsonArray"],
-  ["{{0}}は文字列のJSON配列で入力してください。", "server.expectedStringJsonArray"],
-  ["[実行時補足情報]\n現在のスレッドID: {{0}}\n現在日時 (UTC, ISO 8601): {{1}}", "server.runtimeThreadContext"],
-  ["スケジュール", "server.schedule"],
-  ["CREDENTIALS_ENCRYPTION_KEYを設定してください。", "server.credentialsEncryptionKeyRequired"],
-  ["CREDENTIALS_ENCRYPTION_KEYは32バイトのbase64値にしてください。", "server.credentialsEncryptionKeyInvalidForStorage"],
-  ["OAUTH_BASE_URLを設定してください。", "server.oauthBaseUrlRequired"],
-  ["OAUTH_BASE_URLにはパスなしのHTTPSオリジンを設定してください。", "server.oauthBaseUrlMustBeHttpsOrigin"],
-  ["OAuthエンドポイントにはHTTPまたはHTTPSを指定してください。", "server.oauthEndpointMustBeHttpUrl"],
-  ["認証情報名を入力してください。", "server.oauthAuthenticationNameRequired"],
-  ["OAuth認証情報が見つかりません。", "server.oauthAuthenticationNotFound"],
-  ["OAuthクライアントを選択してください。", "server.oauthClientRequired"],
-  ["選択したOAuthクライアントが見つかりません。", "server.selectedOauthClientNotFound"],
-  ["OAuth認証を開始できませんでした。", "server.oauthAuthorizationStartFailed"],
-  ["OAuthクライアントが見つかりません。", "server.oauthClientNotFound"],
-  ["OAuthサーバーからアクセストークンが返されませんでした。", "server.oauthAccessTokenMissing"],
-  ["未設定", "server.notConfigured"],
-  ["不明", "server.unknown"],
-  ["設定済み", "server.configured"],
-  ["接続名とプラットフォームを入力してください。", "server.adapterNameAndPlatformRequired"],
-  ["環境変数は文字列のキー・値ペアで入力してください。", "server.environmentVariablesMustBeStringPairs"],
-  ["環境変数の形式を確認してください。", "server.invalidEnvironmentVariables"],
-  ["アダプタが見つかりません。", "server.adapterNotFound"],
-  ["選択したOAuth認証情報が見つかりません。", "server.selectedOauthAuthenticationNotFound"],
-  ["環境変数を暗号化できませんでした。", "server.environmentVariablesEncryptionFailed"],
-  ["ボット「{{0}}」で利用中", "server.usedByBot"],
-  ["未使用", "server.unused"],
-  ["MCP OAuth認証の設定はサーバーIDと認証IDのJSONオブジェクトで入力してください。", "server.invalidMcpOauthConfiguration"],
-  ["エージェント名を入力してください。", "server.agentNameRequired"],
-  ["オプションにはJSONオブジェクトを入力してください。", "server.optionsMustBeObject"],
-  ["オプションJSONの形式を確認してください。", "server.invalidOptionsJson"],
-  ["選択したMCPサーバーを使用できません。", "server.selectedMcpServerUnavailable"],
-  ["MCP OAuth認証には選択済みサーバーと自分の認証情報を指定してください。", "server.mcpOauthRequiresSelectedServerAndOwnCredentials"],
-  ["エージェントが見つかりません。", "server.agentNotFound"],
-  ["このエージェントを編集する権限がありません。", "server.agentEditForbidden"],
-  ["稼働中", "server.active"],
-  ["停止中", "server.inactive"],
-  ["MCP接続の設定形式を確認してください。", "server.invalidMcpConnectionSettings"],
-  ["ToolSet context は有効な配列で入力してください。", "server.toolsetContextMustBeArray"],
-  ["利用できないToolSet名が含まれています。利用可能: {{0}}", "server.unavailableToolsetNames"],
-  ["なし", "server.none"],
-  ["ボット名を入力してください。", "server.botNameRequired"],
-  ["エージェントを選択してください。", "server.agentRequired"],
-  ["選択したエージェントが見つかりません。", "server.selectedAgentNotFound"],
-  ["選択したエージェントは別のボットで使用されています。", "server.selectedAgentAlreadyUsed"],
-  ["選択したアダプタを使用できません。", "server.selectedAdapterUnavailable"],
-  ["同じMCPサーバーとOAuth認証の接続は重複できません。", "server.duplicateMcpOauthConnection"],
-  ["選択したサンドボックスを使用できません。", "server.selectedSandboxUnavailable"],
-  ["同じToolSet名とcontextの組み合わせは重複できません。", "server.duplicateToolsetContext"],
-  ["{{0}}: ToolSet context の設定を確認してください。", "server.invalidToolsetContextForItem"],
-  ["ボットが見つかりません。", "server.botNotFound"],
-  ["接続先登録済み", "server.endpointConfigured"],
-  ["接続先未設定", "server.endpointMissing"],
-  ["サーバー名とトランスポートを入力してください。", "server.serverNameAndTransportRequired"],
-  ["対応していないトランスポートです。", "server.unsupportedTransport"],
-  ["ヘッダーJSONにはオブジェクトを入力してください。", "server.httpHeadersMustBeObject"],
-  ["ヘッダーの値は文字列で入力してください。", "server.httpHeaderValuesMustBeStrings"],
-  ["ヘッダーJSONの形式を確認してください。", "server.invalidHttpHeadersJson"],
-  ["MCPサーバーが見つかりません。", "server.mcpServerNotFound"],
-  ["HTTPヘッダーを暗号化できませんでした。", "server.httpHeadersEncryptionFailed"],
-  ["OAuth更新エンドポイントにはHTTPまたはHTTPSを指定してください。", "server.oauthRefreshEndpointMustBeHttpUrl"],
-  ["アクセストークンの有効期限が切れています。refresh tokenがないためOAuth認証を再接続してください。", "server.refreshTokenRequiredToReconnect"],
-  ["スコープ", "server.scopes"],
-  ["名前、クライアントID、認可エンドポイント、トークンエンドポイントを入力してください。", "server.oauthClientFieldsRequired"],
-  ["認可・トークンエンドポイントにはHTTPまたはHTTPSのURLを入力してください。", "server.oauthEndpointsMustBeHttpUrls"],
-  ["更新・失効エンドポイントのURL形式を確認してください。", "server.invalidOauthRefreshOrRevokeUrl"],
-  ["クライアントシークレットを暗号化できませんでした。", "server.oauthClientSecretEncryptionFailed"],
-  ["不明なクライアント", "server.unknownClient"],
-  ["接続名とプロバイダーを入力してください。", "server.providerConnectionNameAndProviderRequired"],
-  ["プロバイダー引数にはオブジェクトを入力してください。", "server.providerArgumentsMustBeObject"],
-  ["プロバイダー引数JSONの形式を確認してください。", "server.invalidProviderArgumentsJson"],
-  ["HTTPヘッダーにはオブジェクトを入力してください。", "server.providerHttpHeadersMustBeObject"],
-  ["HTTPヘッダーの値は文字列で入力してください。", "server.providerHttpHeaderValuesMustBeStrings"],
-  ["HTTPヘッダーJSONの形式を確認してください。", "server.invalidProviderHttpHeadersJson"],
-  ["プロバイダーが見つかりません。", "server.providerNotFound"],
-  ["同じ接続名のプロバイダーが既にあります。", "server.duplicateProviderName"],
-  ["ボット", "server.bot"],
-  ["プロバイダー", "server.provider"],
-  ["対象が見つかりません", "server.targetNotFound"],
-  ["スレッドごと", "server.perThread"],
-  ["全スレッド横断", "server.acrossAllThreads"],
-  ["対象種別と対象を選択してください。", "server.targetTypeAndTargetRequired"],
-  ["スレッドごとの集計方法を選択してください。", "server.threadAggregationMethodRequired"],
-  ["上限には0より大きい数値を入力してください。", "server.limitMustBePositive"],
-  ["係数には利用量の項目と0より大きい係数を1つ以上設定してください。", "server.usageWeightsRequired"],
-  ["リセットCron式を正しく入力してください。", "server.invalidResetCron"],
-  ["有効なタイムゾーンを選択してください。", "server.validTimezoneRequired"],
-  ["上限超過時のメッセージを入力してください。", "server.limitExceededMessageRequired"],
-  ["レートリミットが見つかりません。", "server.rateLimitNotFound"],
-  ["選択したボットが見つかりません。", "server.selectedBotNotFound"],
-  ["同じ対象のレートリミットが既にあります。", "server.duplicateRateLimitTarget"],
-  ["スレッド", "server.thread"],
-  ["アダプター #{{0}}", "server.adapterNumber"],
-  ["ボット #{{0}}", "server.botNumber"],
-  ["共有", "server.shared"],
-  ["{{0}}\n\n[出力を省略しました]", "server.truncatedOutput"],
-  ["サンドボックスが見つかりません。", "server.sandboxNotFound"],
-  ["実行するインスタンスを選択してください。", "server.sandboxInstanceRequired"],
-  ["コマンドを入力してください。", "server.commandRequired"],
-  ["コマンドは4,000文字以内で入力してください。", "server.commandTooLong"],
-  ["選択したインスタンスが見つかりません。", "server.selectedInstanceNotFound"],
-  ["サンドボックスでコマンドを実行できませんでした。", "server.sandboxCommandFailed"],
-  ["端末サイズが不正です。", "server.invalidTerminalSize"],
-  ["サンドボックスのシェルを開始できませんでした。", "server.sandboxShellStartFailed"],
-  ["サポートされていないサンドボックスタイプです。", "server.unsupportedSandboxType"],
-  ["サンドボックスの適用範囲を選択してください。", "server.sandboxScopeRequired"],
-  ["環境変数は文字列のキー・値オブジェクトで入力してください。", "server.sandboxEnvironmentVariablesMustBeStringObject"],
-  ["許可ドメイン", "server.allowedDomains"],
-  ["入力値を確認してください。", "server.invalidInput"],
-  [" (停止中)", "server.inactiveSuffix"],
-  ["スケジュール名を入力してください。", "server.scheduleNameRequired"],
-  ["プロンプトを入力してください。", "server.schedulePromptRequired"],
-  ["Cron式を正しく入力してください。", "server.invalidCronExpression"],
-  ["送信先とスレッドIDを1件以上指定してください。", "server.scheduleTargetAndThreadRequired"],
-  ["同じ送信先とスレッドIDを重複して指定できません。", "server.duplicateScheduleTarget"],
-  ["選択したボットとアダプタの組み合わせが無効です。", "server.invalidBotAdapterPair"],
-  ["スケジュールが見つかりません。", "server.scheduleNotFound"],
-  ["管理者", "server.administrator"],
-  ["一般ユーザー", "server.regularUser"],
-  ["検証済み", "server.verified"],
-  ["未検証", "server.unverified"],
-  ["ロック中", "server.locked"],
-  ["ログイン中", "server.loggedIn"],
-  ["ログアウト", "server.loggedOut"],
-  ["ユーザーが見つかりません。", "server.userNotFound"],
-  ["表示名と有効なメールアドレスを入力してください。", "server.displayNameAndValidEmailRequired"],
-  ["パスワードは12文字以上で入力してください。", "server.passwordTooShort"],
-  ["自分の管理者権限は解除できません。", "server.cannotRevokeOwnAdmin"],
-  ["管理者は最低1人必要です。", "server.atLeastOneAdminRequired"],
-  ["自分のアカウントは削除できません。", "server.cannotDeleteOwnAccount"],
-  ["自分を強制ログアウトさせることはできません。", "server.cannotForceLogoutSelf"],
-  ["このユーザーはログインしていません。", "server.userNotLoggedIn"],
-  ["このユーザーはMFAを設定していません。", "server.userMfaNotConfigured"],
-  ["メールアドレスの確認", "server.emailVerificationSubject"],
-  ["{{0}}AI Bots のメールアドレスを確認してください。", "server.emailVerificationBody"],
-  ["{{0}} さん、", "server.emailGreeting"],
-  ["次のリンクを24時間以内に開いてください。", "server.emailVerificationLinkInstructions"],
-  ["Resendでメールを送信できませんでした: {{0}}", "server.emailDeliveryFailed"],
-  ["パスワードの再設定", "server.passwordResetSubject"],
-  ["{{0}}パスワードの再設定がリクエストされました。", "server.passwordResetBody"],
-  ["次のリンクから1時間以内に新しいパスワードを設定してください。", "server.passwordResetLinkInstructions"],
-  ["このメールに心当たりがない場合は、何も操作する必要はありません。", "server.unrequestedEmailNotice"],
-  ["メッセージID", "server.messageId"],
-  ["アタッチメントのインデックス", "server.attachmentIndex"],
-  ["Webコンテンツをフェッチしてパースします", "server.webContentFetchToolDescription"],
-  ["Googleドライブ用リモートファイルツール", "server.googleDriveRemoteFileTools"],
-  ["Googleドライブ上のフォルダのファイル・フォルダを一覧します。再帰的に取得することも可能です。", "server.googleDriveListFilesDescription"],
-  ["一覧を取得するフォルダのID", "server.googleDriveFolderId"],
-  ["配下を再帰的に一覧するか", "server.googleDriveRecursive"],
-  ["取得する最大件数（1〜1000）", "server.googleDriveMaxResults"],
-  ["このパスより後から一覧を続ける場合の開始位置", "server.googleDrivePageToken"],
-  ["Googleドライブで自分と共有されているファイル・フォルダを一覧します。共有フォルダの中身は通常の一覧ツールで取得してください。", "server.googleDriveSharedFilesDescription"],
-  ["この名前より後から一覧を続ける場合の開始位置", "server.googleDriveNamePageToken"],
-  ["Google Drive APIの検索クエリ（q）でファイル・フォルダを検索します。Drive APIのq構文を使い、name contains、fullText contains、'<folderId>' in parents、modifiedTime、mimeType、sharedWithMeなどの条件を指定してください。複数条件はand/orで組み合わせられます。詳細な構文はGoogle Drive APIの仕様に従います。", "server.googleDriveSearchDescription"],
-  ["Google Drive APIの検索クエリ", "server.googleDriveSearchQuery"],
-  ["前回の検索結果に含まれる次ページトークン", "server.googleDriveNextPageToken"],
-  ["Googleドライブのファイル内容を参照するファイルハンドルを取得します。", "server.googleDriveFileHandleDescription"],
-  ["ハンドルを作成するファイルのID", "server.googleDriveFileIdForHandle"],
-  ["Googleドライブ上のファイルまたはフォルダのメタデータを取得します。", "server.googleDriveMetadataDescription"],
-  ["メタデータを取得するファイルまたはフォルダのID", "server.googleDriveMetadataFileId"],
-  ["Googleドライブ上のファイルまたはフォルダの存在を確認します。", "server.googleDriveExistsDescription"],
-  ["存在を確認するファイルまたはフォルダのID", "server.googleDriveExistsFileId"],
-  ["対象年月（YYYY-MM）", "server.targetMonth"],
-  ["従業員検索結果に含まれる従業員識別キー", "server.employeeKey"],
-  ["未選択", "server.unselected"],
-  ["King of Time APIキー", "server.kingOfTimeApiKey"],
-  ["King of Time 勤怠データ", "server.kingOfTimeAttendance"],
-  ["従業員名（姓・名の一部または全部）で従業員を検索します。対象年月時点の従業員データを使います。同姓同名の場合は候補をすべて返すため、識別キーを確認してから勤怠データを取得してください。", "server.kingOfTimeSearchEmployeeDescription"],
-  ["検索する従業員名（姓・名の一部または全部）", "server.kingOfTimeEmployeeName"],
-  ["指定従業員の対象月の日別勤怠データを取得します。先に従業員名検索を行い、employeeKeyを指定してください。", "server.kingOfTimeDailyAttendanceDescription"],
-  ["指定従業員の対象月の日別打刻データを取得します。先に従業員名検索を行い、employeeKeyを指定してください。", "server.kingOfTimeDailyTimeClockDescription"],
-  ["指定従業員の月別勤怠データを取得します。先に従業員名検索を行い、employeeKeyを指定してください。", "server.kingOfTimeMonthlyAttendanceDescription"],
-  ["指定従業員の対象月の日別スケジュールデータを取得します。先に従業員名検索を行い、employeeKeyを指定してください。", "server.kingOfTimeDailyScheduleDescription"],
-  ["King of Time に登録されている休暇区分コードと名称を一覧します。", "server.kingOfTimeLeaveTypesDescription"],
-  ["OpenDALサービス名", "server.openDalServiceName"],
-  ["OpenDALサービスの設定", "server.openDalServiceConfig"],
-  ["汎用リモートファイルツール（OpenDAL）", "server.openDalRemoteFileTools"],
-  ["リモートファイルソースの指定したパス直下または配下のファイル・ディレクトリを一覧します。", "server.openDalListPathDescription"],
-  ["一覧を取得するパス", "server.openDalPathToList"],
-  ["リモートファイルのハンドルを取得します。", "server.openDalFileHandleDescription"],
-  ["ハンドルを作成するファイルのパス", "server.openDalFilePathForHandle"],
-  ["リモートファイルまたはディレクトリのメタデータを取得します。", "server.openDalMetadataDescription"],
-  ["メタデータを取得するパス", "server.openDalMetadataPath"],
-  ["リモートソース上のパスが存在するかを確認します。", "server.openDalPathExistsDescription"],
-  ["確認するパス", "server.openDalPathToCheck"],
-  ["OAuth認証情報", "server.oauthAuthentication"],
-  ["生成時特権コマンドが失敗しました (exit code {{0}}): {{1}}", "server.initCommandFailed"],
-  ["サンドボックス初期化の失敗後にサンドボックスを削除できませんでした。", "server.sandboxCleanupAfterInitFailed"],
-  ["ネットワークポリシーを設定できませんでした (HTTP {{0}})", "server.networkPolicyUpdateFailed"],
-  ["ネットワークポリシーを取得できませんでした (HTTP {{0}})", "server.networkPolicyFetchFailed"],
-  ["現在のネットワークポリシーを取得できませんでした。", "server.currentNetworkPolicyFetchFailed"],
-  ["コマンド実行用のネットワークポリシーを設定できませんでした (HTTP {{0}})", "server.commandNetworkPolicyUpdateFailed"],
-  ["元のネットワークポリシーを復元できませんでした (HTTP {{0}})", "server.networkPolicyRestoreFailed"],
-  ["無効な環境変数名です: {{0}}", "server.invalidEnvironmentVariableName"],
-  ["シェル用のネットワークポリシーを設定できませんでした (HTTP {{0}})", "server.shellNetworkPolicyUpdateFailed"],
-  ["PTYセッションを作成できませんでした (HTTP {{0}})", "server.ptySessionCreateFailed"],
-  ["PTYセッションの応答形式が不正です。", "server.invalidPtySessionResponse"],
-  ["PTY WebSocket接続がタイムアウトしました。", "server.ptyWebsocketTimedOut"],
-  ["PTY接続に失敗しました。", "server.ptyConnectionFailed"],
-  ["PTY接続が閉じられました (code: {{0}})", "server.ptyConnectionClosed"],
-  ["PTY接続が閉じています。", "server.ptyConnectionNotOpen"],
-  ["PTYセッションを終了できませんでした (HTTP {{0}})", "server.ptySessionCloseFailed"],
-  ["シェルプロセスが起動直後に終了しました。", "server.shellExitedOnStartup"],
-  ["シェルセッションが見つからないか、終了しています。", "server.shellSessionUnavailable"],
-  ["一度に送信できる入力は16,000文字までです。", "server.inputLimitExceeded"],
-  ["Webを検索し、タイトル・URL・抜粋の一覧を返す。最新情報や知らない事柄を調べるときに使う。", "server.webSearchToolDescription"],
-  ["検索クエリ", "server.webSearchQuery"],
-]);
+export type TranslationMessage = {
+  key: TranslationKey;
+  values?: Record<string, string | number>;
+};
+
+export function localizedMessage(
+  key: TranslationKey,
+  values?: Record<string, string | number>,
+): TranslationMessage {
+  return { key, values };
+}
 
 i18n.use(initReactI18next).init({
   resources,
@@ -1161,9 +1001,9 @@ export function t(
   return i18n.t(key, values);
 }
 
-export function tMessage(message: string): string {
-  const key = serverMessageKeys.get(message);
-  return key ? i18n.t(key) : message;
+export function tMessage(message: string | TranslationMessage): string {
+  if (typeof message !== "string") return i18n.t(message.key, message.values);
+  return i18n.exists(message) ? i18n.t(message) : message;
 }
 
 export default i18n;

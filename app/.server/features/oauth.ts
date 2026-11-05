@@ -27,7 +27,7 @@ type OAuthFlow = {
 function encryptionKey() {
   const encoded = process.env.CREDENTIALS_ENCRYPTION_KEY;
   if (!encoded)
-    throw new Error("CREDENTIALS_ENCRYPTION_KEYを設定してください。");
+    throw new Error("server.credentialsEncryptionKeyRequired");
   const key = Buffer.from(encoded, "base64");
   if (key.length !== 32)
     throw new Error(
@@ -99,7 +99,7 @@ function decodeFlow(request: Request): OAuthFlow | null {
 
 function getCallbackUrl() {
   const value = process.env.OAUTH_BASE_URL;
-  if (!value) throw new Error("OAUTH_BASE_URLを設定してください。");
+  if (!value) throw new Error("server.oauthBaseUrlRequired");
   const url = new URL(value);
   if (
     url.pathname !== "/" ||
@@ -151,21 +151,21 @@ export async function startOAuthAuthorization(user: AuthUser, form: FormData) {
   const idValue = String(form.get("id") ?? "").trim();
   const authenticationId = idValue ? Number(idValue) : null;
   const selectedClientId = Number(form.get("oauthId"));
-  if (!name) return { error: "認証情報名を入力してください。" };
+  if (!name) return { error: "server.oauthAuthenticationNameRequired" };
   if (authenticationId !== null && !Number.isInteger(authenticationId))
-    return { error: "OAuth認証情報が見つかりません。" };
+    return { error: "server.oauthAuthenticationNotFound" };
   const existing =
     authenticationId === null
       ? null
       : await getOwnedOAuthAuthentication(authenticationId, user.id);
   if (authenticationId !== null && !existing)
-    return { error: "OAuth認証情報が見つかりません。" };
+    return { error: "server.oauthAuthenticationNotFound" };
   const oauthId = existing?.oauthId ?? selectedClientId;
   if (!Number.isInteger(oauthId))
-    return { error: "OAuthクライアントを選択してください。" };
+    return { error: "server.oauthClientRequired" };
   const oauthClient = await getOwnedOAuthClient(oauthId, user.id);
   if (!oauthClient)
-    return { error: "選択したOAuthクライアントが見つかりません。" };
+    return { error: "server.selectedOauthClientNotFound" };
 
   try {
     const callbackUrl = getCallbackUrl();
@@ -212,7 +212,7 @@ export async function startOAuthAuthorization(user: AuthUser, form: FormData) {
       error:
         error instanceof Error
           ? error.message
-          : "OAuth認証を開始できませんでした。",
+          : "server.oauthAuthorizationStartFailed",
     };
   }
 }
@@ -239,7 +239,7 @@ export async function completeOAuthAuthorization(
 
   try {
     const oauthClient = await getOwnedOAuthClient(flow.oauthId, user.id);
-    if (!oauthClient) throw new Error("OAuthクライアントが見つかりません。");
+    if (!oauthClient) throw new Error("server.oauthClientNotFound");
     const config = configuration(oauthClient);
     const tokens = await oidc.authorizationCodeGrant(
       config,
@@ -258,7 +258,7 @@ export async function completeOAuthAuthorization(
       ? await getOwnedOAuthAuthentication(flow.authenticationId, user.id)
       : null;
     if (flow.authenticationId && !existing)
-      throw new Error("OAuth認証情報が見つかりません。");
+      throw new Error("server.oauthAuthenticationNotFound");
     const expiresAt =
       typeof tokens.expires_in === "number"
         ? new Date(Date.now() + tokens.expires_in * 1000).toISOString()

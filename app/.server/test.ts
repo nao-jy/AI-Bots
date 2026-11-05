@@ -29,9 +29,7 @@ export async function testAdapter(user: AuthUser, values: FormData) {
     return testSuccess(`${bot.displayName}への接続と認証に成功しました。`);
   } catch (error) {
     return testFailure(
-      error instanceof Error
-        ? error.message
-        : "アダプタへの接続に失敗しました。",
+      error instanceof Error ? error.message : "server.adapterConnectionFailed",
     );
   }
 }
@@ -46,11 +44,9 @@ export async function testMcpServer(user: AuthUser, values: FormData) {
     if (authId !== undefined && authId.length !== 0) {
       authIdNum = Number(authId);
     }
-    if (!endpoint) return testFailure("エンドポイントを入力してください。");
+    if (!endpoint) return testFailure("server.endpointRequired");
     if (transport !== "http")
-      return testFailure(
-        "このトランスポートの接続テストには対応していません。",
-      );
+      return testFailure("server.transportTestUnsupported");
     const headers = parseStringMap(values.get("headers"), "HTTPヘッダー");
     const mcpClient = await getMcpClient(
       transport,
@@ -66,9 +62,7 @@ export async function testMcpServer(user: AuthUser, values: FormData) {
     );
   } catch (error) {
     return testFailure(
-      error instanceof Error
-        ? error.message
-        : "MCPサーバーへの接続に失敗しました。",
+      error instanceof Error ? error.message : "server.mcpConnectionFailed",
     );
   }
 }
@@ -79,9 +73,9 @@ export async function testAgent(user: AuthUser, values: FormData) {
     const providerId = Number(values.get("providerId"));
     const modelId = String(values.get("modelId") ?? "").trim();
     if (!Number.isInteger(providerId) || !modelId)
-      return testFailure("プロバイダーとモデルIDを入力してください。");
+      return testFailure("server.providerAndModelRequired");
     const provider = await getProvider(providerId, user.id);
-    if (!provider) return testFailure("選択したプロバイダーが見つかりません。");
+    if (!provider) return testFailure("server.selectedProviderNotFound");
     const args = (
       provider.args && typeof provider.args === "object" ? provider.args : {}
     ) as Record<string, unknown>;
@@ -94,7 +88,7 @@ export async function testAgent(user: AuthUser, values: FormData) {
       options,
       modelId,
     );
-    if (!modelInfo) return testFailure("モデルが取得できませんでした。");
+    if (!modelInfo) return testFailure("server.modelsUnavailable");
     const result = await generateText({
       model: modelInfo.model,
       prompt: "hello",
@@ -105,9 +99,7 @@ export async function testAgent(user: AuthUser, values: FormData) {
     );
   } catch (error) {
     return testFailure(
-      error instanceof Error
-        ? error.message
-        : "エージェントの接続テストに失敗しました。",
+      error instanceof Error ? error.message : "server.agentConnectionFailed",
     );
   }
 }

@@ -1,4 +1,4 @@
-import { t } from "~/i18n";
+import { t, tMessage } from "~/i18n";
 import { Button, Group, Select, Stack, Text, TextInput } from "@mantine/core";
 import { PlusIcon, TrashIcon } from "@phosphor-icons/react";
 import { useState } from "react";
@@ -39,7 +39,9 @@ export function ScheduleTargetsEditor({
 }) {
   const [targets, setTargets] = useState(() => parseTargets(initialValue));
   const targetOptions = options.map((option) =>
-    typeof option === "string" ? { label: option, value: option } : option,
+    typeof option === "string"
+      ? { label: tMessage(option), value: option }
+      : { ...option, label: tMessage(option.label) },
   );
 
   return (
@@ -51,8 +53,16 @@ export function ScheduleTargetsEditor({
       {targets.map((target, index) => (
         <Group key={index} align="flex-end" wrap="nowrap">
           <Select
-            label={index === 0 ? t("components.entityPage.scheduleTargetsEditor.targetTypeLabel") : undefined}
-            placeholder={t("components.entityPage.scheduleTargetsEditor.targetPlaceholder")}
+            label={
+              index === 0
+                ? t(
+                    "components.entityPage.scheduleTargetsEditor.targetTypeLabel",
+                  )
+                : undefined
+            }
+            placeholder={t(
+              "components.entityPage.scheduleTargetsEditor.targetPlaceholder",
+            )}
             data={targetOptions}
             value={
               target.chatbotAdapterId ? String(target.chatbotAdapterId) : null
@@ -74,8 +84,14 @@ export function ScheduleTargetsEditor({
             required
           />
           <TextInput
-            label={index === 0 ? t("components.entityPage.scheduleTargetsEditor.threadIdLabel") : undefined}
-            placeholder={t("components.entityPage.scheduleTargetsEditor.threadIdPlaceholder")}
+            label={
+              index === 0
+                ? t("components.entityPage.scheduleTargetsEditor.threadIdLabel")
+                : undefined
+            }
+            placeholder={t(
+              "components.entityPage.scheduleTargetsEditor.threadIdPlaceholder",
+            )}
             description={
               index === 0
                 ? t("components.entityPage.scheduleTargetsEditor.threadIdHelp")
@@ -97,7 +113,10 @@ export function ScheduleTargetsEditor({
             type="button"
             variant="subtle"
             color="red"
-            aria-label={t("components.entityPage.scheduleTargetsEditor.removeTargetAriaLabel", { 0: index + 1 })}
+            aria-label={t(
+              "components.entityPage.scheduleTargetsEditor.removeTargetAriaLabel",
+              { 0: index + 1 },
+            )}
             onClick={() =>
               setTargets((current) =>
                 current.filter((_, itemIndex) => itemIndex !== index),
@@ -121,10 +140,12 @@ export function ScheduleTargetsEditor({
           ])
         }
       >
-        {t("components.entityPage.scheduleTargetsEditor.addTarget")}</Button>
+        {t("components.entityPage.scheduleTargetsEditor.addTarget")}
+      </Button>
       {targetOptions.length === 0 && (
         <Text size="xs" c="dimmed">
-          {t("components.entityPage.scheduleTargetsEditor.noTargetsAvailable")}</Text>
+          {t("components.entityPage.scheduleTargetsEditor.noTargetsAvailable")}
+        </Text>
       )}
     </Stack>
   );

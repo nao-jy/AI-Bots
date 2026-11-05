@@ -31,10 +31,10 @@ export async function listAdapters(user: AuthUser) {
         authId: adapter.authId === null ? "" : String(adapter.authId),
         authentication:
           adapter.authId === null
-            ? "未設定"
-            : (authNames.get(adapter.authId) ?? "不明"),
+            ? "server.notConfigured"
+            : (authNames.get(adapter.authId) ?? "server.unknown"),
         config: JSON.stringify(config),
-        configured: Object.keys(config).length ? "設定済み" : "未設定",
+        configured: Object.keys(config).length ? "server.configured" : "server.notConfigured",
         publicIds: JSON.stringify(
           adapter.publicIds.map(({ slot, id }) => ({ slot, id })),
         ),
@@ -60,7 +60,7 @@ export async function saveAdapter(
   const authValue = String(values.get("authId") ?? "").trim();
   const authId = authValue ? Number(authValue) : null;
   if (!name || !platform)
-    return { error: "接続名とプラットフォームを入力してください。" };
+    return { error: "server.adapterNameAndPlatformRequired" };
   let config: Record<string, string>;
   try {
     const parsed: unknown = JSON.parse(configValue || "{}");
@@ -70,14 +70,14 @@ export async function saveAdapter(
       Array.isArray(parsed) ||
       Object.values(parsed).some((value) => typeof value !== "string")
     )
-      return { error: "環境変数は文字列のキー・値ペアで入力してください。" };
+      return { error: "server.environmentVariablesMustBeStringPairs" };
     config = parsed as Record<string, string>;
   } catch {
-    return { error: "環境変数の形式を確認してください。" };
+    return { error: "server.invalidEnvironmentVariables" };
   }
   if (id !== null) {
     if (!(await db.orm.aibot.ChatAdapter.first({ id, ownerId: user.id })))
-      return { error: "アダプタが見つかりません。" };
+      return { error: "server.adapterNotFound" };
   }
   if (authId !== null) {
     if (
@@ -87,7 +87,7 @@ export async function saveAdapter(
         ownerId: user.id,
       }))
     )
-      return { error: "選択したOAuth認証情報が見つかりません。" };
+      return { error: "server.selectedOauthAuthenticationNotFound" };
   }
   let encryptedConfig: ReturnType<typeof encryptStringMap>;
   try {
@@ -97,7 +97,7 @@ export async function saveAdapter(
       error:
         error instanceof Error
           ? error.message
-          : "環境変数を暗号化できませんでした。",
+          : "server.environmentVariablesEncryptionFailed",
     };
   }
   const storedEnvs = jsonb(encryptedConfig);

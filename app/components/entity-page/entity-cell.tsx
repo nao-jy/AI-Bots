@@ -17,12 +17,21 @@ export function EntityCell({
 }) {
   if (column.presentation === "webhook-count") {
     const endpoints = parseWebhookEndpoints(value);
-    if (endpoints.length === 0) return <span className="table-text">{t("components.entityPage.entityCell.emptyValue")}</span>;
-    return <span className="table-text">{endpoints.length} {t("components.entityPage.entityCell.countUnit")}</span>;
+    if (endpoints.length === 0)
+      return (
+        <span className="table-text">
+          {t("components.entityPage.entityCell.emptyValue")}
+        </span>
+      );
+    return (
+      <span className="table-text">
+        {endpoints.length} {t("components.entityPage.entityCell.countUnit")}
+      </span>
+    );
   }
 
   if (column.presentation === "verification-status") {
-    const verified = String(value) === "検証済み";
+    const verified = String(value) === "server.verified";
     return (
       <Badge
         className={`status-badge ${verified ? "success" : "pending"}`}
@@ -36,7 +45,7 @@ export function EntityCell({
   }
 
   if (column.presentation === "mfa-status") {
-    const configured = String(value) === "設定済み";
+    const configured = String(value) === "server.configured";
     return (
       <Badge
         className={`status-badge ${configured ? "success" : "pending"}`}
@@ -53,9 +62,12 @@ export function EntityCell({
     return (
       <Group gap="xs">
         <Switch
-          checked={String(value) === "稼働中"}
+          checked={String(value) === "server.active"}
           onChange={(event) => onStatusChange(event.currentTarget.checked)}
-          aria-label={t("components.entityPage.entityCell.toggleStatusAriaLabel", { 0: recordName })}
+          aria-label={t(
+            "components.entityPage.entityCell.toggleStatusAriaLabel",
+            { 0: recordName },
+          )}
         />
         <span className="table-text">{tMessage(String(value))}</span>
       </Group>
@@ -64,10 +76,13 @@ export function EntityCell({
     return (
       <Group gap="xs">
         <Switch
-          checked={String(value) === "管理者"}
+          checked={String(value) === "server.administrator"}
           disabled={disabled}
           onChange={(event) => onStatusChange(event.currentTarget.checked)}
-          aria-label={t("components.entityPage.entityCell.toggleAdminAriaLabel", { 0: recordName })}
+          aria-label={t(
+            "components.entityPage.entityCell.toggleAdminAriaLabel",
+            { 0: recordName },
+          )}
         />
         <span className="table-text">{tMessage(String(value))}</span>
       </Group>
@@ -107,10 +122,14 @@ function parseWebhookEndpoints(value: string | number) {
 }
 
 function Status({ value }: { value: string }) {
-  const active = ["稼働中", "接続済み", "接続先登録済み", "有効"].includes(
+  const active = [
+    "server.active",
+    "server.endpointConfigured",
+    "server.configured",
+  ].includes(value);
+  const pending = ["server.endpointMissing", "招待中", "未接続"].includes(
     value,
   );
-  const pending = ["招待中", "未接続", "接続先未設定"].includes(value);
 
   return (
     <Badge

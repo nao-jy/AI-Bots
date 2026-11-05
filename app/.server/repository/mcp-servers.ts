@@ -26,7 +26,7 @@ export async function listMcpServers(user: AuthUser) {
         transportId: server.transport,
         endpoint: server.endpoint ?? "",
         headers: JSON.stringify(decryptMcpHeaders(server.headers), null, 2),
-        status: server.endpoint ? "接続先登録済み" : "接続先未設定",
+        status: server.endpoint ? "server.endpointConfigured" : "server.endpointMissing",
       });
     }),
   };
@@ -43,25 +43,25 @@ export async function saveMcpServer(
   const endpoint = String(values.get("endpoint") ?? "").trim();
   const headersValue = String(values.get("headers") ?? "{}").trim();
   if (!name || !transport)
-    return { error: "サーバー名とトランスポートを入力してください。" };
+    return { error: "server.serverNameAndTransportRequired" };
   if (!isMcpTransport(transport))
-    return { error: "対応していないトランスポートです。" };
+    return { error: "server.unsupportedTransport" };
   let headers: Record<string, string>;
   try {
     const parsed: unknown = JSON.parse(headersValue || "{}");
     if (!parsed || typeof parsed !== "object" || Array.isArray(parsed))
-      return { error: "ヘッダーJSONにはオブジェクトを入力してください。" };
+      return { error: "server.httpHeadersMustBeObject" };
     if (Object.values(parsed).some((value) => typeof value !== "string"))
-      return { error: "ヘッダーの値は文字列で入力してください。" };
+      return { error: "server.httpHeaderValuesMustBeStrings" };
     headers = parsed as Record<string, string>;
   } catch {
-    return { error: "ヘッダーJSONの形式を確認してください。" };
+    return { error: "server.invalidHttpHeadersJson" };
   }
   if (
     id !== null &&
     !(await db.orm.aibot.McpServer.first({ id, ownerId: user.id }))
   )
-    return { error: "MCPサーバーが見つかりません。" };
+    return { error: "server.mcpServerNotFound" };
   let encryptedHeaders: ReturnType<typeof encryptStringMap>;
   try {
     encryptedHeaders = encryptStringMap(headers);
@@ -70,7 +70,7 @@ export async function saveMcpServer(
       error:
         error instanceof Error
           ? error.message
-          : "HTTPヘッダーを暗号化できませんでした。",
+          : "server.httpHeadersEncryptionFailed",
     };
   }
   const saved = {

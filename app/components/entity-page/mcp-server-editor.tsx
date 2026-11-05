@@ -1,4 +1,4 @@
-import { t } from "~/i18n";
+import { t, tMessage } from "~/i18n";
 import { useState } from "react";
 import { Button, Group, Input, Select, Stack, Text } from "@mantine/core";
 import type { EntityOption } from "../../types/entities";
@@ -90,8 +90,14 @@ export function McpServerEditor({
     ),
   );
   const serverData = serverOptions.map((option) =>
-    typeof option === "string" ? { label: option, value: option } : option,
+    typeof option === "string"
+      ? { label: tMessage(option), value: option }
+      : { ...option, label: tMessage(option.label) },
   );
+  const authenticationData = authenticationOptions.map((option) => ({
+    ...option,
+    label: tMessage(option.label),
+  }));
 
   return (
     <Stack gap="sm">
@@ -106,7 +112,10 @@ export function McpServerEditor({
       {connections.map((connection, index) => (
         <Group key={index} align="flex-end" wrap="nowrap">
           <Select
-            label={t("components.entityPage.mcpServerEditor.serverConnectionLabel", { 0: index + 1 })}
+            label={t(
+              "components.entityPage.mcpServerEditor.serverConnectionLabel",
+              { 0: index + 1 },
+            )}
             placeholder={placeholder}
             data={serverData}
             value={connection.serverId || null}
@@ -121,13 +130,19 @@ export function McpServerEditor({
             }
             searchable
             clearable
-            nothingFoundMessage={t("components.entityPage.mcpServerEditor.noOptions")}
+            nothingFoundMessage={t(
+              "components.entityPage.mcpServerEditor.noOptions",
+            )}
             style={{ flex: 1 }}
           />
           <Select
-            label={t("components.entityPage.mcpServerEditor.oauthAuthenticationLabel")}
-            placeholder={t("components.entityPage.mcpServerEditor.noOauthOption")}
-            data={authenticationOptions}
+            label={t(
+              "components.entityPage.mcpServerEditor.oauthAuthenticationLabel",
+            )}
+            placeholder={t(
+              "components.entityPage.mcpServerEditor.noOauthOption",
+            )}
+            data={authenticationData}
             value={connection.authId}
             onChange={(authId) =>
               setConnections((current) =>
@@ -138,7 +153,9 @@ export function McpServerEditor({
             }
             searchable
             clearable
-            nothingFoundMessage={t("components.entityPage.mcpServerEditor.noOptions")}
+            nothingFoundMessage={t(
+              "components.entityPage.mcpServerEditor.noOptions",
+            )}
             style={{ flex: 1 }}
           />
           <Button
@@ -151,7 +168,8 @@ export function McpServerEditor({
               )
             }
           >
-            {t("components.entityPage.mcpServerEditor.delete")}</Button>
+            {t("components.entityPage.mcpServerEditor.delete")}
+          </Button>
         </Group>
       ))}
       <Button
@@ -165,7 +183,8 @@ export function McpServerEditor({
           ])
         }
       >
-        {t("components.entityPage.mcpServerEditor.addConnection")}</Button>
+        {t("components.entityPage.mcpServerEditor.addConnection")}
+      </Button>
     </Stack>
   );
 }

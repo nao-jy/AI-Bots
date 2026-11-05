@@ -47,12 +47,12 @@ export async function listSandboxes(user: AuthUser) {
             instances.map((instance) => ({
               instanceId: instance.instanceId,
               scopeLabel: instance.threadId
-                ? "スレッド"
+                ? "server.thread"
                 : instance.adapterId !== null
                   ? `アダプター #${instance.adapterId}`
                   : instance.chatbotId !== null
                     ? `ボット #${instance.chatbotId}`
-                    : "共有",
+                    : "server.shared",
             })),
           ),
         });
@@ -76,25 +76,25 @@ export async function runPersistentSandboxCommand(
   command: string,
 ) {
   if (!Number.isInteger(sandboxId) || sandboxId <= 0)
-    return { ok: false, error: "サンドボックスが見つかりません。" };
+    return { ok: false, error: "server.sandboxNotFound" };
   if (!instanceId.trim())
-    return { ok: false, error: "実行するインスタンスを選択してください。" };
+    return { ok: false, error: "server.sandboxInstanceRequired" };
   if (!command.trim())
-    return { ok: false, error: "コマンドを入力してください。" };
+    return { ok: false, error: "server.commandRequired" };
   if (command.length > 4_000)
-    return { ok: false, error: "コマンドは4,000文字以内で入力してください。" };
+    return { ok: false, error: "server.commandTooLong" };
 
   const sandbox = await db.orm.aibot.Sandbox.first({
     id: sandboxId,
     ownerId: user.id,
   });
-  if (!sandbox) return { ok: false, error: "サンドボックスが見つかりません。" };
+  if (!sandbox) return { ok: false, error: "server.sandboxNotFound" };
 
   const instance = await db.orm.aibot.PersistentSandboxInstance.whereUnique({
     instanceId,
   }).first();
   if (!instance || instance.sandboxId !== sandbox.id)
-    return { ok: false, error: "選択したインスタンスが見つかりません。" };
+    return { ok: false, error: "server.selectedInstanceNotFound" };
 
   try {
     const result = await executeSandboxCommand(
@@ -129,7 +129,7 @@ export async function runPersistentSandboxCommand(
       error:
         error instanceof Error
           ? error.message
-          : "サンドボックスでコマンドを実行できませんでした。",
+          : "server.sandboxCommandFailed",
     };
   }
 }
@@ -142,9 +142,9 @@ export async function startPersistentSandboxTerminal(
   rows: number,
 ) {
   if (!Number.isInteger(sandboxId) || sandboxId <= 0)
-    return { ok: false, error: "サンドボックスが見つかりません。" };
+    return { ok: false, error: "server.sandboxNotFound" };
   if (!instanceId.trim())
-    return { ok: false, error: "実行するインスタンスを選択してください。" };
+    return { ok: false, error: "server.sandboxInstanceRequired" };
   if (
     !Number.isInteger(cols) ||
     !Number.isInteger(rows) ||
@@ -153,20 +153,20 @@ export async function startPersistentSandboxTerminal(
     rows < 1 ||
     rows > 300
   ) {
-    return { ok: false, error: "端末サイズが不正です。" };
+    return { ok: false, error: "server.invalidTerminalSize" };
   }
 
   const sandbox = await db.orm.aibot.Sandbox.first({
     id: sandboxId,
     ownerId: user.id,
   });
-  if (!sandbox) return { ok: false, error: "サンドボックスが見つかりません。" };
+  if (!sandbox) return { ok: false, error: "server.sandboxNotFound" };
 
   const instance = await db.orm.aibot.PersistentSandboxInstance.whereUnique({
     instanceId,
   }).first();
   if (!instance || instance.sandboxId !== sandbox.id)
-    return { ok: false, error: "選択したインスタンスが見つかりません。" };
+    return { ok: false, error: "server.selectedInstanceNotFound" };
 
   try {
     const terminalId = await openSandboxTerminal(
@@ -195,7 +195,7 @@ export async function startPersistentSandboxTerminal(
       error:
         error instanceof Error
           ? error.message
-          : "サンドボックスのシェルを開始できませんでした。",
+          : "server.sandboxShellStartFailed",
     };
   }
 }
@@ -209,9 +209,9 @@ export async function saveSandbox(
   const sandboxScope = String(values.get("sandboxScope") ?? "").trim();
   const sandboxName = String(values.get("sandboxName") ?? "").trim();
   if (!(await listSandboxNames()).includes(sandboxType))
-    return { error: "サポートされていないサンドボックスタイプです。" };
+    return { error: "server.unsupportedSandboxType" };
   if (!isSandboxScope(sandboxScope))
-    return { error: "サンドボックスの適用範囲を選択してください。" };
+    return { error: "server.sandboxScopeRequired" };
   let envs: Record<string, string>;
   let allowedDomainList: string[];
   let initCommands: string[];
@@ -240,14 +240,14 @@ export async function saveSandbox(
   } catch (error) {
     return {
       error:
-        error instanceof Error ? error.message : "入力値を確認してください。",
+        error instanceof Error ? error.message : "server.invalidInput",
     };
   }
   if (
     id !== null &&
     !(await db.orm.aibot.Sandbox.first({ id, ownerId: user.id }))
   )
-    return { error: "サンドボックスが見つかりません。" };
+    return { error: "server.sandboxNotFound" };
   const saved = {
     sandboxType,
     sandboxScope,

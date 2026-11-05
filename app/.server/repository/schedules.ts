@@ -134,20 +134,20 @@ export async function saveSchedule(
   const timezone = String(values.get("timezone") ?? "").trim();
   const targets = parseTargets(values.get("targets"));
 
-  if (!name) return { error: "スケジュール名を入力してください。" };
-  if (!prompt) return { error: "プロンプトを入力してください。" };
+  if (!name) return { error: "server.scheduleNameRequired" };
+  if (!prompt) return { error: "server.schedulePromptRequired" };
   if (!cronParam || !cron.validate(cronParam))
-    return { error: "Cron式を正しく入力してください。" };
+    return { error: "server.invalidCronExpression" };
   if (!timezone || !isValidTimezone(timezone))
-    return { error: "有効なタイムゾーンを選択してください。" };
+    return { error: "server.validTimezoneRequired" };
   if (!targets || targets.length === 0)
-    return { error: "送信先とスレッドIDを1件以上指定してください。" };
+    return { error: "server.scheduleTargetAndThreadRequired" };
 
   const targetKeys = targets.map(
     ({ chatbotAdapterId, threadId }) => `${chatbotAdapterId}:${threadId}`,
   );
   if (new Set(targetKeys).size !== targetKeys.length)
-    return { error: "同じ送信先とスレッドIDを重複して指定できません。" };
+    return { error: "server.duplicateScheduleTarget" };
 
   for (const target of targets) {
     const link = await db.orm.aibot.ChatBotAdapter.where({
@@ -161,14 +161,14 @@ export async function saveSchedule(
       link.chatbot.ownerId !== user.id ||
       link.adapter.ownerId !== user.id
     )
-      return { error: "選択したボットとアダプタの組み合わせが無効です。" };
+      return { error: "server.invalidBotAdapterPair" };
   }
 
   if (
     id !== null &&
     !(await db.orm.aibot.ChatBotSchedule.first({ id, ownerId: user.id }))
   )
-    return { error: "スケジュールが見つかりません。" };
+    return { error: "server.scheduleNotFound" };
 
   const scheduleId = await db.transaction(async (tx) => {
     let scheduleId = id;

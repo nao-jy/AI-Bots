@@ -193,7 +193,7 @@ export async function listOAuthClients(user: AuthUser) {
         refreshEndpoint: client.refreshEndpoint ?? "",
         revocationEndpoint: client.revocationEndpoint ?? "",
         scopes: JSON.stringify(client.scopes),
-        secretConfigured: client.clientSecret ? "設定済み" : "未設定",
+        secretConfigured: client.clientSecret ? "server.configured" : "server.notConfigured",
       }),
     ),
   };
@@ -223,25 +223,25 @@ export async function saveOAuthClient(
   if (!name || !clientId || !authorizationEndpoint || !tokenEndpoint)
     return {
       error:
-        "名前、クライアントID、認可エンドポイント、トークンエンドポイントを入力してください。",
+        "server.oauthClientFieldsRequired",
     };
   if (!validHttpUrl(authorizationEndpoint) || !validHttpUrl(tokenEndpoint))
     return {
       error:
-        "認可・トークンエンドポイントにはHTTPまたはHTTPSのURLを入力してください。",
+        "server.oauthEndpointsMustBeHttpUrls",
     };
   if (
     (refreshEndpoint && !validHttpUrl(refreshEndpoint)) ||
     (revocationEndpoint && !validHttpUrl(revocationEndpoint))
   )
-    return { error: "更新・失効エンドポイントのURL形式を確認してください。" };
+    return { error: "server.invalidOauthRefreshOrRevokeUrl" };
 
   const existing =
     id === null
       ? null
       : await db.orm.aibot.OAuthClient.first({ id, ownerId: user.id });
   if (id !== null && !existing)
-    return { error: "OAuthクライアントが見つかりません。" };
+    return { error: "server.oauthClientNotFound" };
 
   let clientSecret = existing?.clientSecret ?? null;
   if (secret) {
@@ -252,7 +252,7 @@ export async function saveOAuthClient(
         error:
           error instanceof Error
             ? error.message
-            : "クライアントシークレットを暗号化できませんでした。",
+            : "server.oauthClientSecretEncryptionFailed",
       };
     }
   }
@@ -326,10 +326,10 @@ export async function listOAuthAuthentications(user: AuthUser) {
         oauthName:
           clientsById.get(authentication.oauthId) ?? "不明なクライアント",
         expiresAt: authentication.expiresAt ?? "",
-        accessTokenConfigured: "設定済み",
+        accessTokenConfigured: "server.configured",
         refreshTokenConfigured: authentication.refreshToken
-          ? "設定済み"
-          : "未設定",
+          ? "server.configured"
+          : "server.notConfigured",
       }),
     ),
     clientOptions: clients.map((client) => ({
@@ -345,9 +345,9 @@ export async function renameOAuthAuthentication(
   values: FormData,
 ) {
   const name = String(values.get("name") ?? "").trim();
-  if (!name) return { error: "認証情報名を入力してください。" };
+  if (!name) return { error: "server.oauthAuthenticationNameRequired" };
   if (!(await db.orm.aibot.OAuthAuthentication.first({ id, ownerId: user.id })))
-    return { error: "OAuth認証情報が見つかりません。" };
+    return { error: "server.oauthAuthenticationNotFound" };
   await db.orm.aibot.OAuthAuthentication.where({
     id,
     ownerId: user.id,

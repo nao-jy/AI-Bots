@@ -27,7 +27,7 @@ export async function listAgents(user: AuthUser) {
         options: JSON.stringify(agent.options ?? {}, null, 2),
         status: agent.chatbot
           ? `ボット「${agent.chatbot.name}」で利用中`
-          : "未使用",
+          : "server.unused",
       });
     }),
     providerOptions: (
@@ -68,26 +68,26 @@ export async function saveAgent(
   } catch {
     return {
       error:
-        "MCP OAuth認証の設定はサーバーIDと認証IDのJSONオブジェクトで入力してください。",
+        "server.invalidMcpOauthConfiguration",
     };
   }
-  if (!name) return { error: "エージェント名を入力してください。" };
+  if (!name) return { error: "server.agentNameRequired" };
   if (!Number.isInteger(providerId) || !modelId)
-    return { error: "プロバイダーとモデルIDを入力してください。" };
+    return { error: "server.providerAndModelRequired" };
   if (
     !(await db.orm.aibot.Provider.first({
       id: providerId,
       ownerId: user.id,
     }))
   )
-    return { error: "選択したプロバイダーが見つかりません。" };
+    return { error: "server.selectedProviderNotFound" };
   let options: unknown;
   try {
     options = JSON.parse(optionsValue || "{}");
     if (!options || typeof options !== "object" || Array.isArray(options))
-      return { error: "オプションにはJSONオブジェクトを入力してください。" };
+      return { error: "server.optionsMustBeObject" };
   } catch {
-    return { error: "オプションJSONの形式を確認してください。" };
+    return { error: "server.invalidOptionsJson" };
   }
   const servers = await db.orm.aibot.McpServer.where({
     ownerId: user.id,
@@ -97,7 +97,7 @@ export async function saveAgent(
   }).all();
   const allowedIds = new Set(servers.map((server) => server.id));
   if (serverIds.some((serverId) => !allowedIds.has(serverId)))
-    return { error: "選択したMCPサーバーを使用できません。" };
+    return { error: "server.selectedMcpServerUnavailable" };
   const authentications = await db.orm.aibot.OAuthAuthentication.where({
     ownerId: user.id,
   }).all();
@@ -110,19 +110,19 @@ export async function saveAgent(
   )
     return {
       error:
-        "MCP OAuth認証には選択済みサーバーと自分の認証情報を指定してください。",
+        "server.mcpOauthRequiresSelectedServerAndOwnCredentials",
     };
   if (id !== null) {
     const existing = await db.orm.aibot.AgentDefinition.where({ id })
       .include("provider")
       .first();
     if (!existing || existing.provider.ownerId !== user.id)
-      return { error: "エージェントが見つかりません。" };
+      return { error: "server.agentNotFound" };
   }
   if (id !== null) {
     const assignedBot = await db.orm.aibot.ChatBot.first({ agentId: id });
     if (assignedBot && !ownedBots.some((bot) => bot.id === assignedBot.id))
-      return { error: "このエージェントを編集する権限がありません。" };
+      return { error: "server.agentEditForbidden" };
   }
   const valuesToSave = {
     name,

@@ -1,11 +1,7 @@
 import { t, tMessage } from "~/i18n";
 import { useEffect, useRef } from "react";
 import { ActionIcon, Alert, Group } from "@mantine/core";
-import {
-  InfoIcon,
-  TerminalWindowIcon,
-  TrashIcon,
-} from "@phosphor-icons/react";
+import { InfoIcon, TerminalWindowIcon, TrashIcon } from "@phosphor-icons/react";
 import { useFetcher } from "react-router";
 import type { PersistentInstance } from "./sandbox-shell";
 
@@ -44,20 +40,25 @@ export function SandboxInstanceDetails({
 
   return (
     <div className="entity-details">
-      <strong className="entity-details-title">{t("components.entityPage.sandboxInstanceDetails.title")}</strong>
+      <strong className="entity-details-title">
+        {t("components.entityPage.sandboxInstanceDetails.title")}
+      </strong>
       {instances.length > 0 ? (
         <div className="sandbox-instance-list">
           {instances.map((instance) => (
             <div className="sandbox-instance-card" key={instance.instanceId}>
               <div className="sandbox-instance-info">
-                <span>{instance.scopeLabel}</span>
+                <span>{tMessage(instance.scopeLabel)}</span>
                 <code>{instance.instanceId}</code>
               </div>
               <Group gap={5} wrap="nowrap">
                 <ActionIcon
                   variant="subtle"
                   color="gray"
-                  aria-label={t("components.entityPage.sandboxInstanceDetails.openShell", { 0: instance.instanceId })}
+                  aria-label={t(
+                    "components.entityPage.sandboxInstanceDetails.openShell",
+                    { 0: instance.instanceId },
+                  )}
                   onClick={() => onOpenShell(instance.instanceId)}
                 >
                   <TerminalWindowIcon size={16} aria-hidden="true" />
@@ -68,18 +69,17 @@ export function SandboxInstanceDetails({
                   onSubmit={(event) => {
                     if (
                       !window.confirm(
-                        t("components.entityPage.sandboxInstanceDetails.confirmDeleteInstance", { 0: instance.instanceId }),
+                        t(
+                          "components.entityPage.sandboxInstanceDetails.confirmDeleteInstance",
+                          { 0: instance.instanceId },
+                        ),
                       )
                     ) {
                       event.preventDefault();
                     }
                   }}
                 >
-                  <input
-                    type="hidden"
-                    name="_intent"
-                    value="delete-instance"
-                  />
+                  <input type="hidden" name="_intent" value="delete-instance" />
                   <input type="hidden" name="id" value={sandboxId} />
                   <input
                     type="hidden"
@@ -90,7 +90,10 @@ export function SandboxInstanceDetails({
                     type="submit"
                     variant="subtle"
                     color="red"
-                    aria-label={t("components.entityPage.sandboxInstanceDetails.deleteInstance", { 0: instance.instanceId })}
+                    aria-label={t(
+                      "components.entityPage.sandboxInstanceDetails.deleteInstance",
+                      { 0: instance.instanceId },
+                    )}
                     disabled={fetcher.state !== "idle"}
                   >
                     <TrashIcon size={16} aria-hidden="true" />
@@ -101,7 +104,9 @@ export function SandboxInstanceDetails({
           ))}
         </div>
       ) : (
-        <span className="table-text">{t("components.entityPage.sandboxInstanceDetails.noInstances")}</span>
+        <span className="table-text">
+          {t("components.entityPage.sandboxInstanceDetails.noInstances")}
+        </span>
       )}
       {fetcher.data?.error && (
         <Alert color="red" role="alert" icon={<InfoIcon />}>

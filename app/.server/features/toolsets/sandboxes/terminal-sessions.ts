@@ -109,7 +109,7 @@ export async function openSandboxTerminal(
     );
     if (exitedDuringStartup) {
       await closeSandboxTerminal(userId, id);
-      throw new Error("シェルプロセスが起動直後に終了しました。");
+      throw new Error("server.shellExitedOnStartup");
     }
     refreshIdleTimeout(session);
     return id;
@@ -132,13 +132,13 @@ export async function sendSandboxTerminalInput(
 ) {
   const session = getOwnedSession(userId, id);
   if (!session || session.closed || !session.backend)
-    throw new Error("シェルセッションが見つからないか、終了しています。");
+    throw new Error("server.shellSessionUnavailable");
   const normalizedData = data.replace(/\r\n|\n/g, "\r");
   if (normalizedData.length > 16_000)
-    throw new Error("一度に送信できる入力は16,000文字までです。");
+    throw new Error("server.inputLimitExceeded");
   const operation = session.inputQueue.then(async () => {
     if (session.closed || !session.backend)
-      throw new Error("シェルセッションが見つからないか、終了しています。");
+      throw new Error("server.shellSessionUnavailable");
     await session.backend.sendInput(normalizedData);
   });
   session.inputQueue = operation.then(
@@ -156,7 +156,7 @@ export async function resizeSandboxTerminal(
 ) {
   const session = getOwnedSession(userId, id);
   if (!session || session.closed || !session.backend)
-    throw new Error("シェルセッションが見つからないか、終了しています。");
+    throw new Error("server.shellSessionUnavailable");
   if (
     !Number.isInteger(size.cols) ||
     !Number.isInteger(size.rows) ||
@@ -165,7 +165,7 @@ export async function resizeSandboxTerminal(
     size.rows < 1 ||
     size.rows > 300
   ) {
-    throw new Error("端末サイズが不正です。");
+    throw new Error("server.invalidTerminalSize");
   }
   await session.backend.resize(size);
   refreshIdleTimeout(session);

@@ -1,4 +1,4 @@
-import { t, tMessage } from "~/i18n";
+import { t, tMessage, type TranslationMessage } from "~/i18n";
 import { useEffect, useState } from "react";
 import {
   Alert,
@@ -26,6 +26,16 @@ import { CronScheduleEditor } from "./cron-schedule-editor";
 import { ScheduleTargetsEditor } from "./schedule-targets-editor";
 
 type KeyValuePair = { key: string; value: string };
+
+function localizedOptions(
+  options: NonNullable<EntityPageDefinition["fields"][number]["options"]>,
+) {
+  return options.map((option) =>
+    typeof option === "string"
+      ? { value: option, label: tMessage(option) }
+      : { ...option, label: tMessage(option.label) },
+  );
+}
 
 function DependentSelectEditor({
   name,
@@ -61,7 +71,10 @@ function DependentSelectEditor({
       ? String(initialDependentValue)
       : "",
   );
-  const availableOptions = dependentOptions[value] ?? [];
+  const availableOptions = (dependentOptions[value] ?? []).map((option) => ({
+    ...option,
+    label: tMessage(option.label),
+  }));
   const validDependentValue = availableOptions.some(
     (option) => option.value === dependentValue,
   )
@@ -72,8 +85,10 @@ function DependentSelectEditor({
       <Select
         name={name}
         label={label}
-        placeholder={placeholder ?? t("components.entityPage.dialogs.selectOption")}
-        data={options}
+        placeholder={
+          placeholder ?? t("components.entityPage.dialogs.selectOption")
+        }
+        data={localizedOptions(options)}
         value={value || null}
         onChange={(nextValue) => {
           setValue(nextValue ?? "");
@@ -86,7 +101,9 @@ function DependentSelectEditor({
       <Select
         label={dependentLabel}
         placeholder={
-          value ? t("components.entityPage.dialogs.selectTarget") : t("components.entityPage.dialogs.selectTargetTypeFirst")
+          value
+            ? t("components.entityPage.dialogs.selectTarget")
+            : t("components.entityPage.dialogs.selectTargetTypeFirst")
         }
         data={availableOptions}
         value={validDependentValue || null}
@@ -111,7 +128,9 @@ function MetricCoefficientsEditor({
   initialValue: unknown;
 }) {
   const metricOptions = options.map((option) =>
-    typeof option === "string" ? { value: option, label: option } : option,
+    typeof option === "string"
+      ? { value: option, label: tMessage(option) }
+      : { ...option, label: tMessage(option.label) },
   );
   const [pairs, setPairs] = useState<KeyValuePair[]>(() => {
     if (typeof initialValue !== "string" || !initialValue) return [];
@@ -127,7 +146,9 @@ function MetricCoefficientsEditor({
       return [];
     }
   });
-  const selectedMetrics = new Set(pairs.map((pair) => pair.key).filter(Boolean));
+  const selectedMetrics = new Set(
+    pairs.map((pair) => pair.key).filter(Boolean),
+  );
   const availableMetrics = metricOptions.filter(
     (option) => !selectedMetrics.has(option.value),
   );
@@ -155,16 +176,17 @@ function MetricCoefficientsEditor({
         return (
           <Group key={index} align="flex-end" wrap="nowrap" mb="xs">
             <Select
-              aria-label={t("components.entityPage.dialogs.usageItemLabel", { 0: label, 1: index + 1 })}
+              aria-label={t("components.entityPage.dialogs.usageItemLabel", {
+                0: label,
+                1: index + 1,
+              })}
               placeholder={t("components.entityPage.dialogs.selectUsageItem")}
               data={optionsForPair}
               value={pair.key || null}
               onChange={(value) =>
                 setPairs((current) =>
                   current.map((item, itemIndex) =>
-                    itemIndex === index
-                      ? { ...item, key: value ?? "" }
-                      : item,
+                    itemIndex === index ? { ...item, key: value ?? "" } : item,
                   ),
                 )
               }
@@ -172,7 +194,10 @@ function MetricCoefficientsEditor({
               style={{ flex: 1 }}
             />
             <TextInput
-              aria-label={t("components.entityPage.dialogs.usageMultiplierLabel", { 0: label, 1: index + 1 })}
+              aria-label={t(
+                "components.entityPage.dialogs.usageMultiplierLabel",
+                { 0: label, 1: index + 1 },
+              )}
               type="number"
               min={0}
               step="any"
@@ -196,9 +221,13 @@ function MetricCoefficientsEditor({
               onClick={() =>
                 setPairs((current) => current.filter((_, i) => i !== index))
               }
-              aria-label={t("components.entityPage.dialogs.deleteRowLabel", { 0: label, 1: index + 1 })}
+              aria-label={t("components.entityPage.dialogs.deleteRowLabel", {
+                0: label,
+                1: index + 1,
+              })}
             >
-              {t("components.entityPage.dialogs.delete")}</Button>
+              {t("components.entityPage.dialogs.delete")}
+            </Button>
           </Group>
         );
       })}
@@ -216,7 +245,8 @@ function MetricCoefficientsEditor({
             ]);
         }}
       >
-        {t("components.entityPage.dialogs.addUsageItem")}</Button>
+        {t("components.entityPage.dialogs.addUsageItem")}
+      </Button>
     </div>
   );
 }
@@ -288,7 +318,10 @@ function KeyValueEditor({
       {pairs.map((pair, index) => (
         <Group key={index} align="flex-end" wrap="nowrap" mb="xs">
           <TextInput
-            aria-label={t("components.entityPage.dialogs.keyLabel", { 0: label, 1: index + 1 })}
+            aria-label={t("components.entityPage.dialogs.keyLabel", {
+              0: label,
+              1: index + 1,
+            })}
             placeholder={t("components.entityPage.dialogs.key")}
             value={pair.key}
             onChange={(event) => {
@@ -302,7 +335,10 @@ function KeyValueEditor({
             style={{ flex: 1 }}
           />
           <TextInput
-            aria-label={t("components.entityPage.dialogs.valueLabel", { 0: label, 1: index + 1 })}
+            aria-label={t("components.entityPage.dialogs.valueLabel", {
+              0: label,
+              1: index + 1,
+            })}
             placeholder={t("components.entityPage.dialogs.value")}
             value={pair.value}
             onChange={(event) => {
@@ -323,9 +359,13 @@ function KeyValueEditor({
             onClick={() =>
               setPairs((current) => current.filter((_, i) => i !== index))
             }
-            aria-label={t("components.entityPage.dialogs.deleteRowLabel", { 0: label, 1: index + 1 })}
+            aria-label={t("components.entityPage.dialogs.deleteRowLabel", {
+              0: label,
+              1: index + 1,
+            })}
           >
-            {t("components.entityPage.dialogs.delete")}</Button>
+            {t("components.entityPage.dialogs.delete")}
+          </Button>
         </Group>
       ))}
       <Button
@@ -336,7 +376,8 @@ function KeyValueEditor({
           setPairs((current) => [...current, { key: "", value: "" }])
         }
       >
-        {t("components.entityPage.dialogs.addPair")}</Button>
+        {t("components.entityPage.dialogs.addPair")}
+      </Button>
     </div>
   );
 }
@@ -400,8 +441,8 @@ export function EntityPageDialogs({
   );
   const fetcher = useFetcher<{
     ok?: boolean;
-    error?: string;
-    message?: string;
+    error?: string | TranslationMessage;
+    message?: string | TranslationMessage;
     intent?: string;
     notification?: "verification-email";
   }>();
@@ -432,7 +473,10 @@ export function EntityPageDialogs({
       message: fetcher.data.ok
         ? t("components.entityPage.dialogs.userSavedAndEmailSent")
         : tMessage(
-            fetcher.data.error ?? t("components.entityPage.dialogs.verificationEmailCouldNotBeSent"),
+            fetcher.data.error ??
+              t(
+                "components.entityPage.dialogs.verificationEmailCouldNotBeSent",
+              ),
           ),
       color: fetcher.data.ok ? "green" : "red",
     });
@@ -447,10 +491,18 @@ export function EntityPageDialogs({
         title={
           <div>
             <Text className="modal-kicker">
-              {mode === "edit" ? t("components.entityPage.dialogs.updateSettings") : t("components.entityPage.dialogs.newSettings")}
+              {mode === "edit"
+                ? t("components.entityPage.dialogs.updateSettings")
+                : t("components.entityPage.dialogs.newSettings")}
             </Text>
             <Title order={3}>
-              {mode === "edit" ? t("components.entityPage.dialogs.editRecord", { 0: page.title }) : t("components.entityPage.dialogs.createRecord", { 0: page.title })}
+              {mode === "edit"
+                ? t("components.entityPage.dialogs.editRecord", {
+                    0: page.title,
+                  })
+                : t("components.entityPage.dialogs.createRecord", {
+                    0: page.title,
+                  })}
             </Title>
           </div>
         }
@@ -470,7 +522,9 @@ export function EntityPageDialogs({
           />
           {selected && <input type="hidden" name="id" value={selected.id} />}
           <Text className="modal-intro">
-            {page.description} {t("components.entityPage.dialogs.requiredDetails")}</Text>
+            {page.description}{" "}
+            {t("components.entityPage.dialogs.requiredDetails")}
+          </Text>
           {fetcher.data?.notification !== "verification-email" &&
             (fetcher.data?.error || fetcher.data?.message) && (
               <Alert
@@ -573,8 +627,11 @@ export function EntityPageDialogs({
                     <Select
                       name={field.key}
                       label={field.label}
-                      placeholder={field.placeholder ?? t("components.entityPage.dialogs.selectOption")}
-                      data={field.options ?? []}
+                      placeholder={
+                        field.placeholder ??
+                        t("components.entityPage.dialogs.selectOption")
+                      }
+                      data={localizedOptions(field.options ?? [])}
                       defaultValue={
                         String(
                           selected?.[field.key] ?? field.defaultValue ?? "",
@@ -589,8 +646,11 @@ export function EntityPageDialogs({
                     <MultiSelect
                       name={field.key}
                       label={field.label}
-                      placeholder={field.placeholder ?? t("components.entityPage.dialogs.selectOption")}
-                      data={field.options ?? []}
+                      placeholder={
+                        field.placeholder ??
+                        t("components.entityPage.dialogs.selectOption")
+                      }
+                      data={localizedOptions(field.options ?? [])}
                       required={field.required}
                       defaultValue={String(selected?.[field.key] ?? "")
                         .split(",")
@@ -599,7 +659,9 @@ export function EntityPageDialogs({
                       hiddenInputValuesDivider=", "
                       searchable
                       clearable
-                      nothingFoundMessage={t("components.entityPage.dialogs.noOptions")}
+                      nothingFoundMessage={t(
+                        "components.entityPage.dialogs.noOptions",
+                      )}
                     />
                   ) : field.type === "password" ? (
                     <PasswordInput
@@ -625,7 +687,8 @@ export function EntityPageDialogs({
                   )}
                   {field.help && (
                     <Text size="xs" c="dimmed" mt={6}>
-                      {field.help.text}{t("components.entityPage.dialogs.spacing")}
+                      {field.help.text}
+                      {t("components.entityPage.dialogs.spacing")}
                       {field.help.href && field.help.linkText && (
                         <>
                           {t("components.entityPage.dialogs.spacing")}
@@ -645,7 +708,8 @@ export function EntityPageDialogs({
           </div>
           <div className="modal-actions">
             <Button variant="default" type="button" onClick={onClose}>
-              {t("components.entityPage.dialogs.cancel")}</Button>
+              {t("components.entityPage.dialogs.cancel")}
+            </Button>
             {canTest && (
               <Button
                 type="button"
@@ -678,7 +742,8 @@ export function EntityPageDialogs({
                   fetcher.submit(data, { method: "post" });
                 }}
               >
-                {page.launchLabel ?? t("components.entityPage.dialogs.startAuthentication")}
+                {page.launchLabel ??
+                  t("components.entityPage.dialogs.startAuthentication")}
               </Button>
             )}
             <Button
@@ -690,7 +755,8 @@ export function EntityPageDialogs({
                 ? t("components.entityPage.dialogs.saving")
                 : mode === "edit"
                   ? t("components.entityPage.dialogs.saveChanges")
-                  : (page.createSubmitLabel ?? t("components.entityPage.dialogs.create"))}
+                  : (page.createSubmitLabel ??
+                    t("components.entityPage.dialogs.create"))}
             </Button>
           </div>
         </fetcher.Form>
@@ -699,13 +765,20 @@ export function EntityPageDialogs({
       <Modal
         opened={mode === "status-change"}
         onClose={onClose}
-        title={changesAdmin ? t("components.entityPage.dialogs.confirmAdminChange") : t("components.entityPage.dialogs.confirmStatusChange")}
+        title={
+          changesAdmin
+            ? t("components.entityPage.dialogs.confirmAdminChange")
+            : t("components.entityPage.dialogs.confirmStatusChange")
+        }
         centered
         size="sm"
         radius="lg"
       >
         <Text className="delete-copy">
-          {t("components.entityPage.dialogs.quoteOpen")}{selected?.[page.columns[0].key]}{t("components.entityPage.dialogs.quoteAction")}{changesAdmin
+          {t("components.entityPage.dialogs.quoteOpen")}
+          {selected?.[page.columns[0].key]}
+          {t("components.entityPage.dialogs.quoteAction")}
+          {changesAdmin
             ? nextEnabled
               ? t("components.entityPage.dialogs.confirmGrantAdmin")
               : t("components.entityPage.dialogs.confirmRevokeAdmin")
@@ -734,13 +807,16 @@ export function EntityPageDialogs({
           />
           <div className="modal-actions">
             <Button variant="default" type="button" onClick={onClose}>
-              {t("components.entityPage.dialogs.cancel")}</Button>
+              {t("components.entityPage.dialogs.cancel")}
+            </Button>
             <Button
               type="submit"
               className="primary-button"
               disabled={fetcher.state !== "idle"}
             >
-              {fetcher.state !== "idle" ? t("components.entityPage.dialogs.changing") : t("components.entityPage.dialogs.applyChange")}
+              {fetcher.state !== "idle"
+                ? t("components.entityPage.dialogs.changing")
+                : t("components.entityPage.dialogs.applyChange")}
             </Button>
           </div>
         </fetcher.Form>
@@ -755,7 +831,10 @@ export function EntityPageDialogs({
         radius="lg"
       >
         <Text className="delete-copy">
-          {t("components.entityPage.dialogs.quoteOpen")}{selected?.[page.columns[0].key]}{t("components.entityPage.dialogs.confirmEndSessions")}</Text>
+          {t("components.entityPage.dialogs.quoteOpen")}
+          {selected?.[page.columns[0].key]}
+          {t("components.entityPage.dialogs.confirmEndSessions")}
+        </Text>
         {fetcher.data?.error && (
           <Alert color="red" mt="md">
             {tMessage(fetcher.data.error)}
@@ -766,13 +845,16 @@ export function EntityPageDialogs({
           {selected && <input type="hidden" name="id" value={selected.id} />}
           <div className="modal-actions">
             <Button variant="default" type="button" onClick={onClose}>
-              {t("components.entityPage.dialogs.cancel")}</Button>
+              {t("components.entityPage.dialogs.cancel")}
+            </Button>
             <Button
               type="submit"
               color="orange"
               disabled={fetcher.state !== "idle"}
             >
-              {fetcher.state !== "idle" ? t("components.entityPage.dialogs.loggingOut") : t("components.entityPage.dialogs.forceLogout")}
+              {fetcher.state !== "idle"
+                ? t("components.entityPage.dialogs.loggingOut")
+                : t("components.entityPage.dialogs.forceLogout")}
             </Button>
           </div>
         </fetcher.Form>
@@ -787,8 +869,10 @@ export function EntityPageDialogs({
         radius="lg"
       >
         <Text className="delete-copy">
-          {t("components.entityPage.dialogs.quoteOpen")}{selected?.[page.columns[0].key]}
-          {t("components.entityPage.dialogs.confirmIrreversibleDelete")}</Text>
+          {t("components.entityPage.dialogs.quoteOpen")}
+          {selected?.[page.columns[0].key]}
+          {t("components.entityPage.dialogs.confirmIrreversibleDelete")}
+        </Text>
         {fetcher.data?.error && (
           <Alert color="red" mt="md">
             {tMessage(fetcher.data.error)}
@@ -799,13 +883,16 @@ export function EntityPageDialogs({
           {selected && <input type="hidden" name="id" value={selected.id} />}
           <div className="modal-actions">
             <Button variant="default" type="button" onClick={onClose}>
-              {t("components.entityPage.dialogs.cancel")}</Button>
+              {t("components.entityPage.dialogs.cancel")}
+            </Button>
             <Button
               type="submit"
               color="red"
               disabled={fetcher.state !== "idle"}
             >
-              {fetcher.state !== "idle" ? t("components.entityPage.dialogs.deleting") : t("components.entityPage.dialogs.deleteAction")}
+              {fetcher.state !== "idle"
+                ? t("components.entityPage.dialogs.deleting")
+                : t("components.entityPage.dialogs.deleteAction")}
             </Button>
           </div>
         </fetcher.Form>
