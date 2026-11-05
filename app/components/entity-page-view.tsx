@@ -31,6 +31,10 @@ export function EntityPageView({ page }: { page: EntityPageDefinition }) {
     ...page,
     title: tMessage(page.title),
     description: tMessage(page.description),
+    createSubmitLabel: page.createSubmitLabel
+      ? tMessage(page.createSubmitLabel)
+      : undefined,
+    launchLabel: page.launchLabel ? tMessage(page.launchLabel) : undefined,
     columns: page.columns.map((column) => ({
       ...column,
       label: tMessage(column.label),

@@ -293,6 +293,30 @@ function serializePairs(
   );
 }
 
+function submitFormInNewTab(sourceForm: HTMLFormElement, data: FormData) {
+  const target = `oauth-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  const popup = window.open("", target);
+  if (!popup) return false;
+
+  const form = document.createElement("form");
+  form.method = "post";
+  form.action = sourceForm.action;
+  form.target = target;
+  form.style.display = "none";
+  for (const [name, value] of data.entries()) {
+    if (typeof value !== "string") continue;
+    const input = document.createElement("input");
+    input.type = "hidden";
+    input.name = name;
+    input.value = value;
+    form.append(input);
+  }
+  document.body.append(form);
+  form.submit();
+  form.remove();
+  return true;
+}
+
 function KeyValueEditor({
   name,
   label,
@@ -514,7 +538,17 @@ export function EntityPageDialogs({
           content: "editor-modal-content",
         }}
       >
-        <fetcher.Form method="post" key={`${mode}-${selected?.id ?? "new"}`}>
+        <fetcher.Form
+          method="post"
+          key={`${mode}-${selected?.id ?? "new"}`}
+          onSubmit={(event) => {
+            if (!page.authorizationInNewTab || mode !== "create") return;
+            event.preventDefault();
+            const data = new FormData(event.currentTarget);
+            if (!submitFormInNewTab(event.currentTarget, data))
+              fetcher.submit(data, { method: "post" });
+          }}
+        >
           <input
             type="hidden"
             name="_intent"
@@ -739,7 +773,11 @@ export function EntityPageDialogs({
                   if (!form) return;
                   const data = new FormData(form);
                   data.set("_intent", page.launchIntent!);
-                  fetcher.submit(data, { method: "post" });
+                  if (
+                    !page.authorizationInNewTab ||
+                    !submitFormInNewTab(form, data)
+                  )
+                    fetcher.submit(data, { method: "post" });
                 }}
               >
                 {page.launchLabel ??

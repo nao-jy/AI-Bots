@@ -80,10 +80,23 @@ export async function action({ request }: Route.ActionArgs) {
   const form = await request.formData();
   const intent = String(form.get("_intent") ?? "");
   const id = Number(form.get("id"));
-  if (intent === "delete")
-    return Number.isInteger(id) && (await deleteOAuthClient(user, id))
-      ? { ok: true }
-      : { ok: false, error: t("pages.oauthClients.notFound") };
+  if (intent === "delete") {
+    if (!Number.isInteger(id))
+      return { ok: false, error: t("pages.oauthClients.notFound") };
+    try {
+      return (await deleteOAuthClient(user, id))
+        ? { ok: true }
+        : { ok: false, error: t("pages.oauthClients.notFound") };
+    } catch (error) {
+      return {
+        ok: false,
+        error:
+          error instanceof Error
+            ? error.message
+            : "server.oauthTokenRevocationFailed",
+      };
+    }
+  }
   if (intent === "create") return saveOAuthClient(user, null, form);
   if (intent === "update")
     return Number.isInteger(id)

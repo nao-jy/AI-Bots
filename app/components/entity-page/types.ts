@@ -85,6 +85,7 @@ export type EntityPageDefinition = {
   mcpAuthenticationOptions?: EntityOption[];
   createIntent?: string;
   createSubmitLabel?: string;
+  authorizationInNewTab?: boolean;
   launchIntent?: string;
   launchLabel?: string;
   toolSetSchemas?: { name: string; displayName: string; schema: unknown }[];

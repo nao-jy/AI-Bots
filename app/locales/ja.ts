@@ -230,6 +230,9 @@ export const ja = {
         "OAuthクライアントを選択して認証し、取得したトークンを保存します。",
       createSubmitLabel: "OAuth認証を開始",
       launchLabel: "OAuth認証をやり直す",
+      startTitle: "OAuth認証を続ける",
+      startDescription: "選択したOAuthプロバイダーに移動して認証します。",
+      startButton: "OAuthプロバイダーへ進む",
       nameLabel: "認証情報名",
       oauthClientLabel: "OAuthクライアント",
       expiresAtLabel: "有効期限",
@@ -698,6 +701,12 @@ export const ja = {
     oauthClientNotFound: "OAuthクライアントが見つかりません。",
     oauthAccessTokenMissing:
       "OAuthサーバーからアクセストークンが返されませんでした。",
+    oauthRevocationEndpointRequired:
+      "認証情報を削除するには、OAuthクライアントに失効エンドポイントを設定してください。",
+    oauthRevocationEndpointInvalid:
+      "OAuthクライアントの失効エンドポイントが正しくありません。",
+    oauthTokenRevocationFailed:
+      "OAuthトークンを失効できませんでした。認証情報は削除していません。",
     notConfigured: "未設定",
     unknown: "不明",
     configured: "設定済み",

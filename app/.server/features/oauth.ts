@@ -1,4 +1,4 @@
-import { createHmac, timingSafeEqual } from "node:crypto";
+import { timingSafeEqual } from "node:crypto";
 import * as oidc from "openid-client";
 import { redirect } from "react-router";
 import { clearCookie, getCookieValue, serializeCookie } from "../../cookie";
@@ -14,6 +14,7 @@ import { decryptCredential, encryptCredential, sign } from "../utils";
 const FLOW_COOKIE = "oauth_authorization_flow";
 const FLOW_TTL_SECONDS = 10 * 60;
 const CALLBACK_PATH = `/${OAUTH_CALLBACK_PATH}`;
+export const OAUTH_START_PATH = "/oauth/start";
 
 type OAuthFlow = {
   state: string;
@@ -41,9 +42,7 @@ function readCookie(request: Request, name: string) {
   return getCookieValue(request.headers.get("Cookie"), name) ?? undefined;
 }
 
-function decodeFlow(request: Request): OAuthFlow | null {
-  const value = readCookie(request, FLOW_COOKIE);
-  if (!value) return null;
+function verifyFlowPayload(value: string): OAuthFlow | null {
   const [payload, suppliedSignature] = value.split(".");
   if (!payload || !suppliedSignature) return null;
   try {
@@ -64,6 +63,12 @@ function decodeFlow(request: Request): OAuthFlow | null {
       typeof (decoded as OAuthFlow).codeVerifier !== "string" ||
       typeof (decoded as OAuthFlow).userId !== "number" ||
       typeof (decoded as OAuthFlow).oauthId !== "number" ||
+      !Number.isInteger((decoded as OAuthFlow).userId) ||
+      !Number.isInteger((decoded as OAuthFlow).oauthId) ||
+      !(
+        (decoded as OAuthFlow).authenticationId === null ||
+        Number.isInteger((decoded as OAuthFlow).authenticationId)
+      ) ||
       typeof (decoded as OAuthFlow).name !== "string" ||
       typeof (decoded as OAuthFlow).expiresAt !== "number"
     )
@@ -74,6 +79,16 @@ function decodeFlow(request: Request): OAuthFlow | null {
   } catch {
     return null;
   }
+}
+
+function encodeFlow(flow: OAuthFlow) {
+  const payload = Buffer.from(JSON.stringify(flow)).toString("base64url");
+  return `${payload}.${sign(payload)}`;
+}
+
+function decodeFlow(request: Request): OAuthFlow | null {
+  const value = readCookie(request, FLOW_COOKIE);
+  return value ? verifyFlowPayload(value) : null;
 }
 
 function getCallbackUrl() {
@@ -121,7 +136,7 @@ function configuration(client: {
   );
 }
 
-export async function startOAuthAuthorization(user: AuthUser, form: FormData) {
+export async function prepareOAuthAuthorization(user: AuthUser, form: FormData) {
   const name = String(form.get("name") ?? "").trim();
   const idValue = String(form.get("id") ?? "").trim();
   const authenticationId = idValue ? Number(idValue) : null;
@@ -142,46 +157,22 @@ export async function startOAuthAuthorization(user: AuthUser, form: FormData) {
   if (!oauthClient) return { error: "server.selectedOauthClientNotFound" };
 
   try {
-    const callbackUrl = getCallbackUrl();
-    const config = configuration(oauthClient);
+    getCallbackUrl();
+    configuration(oauthClient);
     const state = oidc.randomState();
     const codeVerifier = oidc.randomPKCECodeVerifier();
-    const codeChallenge = await oidc.calculatePKCECodeChallenge(codeVerifier);
-    const authorizationHost = new URL(oauthClient.authorizationEndpoint)
-      .hostname;
-    const isGoogleOAuth =
-      authorizationHost === "google.com" ||
-      authorizationHost.endsWith(".google.com") ||
-      authorizationHost === "googleapis.com" ||
-      authorizationHost.endsWith(".googleapis.com");
-    const scopes = new Set(oauthClient.scopes);
-    if (!isGoogleOAuth) scopes.add("offline_access");
-    const payload = Buffer.from(
-      JSON.stringify({
-        state,
-        codeVerifier,
-        userId: user.id,
-        oauthId,
-        authenticationId,
-        name,
-        expiresAt: Date.now() + FLOW_TTL_SECONDS * 1000,
-      } satisfies OAuthFlow),
-    ).toString("base64url");
-    const authorizationUrl = oidc.buildAuthorizationUrl(config, {
-      redirect_uri: callbackUrl.href,
-      response_type: "code",
-      scope: [...scopes].join(" "),
-      ...(isGoogleOAuth ? { access_type: "offline" } : {}),
-      prompt: "consent",
+    const payload = encodeFlow({
       state,
-      code_challenge: codeChallenge,
-      code_challenge_method: "S256",
-    });
-    return redirect(authorizationUrl.href, {
-      headers: {
-        "Set-Cookie": flowCookie(`${payload}.${sign(payload)}`),
-      },
-    });
+      codeVerifier,
+      userId: user.id,
+      oauthId,
+      authenticationId,
+      name,
+      expiresAt: Date.now() + FLOW_TTL_SECONDS * 1000,
+    } satisfies OAuthFlow);
+    return redirect(
+      `${OAUTH_START_PATH}?payload=${encodeURIComponent(payload)}`,
+    );
   } catch (error) {
     return {
       error:
@@ -192,10 +183,49 @@ export async function startOAuthAuthorization(user: AuthUser, form: FormData) {
   }
 }
 
-export async function completeOAuthAuthorization(
-  request: Request,
-  user: AuthUser,
-) {
+export function isValidOAuthLaunchPayload(value: string) {
+  return verifyFlowPayload(value);
+}
+
+export async function launchOAuthAuthorization(payloadValue: string) {
+  const flow = isValidOAuthLaunchPayload(payloadValue);
+  if (!flow) return redirect("/oauth-authentications?oauth=error");
+
+  try {
+    const oauthClient = await getOwnedOAuthClient(flow.oauthId, flow.userId);
+    if (!oauthClient) throw new Error("server.oauthClientNotFound");
+    const callbackUrl = getCallbackUrl();
+    const config = configuration(oauthClient);
+    const authorizationHost = new URL(oauthClient.authorizationEndpoint)
+      .hostname;
+    const isGoogleOAuth =
+      authorizationHost === "google.com" ||
+      authorizationHost.endsWith(".google.com") ||
+      authorizationHost === "googleapis.com" ||
+      authorizationHost.endsWith(".googleapis.com");
+    const scopes = new Set(oauthClient.scopes);
+    if (!isGoogleOAuth) scopes.add("offline_access");
+    const authorizationUrl = oidc.buildAuthorizationUrl(config, {
+      redirect_uri: callbackUrl.href,
+      response_type: "code",
+      scope: [...scopes].join(" "),
+      ...(isGoogleOAuth ? { access_type: "offline" } : {}),
+      prompt: "consent",
+      state: flow.state,
+      code_challenge: await oidc.calculatePKCECodeChallenge(flow.codeVerifier),
+      code_challenge_method: "S256",
+    });
+    return redirect(authorizationUrl.href, {
+      headers: {
+        "Set-Cookie": flowCookie(payloadValue),
+      },
+    });
+  } catch {
+    return redirect("/oauth-authentications?oauth=error");
+  }
+}
+
+export async function completeOAuthAuthorization(request: Request) {
   const callbackUrl = getCallbackUrl();
   const requestUrl = new URL(request.url);
   const params = requestUrl.searchParams;
@@ -203,7 +233,7 @@ export async function completeOAuthAuthorization(
   authorizationResponseUrl.search = requestUrl.search;
   const flow = decodeFlow(request);
   const clearCookieHeader = clearFlowCookie();
-  if (!flow || flow.userId !== user.id || params.get("state") !== flow.state)
+  if (!flow || params.get("state") !== flow.state)
     return redirect("/oauth-authentications?oauth=error", {
       headers: { "Set-Cookie": clearCookieHeader },
     });
@@ -213,7 +243,7 @@ export async function completeOAuthAuthorization(
     });
 
   try {
-    const oauthClient = await getOwnedOAuthClient(flow.oauthId, user.id);
+    const oauthClient = await getOwnedOAuthClient(flow.oauthId, flow.userId);
     if (!oauthClient) throw new Error("server.oauthClientNotFound");
     const config = configuration(oauthClient);
     const tokens = await oidc.authorizationCodeGrant(
@@ -227,7 +257,10 @@ export async function completeOAuthAuthorization(
     if (!tokens.access_token) throw new Error("server.oauthAccessTokenMissing");
 
     const existing = flow.authenticationId
-      ? await getOwnedOAuthAuthentication(flow.authenticationId, user.id)
+      ? await getOwnedOAuthAuthentication(
+          flow.authenticationId,
+          flow.userId,
+        )
       : null;
     if (flow.authenticationId && !existing)
       throw new Error("server.oauthAuthenticationNotFound");
@@ -244,7 +277,7 @@ export async function completeOAuthAuthorization(
         : (existing?.refreshToken ?? null),
       expiresAt,
     };
-    await saveOAuthAuthentication(user.id, existing?.id ?? null, saved);
+    await saveOAuthAuthentication(flow.userId, existing?.id ?? null, saved);
     return redirect("/oauth-authentications?oauth=success", {
       headers: { "Set-Cookie": clearCookieHeader },
     });

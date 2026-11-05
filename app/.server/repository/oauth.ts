@@ -9,6 +9,7 @@ import {
 } from "../utils";
 import { logAuditEvent } from "../logger/audit-logger";
 import { t } from "~/.server/i18n";
+import { appLogger } from "../logger/app-logger";
 
 const TOKEN_REFRESH_WINDOW_MS = 60_000;
 
@@ -18,6 +19,59 @@ export async function getOwnedOAuthAuthentication(id: number, ownerId: number) {
 
 export async function getOwnedOAuthClient(id: number, ownerId: number) {
   return db.orm.aibot.OAuthClient.first({ id, ownerId });
+}
+
+async function revokeOAuthAuthenticationTokens(
+  authentication: {
+    accessToken: string;
+    refreshToken: string | null;
+  },
+  client: {
+    clientId: string;
+    clientSecret: string | null;
+    revocationEndpoint: string | null;
+  },
+) {
+  if (!client.revocationEndpoint) return;
+
+  let endpoint: URL;
+  try {
+    endpoint = new URL(client.revocationEndpoint);
+  } catch {
+    throw new Error("server.oauthRevocationEndpointInvalid");
+  }
+  if (endpoint.protocol !== "https:" && endpoint.protocol !== "http:")
+    throw new Error("server.oauthRevocationEndpointInvalid");
+
+  const secret = client.clientSecret
+    ? decryptCredential(client.clientSecret)
+    : undefined;
+  const config = new oidc.Configuration(
+    {
+      issuer: endpoint.origin,
+      revocation_endpoint: endpoint.href,
+    } as oidc.ServerMetadata,
+    client.clientId,
+    secret,
+    secret ? oidc.ClientSecretPost(secret) : oidc.None(),
+  );
+
+  try {
+    if (authentication.refreshToken) {
+      await oidc.tokenRevocation(
+        config,
+        decryptCredential(authentication.refreshToken),
+        { token_type_hint: "refresh_token" },
+      );
+    }
+    await oidc.tokenRevocation(
+      config,
+      decryptCredential(authentication.accessToken),
+      { token_type_hint: "access_token" },
+    );
+  } catch (error) {
+    appLogger.error(error);
+  }
 }
 
 function refreshConfiguration(client: {
@@ -56,8 +110,7 @@ export async function getAdapterOAuthInfo(authId: number) {
   const authentication = await db.orm.aibot.OAuthAuthentication.first({
     id: authId,
   });
-  if (!authentication)
-    throw new Error("server.oauthAuthenticationNotFound");
+  if (!authentication) throw new Error("server.oauthAuthenticationNotFound");
 
   const client = await db.orm.aibot.OAuthClient.first({
     id: authentication.oauthId,
@@ -83,8 +136,7 @@ export async function getAccessToken(authId: number) {
   const authentication = await db.orm.aibot.OAuthAuthentication.first({
     id: authId,
   });
-  if (!authentication)
-    throw new Error("server.oauthAuthenticationNotFound");
+  if (!authentication) throw new Error("server.oauthAuthenticationNotFound");
 
   const client = await db.orm.aibot.OAuthClient.first({
     id: authentication.oauthId,
@@ -111,8 +163,7 @@ export async function getAccessToken(authId: number) {
     refreshConfiguration(client),
     decryptCredential(authentication.refreshToken),
   );
-  if (!tokens.access_token)
-    throw new Error("server.oauthAccessTokenMissing");
+  if (!tokens.access_token) throw new Error("server.oauthAccessTokenMissing");
 
   const refreshedExpiresAt =
     typeof tokens.expires_in === "number"
@@ -129,11 +180,7 @@ export async function getAccessToken(authId: number) {
     refreshToken,
     expiresAt: refreshedExpiresAt,
   });
-  logAuditEvent(
-    "oauth.access_token.refreshed",
-    "oauth_authentication",
-    authId,
-  );
+  logAuditEvent("oauth.access_token.refreshed", "oauth_authentication", authId);
 
   return { name: authentication.name, accessToken: tokens.access_token };
 }
@@ -192,7 +239,9 @@ export async function listOAuthClients(user: AuthUser) {
         refreshEndpoint: client.refreshEndpoint ?? "",
         revocationEndpoint: client.revocationEndpoint ?? "",
         scopes: JSON.stringify(client.scopes),
-        secretConfigured: client.clientSecret ? "server.configured" : "server.notConfigured",
+        secretConfigured: client.clientSecret
+          ? "server.configured"
+          : "server.notConfigured",
       }),
     ),
   };
@@ -218,13 +267,11 @@ export async function saveOAuthClient(
 
   if (!name || !clientId || !authorizationEndpoint || !tokenEndpoint)
     return {
-      error:
-        "server.oauthClientFieldsRequired",
+      error: "server.oauthClientFieldsRequired",
     };
   if (!validHttpUrl(authorizationEndpoint) || !validHttpUrl(tokenEndpoint))
     return {
-      error:
-        "server.oauthEndpointsMustBeHttpUrls",
+      error: "server.oauthEndpointsMustBeHttpUrls",
     };
   if (
     (refreshEndpoint && !validHttpUrl(refreshEndpoint)) ||
@@ -236,8 +283,7 @@ export async function saveOAuthClient(
     id === null
       ? null
       : await db.orm.aibot.OAuthClient.first({ id, ownerId: user.id });
-  if (id !== null && !existing)
-    return { error: "server.oauthClientNotFound" };
+  if (id !== null && !existing) return { error: "server.oauthClientNotFound" };
 
   let clientSecret = existing?.clientSecret ?? null;
   if (secret) {
@@ -279,9 +325,26 @@ export async function saveOAuthClient(
 }
 
 export async function deleteOAuthClient(user: AuthUser, id: number) {
-  if (!(await db.orm.aibot.OAuthClient.first({ id, ownerId: user.id })))
-    return false;
+  const client = await db.orm.aibot.OAuthClient.first({
+    id,
+    ownerId: user.id,
+  });
+  if (!client) return false;
+  const authentications = await db.orm.aibot.OAuthAuthentication.where({
+    oauthId: id,
+    ownerId: user.id,
+  }).all();
+  for (const authentication of authentications)
+    await revokeOAuthAuthenticationTokens(authentication, client);
+
   await db.orm.aibot.OAuthClient.where({ id, ownerId: user.id }).delete();
+  for (const authentication of authentications)
+    logAuditEvent(
+      "oauth.authentication.deleted",
+      "oauth_authentication",
+      authentication.id,
+      user.id,
+    );
   logAuditEvent("oauth.client.deleted", "oauth_client", id, user.id);
   return true;
 }
@@ -358,8 +421,18 @@ export async function renameOAuthAuthentication(
 }
 
 export async function deleteOAuthAuthentication(user: AuthUser, id: number) {
-  if (!(await db.orm.aibot.OAuthAuthentication.first({ id, ownerId: user.id })))
-    return false;
+  const authentication = await db.orm.aibot.OAuthAuthentication.first({
+    id,
+    ownerId: user.id,
+  });
+  if (!authentication) return false;
+  const client = await db.orm.aibot.OAuthClient.first({
+    id: authentication.oauthId,
+    ownerId: user.id,
+  });
+  if (!client) throw new Error("server.oauthClientNotFound");
+  await revokeOAuthAuthenticationTokens(authentication, client);
+
   await db.orm.aibot.OAuthAuthentication.where({
     id,
     ownerId: user.id,

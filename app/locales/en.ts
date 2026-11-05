@@ -300,6 +300,12 @@ export const en = {
     oauthAuthorizationStartFailed: "Could not start OAuth authorization.",
     oauthClientNotFound: "OAuth client not found.",
     oauthAccessTokenMissing: "The OAuth server did not return an access token.",
+    oauthRevocationEndpointRequired:
+      "Set a revocation endpoint on the OAuth client before deleting its credentials.",
+    oauthRevocationEndpointInvalid:
+      "The OAuth client's revocation endpoint is invalid.",
+    oauthTokenRevocationFailed:
+      "Could not revoke the OAuth tokens. The credentials were not deleted.",
     notConfigured: "Not configured",
     unknown: "Unknown",
     configured: "Configured",
@@ -766,6 +772,10 @@ export const en = {
         "Select an OAuth client, authorize it, and save the resulting token.",
       createSubmitLabel: "Start OAuth authorization",
       launchLabel: "Authorize again",
+      startTitle: "Continue to OAuth authorization",
+      startDescription:
+        "Continue to the selected OAuth provider to authorize this account.",
+      startButton: "Continue to OAuth provider",
       nameLabel: "Credential name",
       oauthClientLabel: "OAuth client",
       expiresAtLabel: "Expires at",
