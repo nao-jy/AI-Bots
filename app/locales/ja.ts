@@ -51,7 +51,8 @@ export const ja = {
     dashboard: {
       eyebrow: "WORKSPACE OVERVIEW",
       title: "ダッシュボード",
-      description: "エージェントの利用状況と最近のアクティビティを確認できます。",
+      description:
+        "エージェントの利用状況と最近のアクティビティを確認できます。",
       last30Days: "過去30日間",
       summary: "利用状況の概要",
       totalTokens: "総トークン数",
@@ -294,7 +295,7 @@ export const ja = {
       targetLabel: "対象",
       aggregationScopeLabel: "集計範囲",
       limitLabel: "上限",
-      resetCronLabel: "リセットCron",
+      resetCronLabel: "リセット時刻（Cron式）",
       timezoneLabel: "タイムゾーン",
       exceededMessageLabel: "上限超過時のメッセージ",
       targetTypePlaceholder: "対象種別を選択",

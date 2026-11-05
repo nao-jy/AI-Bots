@@ -832,7 +832,7 @@ export const en = {
       targetLabel: "Target",
       aggregationScopeLabel: "Aggregation scope",
       limitLabel: "Limit",
-      resetCronLabel: "Reset cron",
+      resetCronLabel: "Reset time (cron expression)",
       timezoneLabel: "Time zone",
       exceededMessageLabel: "Message when limit is exceeded",
       targetTypePlaceholder: "Select a target type",

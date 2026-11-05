@@ -5,17 +5,32 @@ import { useState } from "react";
 type CronMode = "daily" | "weekly" | "monthly" | "advanced";
 
 const modes: { label: string; value: CronMode }[] = [
-  { label: t("components.entityPage.cronScheduleEditor.daily"), value: "daily" },
-  { label: t("components.entityPage.cronScheduleEditor.weekly"), value: "weekly" },
-  { label: t("components.entityPage.cronScheduleEditor.monthly"), value: "monthly" },
-  { label: t("components.entityPage.cronScheduleEditor.advanced"), value: "advanced" },
+  {
+    label: t("components.entityPage.cronScheduleEditor.daily"),
+    value: "daily",
+  },
+  {
+    label: t("components.entityPage.cronScheduleEditor.weekly"),
+    value: "weekly",
+  },
+  {
+    label: t("components.entityPage.cronScheduleEditor.monthly"),
+    value: "monthly",
+  },
+  {
+    label: t("components.entityPage.cronScheduleEditor.advanced"),
+    value: "advanced",
+  },
 ];
 
 const weekdays = [
   { label: t("components.entityPage.cronScheduleEditor.sunday"), value: "0" },
   { label: t("components.entityPage.cronScheduleEditor.monday"), value: "1" },
   { label: t("components.entityPage.cronScheduleEditor.tuesday"), value: "2" },
-  { label: t("components.entityPage.cronScheduleEditor.wednesday"), value: "3" },
+  {
+    label: t("components.entityPage.cronScheduleEditor.wednesday"),
+    value: "3",
+  },
   { label: t("components.entityPage.cronScheduleEditor.thursday"), value: "4" },
   { label: t("components.entityPage.cronScheduleEditor.friday"), value: "5" },
   { label: t("components.entityPage.cronScheduleEditor.saturday"), value: "6" },
@@ -136,19 +151,52 @@ function AdvancedCronFields({
   const isSixFields = values.fields.length === 6;
   const displayFields = isSixFields
     ? [
-        { index: 4, label: t("components.entityPage.cronScheduleEditor.monthUnit") },
-        { index: 3, label: t("components.entityPage.cronScheduleEditor.dayUnit") },
-        { index: 5, label: t("components.entityPage.cronScheduleEditor.weekdayUnit") },
-        { index: 2, label: t("components.entityPage.cronScheduleEditor.hourUnit") },
-        { index: 1, label: t("components.entityPage.cronScheduleEditor.minuteUnit") },
-        { index: 0, label: t("components.entityPage.cronScheduleEditor.secondUnit") },
+        {
+          index: 4,
+          label: t("components.entityPage.cronScheduleEditor.monthUnit"),
+        },
+        {
+          index: 3,
+          label: t("components.entityPage.cronScheduleEditor.dayUnit"),
+        },
+        {
+          index: 5,
+          label: t("components.entityPage.cronScheduleEditor.weekdayUnit"),
+        },
+        {
+          index: 2,
+          label: t("components.entityPage.cronScheduleEditor.hourUnit"),
+        },
+        {
+          index: 1,
+          label: t("components.entityPage.cronScheduleEditor.minuteUnit"),
+        },
+        {
+          index: 0,
+          label: t("components.entityPage.cronScheduleEditor.secondUnit"),
+        },
       ]
     : [
-        { index: 3, label: t("components.entityPage.cronScheduleEditor.monthUnit") },
-        { index: 2, label: t("components.entityPage.cronScheduleEditor.dayUnit") },
-        { index: 4, label: t("components.entityPage.cronScheduleEditor.weekdayUnit") },
-        { index: 1, label: t("components.entityPage.cronScheduleEditor.hourUnit") },
-        { index: 0, label: t("components.entityPage.cronScheduleEditor.minuteUnit") },
+        {
+          index: 3,
+          label: t("components.entityPage.cronScheduleEditor.monthUnit"),
+        },
+        {
+          index: 2,
+          label: t("components.entityPage.cronScheduleEditor.dayUnit"),
+        },
+        {
+          index: 4,
+          label: t("components.entityPage.cronScheduleEditor.weekdayUnit"),
+        },
+        {
+          index: 1,
+          label: t("components.entityPage.cronScheduleEditor.hourUnit"),
+        },
+        {
+          index: 0,
+          label: t("components.entityPage.cronScheduleEditor.minuteUnit"),
+        },
       ];
   const maximums = isSixFields ? [59, 59, 23, 31, 12, 7] : [59, 23, 31, 12, 7];
   const minimums = isSixFields ? [0, 0, 0, 1, 1, 0] : [0, 0, 1, 1, 0];
@@ -159,7 +207,14 @@ function AdvancedCronFields({
         const options = [
           ...(index === (isSixFields ? 1 : 0)
             ? []
-            : [{ label: t("components.entityPage.cronScheduleEditor.everyPrefix") + label, value: "*" }]),
+            : [
+                {
+                  label:
+                    t("components.entityPage.cronScheduleEditor.everyPrefix") +
+                    label,
+                  value: "*",
+                },
+              ]),
           ...(index === weekdayIndex
             ? weekdays
             : choices(maximums[index]!, minimums[index]!)),
@@ -178,7 +233,9 @@ function AdvancedCronFields({
             label:
               weekdayName && weekdayValue !== null
                 ? `${weekdayName}（${existing}）`
-                : t("components.entityPage.cronScheduleEditor.currentValue", { 0: existing }),
+                : t("components.entityPage.cronScheduleEditor.currentValue", {
+                    0: existing,
+                  }),
             value: existing,
           });
         }
@@ -208,7 +265,9 @@ export function CronScheduleEditor({
   name,
   label,
   initialValue,
-  timezoneDescription = t("components.entityPage.cronScheduleEditor.timezoneHelp"),
+  timezoneDescription = t(
+    "components.entityPage.cronScheduleEditor.timezoneHelp",
+  ),
 }: {
   name: string;
   label: string;
@@ -227,7 +286,7 @@ export function CronScheduleEditor({
     <Stack gap="xs">
       <input type="hidden" name={name} value={expression} />
       <Select
-        label={t("components.entityPage.cronScheduleEditor.timingLabel")}
+        label={label}
         data={modes}
         value={mode}
         onChange={(value) => {
