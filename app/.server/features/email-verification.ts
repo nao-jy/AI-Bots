@@ -1,6 +1,7 @@
 import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 import { findUserById, markEmailVerified } from "../repository/users";
 import { getEmailProvider } from "./email-providers";
+import { hash, sign } from "../utils";
 
 const EMAIL_VERIFICATION_TTL_MS = 1000 * 60 * 60 * 24;
 
@@ -10,29 +11,11 @@ type EmailVerificationPayload = {
   expiresAt: number;
 };
 
-function hashEmail(email: string) {
-  return createHash("sha256").update(email).digest("base64url");
-}
-
-function signingKey() {
-  const encoded = process.env.CREDENTIALS_ENCRYPTION_KEY;
-  if (!encoded)
-    throw new Error("server.credentialsEncryptionKeyRequired");
-  const key = Buffer.from(encoded, "base64");
-  if (key.length !== 32)
-    throw new Error("server.credentialsEncryptionKeyInvalid");
-  return key;
-}
-
-function sign(payload: string) {
-  return createHmac("sha256", signingKey()).update(payload).digest("base64url");
-}
-
 function createVerificationToken(userId: number, email: string) {
   const payload = Buffer.from(
     JSON.stringify({
       userId,
-      emailHash: hashEmail(email),
+      emailHash: hash(email),
       expiresAt: Date.now() + EMAIL_VERIFICATION_TTL_MS,
     } satisfies EmailVerificationPayload),
   ).toString("base64url");
@@ -109,7 +92,7 @@ async function resolveVerification(token: string) {
 
   const { userId, emailHash } = decoded.payload;
   const user = await findUserById(userId);
-  if (!user || hashEmail(user.email) !== emailHash)
+  if (!user || hash(user.email) !== emailHash)
     return { status: "invalid" as const };
   if (user.emailVerified) return { status: "already-verified" as const };
   return { status: "ready" as const, userId };

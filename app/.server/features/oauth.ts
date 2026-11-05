@@ -9,7 +9,7 @@ import {
   getOwnedOAuthClient,
   saveOAuthAuthentication,
 } from "../repository/oauth";
-import { decryptCredential, encryptCredential } from "../utils";
+import { decryptCredential, encryptCredential, sign } from "../utils";
 
 const FLOW_COOKIE = "oauth_authorization_flow";
 const FLOW_TTL_SECONDS = 10 * 60;
@@ -24,22 +24,6 @@ type OAuthFlow = {
   name: string;
   expiresAt: number;
 };
-
-function encryptionKey() {
-  const encoded = process.env.CREDENTIALS_ENCRYPTION_KEY;
-  if (!encoded)
-    throw new Error("server.credentialsEncryptionKeyRequired");
-  const key = Buffer.from(encoded, "base64");
-  if (key.length !== 32)
-    throw new Error("server.credentialsEncryptionKeyInvalid");
-  return key;
-}
-
-function sign(payload: string) {
-  return createHmac("sha256", encryptionKey())
-    .update(payload)
-    .digest("base64url");
-}
 
 function flowCookie(value: string) {
   return serializeCookie(FLOW_COOKIE, value, {
@@ -155,8 +139,7 @@ export async function startOAuthAuthorization(user: AuthUser, form: FormData) {
   if (!Number.isInteger(oauthId))
     return { error: "server.oauthClientRequired" };
   const oauthClient = await getOwnedOAuthClient(oauthId, user.id);
-  if (!oauthClient)
-    return { error: "server.selectedOauthClientNotFound" };
+  if (!oauthClient) return { error: "server.selectedOauthClientNotFound" };
 
   try {
     const callbackUrl = getCallbackUrl();
@@ -164,9 +147,8 @@ export async function startOAuthAuthorization(user: AuthUser, form: FormData) {
     const state = oidc.randomState();
     const codeVerifier = oidc.randomPKCECodeVerifier();
     const codeChallenge = await oidc.calculatePKCECodeChallenge(codeVerifier);
-    const authorizationHost = new URL(
-      oauthClient.authorizationEndpoint,
-    ).hostname;
+    const authorizationHost = new URL(oauthClient.authorizationEndpoint)
+      .hostname;
     const isGoogleOAuth =
       authorizationHost === "google.com" ||
       authorizationHost.endsWith(".google.com") ||
@@ -197,7 +179,7 @@ export async function startOAuthAuthorization(user: AuthUser, form: FormData) {
     });
     return redirect(authorizationUrl.href, {
       headers: {
-      "Set-Cookie": flowCookie(`${payload}.${sign(payload)}`),
+        "Set-Cookie": flowCookie(`${payload}.${sign(payload)}`),
       },
     });
   } catch (error) {
@@ -242,8 +224,7 @@ export async function completeOAuthAuthorization(
         pkceCodeVerifier: flow.codeVerifier,
       },
     );
-    if (!tokens.access_token)
-      throw new Error("server.oauthAccessTokenMissing");
+    if (!tokens.access_token) throw new Error("server.oauthAccessTokenMissing");
 
     const existing = flow.authenticationId
       ? await getOwnedOAuthAuthentication(flow.authenticationId, user.id)

@@ -1,4 +1,4 @@
-import { createHash, createHmac, timingSafeEqual } from "node:crypto";
+import { timingSafeEqual } from "node:crypto";
 import { hashPassword } from "../auth";
 import {
   findUserByEmail,
@@ -6,6 +6,7 @@ import {
   resetUserPassword,
 } from "../repository/users";
 import { getEmailProvider } from "./email-providers";
+import { sign, hash } from "../utils";
 
 const PASSWORD_RESET_TTL_MS = 1000 * 60 * 60;
 
@@ -16,24 +17,6 @@ type PasswordResetPayload = {
   expiresAt: number;
 };
 
-function hashValue(value: string) {
-  return createHash("sha256").update(value).digest("base64url");
-}
-
-function signingKey() {
-  const encoded = process.env.CREDENTIALS_ENCRYPTION_KEY;
-  if (!encoded)
-    throw new Error("server.credentialsEncryptionKeyRequired");
-  const key = Buffer.from(encoded, "base64");
-  if (key.length !== 32)
-    throw new Error("server.credentialsEncryptionKeyInvalid");
-  return key;
-}
-
-function sign(payload: string) {
-  return createHmac("sha256", signingKey()).update(payload).digest("base64url");
-}
-
 function createPasswordResetToken(user: {
   id: number;
   email: string;
@@ -42,8 +25,8 @@ function createPasswordResetToken(user: {
   const encodedPayload = Buffer.from(
     JSON.stringify({
       userId: user.id,
-      emailHash: hashValue(user.email),
-      passwordHashDigest: hashValue(user.passwordHash),
+      emailHash: hash(user.email),
+      passwordHashDigest: hash(user.passwordHash),
       expiresAt: Date.now() + PASSWORD_RESET_TTL_MS,
     } satisfies PasswordResetPayload),
   ).toString("base64url");
@@ -124,8 +107,8 @@ async function resolvePasswordReset(token: string) {
   if (
     !user ||
     !user.emailVerified ||
-    hashValue(user.email) !== emailHash ||
-    hashValue(user.passwordHash) !== passwordHashDigest
+    hash(user.email) !== emailHash ||
+    hash(user.passwordHash) !== passwordHashDigest
   )
     return { status: "invalid" as const };
   return { status: "ready" as const, userId, passwordHashDigest };
@@ -138,8 +121,7 @@ export async function inspectPasswordReset(token: string) {
 export async function completePasswordReset(token: string, password: string) {
   const resolved = await resolvePasswordReset(token);
   if (resolved.status !== "ready") return resolved;
-  if (password.length < 12)
-    return { status: "weak-password" as const };
+  if (password.length < 12) return { status: "weak-password" as const };
 
   const updated = await resetUserPassword(
     resolved.userId,

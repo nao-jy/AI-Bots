@@ -1,4 +1,10 @@
-import { createCipheriv, createDecipheriv, randomBytes } from "node:crypto";
+import {
+  createCipheriv,
+  createDecipheriv,
+  createHash,
+  createHmac,
+  randomBytes,
+} from "node:crypto";
 import type { CodecTypes } from "../../src/prisma/contract";
 import type { EntityRecord } from "../types/entities";
 import { type TranslationMessage } from "../i18n";
@@ -142,9 +148,7 @@ export function testFailure(
   return { ok: false, intent: "test", error };
 }
 
-export function parseStringMap(
-  value: FormDataEntryValue | null,
-) {
+export function parseStringMap(value: FormDataEntryValue | null) {
   let parsed: unknown;
   try {
     parsed = JSON.parse(String(value ?? "{}").trim() || "{}");
@@ -184,4 +188,18 @@ export function parseStringList(value: string) {
   if (!Array.isArray(parsed) || parsed.some((item) => typeof item !== "string"))
     throw new Error("server.expectedStringJsonArray");
   return [...new Set(parsed.map((item) => item.trim()).filter(Boolean))];
+}
+
+export function sign(payload: string) {
+  const encoded = process.env.CREDENTIALS_ENCRYPTION_KEY;
+  if (!encoded) throw new Error("server.credentialsEncryptionKeyRequired");
+  const key = Buffer.from(encoded, "base64");
+  if (key.length !== 32)
+    throw new Error("server.credentialsEncryptionKeyInvalid");
+
+  return createHmac("sha256", key).update(payload).digest("base64url");
+}
+
+export function hash(value: string) {
+  return createHash("sha256").update(value).digest("base64url");
 }
