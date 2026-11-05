@@ -7,6 +7,7 @@ import {
 } from "./helpers/file-handle";
 import { tool } from "ai";
 import z from "zod";
+import { t } from "~/.server/i18n";
 
 const MAX_PAGINATION = 5;
 
@@ -27,16 +28,19 @@ export function getChatTools(
   return {
     ...tools,
     uploadFileToChat: tool({
-      description: "Upload a file from file handle.",
+      description: t("server.uploadFileToChatDescription"),
       inputSchema: z.object({
-        fileHandle: z.string().describe("file handle"),
-        filename: z.string().describe("file name for upload"),
+        fileHandle: z.string().describe(t("server.fileHandle")),
+        filename: z.string().describe(t("server.filenameForUpload")),
       }),
       execute: async ({ fileHandle, filename }) => {
         try {
           const fileInfo = fileHandles.get(fileHandle);
           if (fileInfo === undefined) {
-            return { succes: false, message: "file not registered" };
+            return {
+              succes: false,
+              message: t("server.fileNotRegistered"),
+            };
           }
           const data = await toBuffer(fileInfo.stream());
 
@@ -48,19 +52,21 @@ export function getChatTools(
           return { success: true, filename, threadId: thread.id };
         } catch (error) {
           throw new Error(
-            `failed: ${error instanceof Error ? error.message : String(error)}`,
+            t("server.chatFileOperationFailed", {
+              0: error instanceof Error ? error.message : String(error),
+            }),
           );
         }
       },
     }),
     getFileHandleFromAttachment: tool({
-      description: "Get file handle from attachment.",
+      description: t("server.getFileHandleFromAttachmentDescription"),
       inputSchema: z.object({
-        messageId: z.string().min(1).describe("メッセージID"),
+        messageId: z.string().min(1).describe(t("server.messageId")),
         attachmentIndex: z
           .number()
           .min(0)
-          .describe("アタッチメントのインデックス"),
+          .describe(t("server.attachmentIndex")),
       }),
       execute: async ({ messageId, attachmentIndex }) => {
         try {
@@ -88,7 +94,7 @@ export function getChatTools(
           }
 
           if (attachment === null) {
-            throw new Error("attachment not found");
+            throw new Error(t("server.attachmentNotFound"));
           }
 
           const selectedAttachment = attachment;
@@ -97,7 +103,7 @@ export function getChatTools(
           > {
             const data = await selectedAttachment.fetchData?.();
             if (data === undefined) {
-              throw new Error("data fetch failed");
+              throw new Error(t("server.attachmentFetchFailed"));
             }
             yield data instanceof ArrayBuffer
               ? new Uint8Array(data)
@@ -114,7 +120,9 @@ export function getChatTools(
           return { success: true, fileHandle: handle, threadId: thread.id };
         } catch (error) {
           throw new Error(
-            `failed: ${error instanceof Error ? error.message : String(error)}`,
+            t("server.chatFileOperationFailed", {
+              0: error instanceof Error ? error.message : String(error),
+            }),
           );
         }
       },

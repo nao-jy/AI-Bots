@@ -20,10 +20,11 @@ import { appLogger } from "../logger/app-logger";
 import { conversationLogger } from "../logger/conversation-logger";
 import { insertUsage } from "../repository/agents";
 import { getExceededRateLimit } from "../repository/rate-limits";
-import { SearXNGWebSearch } from "./toolsets/tools/web/search-searxng";
+import { getSearXNGWebSearch } from "./toolsets/tools/web/search-searxng";
 import { getChatTools } from "./toolsets/chat-tools";
 import type { FileHandleReaderMap } from "./toolsets/helpers/file-handle";
 import { ToolSetFactoryRegistry } from "./toolsets";
+import { t } from "~/.server/i18n";
 
 const MAX_AGENT_STEPS = 8;
 
@@ -202,7 +203,7 @@ async function processBotMessage(
     const tools = {
       ...getChatTools(chat, adapterPlatform, thread, fileHandles),
       ...getFileParseTools(fileHandles),
-      searchWeb: SearXNGWebSearch,
+      searchWeb: getSearXNGWebSearch(),
     } as ToolSet;
 
     turnSandbox = await getBotSandbox(
@@ -287,7 +288,10 @@ async function processBotMessage(
       ...(await toAiMessages([...history, message])),
       {
         role: "user",
-        content: `[実行時補足情報]\n現在のスレッドID: ${thread.id}\n現在日時 (UTC, ISO 8601): ${currentDateTime}`,
+        content: t("server.runtimeThreadContext", {
+          0: thread.id,
+          1: currentDateTime,
+        }),
       },
     ];
     const result = await generateText({
@@ -423,7 +427,7 @@ export async function runScheduledPrompt(
     author: {
       userId: "scheduled-task",
       userName: "schedule",
-      fullName: "スケジュール",
+      fullName: t("server.schedule"),
       isBot: false,
       isMe: false,
     },

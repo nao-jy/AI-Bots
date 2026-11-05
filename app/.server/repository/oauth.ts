@@ -8,6 +8,7 @@ import {
   record,
 } from "../utils";
 import { logAuditEvent } from "../logger/audit-logger";
+import { t } from "~/.server/i18n";
 
 const TOKEN_REFRESH_WINDOW_MS = 60_000;
 
@@ -28,9 +29,7 @@ function refreshConfiguration(client: {
   const endpoint = client.refreshEndpoint ?? client.tokenEndpoint;
   const url = new URL(endpoint);
   if (url.protocol !== "https:" && url.protocol !== "http:")
-    throw new Error(
-      "OAuth更新エンドポイントにはHTTPまたはHTTPSを指定してください。",
-    );
+    throw new Error("server.oauthRefreshEndpointMustBeHttpUrl");
 
   const secret = client.clientSecret
     ? decryptCredential(client.clientSecret)
@@ -57,13 +56,14 @@ export async function getAdapterOAuthInfo(authId: number) {
   const authentication = await db.orm.aibot.OAuthAuthentication.first({
     id: authId,
   });
-  if (!authentication) throw new Error("OAuth認証情報が見つかりません。");
+  if (!authentication)
+    throw new Error("server.oauthAuthenticationNotFound");
 
   const client = await db.orm.aibot.OAuthClient.first({
     id: authentication.oauthId,
     ownerId: authentication.ownerId,
   });
-  if (!client) throw new Error("OAuthクライアントが見つかりません。");
+  if (!client) throw new Error("server.oauthClientNotFound");
 
   if (client.clientSecret !== null && authentication.refreshToken !== null) {
     const clientInfo: AdapterOAuthInfo = {
@@ -83,13 +83,14 @@ export async function getAccessToken(authId: number) {
   const authentication = await db.orm.aibot.OAuthAuthentication.first({
     id: authId,
   });
-  if (!authentication) throw new Error("OAuth認証情報が見つかりません。");
+  if (!authentication)
+    throw new Error("server.oauthAuthenticationNotFound");
 
   const client = await db.orm.aibot.OAuthClient.first({
     id: authentication.oauthId,
     ownerId: authentication.ownerId,
   });
-  if (!client) throw new Error("OAuthクライアントが見つかりません。");
+  if (!client) throw new Error("server.oauthClientNotFound");
 
   const expiresAt = authentication.expiresAt
     ? new Date(authentication.expiresAt).getTime()
@@ -104,16 +105,14 @@ export async function getAccessToken(authId: number) {
     };
 
   if (!authentication.refreshToken)
-    throw new Error(
-      "アクセストークンの有効期限が切れています。refresh tokenがないためOAuth認証を再接続してください。",
-    );
+    throw new Error("server.refreshTokenRequiredToReconnect");
 
   const tokens = await oidc.refreshTokenGrant(
     refreshConfiguration(client),
     decryptCredential(authentication.refreshToken),
   );
   if (!tokens.access_token)
-    throw new Error("OAuthサーバーからアクセストークンが返されませんでした。");
+    throw new Error("server.oauthAccessTokenMissing");
 
   const refreshedExpiresAt =
     typeof tokens.expires_in === "number"
@@ -215,10 +214,7 @@ export async function saveOAuthClient(
   const revocationEndpoint = String(
     values.get("revocationEndpoint") ?? "",
   ).trim();
-  const scopes = parseStringList(
-    String(values.get("scopes") ?? "[]").trim(),
-    "スコープ",
-  );
+  const scopes = parseStringList(String(values.get("scopes") ?? "[]").trim());
 
   if (!name || !clientId || !authorizationEndpoint || !tokenEndpoint)
     return {
@@ -324,7 +320,7 @@ export async function listOAuthAuthentications(user: AuthUser) {
         name: authentication.name,
         oauthId: String(authentication.oauthId),
         oauthName:
-          clientsById.get(authentication.oauthId) ?? "不明なクライアント",
+          clientsById.get(authentication.oauthId) ?? t("server.unknownClient"),
         expiresAt: authentication.expiresAt ?? "",
         accessTokenConfigured: "server.configured",
         refreshTokenConfigured: authentication.refreshToken

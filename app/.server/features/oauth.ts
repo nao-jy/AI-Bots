@@ -30,9 +30,7 @@ function encryptionKey() {
     throw new Error("server.credentialsEncryptionKeyRequired");
   const key = Buffer.from(encoded, "base64");
   if (key.length !== 32)
-    throw new Error(
-      "CREDENTIALS_ENCRYPTION_KEYは32バイトのbase64値にしてください。",
-    );
+    throw new Error("server.credentialsEncryptionKeyInvalid");
   return key;
 }
 
@@ -109,9 +107,7 @@ function getCallbackUrl() {
     url.password ||
     (url.protocol !== "https:" && url.hostname !== "localhost")
   )
-    throw new Error(
-      "OAUTH_BASE_URLにはパスなしのHTTPSオリジンを設定してください。",
-    );
+    throw new Error("server.oauthBaseUrlMustBeHttpsOrigin");
   return new URL(CALLBACK_PATH, url.origin);
 }
 
@@ -130,9 +126,7 @@ function configuration(client: {
     !["https:", "http:"].includes(authorizationEndpoint.protocol) ||
     !["https:", "http:"].includes(tokenEndpoint.protocol)
   )
-    throw new Error(
-      "OAuthエンドポイントにはHTTPまたはHTTPSを指定してください。",
-    );
+    throw new Error("server.oauthEndpointMustBeHttpUrl");
   const server = {
     issuer: authorizationEndpoint.origin,
     authorization_endpoint: authorizationEndpoint.href,
@@ -250,9 +244,7 @@ export async function completeOAuthAuthorization(
       },
     );
     if (!tokens.access_token)
-      throw new Error(
-        "OAuthサーバーからアクセストークンが返されませんでした。",
-      );
+      throw new Error("server.oauthAccessTokenMissing");
 
     const existing = flow.authenticationId
       ? await getOwnedOAuthAuthentication(flow.authenticationId, user.id)

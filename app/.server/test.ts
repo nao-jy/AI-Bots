@@ -11,12 +11,14 @@ import {
   testSuccess,
 } from "./utils";
 import { generateText } from "ai";
+import { localizedMessage } from "../i18n";
+import { t } from "./i18n";
 
 export async function testAdapter(user: AuthUser, values: FormData) {
   try {
     const name = String(values.get("name") ?? "").trim();
     const platformId = String(values.get("platformId") ?? "").trim();
-    const conf = parseStringMap(values.get("config"), "コンフィグ");
+    const conf = parseStringMap(values.get("config"));
     const authId = values.get("authId")?.toString().trim();
     let authIdNum: number | null = null;
     if (authId !== undefined && authId.length !== 0) {
@@ -24,9 +26,13 @@ export async function testAdapter(user: AuthUser, values: FormData) {
     }
     const bot = await getBotInfo(platformId, name, conf, authIdNum);
     if (!bot) {
-      throw new Error("bot not found");
+      throw new Error("server.botNotFound");
     }
-    return testSuccess(`${bot.displayName}への接続と認証に成功しました。`);
+    return testSuccess(
+      localizedMessage("server.connectionTestSucceeded", {
+        0: bot.displayName,
+      }),
+    );
   } catch (error) {
     return testFailure(
       error instanceof Error ? error.message : "server.adapterConnectionFailed",
@@ -47,7 +53,7 @@ export async function testMcpServer(user: AuthUser, values: FormData) {
     if (!endpoint) return testFailure("server.endpointRequired");
     if (transport !== "http")
       return testFailure("server.transportTestUnsupported");
-    const headers = parseStringMap(values.get("headers"), "HTTPヘッダー");
+    const headers = parseStringMap(values.get("headers"));
     const mcpClient = await getMcpClient(
       transport,
       endpoint,
@@ -58,7 +64,10 @@ export async function testMcpServer(user: AuthUser, values: FormData) {
     const tools = await mcpClient.listTools();
 
     return testSuccess(
-      `${name || "MCPサーバー"}とのMCP接続に成功しました。(${tools.tools.length}個のツールが利用可能)`,
+      localizedMessage("server.mcpConnectionTestSucceeded", {
+        0: name || t("server.mcpServer"),
+        1: tools.tools.length,
+      }),
     );
   } catch (error) {
     return testFailure(
@@ -80,7 +89,7 @@ export async function testAgent(user: AuthUser, values: FormData) {
       provider.args && typeof provider.args === "object" ? provider.args : {}
     ) as Record<string, unknown>;
     const headers = decryptMcpHeaders(provider.headers);
-    const options = parseObject(values.get("options"), "オプション");
+    const options = parseObject(values.get("options"));
     const modelInfo = getModelInfo(
       provider.providerName,
       args,
@@ -95,7 +104,10 @@ export async function testAgent(user: AuthUser, values: FormData) {
       providerOptions: modelInfo.options,
     });
     return testSuccess(
-      `${name || "エージェント"}のモデル「${modelId}」に接続できました。`,
+      localizedMessage("server.modelConnectionSucceeded", {
+        0: name || "エージェント",
+        1: modelId,
+      }),
     );
   } catch (error) {
     return testFailure(

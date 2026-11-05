@@ -9,7 +9,7 @@ import {
   ScrollRestoration,
   useNavigation,
 } from "react-router";
-import { I18nextProvider, useTranslation } from "react-i18next";
+import { useTranslation } from "react-i18next";
 
 import type { Route } from "./+types/root";
 import "@mantine/core/styles.css";
@@ -26,12 +26,13 @@ import { httpLogger } from "./.server/logger/http-logger";
 import { randomUUID } from "node:crypto";
 import {
   requestContext,
+  localeStorage,
   requestStorage,
   type RequestContext,
 } from "./.server/request-context";
 import { getSessionUser } from "./.server/auth";
 import { startCronScheduler } from "./.server/features/scheduler";
-import i18n, { type NavigationLabelKey } from "./i18n";
+import { type NavigationLabelKey, getLocaleFromCookie } from "./i18n";
 
 export const links: Route.LinksFunction = () => [
   { rel: "icon", type: "image/png", href: "/favicon.png" },
@@ -48,8 +49,10 @@ export const links: Route.LinksFunction = () => [
 ];
 
 export function Layout({ children }: { children: React.ReactNode }) {
+  const { i18n } = useTranslation();
+  const locale = i18n.resolvedLanguage ?? i18n.language;
   return (
-    <html lang="ja" {...mantineHtmlProps}>
+    <html lang={locale.startsWith("en") ? "en" : "ja"} {...mantineHtmlProps}>
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -58,12 +61,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Links />
       </head>
       <body>
-        <I18nextProvider i18n={i18n}>
-          <MantineProvider>
-            <Notifications />
-            {children}
-          </MantineProvider>
-        </I18nextProvider>
+        <MantineProvider>
+          <Notifications />
+          {children}
+        </MantineProvider>
         <ScrollRestoration />
         <Scripts />
       </body>
@@ -72,10 +73,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigation = useNavigation();
   const isPending = navigation.state !== "idle";
   const [showPending, setShowPending] = useState(false);
+
+  useEffect(() => {
+    document.documentElement.lang = i18n.language.startsWith("en") ? "en" : "ja";
+  }, [i18n.language]);
 
   useEffect(() => {
     if (!isPending) {
@@ -146,40 +151,44 @@ export const middleware: Route.MiddlewareFunction[] = [
       requestId,
       clientIp: clientIp,
       userId: user?.id ?? null,
+      locale: getLocaleFromCookie(request.headers.get("cookie")),
     };
     context.set(requestContext, ctx);
 
-    return requestStorage.run(ctx, async () => {
-      httpLogger.http("request.received", {
-        method: request.method,
-        path: new URL(request.url).pathname,
-      });
+    return localeStorage.run(ctx.locale, () =>
+      requestStorage.run(ctx, async () => {
+        httpLogger.http("request.received", {
+          method: request.method,
+          path: new URL(request.url).pathname,
+        });
 
-      const response = await next();
+        const response = await next();
 
-      httpLogger.http("request.completed", {
-        method: request.method,
-        statusCode: response.status,
-      });
+        httpLogger.http("request.completed", {
+          method: request.method,
+          statusCode: response.status,
+        });
 
-      return response;
-    });
+        return response;
+      }),
+    );
   },
 ];
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
-  let message = i18n.t("errors.fallbackTitle");
-  let details = i18n.t("errors.unexpected");
+  const { t } = useTranslation();
+  let message = t("errors.fallbackTitle");
+  let details = t("errors.unexpected");
   let stack: string | undefined;
 
   if (isRouteErrorResponse(error)) {
     message =
       error.status === 404
-        ? i18n.t("errors.notFoundCode")
-        : i18n.t("errors.title");
+        ? t("errors.notFoundCode")
+        : t("errors.title");
     details =
       error.status === 404
-        ? i18n.t("errors.pageNotFound")
+        ? t("errors.pageNotFound")
         : error.statusText || details;
   } else if (import.meta.env.DEV && error && error instanceof Error) {
     details = error.message;

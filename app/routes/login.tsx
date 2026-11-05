@@ -30,6 +30,7 @@ import { isPasswordResetEnabled } from "../.server/features/password-reset";
 import { appLogger } from "../.server/logger/app-logger";
 import { logAuditEvent } from "../.server/logger/audit-logger";
 import { APP_NAME } from "~/const";
+import { LanguageSwitcher } from "~/components/language-switcher";
 
 export function meta() {
   return [
@@ -187,6 +188,7 @@ export default function Login({ loaderData }: Route.ComponentProps) {
         <Link to="/login" className="brand">
           <img src="/logo.png" alt={APP_NAME} />
         </Link>
+        <LanguageSwitcher />
       </div>
       <div className="login-card-wrap">
         <section className="login-card">

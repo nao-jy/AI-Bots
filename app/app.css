@@ -162,3 +162,6 @@ a { color: inherit; text-decoration: none; }
   .editor-modal-content { max-height: calc(100dvh - 20px); }
   .editor-modal-content .modal-actions { flex-wrap: wrap; }
 }
+.locale-form { display: flex; align-items: center; }
+.locale-form select { min-height: 30px; padding: 4px 8px; border: 1px solid #e5e3eb; border-radius: 6px; color: #625d70; background: #fff; font: inherit; font-size: 11px; }
+.login-top .locale-form { margin-left: auto; }

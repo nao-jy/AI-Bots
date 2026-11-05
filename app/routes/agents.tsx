@@ -14,36 +14,36 @@ import { APP_NAME } from "~/const";
 import { testAgent } from "~/.server/test";
 
 const page: Omit<EntityPageDefinition, "records"> = {
-  title: t("pages.agents.title"),
-  description: t("pages.agents.description"),
+  title: "pages.agents.title",
+  description: "pages.agents.description",
   icon: "agents",
   columns: [
-    { key: "name", label: t("pages.agents.title") },
-    { key: "model", label: t("pages.agents.modelLabel") },
-    { key: "mcpAuthentications", label: t("pages.agents.mcpOauthAuthenticationLabel") },
-    { key: "status", label: t("pages.agents.usageLabel") },
+    { key: "name", label: "pages.agents.title" },
+    { key: "model", label: "pages.agents.modelLabel" },
+    { key: "mcpAuthentications", label: "pages.agents.mcpOauthAuthenticationLabel" },
+    { key: "status", label: "pages.agents.usageLabel" },
   ],
   fields: [
     {
       key: "name",
-      label: t("pages.agents.nameLabel"),
-      placeholder: t("pages.agents.namePlaceholder"),
+      label: "pages.agents.nameLabel",
+      placeholder: "pages.agents.namePlaceholder",
     },
     {
       key: "providerId",
-      label: t("pages.agents.providerLabel"),
+      label: "pages.agents.providerLabel",
       type: "select",
       options: [],
-      placeholder: t("pages.agents.providerPlaceholder"),
+      placeholder: "pages.agents.providerPlaceholder",
     },
     {
       key: "modelId",
-      label: t("pages.agents.modelIdLabel"),
-      placeholder: t("pages.agents.modelIdPlaceholder"),
+      label: "pages.agents.modelIdLabel",
+      placeholder: "pages.agents.modelIdPlaceholder",
     },
     {
       key: "options",
-      label: t("pages.agents.modelOptionsLabel"),
+      label: "pages.agents.modelOptionsLabel",
       type: "key-value",
       valueType: "json-scalar",
       wide: true,

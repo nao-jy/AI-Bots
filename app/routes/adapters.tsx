@@ -16,43 +16,43 @@ import { testAdapter } from "~/.server/test";
 import { listAdapterNames } from "~/.server/features/chat-adapter";
 
 const page: Omit<EntityPageDefinition, "records"> = {
-  title: t("pages.adapters.title"),
-  description: t("pages.adapters.description"),
+  title: "pages.adapters.title",
+  description: "pages.adapters.description",
   icon: "adapters",
   tableFeatures: { publicIds: true },
   columns: [
-    { key: "name", label: t("pages.adapters.connectionNameLabel") },
-    { key: "platform", label: t("pages.adapters.platformLabel") },
-    { key: "authentication", label: t("pages.adapters.oauthAuthenticationLabel") },
-    { key: "configured", label: t("pages.adapters.environmentVariablesLabel") },
-    { key: "updated", label: t("pages.adapters.updatedLabel") },
+    { key: "name", label: "pages.adapters.connectionNameLabel" },
+    { key: "platform", label: "pages.adapters.platformLabel" },
+    { key: "authentication", label: "pages.adapters.oauthAuthenticationLabel" },
+    { key: "configured", label: "pages.adapters.environmentVariablesLabel" },
+    { key: "updated", label: "pages.adapters.updatedLabel" },
   ],
   fields: [
-    { key: "name", label: t("pages.adapters.connectionNameLabel"), placeholder: t("pages.adapters.connectionNamePlaceholder") },
+    { key: "name", label: "pages.adapters.connectionNameLabel", placeholder: "pages.adapters.connectionNamePlaceholder" },
     {
       key: "platformId",
-      label: t("pages.adapters.platformLabel"),
+      label: "pages.adapters.platformLabel",
       type: "select",
       options: [],
     },
     {
       key: "config",
-      label: t("pages.adapters.configLabel"),
+      label: "pages.adapters.configLabel",
       type: "key-value",
       valueType: "string",
       wide: true,
       help: {
-        text: t("pages.adapters.configHelp"),
-        linkText: t("pages.adapters.documentationLink"),
+        text: "pages.adapters.configHelp",
+        linkText: "pages.adapters.documentationLink",
         href: "https://chat-sdk.dev/adapters",
       },
     },
     {
       key: "authId",
-      label: t("pages.adapters.oauthCredentialsLabel"),
+      label: "pages.adapters.oauthCredentialsLabel",
       type: "select",
       options: [],
-      placeholder: t("pages.adapters.noOauthOption"),
+      placeholder: "pages.adapters.noOauthOption",
     },
   ],
 };

@@ -10,6 +10,7 @@ import {
   createLifecycleClient,
   createRedirectSafeFetch,
 } from "@alibaba-group/opensandbox/internal";
+import { t } from "~/.server/i18n";
 
 async function replaceNetworkPolicy(
   sandbox: OpenSandbox,
@@ -31,7 +32,7 @@ async function replaceNetworkPolicy(
   });
   if (result.error || !result.response.ok)
     throw new Error(
-      `ネットワークポリシーを設定できませんでした (HTTP ${result.response.status})`,
+      t("server.networkPolicyUpdateFailed", { 0: result.response.status }),
     );
 }
 
@@ -55,7 +56,7 @@ async function withOpenNetwork<T>(
   });
   if (current.error || !current.response.ok)
     throw new Error(
-      `ネットワークポリシーを取得できませんでした (HTTP ${current.response.status})`,
+      t("server.networkPolicyFetchFailed", { 0: current.response.status }),
     );
   const previousPolicy = current.data.policy;
   if (!previousPolicy)
@@ -67,7 +68,9 @@ async function withOpenNetwork<T>(
   });
   if (opened.error || !opened.response.ok)
     throw new Error(
-      `コマンド実行用のネットワークポリシーを設定できませんでした (HTTP ${opened.response.status})`,
+      t("server.commandNetworkPolicyUpdateFailed", {
+        0: opened.response.status,
+      }),
     );
   try {
     return await operation();
@@ -81,7 +84,9 @@ async function withOpenNetwork<T>(
     );
     if (restored.error || !restored.response.ok)
       throw new Error(
-        `元のネットワークポリシーを復元できませんでした (HTTP ${restored.response.status})`,
+        t("server.networkPolicyRestoreFailed", {
+          0: restored.response.status,
+        }),
       );
   }
 }
@@ -98,7 +103,7 @@ function getConfig() {
 function terminalCommand(envs: Record<string, string>) {
   const assignments = Object.entries(envs).map(([key, value]) => {
     if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(key))
-      throw new Error(`無効な環境変数名です: ${key}`);
+      throw new Error("server.invalidEnvironmentVariableName");
     return `${key}='${value.replace(/'/g, "'\\''")}'`;
   });
   return `exec env ${[...assignments, "bash", "-i"].join(" ")}`;
@@ -169,7 +174,7 @@ export const OPEN_SANDBOX: Sandbox = {
     );
     if (current.error || !current.response.ok || !current.data.policy)
       throw new Error(
-        `ネットワークポリシーを取得できませんでした (HTTP ${current.response.status})`,
+        t("server.networkPolicyFetchFailed", { 0: current.response.status }),
       );
     const previousPolicy = current.data.policy;
     const opened = await lifecycle.PUT("/sandboxes/{sandboxId}/networkpolicy", {
@@ -178,7 +183,9 @@ export const OPEN_SANDBOX: Sandbox = {
     });
     if (opened.error || !opened.response.ok)
       throw new Error(
-        `シェル用のネットワークポリシーを設定できませんでした (HTTP ${opened.response.status})`,
+        t("server.shellNetworkPolicyUpdateFailed", {
+          0: opened.response.status,
+        }),
       );
 
     let ptySessionId: string | null = null;
@@ -194,7 +201,9 @@ export const OPEN_SANDBOX: Sandbox = {
       );
       if (result.error || !result.response.ok)
         throw new Error(
-          `元のネットワークポリシーを復元できませんでした (HTTP ${result.response.status})`,
+          t("server.networkPolicyRestoreFailed", {
+            0: result.response.status,
+          }),
         );
     }
 
@@ -211,7 +220,7 @@ export const OPEN_SANDBOX: Sandbox = {
       });
       if (!response.ok)
         throw new Error(
-          `PTYセッションを作成できませんでした (HTTP ${response.status})`,
+          t("server.ptySessionCreateFailed", { 0: response.status }),
         );
       const created: unknown = await response.json();
       if (
@@ -251,7 +260,7 @@ export const OPEN_SANDBOX: Sandbox = {
           } else if (message.type === "error") {
             clearTimeout(timeout);
             ws.off("message", handleInitialMessage);
-            reject(new Error(message.message ?? "PTY接続に失敗しました。"));
+            reject(new Error(message.message ?? "server.ptyConnectionFailed"));
           }
         };
         ws.on("message", handleInitialMessage);
@@ -262,7 +271,7 @@ export const OPEN_SANDBOX: Sandbox = {
         ws.once("close", (code) => {
           clearTimeout(timeout);
           if (ws !== socket)
-            reject(new Error(`PTY接続が閉じられました (code: ${code})`));
+          reject(new Error(t("server.ptyConnectionClosed", { 0: code })));
         });
       });
       const activeSocket = socket;
@@ -326,7 +335,7 @@ export const OPEN_SANDBOX: Sandbox = {
               });
               if (!deleted.ok && deleted.status !== 404)
                 throw new Error(
-                  `PTYセッションを終了できませんでした (HTTP ${deleted.status})`,
+                  t("server.ptySessionCloseFailed", { 0: deleted.status }),
                 );
             }
           } finally {
@@ -390,7 +399,10 @@ export const OPEN_SANDBOX: Sandbox = {
             const result = await sandbox.commands.run(command, { envs });
             if ((result.exitCode ?? 0) !== 0)
               throw new Error(
-                `生成時特権コマンドが失敗しました (exit code ${result.exitCode}): ${command}`,
+                t("server.initCommandFailed", {
+                  0: String(result.exitCode),
+                  1: command,
+                }),
               );
           }
         });
@@ -410,7 +422,7 @@ export const OPEN_SANDBOX: Sandbox = {
         } catch (cleanupError) {
           throw new AggregateError(
             [error, cleanupError],
-            "サンドボックス初期化の失敗後にサンドボックスを削除できませんでした。",
+            t("server.sandboxCleanupAfterInitFailed"),
           );
         }
       }

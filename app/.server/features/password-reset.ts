@@ -26,9 +26,7 @@ function signingKey() {
     throw new Error("server.credentialsEncryptionKeyRequired");
   const key = Buffer.from(encoded, "base64");
   if (key.length !== 32)
-    throw new Error(
-      "CREDENTIALS_ENCRYPTION_KEYは32バイトのbase64値にしてください。",
-    );
+    throw new Error("server.credentialsEncryptionKeyInvalid");
   return key;
 }
 

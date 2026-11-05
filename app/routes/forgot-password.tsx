@@ -9,9 +9,6 @@ import {
 } from "../.server/features/password-reset";
 import { APP_NAME } from "~/const";
 
-const REQUEST_MESSAGE =
-  t("pages.forgotPassword.requestSentNotice");
-
 export function meta() {
   return [{ title: t("pages.forgotPassword.documentTitle", { 0: APP_NAME }) }];
 }
@@ -25,14 +22,15 @@ export async function action({ request }: Route.ActionArgs) {
   const email = String(form.get("email") ?? "")
     .trim()
     .toLowerCase();
-  if (!/^\S+@\S+\.\S+$/.test(email)) return data({ message: REQUEST_MESSAGE });
+  const requestMessage = t("pages.forgotPassword.requestSentNotice");
+  if (!/^\S+@\S+\.\S+$/.test(email)) return data({ message: requestMessage });
 
   try {
     await sendPasswordResetEmail(email, request.url);
   } catch (error) {
     appLogger.error("Failed to send password reset email", { error });
   }
-  return data({ message: REQUEST_MESSAGE });
+  return data({ message: requestMessage });
 }
 
 export default function ForgotPassword({ loaderData }: Route.ComponentProps) {

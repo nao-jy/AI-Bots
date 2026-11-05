@@ -5,7 +5,11 @@ import { Form, Link, NavLink, Outlet, useLocation } from "react-router";
 import type { Route } from "./+types/layout";
 import { requireUser } from "../.server/auth";
 import { APP_NAME } from "~/const";
-import { type NavigationLabelKey } from "~/i18n";
+import {
+  type NavigationLabelKey,
+} from "~/i18n";
+import { getLocaleFromCookie } from "~/i18n";
+import { LanguageSwitcher } from "~/components/language-switcher";
 import { useTranslation } from "react-i18next";
 import {
   SectionIcon,
@@ -41,6 +45,7 @@ export async function loader({ request }: Route.LoaderArgs) {
   const user = await requireUser(request);
   return {
     user,
+    locale: getLocaleFromCookie(request.headers.get("cookie")),
     items: user.isAdmin
       ? [
           ...items,
@@ -149,6 +154,7 @@ export default function Workspace({ loaderData }: Route.ComponentProps) {
             <strong>{t(current.labelKey)}</strong>
           </div>
           <div className="top-actions">
+            <LanguageSwitcher />
             <Avatar color="violet" radius="xl" size={34}>
               {(loaderData.user.name ?? loaderData.user.email)
                 .slice(0, 2)

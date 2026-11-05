@@ -4,6 +4,7 @@ import type {
   EmailVerificationMessage,
   PasswordResetMessage,
 } from "./index";
+import { t } from "~/.server/i18n";
 
 export function createResendEmailProvider(apiKey: string): EmailProvider {
   const resend = new Resend(apiKey);
@@ -20,17 +21,19 @@ export function createResendEmailProvider(apiKey: string): EmailProvider {
       const { error } = await resend.emails.send({
         from,
         to,
-        subject: "メールアドレスの確認",
+        subject: t("server.emailVerificationSubject"),
         text: [
-          `${name ? `${name} さん、` : ""}AI Bots のメールアドレスを確認してください。`,
+          t("server.emailVerificationBody", {
+            0: name ? t("server.emailGreeting", { 0: name }) : "",
+          }),
           "",
-          "次のリンクを24時間以内に開いてください。",
+          t("server.emailVerificationLinkInstructions"),
           verificationUrl,
         ].join("\n"),
       });
       if (error)
         throw new Error(
-          `Resendでメールを送信できませんでした: ${error.message}`,
+          t("server.emailDeliveryFailed", { 0: error.message }),
         );
     },
     async sendPasswordResetEmail({
@@ -41,19 +44,21 @@ export function createResendEmailProvider(apiKey: string): EmailProvider {
       const { error } = await resend.emails.send({
         from,
         to,
-        subject: "パスワードの再設定",
+        subject: t("server.passwordResetSubject"),
         text: [
-          `${name ? `${name} さん、` : ""}パスワードの再設定がリクエストされました。`,
+          t("server.passwordResetBody", {
+            0: name ? t("server.emailGreeting", { 0: name }) : "",
+          }),
           "",
-          "次のリンクから1時間以内に新しいパスワードを設定してください。",
+          t("server.passwordResetLinkInstructions"),
           resetUrl,
           "",
-          "このメールに心当たりがない場合は、何も操作する必要はありません。",
+          t("server.unrequestedEmailNotice"),
         ].join("\n"),
       });
       if (error)
         throw new Error(
-          `Resendでメールを送信できませんでした: ${error.message}`,
+          t("server.emailDeliveryFailed", { 0: error.message }),
         );
     },
   };

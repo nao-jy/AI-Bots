@@ -16,6 +16,7 @@ import {
   searchGoogleDriveFiles,
 } from "./helpers/gdrive";
 import { ReservedParams } from "./helpers/reserved-params";
+import { t } from "~/.server/i18n";
 
 async function getSchema(userId: number) {
   return z.object({
@@ -49,7 +50,7 @@ function requireAccessToken(
   accessToken: Awaited<ReturnType<typeof getAccessToken>> | null,
 ) {
   if (!accessToken) {
-    throw new Error("Google Drive tools require an OAuth authentication.");
+    throw new Error("server.googleDriveOAuthRequired");
   }
   return accessToken;
 }
@@ -58,7 +59,7 @@ export async function getToolSetFactory(userId: number) {
   const schema = await getSchema(userId);
   const ret: ToolSetFactory = {
     name: "gdrive",
-    displayName: "Googleドライブ用リモートファイルツール",
+    displayName: t("server.googleDriveRemoteFileTools"),
     getToolSetContextSchema: () => schema.toJSONSchema({ target: "draft-7" }),
     validateContext: (value: unknown) => schema.validate(value),
     getTools: async (fileHandles: FileHandleReaderMap, context: unknown) => {
@@ -71,25 +72,27 @@ export async function getToolSetFactory(userId: number) {
 
       return {
         [`listGdrive_${authName}`]: tool({
-          description:
-            "Googleドライブ上のフォルダのファイル・フォルダを一覧します。再帰的に取得することも可能です。",
+          description: t("server.googleDriveListFilesDescription"),
           inputSchema: z.object({
-            folderId: z.string().min(1).describe("一覧を取得するフォルダのID"),
+            folderId: z
+              .string()
+              .min(1)
+              .describe(t("server.googleDriveFolderId")),
             recursive: z
               .boolean()
               .default(false)
-              .describe("配下を再帰的に一覧するか"),
+              .describe(t("server.googleDriveRecursive")),
             limit: z
               .number()
               .int()
               .min(1)
               .max(1000)
               .default(100)
-              .describe("取得する最大件数（1〜1000）"),
+              .describe(t("server.googleDriveMaxResults")),
             startAfter: z
               .string()
               .optional()
-              .describe("このパスより後から一覧を続ける場合の開始位置"),
+              .describe(t("server.googleDrivePageToken")),
           }),
           execute: async ({ folderId, recursive, limit, startAfter }) => {
             try {
@@ -111,8 +114,7 @@ export async function getToolSetFactory(userId: number) {
           },
         }),
         [`listSharedGdrive_${authName}`]: tool({
-          description:
-            "Googleドライブで自分と共有されているファイル・フォルダを一覧します。共有フォルダの中身は通常の一覧ツールで取得してください。",
+          description: t("server.googleDriveSharedFilesDescription"),
           inputSchema: z.object({
             limit: z
               .number()
@@ -120,11 +122,11 @@ export async function getToolSetFactory(userId: number) {
               .min(1)
               .max(1000)
               .default(100)
-              .describe("取得する最大件数（1〜1000）"),
+              .describe(t("server.googleDriveMaxResults")),
             startAfter: z
               .string()
               .optional()
-              .describe("この名前より後から一覧を続ける場合の開始位置"),
+              .describe(t("server.googleDriveNamePageToken")),
           }),
           execute: async ({ limit, startAfter }) => {
             try {
@@ -144,25 +146,24 @@ export async function getToolSetFactory(userId: number) {
           },
         }),
         [`searchGdrive_${authName}`]: tool({
-          description:
-            "Google Drive APIの検索クエリ（q）でファイル・フォルダを検索します。Drive APIのq構文を使い、name contains、fullText contains、'<folderId>' in parents、modifiedTime、mimeType、sharedWithMeなどの条件を指定してください。複数条件はand/orで組み合わせられます。詳細な構文はGoogle Drive APIの仕様に従います。",
+          description: t("server.googleDriveSearchDescription"),
           inputSchema: z.object({
             q: z
               .string()
               .trim()
               .min(1)
-              .describe("Google Drive APIの検索クエリ"),
+              .describe(t("server.googleDriveSearchQuery")),
             limit: z
               .number()
               .int()
               .min(1)
               .max(1000)
               .default(100)
-              .describe("取得する最大件数（1〜1000）"),
+              .describe(t("server.googleDriveMaxResults")),
             pageToken: z
               .string()
               .optional()
-              .describe("前回の検索結果に含まれる次ページトークン"),
+              .describe(t("server.googleDriveNextPageToken")),
           }),
           execute: async ({ q, limit, pageToken }) => {
             try {
@@ -186,13 +187,12 @@ export async function getToolSetFactory(userId: number) {
           },
         }),
         [`getGdriveFileHandle_${authName}`]: tool({
-          description:
-            "Googleドライブのファイル内容を参照するファイルハンドルを取得します。",
+          description: t("server.googleDriveFileHandleDescription"),
           inputSchema: z.object({
             fileId: z
               .string()
               .min(1)
-              .describe("ハンドルを作成するファイルのID"),
+              .describe(t("server.googleDriveFileIdForHandle")),
           }),
           execute: async ({ fileId }) => {
             try {
@@ -205,7 +205,7 @@ export async function getToolSetFactory(userId: number) {
                 !metadata.mimeType ||
                 isGoogleDriveFolder(metadata.mimeType)
               ) {
-                throw new Error(`Not a Google Drive file: ${fileId}`);
+                throw new Error("server.googleDriveExpectedFile");
               }
 
               const sourceFilename = metadata.name ?? fileId;
@@ -223,7 +223,7 @@ export async function getToolSetFactory(userId: number) {
                   for await (const chunk of downloadedFile.stream) {
                     if (!(chunk instanceof Uint8Array)) {
                       throw new Error(
-                        `Google Drive returned non-binary data: ${fileId}`,
+                        "server.googleDriveExpectedBinaryContent",
                       );
                     }
                     yield new Uint8Array(
@@ -250,13 +250,12 @@ export async function getToolSetFactory(userId: number) {
           },
         }),
         [`getGdriveFileMetadata_${authName}`]: tool({
-          description:
-            "Googleドライブ上のファイルまたはフォルダのメタデータを取得します。",
+          description: t("server.googleDriveMetadataDescription"),
           inputSchema: z.object({
             fileOrFolderId: z
               .string()
               .min(1)
-              .describe("メタデータを取得するファイルまたはフォルダのID"),
+              .describe(t("server.googleDriveMetadataFileId")),
           }),
           execute: async ({ fileOrFolderId }) => {
             try {
@@ -272,13 +271,12 @@ export async function getToolSetFactory(userId: number) {
           },
         }),
         [`gdriveFileExists_${authName}`]: tool({
-          description:
-            "Googleドライブ上のファイルまたはフォルダの存在を確認します。",
+          description: t("server.googleDriveExistsDescription"),
           inputSchema: z.object({
             fileOrFolderId: z
               .string()
               .min(1)
-              .describe("存在を確認するファイルまたはフォルダのID"),
+              .describe(t("server.googleDriveExistsFileId")),
           }),
           execute: async ({ fileOrFolderId }) => {
             try {

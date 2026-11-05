@@ -13,6 +13,7 @@ import {
 import { appLogger } from "~/.server/logger/app-logger";
 import { logAuditEvent } from "../logger/audit-logger";
 import { SANDBOX_SCOPES } from "~/const";
+import { t } from "~/.server/i18n";
 export type SandboxScope = keyof typeof SANDBOX_SCOPES;
 
 function isSandboxScope(value: string): value is SandboxScope {
@@ -49,9 +50,9 @@ export async function listSandboxes(user: AuthUser) {
               scopeLabel: instance.threadId
                 ? "server.thread"
                 : instance.adapterId !== null
-                  ? `アダプター #${instance.adapterId}`
+                  ? t("server.adapterNumber", { 0: instance.adapterId })
                   : instance.chatbotId !== null
-                    ? `ボット #${instance.chatbotId}`
+                    ? t("server.botNumber", { 0: instance.chatbotId })
                     : "server.shared",
             })),
           ),
@@ -65,7 +66,7 @@ const SHELL_OUTPUT_LIMIT = 30_000;
 
 function limitShellOutput(value: string) {
   return value.length > SHELL_OUTPUT_LIMIT
-    ? `${value.slice(0, SHELL_OUTPUT_LIMIT)}\n\n[出力を省略しました]`
+    ? t("server.truncatedOutput", { 0: value.slice(0, SHELL_OUTPUT_LIMIT) })
     : value;
 }
 
@@ -225,13 +226,10 @@ export async function saveSandbox(
       Array.isArray(envValue) ||
       Object.values(envValue).some((v) => typeof v !== "string")
     )
-      throw new Error(
-        "環境変数は文字列のキー・値オブジェクトで入力してください。",
-      );
+      throw new Error("server.sandboxEnvironmentVariablesMustBeStringObject");
     envs = envValue as Record<string, string>;
     allowedDomainList = parseStringList(
       String(values.get("allowedDomainList") ?? "[]").trim(),
-      "許可ドメイン",
     );
     initCommands = String(values.get("initCommands") ?? "")
       .split(/\r?\n/)

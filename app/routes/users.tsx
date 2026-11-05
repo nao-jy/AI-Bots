@@ -25,8 +25,8 @@ import { appLogger } from "../.server/logger/app-logger";
 import { APP_NAME } from "~/const";
 
 const page: Omit<EntityPageDefinition, "records"> = {
-  title: t("pages.users.title"),
-  description: t("pages.users.description"),
+  title: "pages.users.title",
+  description: "pages.users.description",
   icon: "users",
   tableFeatures: {
     expandableActions: true,
@@ -36,34 +36,34 @@ const page: Omit<EntityPageDefinition, "records"> = {
     loginUnlock: true,
   },
   columns: [
-    { key: "name", label: t("pages.users.title") },
-    { key: "email", label: t("pages.users.emailLabel") },
+    { key: "name", label: "pages.users.title" },
+    { key: "email", label: "pages.users.emailLabel" },
     {
       key: "emailVerification",
-      label: t("pages.users.emailVerificationLabel"),
+      label: "pages.users.emailVerificationLabel",
       presentation: "verification-status",
     },
-    { key: "mfaStatus", label: t("pages.users.mfaLabel"), presentation: "mfa-status" },
-    { key: "isAdmin", label: t("pages.users.roleLabel"), presentation: "admin-toggle" },
-    { key: "loginLockStatus", label: t("pages.users.loginLockLabel") },
-    { key: "loginStatus", label: t("pages.users.loginStatusLabel") },
-    { key: "lastLogin", label: t("pages.users.lastLoginLabel") },
-    { key: "updated", label: t("pages.users.updatedLabel") },
+    { key: "mfaStatus", label: "pages.users.mfaLabel", presentation: "mfa-status" },
+    { key: "isAdmin", label: "pages.users.roleLabel", presentation: "admin-toggle" },
+    { key: "loginLockStatus", label: "pages.users.loginLockLabel" },
+    { key: "loginStatus", label: "pages.users.loginStatusLabel" },
+    { key: "lastLogin", label: "pages.users.lastLoginLabel" },
+    { key: "updated", label: "pages.users.updatedLabel" },
   ],
   fields: [
-    { key: "name", label: t("pages.users.displayNameLabel"), placeholder: t("pages.users.displayNamePlaceholder") },
+    { key: "name", label: "pages.users.displayNameLabel", placeholder: "pages.users.displayNamePlaceholder" },
     {
       key: "email",
-      label: t("pages.users.emailLabel"),
+      label: "pages.users.emailLabel",
       type: "email",
-      placeholder: t("pages.users.emailPlaceholder"),
+      placeholder: "pages.users.emailPlaceholder",
     },
     {
       key: "password",
-      label: t("pages.users.passwordLabel"),
+      label: "pages.users.passwordLabel",
       type: "password",
       required: true,
-      placeholder: t("pages.users.passwordHint"),
+      placeholder: "pages.users.passwordHint",
     },
   ],
 };

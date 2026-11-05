@@ -24,6 +24,7 @@ export default [
   route("mfa", "routes/mfa.tsx"),
   route("verify-email", "routes/verify-email.tsx"),
   route("logout", "routes/logout.tsx"),
+  route("locale", "routes/locale.tsx"),
   route("api/webhooks/:botId/:adapterId", "routes/webhook.tsx"),
   route("api/sandbox-terminals/:terminalId", "routes/sandbox-terminal.tsx"),
 ] satisfies RouteConfig;

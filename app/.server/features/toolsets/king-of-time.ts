@@ -2,19 +2,9 @@ import { tool, type Tool } from "ai";
 import z from "zod";
 import type { ToolSetFactory } from ".";
 import type { FileHandleReaderMap } from "./helpers/file-handle";
+import { t } from "~/.server/i18n";
 
 const API_BASE_URL = "https://api.kingtime.jp/v1.0";
-const yearMonthSchema = z
-  .string()
-  .regex(/^\d{4}-(0[1-9]|1[0-2])$/)
-  .describe("対象年月（YYYY-MM）");
-const employeeMonthSchema = z.object({
-  employeeKey: z
-    .string()
-    .min(1)
-    .describe("従業員検索結果に含まれる従業員識別キー"),
-  yearMonth: yearMonthSchema,
-});
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -52,17 +42,23 @@ async function getApiData(
   } catch {
     if (!response.ok) {
       throw new Error(
-        `King of Time API request failed (${response.status}): ${responseText || response.statusText}`,
+        t("server.kingOfTimeApiRequestFailed", {
+          0: response.status,
+          1: responseText || response.statusText,
+        }),
       );
     }
     throw new Error(
-      `King of Time API returned an invalid JSON response (${response.status}).`,
+      t("server.kingOfTimeApiInvalidJson", { 0: response.status }),
     );
   }
 
   if (!response.ok) {
     throw new Error(
-      `King of Time API request failed (${response.status}): ${getErrorMessage(data) ?? response.statusText}`,
+      t("server.kingOfTimeApiRequestFailed", {
+        0: response.status,
+        1: getErrorMessage(data) ?? response.statusText,
+      }),
     );
   }
   return data;
@@ -107,7 +103,7 @@ function filterEmployeeRecords(
 }
 
 function makeReadableValues(value: unknown): unknown {
-  if (value === "no_selected") return "未選択";
+  if (value === "no_selected") return t("server.unselected");
   if (Array.isArray(value)) return value.map(makeReadableValues);
   if (!isRecord(value)) return value;
   return Object.fromEntries(
@@ -119,8 +115,14 @@ function normalizeEmployeeName(value: string) {
   return value.normalize("NFKC").replace(/\s+/g, "").toLocaleLowerCase();
 }
 
-function makeEmployeeMonthTool(
+function makeEmployeeMonthTool<
+  TSchema extends z.ZodObject<{
+    employeeKey: z.ZodString;
+    yearMonth: z.ZodString;
+  }>,
+>(
   accessToken: string,
+  inputSchema: TSchema,
   description: string,
   getRequest: (
     employeeKey: string,
@@ -129,7 +131,7 @@ function makeEmployeeMonthTool(
 ): Tool {
   return tool({
     description,
-    inputSchema: employeeMonthSchema,
+    inputSchema,
     execute: async ({ employeeKey, yearMonth }) => {
       try {
         const { path, parameters } = getRequest(employeeKey, yearMonth);
@@ -150,26 +152,33 @@ function makeEmployeeMonthTool(
 }
 
 export async function getToolSetFactory(userId: number) {
-  const schema = z.object({
-    apiKey: z.string().min(1).meta({ title: "King of Time APIキー" }),
+  const contextSchema = z.object({
+    apiKey: z.string().min(1).meta({ title: t("server.kingOfTimeApiKey") }),
+  });
+  const yearMonthSchema = z
+    .string()
+    .regex(/^\d{4}-(0[1-9]|1[0-2])$/)
+    .describe(t("server.targetMonth"));
+  const employeeMonthSchema = z.object({
+    employeeKey: z.string().min(1).describe(t("server.employeeKey")),
+    yearMonth: yearMonthSchema,
   });
   const ret: ToolSetFactory = {
     name: "king-of-time",
-    displayName: "King of Time 勤怠データ",
-    getToolSetContextSchema: () => schema.toJSONSchema({ target: "draft-7" }),
-    validateContext: (value: unknown) => schema.validate(value),
+    displayName: t("server.kingOfTimeAttendance"),
+    getToolSetContextSchema: () => contextSchema.toJSONSchema({ target: "draft-7" }),
+    validateContext: (value: unknown) => contextSchema.validate(value),
     getTools: async (_fileHandles: FileHandleReaderMap, context: unknown) => {
-      const args = schema.parse(context);
+      const args = contextSchema.parse(context);
       return {
         [`searchKingOfTimeEmployees`]: tool({
-          description:
-            "従業員名（姓・名の一部または全部）で従業員を検索します。対象年月時点の従業員データを使います。同姓同名の場合は候補をすべて返すため、識別キーを確認してから勤怠データを取得してください。",
+          description: t("server.kingOfTimeSearchEmployeeDescription"),
           inputSchema: z.object({
             employeeName: z
               .string()
               .trim()
               .min(1)
-              .describe("検索する従業員名（姓・名の一部または全部）"),
+              .describe(t("server.kingOfTimeEmployeeName")),
             yearMonth: yearMonthSchema,
           }),
           execute: async ({ employeeName, yearMonth }) => {
@@ -185,7 +194,7 @@ export async function getToolSetFactory(userId: number) {
                   : null;
               if (!employees) {
                 throw new Error(
-                  "King of Time returned an unexpected employee list response.",
+                  t("server.kingOfTimeUnexpectedEmployeeList"),
                 );
               }
 
@@ -206,7 +215,7 @@ export async function getToolSetFactory(userId: number) {
                 }
                 if (typeof employee.employeeKey !== "string") {
                   throw new Error(
-                    "King of Time employee data is missing employeeKey.",
+                    t("server.kingOfTimeEmployeeKeyMissing"),
                   );
                 }
                 return [
@@ -242,7 +251,8 @@ export async function getToolSetFactory(userId: number) {
         }),
         [`getKingOfTimeDailyAttendance`]: makeEmployeeMonthTool(
           args.apiKey,
-          "指定従業員の対象月の日別勤怠データを取得します。先に従業員名検索を行い、employeeKeyを指定してください。",
+          employeeMonthSchema,
+          t("server.kingOfTimeDailyAttendanceDescription"),
           (_employeeKey, yearMonth) => ({
             path: "/daily-workings",
             parameters: getMonthRange(yearMonth),
@@ -250,7 +260,8 @@ export async function getToolSetFactory(userId: number) {
         ),
         [`getKingOfTimeDailyTimeRecords`]: makeEmployeeMonthTool(
           args.apiKey,
-          "指定従業員の対象月の日別打刻データを取得します。先に従業員名検索を行い、employeeKeyを指定してください。",
+          employeeMonthSchema,
+          t("server.kingOfTimeDailyTimeClockDescription"),
           (employeeKey, yearMonth) => ({
             path: "/daily-workings/timerecord",
             parameters: {
@@ -261,29 +272,30 @@ export async function getToolSetFactory(userId: number) {
         ),
         [`getKingOfTimeMonthlyAttendance`]: makeEmployeeMonthTool(
           args.apiKey,
-          "指定従業員の月別勤怠データを取得します。先に従業員名検索を行い、employeeKeyを指定してください。",
+          employeeMonthSchema,
+          t("server.kingOfTimeMonthlyAttendanceDescription"),
           (_employeeKey, yearMonth) => ({
             path: `/monthly-workings/${yearMonth}`,
           }),
         ),
         [`getKingOfTimeDailySchedules`]: makeEmployeeMonthTool(
           args.apiKey,
-          "指定従業員の対象月の日別スケジュールデータを取得します。先に従業員名検索を行い、employeeKeyを指定してください。",
+          employeeMonthSchema,
+          t("server.kingOfTimeDailyScheduleDescription"),
           (_employeeKey, yearMonth) => ({
             path: "/daily-schedules",
             parameters: getMonthRange(yearMonth),
           }),
         ),
         [`listKingOfTimeHolidayTypes`]: tool({
-          description:
-            "King of Time に登録されている休暇区分コードと名称を一覧します。",
+          description: t("server.kingOfTimeLeaveTypesDescription"),
           inputSchema: z.object({}),
           execute: async () => {
             try {
               const data = await getApiData(args.apiKey, "/holiday-types");
               if (!Array.isArray(data)) {
                 throw new Error(
-                  "King of Time returned an unexpected holiday type list response.",
+                  t("server.kingOfTimeUnexpectedHolidayTypes"),
                 );
               }
               return makeReadableValues(data);

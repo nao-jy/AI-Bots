@@ -1,5 +1,6 @@
 import z from "zod";
 import { listOauth } from "~/.server/repository/oauth";
+import { t } from "~/.server/i18n";
 
 export namespace ReservedParams {
   export async function getAuthIdSchema(ownerId: number) {
@@ -13,7 +14,7 @@ export namespace ReservedParams {
 
     return {
       authId: z.literal(authentications.map(({ id }) => id)).meta({
-        title: "OAuth認証情報",
+        title: t("server.oauthAuthentication"),
         enumNames: authentications.map(({ label }) => label),
       }),
     };
@@ -34,7 +35,7 @@ export namespace ReservedParams {
         .literal(authenticationIds)
         .optional()
         .meta({
-          title: "OAuth認証情報",
+          title: t("server.oauthAuthentication"),
           enum: authenticationIds,
           enumNames: authentications.map(({ label }) => label),
         }),

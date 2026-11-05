@@ -3,6 +3,7 @@ import { db } from "./db";
 import type { AuthUser } from "../auth";
 import { record } from "../utils";
 import { logAuditEvent } from "../logger/audit-logger";
+import { localizedMessage } from "../../i18n";
 
 export type ScheduleTargetInput = {
   chatbotAdapterId: number;
@@ -92,9 +93,12 @@ export async function listSchedules(user: AuthUser) {
           link.chatbot.ownerId === user.id && link.adapter.ownerId === user.id,
       )
       .map((link) => ({
-        label: `${link.chatbot.name} / ${link.adapter.name}${
-          link.chatbot.isEnabled ? "" : " (停止中)"
-        }`,
+        label: localizedMessage(
+          link.chatbot.isEnabled
+            ? "server.scheduleTargetOptionActive"
+            : "server.scheduleTargetOptionInactive",
+          { 0: link.chatbot.name, 1: link.adapter.name },
+        ),
         value: String(link.id),
       })),
   };

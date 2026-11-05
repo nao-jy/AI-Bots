@@ -1,5 +1,6 @@
 import { type BashSandboxExtended, type Sandbox, type TerminalSize } from ".";
 import { Sandbox as E2BSandbox } from "e2b";
+import { t } from "~/.server/i18n";
 
 async function* toAsyncIterable(
   streamPromise: Promise<ReadableStream<Uint8Array>>,
@@ -140,7 +141,10 @@ export const E2B: Sandbox = {
             const result = await sandbox.commands.run(command, { envs });
             if ((result.exitCode ?? 0) !== 0)
               throw new Error(
-                `生成時特権コマンドが失敗しました (exit code ${result.exitCode}): ${command}`,
+                t("server.initCommandFailed", {
+                  0: String(result.exitCode),
+                  1: command,
+                }),
               );
           }
         } finally {
@@ -156,7 +160,7 @@ export const E2B: Sandbox = {
         } catch (cleanupError) {
           throw new AggregateError(
             [error, cleanupError],
-            "サンドボックス初期化の失敗後にサンドボックスを削除できませんでした。",
+            t("server.sandboxCleanupAfterInitFailed"),
           );
         }
       }

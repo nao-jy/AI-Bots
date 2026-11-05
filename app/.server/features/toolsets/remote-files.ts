@@ -12,23 +12,22 @@ import {
   exportGoogleWorkspaceFile,
   isGoogleWorkspaceFile,
 } from "./helpers/gdrive";
+import { t } from "~/.server/i18n";
 
 async function getSchema(userId: number) {
   const schema = z.object({
     service: z
       .string()
       .meta({
-        title: "OpenDALサービス名",
+        title: t("server.openDalServiceName"),
       })
-      .describe(
-        "service name of OpenDAL. see https://opendal.apache.org/services/",
-      ),
+      .describe(t("server.openDalServiceNameDescription")),
     configuration: z
       .array(z.object({ key: z.string(), value: z.string() }))
       .meta({
-        title: "OpenDALサービスの設定",
+        title: t("server.openDalServiceConfig"),
       })
-      .describe("configuration of service"),
+      .describe(t("server.openDalServiceConfigDescription")),
     ...(await ReservedParams.getAuthIdOptionalSchema(userId)),
   });
   return schema;
@@ -52,7 +51,7 @@ export async function getToolSetFactory(userId: number) {
   const schema = await getSchema(userId);
   const ret: ToolSetFactory = {
     name: "remote-files-opendal",
-    displayName: "汎用リモートファイルツール（OpenDAL）",
+    displayName: t("server.openDalRemoteFileTools"),
     getToolSetContextSchema: () => {
       return schema.toJSONSchema({ target: "draft-7" });
     },
@@ -77,25 +76,27 @@ export async function getToolSetFactory(userId: number) {
 
       return {
         [`listRemoteFiles_${args.service}${authName}`]: tool({
-          description:
-            "リモートファイルソースの指定したパス直下または配下のファイル・ディレクトリを一覧します。",
+          description: t("server.openDalListPathDescription"),
           inputSchema: z.object({
-            path: z.string().default("").describe("一覧を取得するパス"),
+            path: z
+              .string()
+              .default("")
+              .describe(t("server.openDalPathToList")),
             recursive: z
               .boolean()
               .default(false)
-              .describe("配下を再帰的に一覧するか"),
+              .describe(t("server.openDalRecursive")),
             limit: z
               .number()
               .int()
               .min(1)
               .max(1000)
               .default(100)
-              .describe("取得する最大件数（1〜1000）"),
+              .describe(t("server.openDalMaxResults")),
             startAfter: z
               .string()
               .optional()
-              .describe("このパスより後から一覧を続ける場合の開始位置"),
+              .describe(t("server.openDalPageToken")),
           }),
           execute: async ({ path, recursive, limit, startAfter }) => {
             try {
@@ -115,18 +116,18 @@ export async function getToolSetFactory(userId: number) {
           },
         }),
         [`getRemoteFileHandle_${args.service}${authName}`]: tool({
-          description: "リモートファイルのハンドルを取得します。",
+          description: t("server.openDalFileHandleDescription"),
           inputSchema: z.object({
             path: z
               .string()
               .min(1)
-              .describe("ハンドルを作成するファイルのパス"),
+              .describe(t("server.openDalFilePathForHandle")),
           }),
           execute: async ({ path }) => {
             try {
               const metadata = await operator.stat(path);
               if (!metadata.isFile()) {
-                throw new Error(`Not a remote file: ${path}`);
+                throw new Error("server.openDalExpectedFile");
               }
               const sourceFilename =
                 path.split("/").filter(Boolean).at(-1) ?? path;
@@ -137,7 +138,7 @@ export async function getToolSetFactory(userId: number) {
               if (sourceMimeType && isGoogleWorkspaceFile(sourceMimeType)) {
                 if (!accessToken) {
                   throw new Error(
-                    "Google Workspace files require an OAuth authentication.",
+                    "server.googleDriveOAuthRequired",
                   );
                 }
                 exportedFile = await exportGoogleWorkspaceFile({
@@ -158,7 +159,7 @@ export async function getToolSetFactory(userId: number) {
                   for await (const chunk of source) {
                     if (!(chunk instanceof Uint8Array)) {
                       throw new Error(
-                        `Remote file reader returned non-binary data: ${path}`,
+                        "server.openDalExpectedBinaryContent",
                       );
                     }
                     yield new Uint8Array(
@@ -185,10 +186,12 @@ export async function getToolSetFactory(userId: number) {
           },
         }),
         [`getRemoteFileMetadata_${args.service}${authName}`]: tool({
-          description:
-            "リモートファイルまたはディレクトリのメタデータを取得します。",
+          description: t("server.openDalMetadataDescription"),
           inputSchema: z.object({
-            path: z.string().min(1).describe("メタデータを取得するパス"),
+            path: z
+              .string()
+              .min(1)
+              .describe(t("server.openDalMetadataPath")),
           }),
           execute: async ({ path }) => {
             try {
@@ -200,9 +203,9 @@ export async function getToolSetFactory(userId: number) {
           },
         }),
         [`remoteFileExists_${args.service}${authName}`]: tool({
-          description: "リモートソース上のパスが存在するかを確認します。",
+          description: t("server.openDalPathExistsDescription"),
           inputSchema: z.object({
-            path: z.string().min(1).describe("確認するパス"),
+            path: z.string().min(1).describe(t("server.openDalPathToCheck")),
           }),
           execute: async ({ path }) => {
             try {

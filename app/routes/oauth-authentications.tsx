@@ -14,28 +14,28 @@ import {
 import { APP_NAME } from "~/const";
 
 const page: Omit<EntityPageDefinition, "records"> = {
-  title: t("pages.oauthAuthentications.title"),
+  title: "pages.oauthAuthentications.title",
   description:
-    t("pages.oauthAuthentications.description"),
+    "pages.oauthAuthentications.description",
   icon: "oauth_authentications",
   createIntent: "authorize",
-  createSubmitLabel: t("pages.oauthAuthentications.createSubmitLabel"),
+  createSubmitLabel: "pages.oauthAuthentications.createSubmitLabel",
   launchIntent: "authorize",
-  launchLabel: t("pages.oauthAuthentications.launchLabel"),
+  launchLabel: "pages.oauthAuthentications.launchLabel",
   columns: [
-    { key: "name", label: t("pages.oauthAuthentications.nameLabel") },
-    { key: "oauthName", label: t("pages.oauthAuthentications.oauthClientLabel") },
-    { key: "expiresAt", label: t("pages.oauthAuthentications.expiresAtLabel") },
-    { key: "refreshTokenConfigured", label: t("pages.oauthAuthentications.refreshTokenLabel") },
-    { key: "updated", label: t("pages.oauthAuthentications.updatedLabel") },
+    { key: "name", label: "pages.oauthAuthentications.nameLabel" },
+    { key: "oauthName", label: "pages.oauthAuthentications.oauthClientLabel" },
+    { key: "expiresAt", label: "pages.oauthAuthentications.expiresAtLabel" },
+    { key: "refreshTokenConfigured", label: "pages.oauthAuthentications.refreshTokenLabel" },
+    { key: "updated", label: "pages.oauthAuthentications.updatedLabel" },
   ],
   fields: [
-    { key: "name", label: t("pages.oauthAuthentications.nameLabel"), required: true },
+    { key: "name", label: "pages.oauthAuthentications.nameLabel", required: true },
     {
       key: "oauthId",
-      label: t("pages.oauthAuthentications.oauthClientLabel"),
+      label: "pages.oauthAuthentications.oauthClientLabel",
       type: "select",
-      placeholder: t("pages.oauthAuthentications.oauthClientPlaceholder"),
+      placeholder: "pages.oauthAuthentications.oauthClientPlaceholder",
       options: [],
       required: true,
       createOnly: true,

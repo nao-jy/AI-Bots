@@ -2,6 +2,7 @@ import { db } from "./db";
 import type { AuthUser } from "../auth";
 import { idList, jsonb, record } from "../utils";
 import { logAuditEvent } from "../logger/audit-logger";
+import { t } from "~/.server/i18n";
 import type {
   LanguageModelUsage,
   ToolSet,
@@ -26,7 +27,7 @@ export async function listAgents(user: AuthUser) {
         providerId: agent.provider.id,
         options: JSON.stringify(agent.options ?? {}, null, 2),
         status: agent.chatbot
-          ? `ボット「${agent.chatbot.name}」で利用中`
+          ? t("server.usedByBot", { 0: agent.chatbot.name })
           : "server.unused",
       });
     }),

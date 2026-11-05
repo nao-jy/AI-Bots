@@ -14,42 +14,42 @@ import { APP_NAME } from "~/const";
 import { listProviderNames } from "~/.server/features/provider";
 
 const page: Omit<EntityPageDefinition, "records"> = {
-  title: t("pages.providers.title"),
-  description: t("pages.providers.description"),
+  title: "pages.providers.title",
+  description: "pages.providers.description",
   icon: "providers",
   columns: [
-    { key: "name", label: t("pages.providers.connectionNameLabel") },
-    { key: "providerName", label: t("pages.providers.providerNameLabel") },
-    { key: "headersConfigured", label: t("pages.providers.httpHeadersLabel") },
-    { key: "updated", label: t("pages.providers.updatedLabel") },
+    { key: "name", label: "pages.providers.connectionNameLabel" },
+    { key: "providerName", label: "pages.providers.providerNameLabel" },
+    { key: "headersConfigured", label: "pages.providers.httpHeadersLabel" },
+    { key: "updated", label: "pages.providers.updatedLabel" },
   ],
   fields: [
     {
       key: "name",
-      label: t("pages.providers.connectionNameLabel"),
-      placeholder: t("pages.providers.connectionNamePlaceholder"),
+      label: "pages.providers.connectionNameLabel",
+      placeholder: "pages.providers.connectionNamePlaceholder",
     },
     {
       key: "providerName",
-      label: t("pages.providers.providerIdLabel"),
+      label: "pages.providers.providerIdLabel",
       type: "select",
-      placeholder: t("pages.providers.providerPlaceholder"),
+      placeholder: "pages.providers.providerPlaceholder",
       help: {
-        text: t("pages.providers.documentationHelp"),
-        linkText: t("pages.providers.documentationLink"),
+        text: "pages.providers.documentationHelp",
+        linkText: "pages.providers.documentationLink",
         href: "https://ai-sdk.dev/providers/ai-sdk-providers",
       },
     },
     {
       key: "args",
-      label: t("pages.providers.providerArgumentsLabel"),
+      label: "pages.providers.providerArgumentsLabel",
       type: "key-value",
       valueType: "json-scalar",
       wide: true,
     },
     {
       key: "headers",
-      label: t("pages.providers.httpHeadersLabel"),
+      label: "pages.providers.httpHeadersLabel",
       type: "key-value",
       valueType: "string",
       wide: true,

@@ -220,7 +220,7 @@ export async function listRateLimits(user: AuthUser) {
         criteriaLabel: criteriaLabels.get(limit.criteria) ?? limit.criteria,
         targetLabel:
           targetLabels[limit.criteria]?.get(criteriaId) ??
-          "対象が見つかりません",
+          "server.targetNotFound",
         perThread: String(limit.perThread),
         perThreadLabel: limit.perThread ? "server.perThread" : "server.acrossAllThreads",
         coefficients,

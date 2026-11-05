@@ -5,6 +5,7 @@ import dns from "node:dns/promises";
 import net from "node:net";
 import type { Chat } from "chat";
 import { toBuffer, type FileHandleReaderMap } from "./helpers/file-handle";
+import { t } from "~/.server/i18n";
 
 // SSRF
 function isPrivateIp(ip: string): boolean {
@@ -34,13 +35,13 @@ function isPrivateIp(ip: string): boolean {
 async function assertPublicUrl(raw: string): Promise<URL> {
   const u = new URL(raw);
   if (u.protocol !== "http:" && u.protocol !== "https:")
-    throw new Error("http/https only");
+    throw new Error(t("server.httpOrHttpsOnly"));
   const host = u.hostname.replace(/^\[|\]$/g, "");
   const addrs = net.isIP(host)
     ? [{ address: host }]
     : await dns.lookup(host, { all: true });
   if (addrs.some((a) => isPrivateIp(a.address)))
-    throw new Error("private address blocked");
+    throw new Error(t("server.privateAddressBlocked"));
   return u;
 }
 
@@ -54,12 +55,12 @@ const MAX_PAGINATION = 5;
 
 export function getFileParseTools(fileHandles: FileHandleReaderMap) {
   const parseFileFromUri = tool({
-    description: "Webコンテンツをフェッチしてパースします",
+    description: t("server.webContentFetchToolDescription"),
     inputSchema: z.object({
-      uri: z.string().min(1).describe("uri"),
+      uri: z.string().min(1).describe(t("server.webContentUri")),
       ocrLanguages: z
         .array(z.string())
-        .describe("tesseract ocr languages such as 'eng'"),
+        .describe(t("server.ocrLanguages")),
     }),
     execute: async ({ uri, ocrLanguages }) => {
       try {
@@ -90,19 +91,19 @@ export function getFileParseTools(fileHandles: FileHandleReaderMap) {
   });
 
   const parseFileFromHandle = tool({
-    description: "parse file from file handle",
+      description: t("server.parseFileFromHandleDescription"),
     inputSchema: z.object({
-      fileHandle: z.string().describe("file handle"),
+      fileHandle: z.string().describe(t("server.fileHandle")),
       ocrLanguages: z
         .array(z.string())
-        .describe("tesseract ocr languages such as 'eng'"),
+        .describe(t("server.ocrLanguages")),
     }),
 
     execute: async ({ fileHandle, ocrLanguages }) => {
       try {
         const fileInfo = fileHandles.get(fileHandle);
         if (fileInfo === undefined) {
-          throw new Error("file not registered");
+          throw new Error(t("server.fileNotRegistered"));
         }
         const data = await toBuffer(fileInfo.stream());
 
@@ -124,7 +125,7 @@ export function getFileParseTools(fileHandles: FileHandleReaderMap) {
         const doc = result.results?.[0];
 
         if (!doc) {
-          throw new Error("No document was extracted");
+          throw new Error(t("server.documentExtractionEmpty"));
         }
         return {
           filename: fileInfo.filename,
@@ -135,9 +136,9 @@ export function getFileParseTools(fileHandles: FileHandleReaderMap) {
         };
       } catch (error) {
         throw new Error(
-          `Document extraction failed: ${
-            error instanceof Error ? error.message : String(error)
-          }`,
+          t("server.documentExtractionFailed", {
+            0: error instanceof Error ? error.message : String(error),
+          }),
         );
       }
     },

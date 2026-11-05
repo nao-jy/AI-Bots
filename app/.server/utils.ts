@@ -1,6 +1,7 @@
 import { createCipheriv, createDecipheriv, randomBytes } from "node:crypto";
 import type { CodecTypes } from "../../src/prisma/contract";
 import type { EntityRecord } from "../types/entities";
+import { type TranslationMessage } from "../i18n";
 
 export const jsonb = (value: unknown) =>
   value as CodecTypes["pg/jsonb@1"]["input"];
@@ -42,14 +43,10 @@ export function record(
 export function encryptCredential(credential: string) {
   const keyValue = process.env.CREDENTIALS_ENCRYPTION_KEY;
   if (!keyValue)
-    throw new Error(
-      "認証情報を暗号化するには CREDENTIALS_ENCRYPTION_KEY を設定してください。",
-    );
+    throw new Error("server.credentialsEncryptionKeyRequiredForEncrypt");
   const key = Buffer.from(keyValue, "base64");
   if (key.length !== 32)
-    throw new Error(
-      "CREDENTIALS_ENCRYPTION_KEY は32バイトのbase64値にしてください。",
-    );
+    throw new Error("server.credentialsEncryptionKeyInvalid");
   const iv = randomBytes(12);
   const cipher = createCipheriv("aes-256-gcm", key, iv);
   const ciphertext = Buffer.concat([
@@ -62,14 +59,10 @@ export function encryptCredential(credential: string) {
 export function decryptCredential(value: string) {
   const keyValue = process.env.CREDENTIALS_ENCRYPTION_KEY;
   if (!keyValue)
-    throw new Error(
-      "認証情報を復号するには CREDENTIALS_ENCRYPTION_KEY を設定してください。",
-    );
+    throw new Error("server.credentialsEncryptionKeyRequiredForDecrypt");
   const key = Buffer.from(keyValue, "base64");
   if (key.length !== 32)
-    throw new Error(
-      "CREDENTIALS_ENCRYPTION_KEY は32バイトのbase64値にしてください。",
-    );
+    throw new Error("server.credentialsEncryptionKeyInvalid");
   const [ivValue, authTagValue, ciphertextValue] = value.split(".");
   if (!ivValue || !authTagValue || ciphertextValue === undefined)
     throw new Error("server.savedCredentialsUnreadable");
@@ -134,43 +127,46 @@ export function decryptMcpHeaders(value: unknown): Record<string, string> {
 }
 
 export type ConnectionTestResult =
-  | { ok: true; intent: "test"; message: string }
-  | { ok: false; intent: "test"; error: string };
+  | { ok: true; intent: "test"; message: string | TranslationMessage }
+  | { ok: false; intent: "test"; error: string | TranslationMessage };
 
-export function testSuccess(message: string): ConnectionTestResult {
+export function testSuccess(
+  message: string | TranslationMessage,
+): ConnectionTestResult {
   return { ok: true, intent: "test", message };
 }
 
-export function testFailure(error: string): ConnectionTestResult {
+export function testFailure(
+  error: string | TranslationMessage,
+): ConnectionTestResult {
   return { ok: false, intent: "test", error };
 }
 
 export function parseStringMap(
   value: FormDataEntryValue | null,
-  label: string,
 ) {
   let parsed: unknown;
   try {
     parsed = JSON.parse(String(value ?? "{}").trim() || "{}");
   } catch {
-    throw new Error(`${label}のJSON形式を確認してください。`);
+    throw new Error("server.invalidJson");
   }
   if (!parsed || typeof parsed !== "object" || Array.isArray(parsed))
-    throw new Error(`${label}はキー・値のオブジェクトで入力してください。`);
+    throw new Error("server.expectedKeyValueObject");
   if (Object.values(parsed).some((item) => typeof item !== "string"))
-    throw new Error(`${label}の値は文字列で入力してください。`);
+    throw new Error("server.expectedStringValue");
   return parsed as Record<string, string>;
 }
 
-export function parseObject(value: FormDataEntryValue | null, label: string) {
+export function parseObject(value: FormDataEntryValue | null) {
   let parsed: unknown;
   try {
     parsed = JSON.parse(String(value ?? "{}").trim() || "{}");
   } catch {
-    throw new Error(`${label}のJSON形式を確認してください。`);
+    throw new Error("server.invalidJson");
   }
   if (!parsed || typeof parsed !== "object" || Array.isArray(parsed))
-    throw new Error(`${label}にはオブジェクトを入力してください。`);
+    throw new Error("server.expectedObject");
   return parsed as Record<string, unknown>;
 }
 
@@ -178,14 +174,14 @@ export function generatePublicId() {
   return randomBytes(16).toString("base64url");
 }
 
-export function parseStringList(value: string, label: string) {
+export function parseStringList(value: string) {
   let parsed: unknown;
   try {
     parsed = JSON.parse(value || "[]");
   } catch {
-    throw new Error(`${label}はJSON配列で入力してください。`);
+    throw new Error("server.expectedJsonArray");
   }
   if (!Array.isArray(parsed) || parsed.some((item) => typeof item !== "string"))
-    throw new Error(`${label}は文字列のJSON配列で入力してください。`);
+    throw new Error("server.expectedStringJsonArray");
   return [...new Set(parsed.map((item) => item.trim()).filter(Boolean))];
 }

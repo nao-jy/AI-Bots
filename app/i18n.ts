@@ -1,4 +1,4 @@
-import i18n from "i18next";
+import i18next, { type i18n as I18nInstance } from "i18next";
 import { initReactI18next } from "react-i18next";
 
 export const resources = {
@@ -26,6 +26,11 @@ export const resources = {
         menuToggle: "メニューを開閉",
       },
       actions: { logout: "ログアウト" },
+      language: {
+        label: "言語",
+        japanese: "日本語",
+        english: "English",
+      },
       sandboxScopes: {
         turn: "ターン",
         thread: "スレッド",
@@ -638,20 +643,17 @@ export const resources = {
       },
 
       server: {
-        config: "コンフィグ",
         connectionTestSucceeded: "{{0}}への接続と認証に成功しました。",
         adapterConnectionFailed: "アダプタへの接続に失敗しました。",
         endpointRequired: "エンドポイントを入力してください。",
         transportTestUnsupported:
           "このトランスポートの接続テストには対応していません。",
-        httpHeaders: "HTTPヘッダー",
         mcpConnectionTestSucceeded:
           "{{0}}とのMCP接続に成功しました。({{1}}個のツールが利用可能)",
         mcpServer: "MCPサーバー",
         mcpConnectionFailed: "MCPサーバーへの接続に失敗しました。",
         providerAndModelRequired: "プロバイダーとモデルIDを入力してください。",
         selectedProviderNotFound: "選択したプロバイダーが見つかりません。",
-        options: "オプション",
         modelsUnavailable: "モデルが取得できませんでした。",
         modelConnectionSucceeded: "{{0}}のモデル「{{1}}」に接続できました。",
         agent: "エージェント",
@@ -663,20 +665,17 @@ export const resources = {
         credentialsEncryptionKeyRequiredForDecrypt:
           "認証情報を復号するには CREDENTIALS_ENCRYPTION_KEY を設定してください。",
         savedCredentialsUnreadable: "保存された認証情報を読み込めません。",
-        invalidJson: "{{0}}のJSON形式を確認してください。",
-        expectedKeyValueObject:
-          "{{0}}はキー・値のオブジェクトで入力してください。",
-        expectedStringValue: "{{0}}の値は文字列で入力してください。",
-        expectedObject: "{{0}}にはオブジェクトを入力してください。",
-        expectedJsonArray: "{{0}}はJSON配列で入力してください。",
-        expectedStringJsonArray: "{{0}}は文字列のJSON配列で入力してください。",
+        invalidJson: "JSON形式を確認してください。",
+        expectedKeyValueObject: "キー・値のオブジェクトで入力してください。",
+        expectedStringValue: "値は文字列で入力してください。",
+        expectedObject: "オブジェクトを入力してください。",
+        expectedJsonArray: "JSON配列で入力してください。",
+        expectedStringJsonArray: "文字列のJSON配列で入力してください。",
         runtimeThreadContext:
           "[実行時補足情報]\n現在のスレッドID: {{0}}\n現在日時 (UTC, ISO 8601): {{1}}",
         schedule: "スケジュール",
         credentialsEncryptionKeyRequired:
           "CREDENTIALS_ENCRYPTION_KEYを設定してください。",
-        credentialsEncryptionKeyInvalidForStorage:
-          "CREDENTIALS_ENCRYPTION_KEYは32バイトのbase64値にしてください。",
         oauthBaseUrlRequired: "OAUTH_BASE_URLを設定してください。",
         oauthBaseUrlMustBeHttpsOrigin:
           "OAUTH_BASE_URLにはパスなしのHTTPSオリジンを設定してください。",
@@ -724,7 +723,6 @@ export const resources = {
           "ToolSet context は有効な配列で入力してください。",
         unavailableToolsetNames:
           "利用できないToolSet名が含まれています。利用可能: {{0}}",
-        none: "なし",
         botNameRequired: "ボット名を入力してください。",
         agentRequired: "エージェントを選択してください。",
         selectedAgentNotFound: "選択したエージェントが見つかりません。",
@@ -755,7 +753,6 @@ export const resources = {
           "OAuth更新エンドポイントにはHTTPまたはHTTPSを指定してください。",
         refreshTokenRequiredToReconnect:
           "アクセストークンの有効期限が切れています。refresh tokenがないためOAuth認証を再接続してください。",
-        scopes: "スコープ",
         oauthClientFieldsRequired:
           "名前、クライアントID、認可エンドポイント、トークンエンドポイントを入力してください。",
         oauthEndpointsMustBeHttpUrls:
@@ -817,9 +814,7 @@ export const resources = {
         sandboxScopeRequired: "サンドボックスの適用範囲を選択してください。",
         sandboxEnvironmentVariablesMustBeStringObject:
           "環境変数は文字列のキー・値オブジェクトで入力してください。",
-        allowedDomains: "許可ドメイン",
         invalidInput: "入力値を確認してください。",
-        inactiveSuffix: " (停止中)",
         scheduleNameRequired: "スケジュール名を入力してください。",
         schedulePromptRequired: "プロンプトを入力してください。",
         invalidCronExpression: "Cron式を正しく入力してください。",
@@ -830,6 +825,8 @@ export const resources = {
         invalidBotAdapterPair:
           "選択したボットとアダプタの組み合わせが無効です。",
         scheduleNotFound: "スケジュールが見つかりません。",
+        scheduleTargetOptionActive: "{{0}} / {{1}}",
+        scheduleTargetOptionInactive: "{{0}} / {{1}} (停止中)",
         administrator: "管理者",
         regularUser: "一般ユーザー",
         verified: "検証済み",
@@ -889,6 +886,11 @@ export const resources = {
         googleDriveExistsDescription:
           "Googleドライブ上のファイルまたはフォルダの存在を確認します。",
         googleDriveExistsFileId: "存在を確認するファイルまたはフォルダのID",
+        googleDriveOAuthRequired:
+          "Googleドライブを使うにはOAuth認証情報を指定してください。",
+        googleDriveExpectedFile: "指定されたGoogleドライブ項目はファイルではありません。",
+        googleDriveExpectedBinaryContent:
+          "Googleドライブからファイルデータを取得できませんでした。",
         targetMonth: "対象年月（YYYY-MM）",
         employeeKey: "従業員検索結果に含まれる従業員識別キー",
         unselected: "未選択",
@@ -907,12 +909,47 @@ export const resources = {
           "指定従業員の対象月の日別スケジュールデータを取得します。先に従業員名検索を行い、employeeKeyを指定してください。",
         kingOfTimeLeaveTypesDescription:
           "King of Time に登録されている休暇区分コードと名称を一覧します。",
+        kingOfTimeApiRequestFailed:
+          "King of Time APIへのリクエストに失敗しました (HTTP {{0}}): {{1}}",
+        kingOfTimeApiInvalidJson:
+          "King of Time APIから不正なJSON応答が返されました (HTTP {{0}})。",
+        kingOfTimeUnexpectedEmployeeList:
+          "King of Time APIから予期しない従業員一覧が返されました。",
+        kingOfTimeEmployeeKeyMissing:
+          "King of Timeの従業員データに従業員識別キーがありません。",
+        kingOfTimeUnexpectedHolidayTypes:
+          "King of Time APIから予期しない休暇区分一覧が返されました。",
+        uploadFileToChatDescription: "ファイルハンドルからチャットにファイルを送信します。",
+        getFileHandleFromAttachmentDescription:
+          "メッセージの添付ファイルを参照するファイルハンドルを取得します。",
+        fileHandle: "ファイルハンドル",
+        filenameForUpload: "アップロードするファイル名",
+        fileNotRegistered: "ファイルハンドルが見つかりません。",
+        attachmentNotFound: "指定された添付ファイルが見つかりません。",
+        attachmentFetchFailed: "添付ファイルを取得できませんでした。",
+        httpOrHttpsOnly: "URLにはHTTPまたはHTTPSを指定してください。",
+        privateAddressBlocked: "プライベートネットワークのアドレスには接続できません。",
+        webContentUri: "取得して解析するWebコンテンツのURL",
+        ocrLanguages: "OCRに使用する言語コード（例: eng）",
+        parseFileFromHandleDescription: "ファイルハンドルの内容を解析します。",
+        documentExtractionEmpty: "ファイルから文書を抽出できませんでした。",
+        documentExtractionFailed: "文書の抽出に失敗しました: {{0}}",
+        chatFileOperationFailed: "チャットのファイル操作に失敗しました: {{0}}",
+        webSearchServiceNotConfigured: "Web検索サービスが設定されていません。",
+        webSearchRequestFailed: "Web検索に失敗しました (HTTP {{0}})。",
         openDalServiceName: "OpenDALサービス名",
+        openDalServiceNameDescription:
+          "OpenDALサービス名を指定してください。利用可能なサービス一覧はOpenDALのドキュメントを参照してください。",
         openDalServiceConfig: "OpenDALサービスの設定",
+        openDalServiceConfigDescription:
+          "選択したサービスに必要な設定をキーと値の組で指定してください。",
         openDalRemoteFileTools: "汎用リモートファイルツール（OpenDAL）",
         openDalListPathDescription:
           "リモートファイルソースの指定したパス直下または配下のファイル・ディレクトリを一覧します。",
         openDalPathToList: "一覧を取得するパス",
+        openDalRecursive: "配下を再帰的に一覧するか",
+        openDalMaxResults: "取得する最大件数（1〜1000）",
+        openDalPageToken: "このパスより後から一覧を続ける場合の開始位置",
         openDalFileHandleDescription:
           "リモートファイルのハンドルを取得します。",
         openDalFilePathForHandle: "ハンドルを作成するファイルのパス",
@@ -922,6 +959,9 @@ export const resources = {
         openDalPathExistsDescription:
           "リモートソース上のパスが存在するかを確認します。",
         openDalPathToCheck: "確認するパス",
+        openDalExpectedFile: "指定されたリモート項目はファイルではありません。",
+        openDalExpectedBinaryContent:
+          "リモートソースからファイルデータを取得できませんでした。",
         oauthAuthentication: "OAuth認証情報",
         initCommandFailed:
           "生成時特権コマンドが失敗しました (exit code {{0}}): {{1}}",
@@ -937,7 +977,7 @@ export const resources = {
           "コマンド実行用のネットワークポリシーを設定できませんでした (HTTP {{0}})",
         networkPolicyRestoreFailed:
           "元のネットワークポリシーを復元できませんでした (HTTP {{0}})",
-        invalidEnvironmentVariableName: "無効な環境変数名です: {{0}}",
+        invalidEnvironmentVariableName: "無効な環境変数名が含まれています。",
         shellNetworkPolicyUpdateFailed:
           "シェル用のネットワークポリシーを設定できませんでした (HTTP {{0}})",
         ptySessionCreateFailed:
@@ -959,7 +999,135 @@ export const resources = {
       },
     },
   },
+  en: {
+    translation: {
+      navigation: {
+        dashboard: "Dashboard",
+        chatbots: "Chatbots",
+        adapters: "Adapters",
+        providers: "Providers",
+        oauthClients: "OAuth clients",
+        oauthAuthentications: "OAuth credentials",
+        agents: "Agents",
+        mcpServers: "MCP servers",
+        schedules: "Schedules",
+        users: "Users",
+        rateLimits: "Rate limits",
+        sandboxes: "Sandboxes",
+        settings: "Settings",
+        login: "Login",
+        logout: "Log out",
+        page: "Page",
+        management: "Management",
+        entityManagement: "Entity management",
+        menuToggle: "Toggle menu",
+      },
+      actions: { logout: "Log out" },
+      language: {
+        label: "Language",
+        japanese: "日本語",
+        english: "English",
+      },
+      sandboxScopes: {
+        turn: "Turn",
+        thread: "Thread",
+        adapter: "Chat adapter",
+        bot: "Chatbot",
+        all: "Shared",
+      },
+      loading: {
+        destination: "Loading {{label}}",
+        logout: "Logging out",
+        processing: "Processing",
+        submitting: "Submitting",
+      },
+      errors: {
+        unexpected: "An unexpected error occurred.",
+        pageNotFound: "The requested page could not be found.",
+        title: "Error",
+        notFoundCode: "404",
+        fallbackTitle: "Something went wrong",
+      },
+      pages: {
+        login: {
+          documentTitle: "Log in | {{0}}",
+          workspaceTitle: "Log in to the {{0}} workspace",
+          loginInstructions: "Enter your email address and password.",
+          invalidCredentials: "The email address or password is incorrect.",
+          firstAccountRequirements:
+            "The first account needs a display name and a password of at least 12 characters.",
+          createFirstAccount: "Create the first account",
+          welcomeBack: "Welcome back",
+          firstAccountIntroduction:
+            "Create the first account to get your workspace started.",
+          loginIntroduction: "Log in to open your workspace.",
+          displayNameLabel: "Display name",
+          emailLabel: "Email address",
+          emailPlaceholder: "name@company.com",
+          passwordMinimumLabel: "Password (at least 12 characters)",
+          passwordLabel: "Password",
+          forgotPasswordLink: "Forgot your password?",
+          createAccount: "Create account",
+          submitLogin: "Log in",
+        },
+      },
+    },
+  },
 } as const;
+
+export type Locale = "ja" | "en";
+export const DEFAULT_LOCALE: Locale = "ja";
+export const LOCALE_COOKIE = "app_locale";
+
+export function isLocale(value: string): value is Locale {
+  return value === "ja" || value === "en";
+}
+
+export function getLocaleFromCookie(cookieHeader: string | null): Locale {
+  const localeCookie = cookieHeader
+    ?.split(";")
+    .map((part) => part.trim())
+    .find((part) => part.startsWith(`${LOCALE_COOKIE}=`));
+  const value = localeCookie?.slice(LOCALE_COOKIE.length + 1);
+  if (!value) return DEFAULT_LOCALE;
+  try {
+    const decoded = decodeURIComponent(value);
+    return isLocale(decoded) ? decoded : DEFAULT_LOCALE;
+  } catch {
+    return DEFAULT_LOCALE;
+  }
+}
+
+function getInitialLocale(): Locale {
+  return typeof document === "undefined"
+    ? DEFAULT_LOCALE
+    : getLocaleFromCookie(document.cookie);
+}
+
+function initializeInstance(instance: I18nInstance, locale: Locale) {
+  instance.use(initReactI18next);
+  void instance.init({
+    resources,
+    lng: locale,
+    fallbackLng: DEFAULT_LOCALE,
+    defaultNS: "translation",
+    interpolation: { escapeValue: false },
+    react: { useSuspense: false },
+  });
+}
+
+export async function createRequestI18n(locale: Locale): Promise<I18nInstance> {
+  const instance = i18next.createInstance();
+  await instance.init({
+    resources,
+    lng: locale,
+    fallbackLng: DEFAULT_LOCALE,
+    defaultNS: "translation",
+    interpolation: { escapeValue: false },
+    react: { useSuspense: false },
+  });
+  return instance;
+}
 
 type Join<K extends string, V> = V extends string ? `${K}.${V}` : never;
 export type TranslationKey<T = typeof resources.ja.translation> = {
@@ -985,25 +1153,54 @@ export function localizedMessage(
   return { key, values };
 }
 
-i18n.use(initReactI18next).init({
-  resources,
-  lng: "ja",
-  fallbackLng: "ja",
-  defaultNS: "translation",
-  interpolation: { escapeValue: false },
-  react: { useSuspense: false },
-});
+const i18n = i18next.createInstance();
+if (typeof document !== "undefined") initializeInstance(i18n, getInitialLocale());
+
+type ServerTranslator = (
+  key: TranslationKey,
+  values?: Record<string, string | number>,
+) => string;
+
+function isKnownKey(value: string): value is TranslationKey {
+  let current: unknown = resources.ja.translation;
+  for (const part of value.split(".")) {
+    if (!current || typeof current !== "object") return false;
+    current = (current as Record<string, unknown>)[part];
+  }
+  return typeof current === "string";
+}
+
+function fallbackTranslate(
+  key: TranslationKey,
+  values?: Record<string, string | number>,
+) {
+  let current: unknown = resources.ja.translation;
+  for (const part of key.split(".")) {
+    if (!current || typeof current !== "object") return key;
+    current = (current as Record<string, unknown>)[part];
+  }
+  if (typeof current !== "string") return key;
+  return current.replace(/{{\s*([^{}]+?)\s*}}/g, (match, name: string) =>
+    String(values?.[name] ?? match),
+  );
+}
 
 export function t(
   key: TranslationKey,
   values?: Record<string, string | number>,
 ): string {
+  if (typeof document === "undefined") {
+    const serverTranslator = (
+      globalThis as typeof globalThis & { __appServerTranslator?: ServerTranslator }
+    ).__appServerTranslator;
+    return serverTranslator?.(key, values) ?? fallbackTranslate(key, values);
+  }
   return i18n.t(key, values);
 }
 
 export function tMessage(message: string | TranslationMessage): string {
-  if (typeof message !== "string") return i18n.t(message.key, message.values);
-  return i18n.exists(message) ? i18n.t(message) : message;
+  if (typeof message !== "string") return t(message.key, message.values);
+  return isKnownKey(message) ? t(message) : message;
 }
 
 export default i18n;
