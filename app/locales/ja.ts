@@ -144,7 +144,6 @@ export const ja = {
       memoryConfigNouseOption: "使用しない",
       memoryConfigThreadOption: "スレッドごとに保存",
       memoryConfigBotOption: "ボット全体で共有",
-      memoryConfigHelp: "ボット全体で共有すると、接続先やスレッドをまたいで同じメモリを使用します。",
       noLimitOption: "指定しない",
       adaptersPlaceholder: "接続するアダプタを選択",
       sandboxPlaceholder: "利用するサンドボックスを選択",
@@ -348,7 +347,8 @@ export const ja = {
       invalidLinkMessage: "リンクが無効か、すでに使用されています。",
       formTitle: "新しいパスワードを設定",
       passwordHint: "必要な強度を満たすパスワードを入力してください。",
-      passwordValidationError: "パスワードが設定された強度条件を満たしていません。",
+      passwordValidationError:
+        "パスワードが設定された強度条件を満たしていません。",
       newPasswordLabel: "新しいパスワード",
       submit: "パスワードを再設定",
       backToLogin: "ログイン画面へ",
@@ -437,7 +437,8 @@ export const ja = {
       displayNamePlaceholder: "例：山田 花子",
       emailPlaceholder: "name@example.com",
       passwordLabel: "パスワード",
-      passwordHint: "作成時は必要な強度を満たすパスワードを入力。編集時は変更する場合のみ入力",
+      passwordHint:
+        "作成時は必要な強度を満たすパスワードを入力。編集時は変更する場合のみ入力",
       documentTitle: "ユーザー | {{0}}",
       notFound: "ユーザーが見つかりません。",
       invalidChanges: "変更内容を確認してください。",
@@ -940,7 +941,8 @@ export const ja = {
     userNotFound: "ユーザーが見つかりません。",
     displayNameAndValidEmailRequired:
       "ユーザー名と有効なメールアドレスを入力してください。",
-    passwordStrengthInsufficient: "パスワードが設定された強度条件を満たしていません。",
+    passwordStrengthInsufficient:
+      "パスワードが設定された強度条件を満たしていません。",
     cannotRevokeOwnAdmin: "自分の管理者権限は解除できません。",
     atLeastOneAdminRequired: "管理者は最低1人必要です。",
     cannotDeleteOwnAccount: "自分のアカウントは削除できません。",

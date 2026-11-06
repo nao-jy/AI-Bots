@@ -17,8 +17,7 @@ import { APP_NAME } from "~/const";
 
 const page: Omit<EntityPageDefinition, "records"> = {
   title: "pages.bots.title",
-  description:
-    "pages.bots.description",
+  description: "pages.bots.description",
   icon: "bots",
   tableFeatures: {
     subtitleKeys: ["description"],
@@ -37,11 +36,19 @@ const page: Omit<EntityPageDefinition, "records"> = {
       label: "pages.bots.webhookEndpointLabel",
       presentation: "webhook-count",
     },
-    { key: "status", label: "pages.bots.statusLabel", presentation: "status-toggle" },
+    {
+      key: "status",
+      label: "pages.bots.statusLabel",
+      presentation: "status-toggle",
+    },
     { key: "updated", label: "pages.bots.updatedLabel" },
   ],
   fields: [
-    { key: "name", label: "pages.bots.nameLabel", placeholder: "pages.bots.namePlaceholder" },
+    {
+      key: "name",
+      label: "pages.bots.nameLabel",
+      placeholder: "pages.bots.namePlaceholder",
+    },
     {
       key: "description",
       label: "pages.bots.descriptionLabel",
@@ -80,7 +87,6 @@ const page: Omit<EntityPageDefinition, "records"> = {
         { value: "thread", label: "pages.bots.memoryConfigThreadOption" },
         { value: "bot", label: "pages.bots.memoryConfigBotOption" },
       ],
-      help: { text: "pages.bots.memoryConfigHelp" },
     },
     {
       key: "agentId",
@@ -140,8 +146,7 @@ export async function action({ request }: Route.ActionArgs) {
     const slot = String(form.get("slot") ?? "");
     if (slot !== "first" && slot !== "second")
       return { ok: false, error: t("pages.bots.publicIdRegenerationRequired") };
-    return isUuid(id) &&
-      (await regenerateBotPublicIds(user, id, slot))
+    return isUuid(id) && (await regenerateBotPublicIds(user, id, slot))
       ? { ok: true }
       : { ok: false, error: t("pages.bots.notFound") };
   }

@@ -60,7 +60,8 @@ export const en = {
     },
     resourceGrants: {
       title: "Access for {{0}}",
-      description: "Grant a role on this resource to a user or group. When a user has multiple grants, their highest role applies.",
+      description:
+        "Grant a role on this resource to a user or group. When a user has multiple grants, their highest role applies.",
       manageAccess: "Manage access",
       manageAccessFor: "Manage access for {{0}}",
       principal: "Principal",
@@ -292,7 +293,8 @@ export const en = {
     },
   },
   server: {
-    duplicateGroupName: "A group with this name already exists in the organization.",
+    duplicateGroupName:
+      "A group with this name already exists in the organization.",
     invalidGrant: "The grant details are invalid.",
     resourceNotFound: "Resource not found.",
     connectionTestSucceeded: "Connected to and authenticated with {{0}}.",
@@ -725,7 +727,6 @@ export const en = {
       memoryConfigNouseOption: "Do not use memory",
       memoryConfigThreadOption: "Save per thread",
       memoryConfigBotOption: "Share across the bot",
-      memoryConfigHelp: "Bot-wide memory is shared across connected adapters and threads.",
       noLimitOption: "No limit",
       adaptersPlaceholder: "Select adapters to connect",
       sandboxPlaceholder: "Select a sandbox to use",
@@ -1039,7 +1040,8 @@ export const en = {
     },
     groups: {
       title: "Groups",
-      description: "Organize users into groups and grant resource access to a group.",
+      description:
+        "Organize users into groups and grant resource access to a group.",
       documentTitle: "Groups | {{0}}",
       deleteWarning: "Grants assigned to this group will also be deleted.",
       newGroupName: "New group name",
@@ -1048,7 +1050,8 @@ export const en = {
       createGroup: "Create group",
       renameGroup: "Rename",
       deleteGroup: "Delete group",
-      deleteConfirmation: "Delete “{{0}}”? Grants assigned to this group will also be removed.",
+      deleteConfirmation:
+        "Delete “{{0}}”? Grants assigned to this group will also be removed.",
       memberCount: "{{0}} members",
       members: "Members",
       memberName: "Name",
