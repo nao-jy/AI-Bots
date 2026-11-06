@@ -36,12 +36,15 @@ import { LanguageSwitcher } from "~/components/language-switcher";
 export function meta() {
   return [
     { title: t("pages.login.documentTitle", { 0: APP_NAME }) },
-    { name: "description", content: t("pages.login.workspaceTitle", { 0: APP_NAME }) },
+    {
+      name: "description",
+      content: t("pages.login.workspaceTitle", { 0: APP_NAME }),
+    },
   ];
 }
 
 export async function loader({ request }: Route.LoaderArgs) {
-  if (await getSessionUser(request)) throw redirect("/bots");
+  if (await getSessionUser(request)) throw redirect("/");
   return {
     setupRequired: !(await hasUsers()),
     passwordResetEnabled: isPasswordResetEnabled(),
@@ -57,10 +60,7 @@ export async function action({ request }: Route.ActionArgs) {
   const name = String(form.get("name") ?? "").trim();
   if (!/^\S+@\S+\.\S+$/.test(email) || !password) {
     logAuditEvent("auth.login.rejected", "account", email || null);
-    return data(
-      { error: t("pages.login.loginInstructions") },
-      { status: 400 },
-    );
+    return data({ error: t("pages.login.loginInstructions") }, { status: 400 });
   }
 
   let user = await findUserByEmail(email);
@@ -90,8 +90,7 @@ export async function action({ request }: Route.ActionArgs) {
     } catch {
       return data(
         {
-          error:
-            t("pages.login.firstAccountCreationFailed"),
+          error: t("pages.login.firstAccountCreationFailed"),
         },
         { status: 400 },
       );
@@ -109,8 +108,7 @@ export async function action({ request }: Route.ActionArgs) {
         );
         return data(
           {
-            error:
-              t("pages.login.verificationEmailSendFailedAfterSignup"),
+            error: t("pages.login.verificationEmailSendFailedAfterSignup"),
           },
           { status: 502 },
         );
@@ -122,8 +120,7 @@ export async function action({ request }: Route.ActionArgs) {
       logAuditEvent("auth.login.rejected", "user", user.id);
       return data(
         {
-          error:
-            t("pages.login.loginAttemptsLocked"),
+          error: t("pages.login.loginAttemptsLocked"),
         },
         { status: 423 },
       );
@@ -146,8 +143,7 @@ export async function action({ request }: Route.ActionArgs) {
       logAuditEvent("auth.login.rejected", "user", user.id);
       return data(
         {
-          error:
-            t("pages.login.loginAttemptsLocked"),
+          error: t("pages.login.loginAttemptsLocked"),
         },
         { status: 423 },
       );
@@ -170,7 +166,7 @@ export async function action({ request }: Route.ActionArgs) {
 
   const session = await createSession(user.id);
   logAuditEvent("auth.login.succeeded", "user", user.id, user.id);
-  return redirect("/bots", {
+  return redirect("/", {
     headers: {
       "Set-Cookie": sessionCookie(session.token, session.expiresAt),
     },
@@ -197,7 +193,11 @@ export default function Login({ loaderData }: Route.ComponentProps) {
           <div className="login-welcome-mark">
             <img src="/logo.png" alt={APP_NAME} />
           </div>
-          <h1>{setupRequired ? t("pages.login.createFirstAccount") : t("pages.login.welcomeBack")}</h1>
+          <h1>
+            {setupRequired
+              ? t("pages.login.createFirstAccount")
+              : t("pages.login.welcomeBack")}
+          </h1>
           <p className="login-subtitle">
             {setupRequired
               ? t("pages.login.firstAccountIntroduction")
@@ -222,7 +222,11 @@ export default function Login({ loaderData }: Route.ComponentProps) {
             />
             <PasswordInput
               name="password"
-              label={setupRequired ? t("pages.login.passwordMinimumLabel") : t("pages.login.passwordLabel")}
+              label={
+                setupRequired
+                  ? t("pages.login.passwordMinimumLabel")
+                  : t("pages.login.passwordLabel")
+              }
               autoComplete={setupRequired ? "new-password" : "current-password"}
               minLength={setupRequired ? 12 : undefined}
               required
@@ -230,14 +234,17 @@ export default function Login({ loaderData }: Route.ComponentProps) {
             {actionData?.error && <Alert color="red">{actionData.error}</Alert>}
             {loaderData.passwordResetEnabled && !setupRequired && (
               <Link to="/forgot-password" className="forgot-password-link">
-                {t("pages.login.forgotPasswordLink")}</Link>
+                {t("pages.login.forgotPasswordLink")}
+              </Link>
             )}
             <Button
               type="submit"
               fullWidth
               rightSection={<ArrowRightIcon size={16} aria-hidden="true" />}
             >
-              {setupRequired ? t("pages.login.createAccount") : t("pages.login.submitLogin")}
+              {setupRequired
+                ? t("pages.login.createAccount")
+                : t("pages.login.submitLogin")}
             </Button>
           </Form>
         </section>

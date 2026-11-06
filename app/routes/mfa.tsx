@@ -1,5 +1,12 @@
 import { t } from "~/i18n";
-import { Alert, Button, Image, PasswordInput, Text, Title } from "@mantine/core";
+import {
+  Alert,
+  Button,
+  Image,
+  PasswordInput,
+  Text,
+  Title,
+} from "@mantine/core";
 import QRCode from "qrcode";
 import { data, Form, redirect, useActionData } from "react-router";
 import type { Route } from "./+types/mfa";
@@ -28,11 +35,7 @@ export async function loader({ request }: Route.LoaderArgs) {
   const challenge = await getMfaChallenge(request);
   if (!challenge) {
     const headers = new Headers({ "Cache-Control": "no-store" });
-    appendSetCookies(
-      headers,
-      clearSessionCookie(),
-      ...clearMfaSetupCookies(),
-    );
+    appendSetCookies(headers, clearSessionCookie(), ...clearMfaSetupCookies());
     throw redirect("/login", { headers });
   }
 
@@ -59,11 +62,7 @@ export async function action({ request }: Route.ActionArgs) {
   const challenge = await getMfaChallenge(request);
   if (!challenge) {
     const headers = new Headers({ "Cache-Control": "no-store" });
-    appendSetCookies(
-      headers,
-      clearSessionCookie(),
-      ...clearMfaSetupCookies(),
-    );
+    appendSetCookies(headers, clearSessionCookie(), ...clearMfaSetupCookies());
     return data(
       { error: t("pages.mfa.expiredSession") },
       { status: 401, headers },
@@ -111,7 +110,7 @@ export async function action({ request }: Route.ActionArgs) {
     sessionCookie(token, completed.expiresAt),
     ...clearMfaSetupCookies(),
   );
-  return redirect("/bots", { headers });
+  return redirect("/", { headers });
 }
 
 export default function Mfa({ loaderData }: Route.ComponentProps) {
@@ -124,7 +123,9 @@ export default function Mfa({ loaderData }: Route.ComponentProps) {
         <section className="login-card">
           <div className="eyebrow">{APP_NAME}</div>
           <Title order={1}>
-            {isSetup ? t("pages.mfa.setupTitle") : t("pages.mfa.challengeTitle")}
+            {isSetup
+              ? t("pages.mfa.setupTitle")
+              : t("pages.mfa.challengeTitle")}
           </Title>
           <Text className="login-subtitle">
             {isSetup
@@ -155,7 +156,9 @@ export default function Mfa({ loaderData }: Route.ComponentProps) {
               autoFocus
             />
             <Button type="submit" fullWidth>
-              {isSetup ? t("pages.mfa.setupAndLogin") : t("pages.mfa.verifyAndLogin")}
+              {isSetup
+                ? t("pages.mfa.setupAndLogin")
+                : t("pages.mfa.verifyAndLogin")}
             </Button>
           </Form>
         </section>

@@ -5,9 +5,7 @@ import { Form, Link, NavLink, Outlet, useLocation } from "react-router";
 import type { Route } from "./+types/layout";
 import { requireUser } from "../.server/auth";
 import { APP_NAME } from "~/const";
-import {
-  type NavigationLabelKey,
-} from "~/i18n";
+import { type NavigationLabelKey } from "~/i18n";
 import { getLocaleFromCookie } from "~/i18n";
 import { LanguageSwitcher } from "~/components/language-switcher";
 import { useTranslation } from "react-i18next";
@@ -26,7 +24,11 @@ const items: {
   { path: "/adapters", id: "adapters", labelKey: "navigation.adapters" },
   { path: "/providers", id: "providers", labelKey: "navigation.providers" },
   { path: "/agents", id: "agents", labelKey: "navigation.agents" },
-  { path: "/rate-limits", id: "rate_limits", labelKey: "navigation.rateLimits" },
+  {
+    path: "/rate-limits",
+    id: "rate_limits",
+    labelKey: "navigation.rateLimits",
+  },
   { path: "/sandboxes", id: "sandboxes", labelKey: "navigation.sandboxes" },
   { path: "/schedules", id: "schedules", labelKey: "navigation.schedules" },
   { path: "/mcp-servers", id: "mcp", labelKey: "navigation.mcpServers" },
@@ -87,17 +89,14 @@ export default function Workspace({ loaderData }: Route.ComponentProps) {
       transitionDuration={180}
     >
       <AppShell.Navbar className="workspace-navbar">
-        <Link to="/bots" className="brand" onClick={closeMobileNav}>
+        <Link to="/" className="brand" onClick={closeMobileNav}>
           <span className="brand-mark">
             <img src="/logo.png" alt={APP_NAME} />
           </span>
         </Link>
 
         <div className="nav-label">{t("navigation.management")}</div>
-        <nav
-          className="side-nav"
-          aria-label={t("navigation.entityManagement")}
-        >
+        <nav className="side-nav" aria-label={t("navigation.entityManagement")}>
           {loaderData.items.map((item) => (
             <NavLink
               key={item.id}
@@ -129,9 +128,7 @@ export default function Workspace({ loaderData }: Route.ComponentProps) {
               .toUpperCase()}
           </Avatar>
           <div className="profile-meta">
-            <strong>
-              {loaderData.user.name ?? t("navigation.users")}
-            </strong>
+            <strong>{loaderData.user.name ?? t("navigation.users")}</strong>
             <span>{loaderData.user.email}</span>
           </div>
           <span className="profile-menu">
