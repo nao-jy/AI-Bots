@@ -41,29 +41,29 @@ export function PasswordStrengthInput({
 
   return (
     <>
-      <PasswordInput {...props} onChange={(event) => setPassword(event.currentTarget.value)} />
+      <PasswordInput
+        {...props}
+        onChange={(event) => setPassword(event.currentTarget.value)}
+      />
       {(score !== null || minimumStrength > 0) && (
         <div aria-live="polite" aria-atomic="true">
-          {score !== null && (
-            <Text size="xs" mt={4}>
-              {t("components.passwordStrength.label")}: {levels[score]}
-            </Text>
-          )}
-          <Text
-            size="xs"
-            c={score !== null && score < minimumStrength ? "red" : "dimmed"}
-          >
+          <Text size="xs" c={"dimmed"} mt={4}>
             {t("components.passwordStrength.minimum", {
               strength: levels[minimumStrength],
             })}
           </Text>
           {score !== null && (
-            <Progress
-              value={((score + 1) / 5) * 100}
-              color={score < 2 ? "red" : score < 4 ? "yellow" : "green"}
-              size="sm"
-              aria-label={`${t("components.passwordStrength.label")}: ${levels[score]}`}
-            />
+            <>
+              <Text size="xs" mt={4}>
+                {t("components.passwordStrength.label")}: {levels[score]}
+              </Text>
+              <Progress
+                value={((score + 1) / 5) * 100}
+                color={score < 2 ? "red" : score < 4 ? "yellow" : "green"}
+                size="sm"
+                aria-label={`${t("components.passwordStrength.label")}: ${levels[score]}`}
+              />
+            </>
           )}
         </div>
       )}
