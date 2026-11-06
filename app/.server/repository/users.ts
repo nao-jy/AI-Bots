@@ -120,10 +120,14 @@ export async function listUsers(
       name: user.name ?? "",
       email: user.email,
       isAdmin: user.isAdmin ? "server.administrator" : "server.regularUser",
+      emailVerified: user.emailVerified,
       emailVerification: user.emailVerified ? "server.verified" : "server.unverified",
+      mfaConfigured: Boolean(user.mfaSecret),
       mfaStatus: user.mfaSecret ? "server.configured" : "server.notConfigured",
+      loginLocked: user.loginAttempts >= maxLoginAttempts,
       loginLockStatus:
         user.loginAttempts >= maxLoginAttempts ? "server.locked" : "—",
+      loginActive: active,
       loginStatus: active ? "server.loggedIn" : "server.loggedOut",
       lastLogin: sessions[0] ? timestamp(sessions[0].createdAt) : "—",
     });

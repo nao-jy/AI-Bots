@@ -1,4 +1,5 @@
-import { createResendEmailProvider } from "./resend";
+import { appLogger } from "~/.server/logger/app-logger";
+import { createSMTPRelayEmailProvider } from "./smtp-relay";
 
 export type EmailVerificationMessage = {
   to: string;
@@ -18,6 +19,23 @@ export interface EmailProvider {
 }
 
 export function getEmailProvider(): EmailProvider | null {
-  const apiKey = process.env.RESEND_API_KEY?.trim();
-  return apiKey ? createResendEmailProvider(apiKey) : null;
+  try {
+    const host = process.env.SMTP_RELAY_HOST!;
+    const port = Number(process.env.SMTP_RELAY_PORT!);
+    const secure = process.env.SMTP_RELAY_SECURE?.toLowerCase() === "true";
+    const user = process.env.SMTP_RELAY_USER!;
+    const pass = process.env.SMTP_RELAY_PASS!;
+    const domainFrom = process.env.SMTP_RELAY_DOMAIN_FROM!;
+    return createSMTPRelayEmailProvider(
+      host,
+      port,
+      secure,
+      user,
+      pass,
+      domainFrom,
+    );
+  } catch (error) {
+    appLogger.error(error);
+  }
+  return null;
 }

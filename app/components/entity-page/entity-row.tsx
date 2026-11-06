@@ -47,7 +47,11 @@ export function EntityRow({
   onDeleteInstance: (instanceId: string) => void;
 }) {
   const cannotDelete = record.id === page.protectedRecordId;
-  const recordName = record[page.columns[0].key];
+  const recordNameValue = record[page.columns[0].key];
+  const recordName =
+    typeof recordNameValue === "boolean"
+      ? String(recordNameValue)
+      : recordNameValue;
   const grantRecordName = String(
     record.name ?? record.targetLabel ?? recordName ?? record.id,
   );
@@ -56,7 +60,10 @@ export function EntityRow({
   const supportsGroupMembers = page.tableFeatures?.groupMembers ?? false;
   const supportsActions = page.tableFeatures?.expandableActions ?? false;
   const hasExpandedContent =
-    supportsPublicIds || supportsSandboxShell || supportsActions || supportsGroupMembers;
+    supportsPublicIds ||
+    supportsSandboxShell ||
+    supportsActions ||
+    supportsGroupMembers;
   const supportsEmailVerification =
     page.tableFeatures?.emailVerification ?? false;
   const supportsLoginUnlock = page.tableFeatures?.loginUnlock ?? false;
@@ -67,7 +74,7 @@ export function EntityRow({
     !supportsResourceGrants || String(record.canDelete) === "true";
   const canManageGrants = String(record.canManageGrants) === "true";
   const instances: PersistentInstance[] = parsePersistentInstances(
-    record.instances,
+    String(record.instances ?? "[]"),
   );
   const [expanded, setExpanded] = useState(false);
   const subtitle = page.tableFeatures?.subtitleKeys
@@ -82,27 +89,26 @@ export function EntityRow({
           color="orange"
           size="xs"
           leftSection={<SignOutIcon size={15} aria-hidden="true" />}
-          disabled={
-            cannotDelete || record.loginStatus !== "ログイン中"
-          }
+          disabled={cannotDelete || record.loginActive !== true}
           onClick={onForceLogout}
         >
-          {t("components.entityPage.entityRow.forceLogout")}</Button>
+          {t("components.entityPage.entityRow.forceLogout")}
+        </Button>
       )}
-      {supportsEmailVerification &&
-        record.emailVerification !== "検証済み" && (
-          <EmailVerificationAction
-            recordId={record.id}
-            recordName={String(recordName ?? "")}
-          />
-        )}
-      {page.tableFeatures?.mfaReset && record.mfaStatus === "設定済み" && (
+      {supportsEmailVerification && (
+        <EmailVerificationAction
+          recordId={record.id}
+          recordName={String(recordName ?? "")}
+          emailVerified={record.emailVerified === true}
+        />
+      )}
+      {page.tableFeatures?.mfaReset && record.mfaConfigured === true && (
         <MfaResetAction
           recordId={record.id}
           recordName={String(recordName ?? "")}
         />
       )}
-      {supportsLoginUnlock && record.loginLockStatus === "ロック中" && (
+      {supportsLoginUnlock && record.loginLocked === true && (
         <LoginUnlockAction
           recordId={record.id}
           recordName={String(recordName ?? "")}
@@ -116,7 +122,9 @@ export function EntityRow({
           <ActionIcon
             variant="subtle"
             color="violet"
-            aria-label={t("components.resourceGrants.manageAccessFor", { 0: grantRecordName })}
+            aria-label={t("components.resourceGrants.manageAccessFor", {
+              0: grantRecordName,
+            })}
             onClick={onManageGrants}
           >
             <ShareNetworkIcon size={16} aria-hidden="true" />
@@ -128,7 +136,7 @@ export function EntityRow({
           label={
             cannotDelete
               ? t("components.entityPage.entityRow.cannotForceLogoutSelf")
-              : record.loginStatus !== "ログイン中"
+              : record.loginActive !== true
                 ? t("components.entityPage.entityRow.userNotLoggedIn")
                 : t("components.entityPage.entityRow.endAllSessions")
           }
@@ -137,10 +145,11 @@ export function EntityRow({
             <ActionIcon
               variant="subtle"
               color="orange"
-              aria-label={t("components.entityPage.entityRow.forceLogoutRecord", { 0: recordName })}
-              disabled={
-                cannotDelete || record.loginStatus !== "ログイン中"
-              }
+              aria-label={t(
+                "components.entityPage.entityRow.forceLogoutRecord",
+                { 0: recordName },
+              )}
+              disabled={cannotDelete || record.loginActive !== true}
               onClick={onForceLogout}
             >
               <SignOutIcon size={16} aria-hidden="true" />
@@ -148,20 +157,20 @@ export function EntityRow({
           </span>
         </Tooltip>
       )}
-      {supportsEmailVerification &&
-        record.emailVerification !== "検証済み" && (
-          <EmailVerificationAction
-            recordId={record.id}
-            recordName={String(recordName ?? "")}
-          />
-        )}
-      {page.tableFeatures?.mfaReset && record.mfaStatus === "設定済み" && (
+      {supportsEmailVerification && (
+        <EmailVerificationAction
+          recordId={record.id}
+          recordName={String(recordName ?? "")}
+          emailVerified={record.emailVerified === true}
+        />
+      )}
+      {page.tableFeatures?.mfaReset && record.mfaConfigured === true && (
         <MfaResetAction
           recordId={record.id}
           recordName={String(recordName ?? "")}
         />
       )}
-      {supportsLoginUnlock && record.loginLockStatus === "ロック中" && (
+      {supportsLoginUnlock && record.loginLocked === true && (
         <LoginUnlockAction
           recordId={record.id}
           recordName={String(recordName ?? "")}
@@ -169,12 +178,16 @@ export function EntityRow({
       )}
       {canUpdate && (
         <Tooltip
-          label={t("components.entityPage.entityRow.editRecord", { 0: recordName })}
+          label={t("components.entityPage.entityRow.editRecord", {
+            0: recordName,
+          })}
         >
           <ActionIcon
             variant="subtle"
             color="gray"
-            aria-label={t("components.entityPage.entityRow.editRecord", { 0: recordName })}
+            aria-label={t("components.entityPage.entityRow.editRecord", {
+              0: recordName,
+            })}
             onClick={onEdit}
           >
             <PencilSimpleIcon size={16} aria-hidden="true" />
@@ -186,7 +199,9 @@ export function EntityRow({
           label={
             cannotDelete
               ? t("components.entityPage.entityRow.cannotDeleteSelf")
-              : t("components.entityPage.entityRow.deleteRecord", { 0: recordName })
+              : t("components.entityPage.entityRow.deleteRecord", {
+                  0: recordName,
+                })
           }
         >
           <span style={{ display: "inline-flex" }}>
@@ -196,7 +211,9 @@ export function EntityRow({
               aria-label={
                 cannotDelete
                   ? t("components.entityPage.entityRow.cannotDeleteSelf")
-                  : t("components.entityPage.entityRow.deleteRecord", { 0: recordName })
+                  : t("components.entityPage.entityRow.deleteRecord", {
+                      0: recordName,
+                    })
               }
               disabled={cannotDelete}
               onClick={onDelete}
@@ -225,25 +242,31 @@ export function EntityRow({
                           : t("components.entityPage.entityRow.show"),
                       })
                     : supportsSandboxShell
-                      ? t("components.entityPage.entityRow.togglePersistentInstance", {
-                          0: recordName,
-                          1: expanded
-                            ? t("components.entityPage.entityRow.close")
-                            : t("components.entityPage.entityRow.show"),
-                        })
-                    : supportsGroupMembers
-                      ? t("components.entityPage.entityRow.toggleGroupMembers", {
-                          0: recordName,
-                          1: expanded
-                            ? t("components.entityPage.entityRow.close")
-                            : t("components.entityPage.entityRow.show"),
-                        })
-                      : t("components.entityPage.entityRow.togglePublicId", {
-                          0: recordName,
-                          1: expanded
-                            ? t("components.entityPage.entityRow.close")
-                            : t("components.entityPage.entityRow.show"),
-                        })
+                      ? t(
+                          "components.entityPage.entityRow.togglePersistentInstance",
+                          {
+                            0: recordName,
+                            1: expanded
+                              ? t("components.entityPage.entityRow.close")
+                              : t("components.entityPage.entityRow.show"),
+                          },
+                        )
+                      : supportsGroupMembers
+                        ? t(
+                            "components.entityPage.entityRow.toggleGroupMembers",
+                            {
+                              0: recordName,
+                              1: expanded
+                                ? t("components.entityPage.entityRow.close")
+                                : t("components.entityPage.entityRow.show"),
+                            },
+                          )
+                        : t("components.entityPage.entityRow.togglePublicId", {
+                            0: recordName,
+                            1: expanded
+                              ? t("components.entityPage.entityRow.close")
+                              : t("components.entityPage.entityRow.show"),
+                          })
                 }
               >
                 <ActionIcon
@@ -251,32 +274,44 @@ export function EntityRow({
                   color="gray"
                   aria-label={
                     supportsActions
-                      ? t("components.entityPage.entityRow.toggleRecordAction", {
-                          0: recordName,
-                          1: expanded
-                            ? t("components.entityPage.entityRow.close")
-                            : t("components.entityPage.entityRow.show"),
-                        })
-                      : supportsSandboxShell
-                        ? t("components.entityPage.entityRow.togglePersistentInstance", {
+                      ? t(
+                          "components.entityPage.entityRow.toggleRecordAction",
+                          {
                             0: recordName,
                             1: expanded
                               ? t("components.entityPage.entityRow.close")
                               : t("components.entityPage.entityRow.show"),
-                          })
-                        : supportsGroupMembers
-                          ? t("components.entityPage.entityRow.toggleGroupMembers", {
+                          },
+                        )
+                      : supportsSandboxShell
+                        ? t(
+                            "components.entityPage.entityRow.togglePersistentInstance",
+                            {
                               0: recordName,
                               1: expanded
                                 ? t("components.entityPage.entityRow.close")
                                 : t("components.entityPage.entityRow.show"),
-                            })
-                          : t("components.entityPage.entityRow.togglePublicId", {
-                            0: recordName,
-                            1: expanded
-                              ? t("components.entityPage.entityRow.close")
-                              : t("components.entityPage.entityRow.show"),
-                          })
+                            },
+                          )
+                        : supportsGroupMembers
+                          ? t(
+                              "components.entityPage.entityRow.toggleGroupMembers",
+                              {
+                                0: recordName,
+                                1: expanded
+                                  ? t("components.entityPage.entityRow.close")
+                                  : t("components.entityPage.entityRow.show"),
+                              },
+                            )
+                          : t(
+                              "components.entityPage.entityRow.togglePublicId",
+                              {
+                                0: recordName,
+                                1: expanded
+                                  ? t("components.entityPage.entityRow.close")
+                                  : t("components.entityPage.entityRow.show"),
+                              },
+                            )
                   }
                   aria-expanded={expanded}
                   onClick={() => setExpanded((current) => !current)}
@@ -293,7 +328,10 @@ export function EntityRow({
               <SectionIcon section={page.icon} size={17} />
             </span>
             <div>
-              <strong>{recordName ?? t("components.entityPage.entityRow.unnamedRecord")}</strong>
+              <strong>
+                {recordName ??
+                  t("components.entityPage.entityRow.unnamedRecord")}
+              </strong>
               {subtitle != null && <small>{String(subtitle)}</small>}
             </div>
           </div>
@@ -321,7 +359,9 @@ export function EntityRow({
                   <ActionIcon
                     variant="subtle"
                     color="violet"
-                    aria-label={t("components.resourceGrants.manageAccessFor", { 0: grantRecordName })}
+                    aria-label={t("components.resourceGrants.manageAccessFor", {
+                      0: grantRecordName,
+                    })}
                     onClick={onManageGrants}
                   >
                     <ShareNetworkIcon size={16} aria-hidden="true" />
@@ -330,12 +370,17 @@ export function EntityRow({
               )}
               {canUpdate && (
                 <Tooltip
-                  label={t("components.entityPage.entityRow.editRecord", { 0: recordName })}
+                  label={t("components.entityPage.entityRow.editRecord", {
+                    0: recordName,
+                  })}
                 >
                   <ActionIcon
                     variant="subtle"
                     color="gray"
-                    aria-label={t("components.entityPage.entityRow.editRecord", { 0: recordName })}
+                    aria-label={t(
+                      "components.entityPage.entityRow.editRecord",
+                      { 0: recordName },
+                    )}
                     onClick={onEdit}
                   >
                     <PencilSimpleIcon size={16} aria-hidden="true" />
@@ -347,7 +392,9 @@ export function EntityRow({
                   label={
                     cannotDelete
                       ? t("components.entityPage.entityRow.cannotDeleteSelf")
-                      : t("components.entityPage.entityRow.deleteRecord", { 0: recordName })
+                      : t("components.entityPage.entityRow.deleteRecord", {
+                          0: recordName,
+                        })
                   }
                 >
                   <span style={{ display: "inline-flex" }}>
@@ -356,8 +403,12 @@ export function EntityRow({
                       color="gray"
                       aria-label={
                         cannotDelete
-                          ? t("components.entityPage.entityRow.cannotDeleteSelf")
-                          : t("components.entityPage.entityRow.deleteRecord", { 0: recordName })
+                          ? t(
+                              "components.entityPage.entityRow.cannotDeleteSelf",
+                            )
+                          : t("components.entityPage.entityRow.deleteRecord", {
+                              0: recordName,
+                            })
                       }
                       disabled={cannotDelete}
                       onClick={onDelete}
@@ -380,8 +431,8 @@ export function EntityRow({
               {supportsPublicIds && (
                 <PublicIdDetails
                   recordId={record.id}
-                  publicIdsValue={record.publicIds}
-                  webhookEndpointsValue={record.webhooks}
+                  publicIdsValue={String(record.publicIds ?? "")}
+                  webhookEndpointsValue={String(record.webhooks ?? "")}
                   showWebhooks={page.tableFeatures?.webhookDetails ?? false}
                 />
               )}
@@ -397,13 +448,15 @@ export function EntityRow({
                 <GroupMembersDetails
                   groupId={record.id}
                   groupName={String(record[page.columns[0].key] ?? "")}
-                  membersValue={record.members}
+                  membersValue={String(record.members ?? "")}
                   memberOptions={page.memberOptions ?? []}
                 />
               )}
               {supportsActions && (
                 <>
-                  <strong className="entity-details-title">{t("components.entityPage.entityRow.actionsLabel")}</strong>
+                  <strong className="entity-details-title">
+                    {t("components.entityPage.entityRow.actionsLabel")}
+                  </strong>
                   {actions}
                 </>
               )}
@@ -418,9 +471,11 @@ export function EntityRow({
 function EmailVerificationAction({
   recordId,
   recordName,
+  emailVerified,
 }: {
   recordId: string | number;
   recordName: string;
+  emailVerified: boolean;
 }) {
   const fetcher = useFetcher<{ ok?: boolean; error?: string }>();
 
@@ -434,7 +489,9 @@ function EmailVerificationAction({
     } else if (fetcher.data?.ok) {
       notifications.show({
         title: t("components.entityPage.entityRow.verificationEmailSent"),
-        message: t("components.entityPage.entityRow.verificationEmailSentTo", { 0: recordName }),
+        message: t("components.entityPage.entityRow.verificationEmailSentTo", {
+          0: recordName,
+        }),
         color: "green",
       });
     }
@@ -451,9 +508,10 @@ function EmailVerificationAction({
           size="xs"
           type="submit"
           leftSection={<EnvelopeSimpleIcon size={15} aria-hidden="true" />}
-          disabled={fetcher.state !== "idle"}
+          disabled={emailVerified || fetcher.state !== "idle"}
         >
-          {t("components.entityPage.entityRow.resendVerificationEmail")}</Button>
+          {t("components.entityPage.entityRow.resendVerificationEmail")}
+        </Button>
       </fetcher.Form>
     </>
   );
@@ -478,7 +536,9 @@ function MfaResetAction({
     } else if (fetcher.data?.ok) {
       notifications.show({
         title: t("components.entityPage.entityRow.mfaResetSucceeded"),
-        message: t("components.entityPage.entityRow.mfaResetForRecord", { 0: recordName }),
+        message: t("components.entityPage.entityRow.mfaResetForRecord", {
+          0: recordName,
+        }),
         color: "green",
       });
     }
@@ -490,7 +550,13 @@ function MfaResetAction({
         method="post"
         action="/users"
         onSubmit={(event) => {
-          if (!window.confirm(t("components.entityPage.entityRow.confirmMfaReset", { 0: recordName })))
+          if (
+            !window.confirm(
+              t("components.entityPage.entityRow.confirmMfaReset", {
+                0: recordName,
+              }),
+            )
+          )
             event.preventDefault();
         }}
       >
@@ -506,7 +572,8 @@ function MfaResetAction({
           }
           disabled={fetcher.state !== "idle"}
         >
-          {t("components.entityPage.entityRow.resetMfa")}</Button>
+          {t("components.entityPage.entityRow.resetMfa")}
+        </Button>
       </fetcher.Form>
     </>
   );
@@ -531,7 +598,9 @@ function LoginUnlockAction({
     } else if (fetcher.data?.ok) {
       notifications.show({
         title: t("components.entityPage.entityRow.unlockSucceeded"),
-        message: t("components.entityPage.entityRow.userCanLogin", { 0: recordName }),
+        message: t("components.entityPage.entityRow.userCanLogin", {
+          0: recordName,
+        }),
         color: "green",
       });
     }
@@ -552,7 +621,8 @@ function LoginUnlockAction({
           }
           disabled={fetcher.state !== "idle"}
         >
-          {t("components.entityPage.entityRow.unlockLogin")}</Button>
+          {t("components.entityPage.entityRow.unlockLogin")}
+        </Button>
       </fetcher.Form>
     </>
   );

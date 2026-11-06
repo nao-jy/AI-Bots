@@ -49,7 +49,7 @@ export function generateResourceId() {
 export function record(
   id: number | string,
   updatedAt: string | Date,
-  fields: Record<string, string | number>,
+  fields: Record<string, string | number | boolean>,
 ): EntityRecord {
   return { id: String(id), updated: timestamp(updatedAt instanceof Date ? updatedAt.toISOString() : updatedAt), ...fields };
 }

@@ -12,7 +12,7 @@ export function EntityCell({
 }: {
   column: EntityColumn;
   recordName: string | number;
-  value: string | number;
+  value: string | number | boolean;
   onStatusChange: (enabled: boolean) => void;
   canUpdate?: boolean;
   disabled?: boolean;
@@ -104,12 +104,12 @@ export function EntityCell({
 
   return (
     <span className={column.key === "endpoint" ? "mono" : "table-text"}>
-      {value || t("components.entityPage.entityCell.emptyValue")}
+        {String(value || t("components.entityPage.entityCell.emptyValue"))}
     </span>
   );
 }
 
-function parseWebhookEndpoints(value: string | number) {
+function parseWebhookEndpoints(value: string | number | boolean) {
   try {
     const parsed: unknown = JSON.parse(String(value ?? "[]"));
     if (!Array.isArray(parsed)) return [];

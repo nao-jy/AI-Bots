@@ -46,11 +46,15 @@ export function EntityTable({
   );
   const shellInstances: SandboxShellInstance[] = page.tableFeatures?.sandboxShell
     ? page.records.flatMap((record) =>
-        parsePersistentInstances(record.instances).map((instance) => ({
-          ...instance,
-          sandboxId: String(record.id),
-          sandboxName: String(record.name ?? t("components.entityPage.table.unnamedRecord")),
-        })),
+        parsePersistentInstances(String(record.instances ?? "[]")).map(
+          (instance) => ({
+            ...instance,
+            sandboxId: String(record.id),
+            sandboxName: String(
+              record.name ?? t("components.entityPage.table.unnamedRecord"),
+            ),
+          }),
+        ),
       )
     : [];
   const visibleRecords = page.records.filter((record) =>

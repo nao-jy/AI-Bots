@@ -43,15 +43,27 @@ const page: Omit<EntityPageDefinition, "records"> = {
       label: "pages.users.emailVerificationLabel",
       presentation: "verification-status",
     },
-    { key: "mfaStatus", label: "pages.users.mfaLabel", presentation: "mfa-status" },
-    { key: "isAdmin", label: "pages.users.roleLabel", presentation: "admin-toggle" },
+    {
+      key: "mfaStatus",
+      label: "pages.users.mfaLabel",
+      presentation: "mfa-status",
+    },
+    {
+      key: "isAdmin",
+      label: "pages.users.roleLabel",
+      presentation: "admin-toggle",
+    },
     { key: "loginLockStatus", label: "pages.users.loginLockLabel" },
     { key: "loginStatus", label: "pages.users.loginStatusLabel" },
     { key: "lastLogin", label: "pages.users.lastLoginLabel" },
     { key: "updated", label: "pages.users.updatedLabel" },
   ],
   fields: [
-    { key: "name", label: "pages.users.displayNameLabel", placeholder: "pages.users.displayNamePlaceholder" },
+    {
+      key: "name",
+      label: "pages.users.displayNameLabel",
+      placeholder: "pages.users.displayNamePlaceholder",
+    },
     {
       key: "email",
       label: "pages.users.emailLabel",
@@ -101,7 +113,12 @@ export async function action({ request }: Route.ActionArgs) {
     const isAdminValue = String(form.get("isAdmin") ?? "");
     if (!validId || !["true", "false"].includes(isAdminValue))
       return { ok: false, error: t("pages.users.invalidChanges") };
-    return setUserAdmin(id, isAdminValue === "true", actor.id, actor.organizationId);
+    return setUserAdmin(
+      id,
+      isAdminValue === "true",
+      actor.id,
+      actor.organizationId,
+    );
   }
   if (intent === "force-logout") {
     return validId
@@ -117,10 +134,10 @@ export async function action({ request }: Route.ActionArgs) {
       ? unlockUserLogin(id, actor.organizationId)
       : { ok: false, error: t("pages.users.notFound") };
   if (intent === "send-verification") {
-    if (!validId)
-      return { ok: false, error: t("pages.users.notFound") };
+    if (!validId) return { ok: false, error: t("pages.users.notFound") };
     const user = await findUserById(id);
-    if (!user || user.organizationId !== actor.organizationId) return { ok: false, error: t("pages.users.notFound") };
+    if (!user || user.organizationId !== actor.organizationId)
+      return { ok: false, error: t("pages.users.notFound") };
     if (user.emailVerified)
       return { ok: false, error: t("pages.users.emailAlreadyVerified") };
     try {
@@ -139,13 +156,17 @@ export async function action({ request }: Route.ActionArgs) {
       });
       return {
         ok: false,
-        error:
-          t("pages.users.verificationEmailSendFailed"),
+        error: t("pages.users.verificationEmailSendFailed"),
       };
     }
   }
   if (intent === "create") {
-    const result = await saveUser(null, form, isEmailVerificationEnabled(), actor.organizationId);
+    const result = await saveUser(
+      null,
+      form,
+      isEmailVerificationEnabled(),
+      actor.organizationId,
+    );
     if ("error" in result || !result.verificationRequired) return result;
     return sendNewUserVerification(
       String(form.get("email") ?? "")
@@ -155,9 +176,13 @@ export async function action({ request }: Route.ActionArgs) {
     );
   }
   if (intent === "update") {
-    if (!validId)
-      return { ok: false, error: t("pages.users.notFound") };
-    const result = await saveUser(id, form, isEmailVerificationEnabled(), actor.organizationId);
+    if (!validId) return { ok: false, error: t("pages.users.notFound") };
+    const result = await saveUser(
+      id,
+      form,
+      isEmailVerificationEnabled(),
+      actor.organizationId,
+    );
     if ("error" in result || !result.verificationRequired) return result;
     return sendNewUserVerification(
       String(form.get("email") ?? "")
@@ -175,8 +200,7 @@ async function sendNewUserVerification(email: string, requestUrl: string) {
     return {
       ok: false,
       notification: "verification-email" as const,
-      error:
-        t("pages.users.savedButEmailFailed"),
+      error: t("pages.users.savedButEmailFailed"),
     };
   try {
     await sendEmailVerification(user, requestUrl);
@@ -193,8 +217,7 @@ async function sendNewUserVerification(email: string, requestUrl: string) {
     return {
       ok: false,
       notification: "verification-email" as const,
-      error:
-        t("pages.users.savedButEmailFailed"),
+      error: t("pages.users.savedButEmailFailed"),
     };
   }
 }

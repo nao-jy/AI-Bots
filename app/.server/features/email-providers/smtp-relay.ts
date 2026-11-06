@@ -1,24 +1,38 @@
-import { Resend } from "resend";
+import nodeMailer from "nodemailer";
 import type {
   EmailProvider,
   EmailVerificationMessage,
   PasswordResetMessage,
 } from "./index";
 import { t } from "~/.server/i18n";
+import { APP_NAME } from "~/const";
 
-export function createResendEmailProvider(apiKey: string): EmailProvider {
-  const resend = new Resend(apiKey);
-  const from =
-    process.env.RESEND_FROM_EMAIL?.trim() ||
-    "AI Bots <onboarding@resend.dev>";
-
+export function createSMTPRelayEmailProvider(
+  host: string,
+  port: number,
+  secure: boolean,
+  user: string,
+  pass: string,
+  domainFrom: string,
+): EmailProvider {
+  const from = `${APP_NAME} <noreply@${domainFrom}>`;
+  const transporter = nodeMailer.createTransport({
+    host,
+    port,
+    secure,
+    requireTLS: secure ? undefined : true,
+    auth: {
+      user,
+      pass,
+    },
+  });
   return {
     async sendVerificationEmail({
       to,
       name,
       verificationUrl,
     }: EmailVerificationMessage) {
-      const { error } = await resend.emails.send({
+      const { error } = await transporter.sendMail({
         from,
         to,
         subject: t("server.emailVerificationSubject"),
@@ -32,16 +46,10 @@ export function createResendEmailProvider(apiKey: string): EmailProvider {
         ].join("\n"),
       });
       if (error)
-        throw new Error(
-          t("server.emailDeliveryFailed", { 0: error.message }),
-        );
+        throw new Error(t("server.emailDeliveryFailed", { 0: error.message }));
     },
-    async sendPasswordResetEmail({
-      to,
-      name,
-      resetUrl,
-    }: PasswordResetMessage) {
-      const { error } = await resend.emails.send({
+    async sendPasswordResetEmail({ to, name, resetUrl }: PasswordResetMessage) {
+      const { error } = await transporter.sendMail({
         from,
         to,
         subject: t("server.passwordResetSubject"),
@@ -57,9 +65,7 @@ export function createResendEmailProvider(apiKey: string): EmailProvider {
         ].join("\n"),
       });
       if (error)
-        throw new Error(
-          t("server.emailDeliveryFailed", { 0: error.message }),
-        );
+        throw new Error(t("server.emailDeliveryFailed", { 0: error.message }));
     },
   };
 }

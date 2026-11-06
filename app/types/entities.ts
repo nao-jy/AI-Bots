@@ -2,7 +2,7 @@ import type { TranslationMessage } from "../i18n";
 
 export type EntityRecord = { id: string; updated: string } & Record<
   string,
-  string | number
+  string | number | boolean
 >;
 
 export type EntityOption = {
