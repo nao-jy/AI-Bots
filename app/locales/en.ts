@@ -166,7 +166,7 @@ export const en = {
         emptyValue: "—",
         countUnit: " items",
         toggleStatusAriaLabel: "Toggle {{0}} status",
-        toggleAdminAriaLabel: "Toggle administrator privileges for {{0}}",
+        selectAdminAriaLabel: "Select a role for {{0}}",
       },
       entityRow: {
         forceLogout: "Force logout",

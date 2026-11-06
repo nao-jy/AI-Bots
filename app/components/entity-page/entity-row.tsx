@@ -83,6 +83,19 @@ export function EntityRow({
 
   const actions = supportsActions ? (
     <div className="entity-action-list">
+      {page.tableFeatures?.adminToggle && (
+        <EntityCell
+          column={{
+            key: "isAdmin",
+            label: "pages.users.roleLabel",
+            presentation: "admin-toggle",
+          }}
+          recordName={String(recordName ?? "")}
+          value={record.isAdmin}
+          onStatusChange={onStatusChange}
+          disabled={record.id === page.protectedRecordId}
+        />
+      )}
       {page.tableFeatures?.forceLogout && (
         <Button
           variant="light"

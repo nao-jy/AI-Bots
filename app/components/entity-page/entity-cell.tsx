@@ -1,5 +1,5 @@
 import { t, tMessage } from "~/i18n";
-import { Badge, Group, Switch } from "@mantine/core";
+import { Badge, Group, Select, Switch } from "@mantine/core";
 import type { EntityColumn } from "./types";
 
 export function EntityCell({
@@ -78,18 +78,23 @@ export function EntityCell({
     );
   if (column.presentation === "admin-toggle")
     return (
-      <Group gap="xs">
-        <Switch
-          checked={String(value) === "server.administrator"}
-          disabled={disabled}
-          onChange={(event) => onStatusChange(event.currentTarget.checked)}
-          aria-label={t(
-            "components.entityPage.entityCell.toggleAdminAriaLabel",
-            { 0: recordName },
-          )}
-        />
-        <span className="table-text">{tMessage(String(value))}</span>
-      </Group>
+      <Select
+        w={160}
+        size="xs"
+        value={String(value) === "server.administrator" ? "admin" : "user"}
+        data={[
+          { value: "user", label: tMessage("server.regularUser") },
+          { value: "admin", label: tMessage("server.administrator") },
+        ]}
+        disabled={disabled}
+        onChange={(nextValue) => {
+          if (nextValue !== null) onStatusChange(nextValue === "admin");
+        }}
+        aria-label={t(
+          "components.entityPage.entityCell.selectAdminAriaLabel",
+          { 0: recordName },
+        )}
+      />
     );
   if (column.key === "status") return <Status value={String(value ?? "")} />;
   if (column.key === "provider") {
@@ -104,7 +109,9 @@ export function EntityCell({
 
   return (
     <span className={column.key === "endpoint" ? "mono" : "table-text"}>
-        {String(value || t("components.entityPage.entityCell.emptyValue"))}
+      {tMessage(
+        String(value || t("components.entityPage.entityCell.emptyValue")),
+      )}
     </span>
   );
 }

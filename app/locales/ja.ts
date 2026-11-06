@@ -612,7 +612,7 @@ export const ja = {
         emptyValue: "—",
         countUnit: " 件",
         toggleStatusAriaLabel: "{{0}}の稼働状態を変更",
-        toggleAdminAriaLabel: "{{0}}の管理者権限を変更",
+        selectAdminAriaLabel: "{{0}}の権限を選択",
       },
       entityRow: {
         forceLogout: "強制ログアウト",

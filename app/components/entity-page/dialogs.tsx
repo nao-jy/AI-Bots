@@ -465,7 +465,7 @@ export function EntityPageDialogs({
   const canTest = ["adapters", "agents", "mcp"].includes(page.icon);
   const changesAdmin = page.columns.some(
     (column) => column.presentation === "admin-toggle",
-  );
+  ) || page.tableFeatures?.adminToggle === true;
   const fetcher = useFetcher<{
     ok?: boolean;
     error?: string | TranslationMessage;

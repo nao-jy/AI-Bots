@@ -30,6 +30,7 @@ const page: Omit<EntityPageDefinition, "records"> = {
   icon: "users",
   tableFeatures: {
     expandableActions: true,
+    adminToggle: true,
     forceLogout: true,
     emailVerification: true,
     mfaReset: true,
@@ -47,11 +48,6 @@ const page: Omit<EntityPageDefinition, "records"> = {
       key: "mfaStatus",
       label: "pages.users.mfaLabel",
       presentation: "mfa-status",
-    },
-    {
-      key: "isAdmin",
-      label: "pages.users.roleLabel",
-      presentation: "admin-toggle",
     },
     { key: "loginLockStatus", label: "pages.users.loginLockLabel" },
     { key: "loginStatus", label: "pages.users.loginStatusLabel" },
