@@ -83,7 +83,7 @@
 | `RESEND_FROM_EMAIL` | 任意 | Resendの送信元アドレス。未設定時はResendのテスト用送信元を使用します。本番では検証済みドメインのアドレスを設定してください。 |
 | `CLOUDFLARE_TOKEN` | 任意 | `npm run dev` で使用するCloudflare Tunnelのトークン。 |
 | `LOG_DIR` | 任意 | ログ出力先。既定値は `logs`。 |
-| `MEMORY_DIR` | 任意 | ボットのメモリ保存先。既定値は `data/memory`。組織・ボット・アダプター・スレッドごとに分離します。 |
+| `MEMORY_DIR` | 任意 | ボットのメモリ保存先。既定値は `data/memory`。ボットのメモリ設定により、無効・スレッド別・ボット全体で共有を選べます。 |
 
 `infra/compose.yaml` にはPostgreSQL、SearXNG、OpenSandboxが定義されています。オプションのサービスも起動する場合は、`infra/.env` があることを確認してください（必要であれば `infra/sample.env` をコピーします）。
 

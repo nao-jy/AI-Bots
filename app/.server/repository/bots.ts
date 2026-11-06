@@ -5,6 +5,7 @@ import { generatePublicId, generateResourceId, idList, isUuid, jsonb, record } f
 import { ToolSetFactoryRegistry } from "../features/toolsets";
 import { logAuditEvent } from "../logger/audit-logger";
 import { localizedMessage } from "../../i18n";
+import { isMemoryConfig } from "../features/memory-config";
 import {
   filterResourcesByRole,
   hasResourceAccess,
@@ -100,6 +101,7 @@ export async function listBots(user: AuthUser, publicOrigin: string) {
         ),
         instruction: bot.instruction,
         lookbackMessages: bot.lookbackMessages,
+        memoryConfig: bot.memoryConfig,
         onFailedMessage: bot.onFailedMessage,
         sandboxId: sandboxLinks
           .filter(
@@ -200,6 +202,9 @@ export async function saveBot(
   const lookbackMessages = Number(
     String(values.get("lookbackMessages") ?? "").trim(),
   );
+  const memoryConfig = String(values.get("memoryConfig") ?? "");
+  if (!isMemoryConfig(memoryConfig))
+    return { error: "server.invalidMemoryConfig" };
   const agentValue = String(values.get("agentId") ?? "").trim();
   const agentId = agentValue || null;
   const adapterIds = idList(values.get("adapterIds")?.toString() ?? null);
@@ -401,6 +406,7 @@ export async function saveBot(
         description: description || null,
         instruction: instruction,
         lookbackMessages: lookbackMessages,
+        memoryConfig,
         onFailedMessage: onFailedMessage,
         agentId,
         organizationId: user.organizationId,
@@ -428,6 +434,7 @@ export async function saveBot(
         instruction: instruction,
         onFailedMessage: onFailedMessage,
         lookbackMessages: lookbackMessages,
+        memoryConfig,
         agentId,
       });
     }

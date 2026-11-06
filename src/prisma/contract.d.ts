@@ -23,7 +23,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'5b83f74e93b19a74c7a3f3406c46ac136899570c4b2c752f1b42a867047c32f2'>;
+  StorageHashBase<'6d497b7048bdcb8ccfd230e67cf46d2ea9a0e7e4eb2be48693d14a7156a8e2db'>;
 export type ExecutionHash =
   ExecutionHashBase<'d1cef966cba620d770cced85ebaf6075292f48c77f2dc79d6537bcbbcceb5241'>;
 export type ProfileHash =
@@ -281,6 +281,12 @@ type FieldTypeOverrides = {
       readonly ChatAdapterPublicId: {
         readonly slot: { readonly output: 'first' | 'second'; readonly input: 'first' | 'second' };
       };
+      readonly ChatBot: {
+        readonly memoryConfig: {
+          readonly output: 'nouse' | 'thread' | 'bot';
+          readonly input: 'nouse' | 'thread' | 'bot';
+        };
+      };
       readonly ChatBotPublicId: {
         readonly slot: { readonly output: 'first' | 'second'; readonly input: 'first' | 'second' };
       };
@@ -328,6 +334,12 @@ type ColumnTypeOverrides = {
   readonly aibot: {
     readonly ChatAdapterPublicId: {
       readonly slot: { readonly output: 'first' | 'second'; readonly input: 'first' | 'second' };
+    };
+    readonly ChatBot: {
+      readonly memoryConfig: {
+        readonly output: 'nouse' | 'thread' | 'bot';
+        readonly input: 'nouse' | 'thread' | 'bot';
+      };
     };
     readonly ChatBotPublicId: {
       readonly slot: { readonly output: 'first' | 'second'; readonly input: 'first' | 'second' };
@@ -443,6 +455,7 @@ export namespace Models {
     instruction: FieldOutputTypes['aibot']['ChatBot']['instruction'];
     isEnabled: FieldOutputTypes['aibot']['ChatBot']['isEnabled'];
     lookbackMessages: FieldOutputTypes['aibot']['ChatBot']['lookbackMessages'];
+    memoryConfig: FieldOutputTypes['aibot']['ChatBot']['memoryConfig'];
     name: FieldOutputTypes['aibot']['ChatBot']['name'];
     onFailedMessage: FieldOutputTypes['aibot']['ChatBot']['onFailedMessage'];
     organizationId: FieldOutputTypes['aibot']['ChatBot']['organizationId'];
@@ -1372,6 +1385,16 @@ type ContractBase = Omit<
                   readonly dataType: 'pg/int4';
                   readonly codecId: 'pg/int4@1';
                   readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly memoryConfig: {
+                  readonly dataType: 'pg/text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/text@1', 'nouse'>;
+                  };
                   readonly many: false;
                 };
                 readonly name: {
@@ -3663,6 +3686,10 @@ type ContractBase = Omit<
               readonly kind: 'valueSet';
               readonly values: readonly ['http'];
             };
+            readonly MemoryConfig: {
+              readonly kind: 'valueSet';
+              readonly values: readonly ['nouse', 'thread', 'bot'];
+            };
             readonly PublicIdSlot: {
               readonly kind: 'valueSet';
               readonly values: readonly ['first', 'second'];
@@ -4258,6 +4285,10 @@ type ContractBase = Omit<
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
               };
+              readonly memoryConfig: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
               readonly name: {
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
@@ -4383,6 +4414,7 @@ type ContractBase = Omit<
                 readonly instruction: { readonly column: 'instruction' };
                 readonly isEnabled: { readonly column: 'isEnabled' };
                 readonly lookbackMessages: { readonly column: 'lookbackMessages' };
+                readonly memoryConfig: { readonly column: 'memoryConfig' };
                 readonly name: { readonly column: 'name' };
                 readonly onFailedMessage: { readonly column: 'onFailedMessage' };
                 readonly organizationId: { readonly column: 'organizationId' };
@@ -6449,6 +6481,14 @@ type ContractBase = Omit<
             readonly codecId: 'pg/text@1';
             readonly members: readonly [{ readonly name: 'http'; readonly value: 'http' }];
           };
+          readonly MemoryConfig: {
+            readonly codecId: 'pg/text@1';
+            readonly members: readonly [
+              { readonly name: 'nouse'; readonly value: 'nouse' },
+              { readonly name: 'thread'; readonly value: 'thread' },
+              { readonly name: 'bot'; readonly value: 'bot' },
+            ];
+          };
           readonly PublicIdSlot: {
             readonly codecId: 'pg/text@1';
             readonly members: readonly [
@@ -6485,6 +6525,11 @@ type ContractBase = Omit<
         };
         readonly enumMemberTypes?: {
           readonly MCPTransport: readonly [{ readonly name: 'http'; readonly value: 'http' }];
+          readonly MemoryConfig: readonly [
+            { readonly name: 'nouse'; readonly value: 'nouse' },
+            { readonly name: 'thread'; readonly value: 'thread' },
+            { readonly name: 'bot'; readonly value: 'bot' },
+          ];
           readonly PublicIdSlot: readonly [
             { readonly name: 'first'; readonly value: 'first' },
             { readonly name: 'second'; readonly value: 'second' },

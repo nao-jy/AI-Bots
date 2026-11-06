@@ -140,6 +140,11 @@ export const ja = {
       failureMessagePlaceholder: "Sorry, failed to generate answer.",
       historyMessageCountLabel: "見返すメッセージ数",
       zeroHistoryMessages: "0",
+      memoryConfigLabel: "メモリ",
+      memoryConfigNouseOption: "使用しない",
+      memoryConfigThreadOption: "スレッドごとに保存",
+      memoryConfigBotOption: "ボット全体で共有",
+      memoryConfigHelp: "ボット全体で共有すると、接続先やスレッドをまたいで同じメモリを使用します。",
       noLimitOption: "指定しない",
       adaptersPlaceholder: "接続するアダプタを選択",
       sandboxPlaceholder: "利用するサンドボックスを選択",
@@ -829,6 +834,7 @@ export const ja = {
     unavailableToolsetNames:
       "利用できないToolSet名が含まれています。利用可能: {{0}}",
     botNameRequired: "ボット名を入力してください。",
+    invalidMemoryConfig: "メモリ設定を選択してください。",
     agentRequired: "エージェントを選択してください。",
     selectedAgentNotFound: "選択したエージェントが見つかりません。",
     selectedAgentAlreadyUsed:

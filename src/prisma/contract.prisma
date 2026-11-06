@@ -22,6 +22,12 @@ enum RateLimitCriteria {
   provider = "provider"
 }
 
+enum MemoryConfig {
+  nouse = "nouse"
+  thread = "thread"
+  bot = "bot"
+}
+
 enum Role {
   viewer = "viewer" // read
   editor = "editor" // read, update
@@ -176,6 +182,7 @@ namespace aibot {
     instruction      String
     onFailedMessage  String
     lookbackMessages Int
+    memoryConfig     MemoryConfig            @default(nouse)
     isEnabled        Boolean                 @default(true)
     agent            AgentDefinition?        @relation(fields: [agentId], references: [id], onDelete: SetNull)
     agentId          Uuid?                   @unique

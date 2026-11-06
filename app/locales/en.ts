@@ -375,6 +375,7 @@ export const en = {
     unavailableToolsetNames:
       "Unavailable tool set names were included. Available: {{0}}",
     botNameRequired: "Enter a bot name.",
+    invalidMemoryConfig: "Select a memory setting.",
     agentRequired: "Select an agent.",
     selectedAgentNotFound: "The selected agent was not found.",
     selectedAgentAlreadyUsed:
@@ -720,6 +721,11 @@ export const en = {
       failureMessagePlaceholder: "Sorry, failed to generate answer.",
       historyMessageCountLabel: "Number of messages to include",
       zeroHistoryMessages: "0",
+      memoryConfigLabel: "Memory",
+      memoryConfigNouseOption: "Do not use memory",
+      memoryConfigThreadOption: "Save per thread",
+      memoryConfigBotOption: "Share across the bot",
+      memoryConfigHelp: "Bot-wide memory is shared across connected adapters and threads.",
       noLimitOption: "No limit",
       adaptersPlaceholder: "Select adapters to connect",
       sandboxPlaceholder: "Select a sandbox to use",

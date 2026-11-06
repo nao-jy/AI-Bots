@@ -70,6 +70,19 @@ const page: Omit<EntityPageDefinition, "records"> = {
       placeholder: "pages.bots.zeroHistoryMessages",
     },
     {
+      key: "memoryConfig",
+      label: "pages.bots.memoryConfigLabel",
+      type: "select",
+      defaultValue: "nouse",
+      required: true,
+      options: [
+        { value: "nouse", label: "pages.bots.memoryConfigNouseOption" },
+        { value: "thread", label: "pages.bots.memoryConfigThreadOption" },
+        { value: "bot", label: "pages.bots.memoryConfigBotOption" },
+      ],
+      help: { text: "pages.bots.memoryConfigHelp" },
+    },
+    {
       key: "agentId",
       label: "pages.bots.agentLabel",
       type: "select",

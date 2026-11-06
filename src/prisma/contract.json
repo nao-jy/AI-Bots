@@ -856,6 +856,19 @@
                   "kind": "scalar"
                 }
               },
+              "memoryConfig": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                },
+                "valueSet": {
+                  "entityKind": "enum",
+                  "entityName": "MemoryConfig",
+                  "namespaceId": "public",
+                  "plane": "domain"
+                }
+              },
               "name": {
                 "nullable": false,
                 "type": {
@@ -1035,6 +1048,9 @@
                 },
                 "lookbackMessages": {
                   "column": "lookbackMessages"
+                },
+                "memoryConfig": {
+                  "column": "memoryConfig"
                 },
                 "name": {
                   "column": "name"
@@ -4211,6 +4227,23 @@
               }
             ]
           },
+          "MemoryConfig": {
+            "codecId": "pg/text@1",
+            "members": [
+              {
+                "name": "nouse",
+                "value": "nouse"
+              },
+              {
+                "name": "thread",
+                "value": "thread"
+              },
+              {
+                "name": "bot",
+                "value": "bot"
+              }
+            ]
+          },
           "PublicIdSlot": {
             "codecId": "pg/text@1",
             "members": [
@@ -4938,6 +4971,13 @@
               ]
             },
             "ChatBot": {
+              "checks": [
+                {
+                  "expression": "\"memoryConfig\" IN ('nouse', 'thread', 'bot')",
+                  "name": "ChatBot_memoryConfig_check_0c542cf2",
+                  "prefix": "ChatBot_memoryConfig_check"
+                }
+              ],
               "columns": {
                 "agentId": {
                   "codecId": "pg/uuid@1",
@@ -4981,6 +5021,21 @@
                   "codecId": "pg/int4@1",
                   "dataType": "pg/int4",
                   "nullable": false
+                },
+                "memoryConfig": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "default": {
+                    "kind": "literal",
+                    "value": "nouse"
+                  },
+                  "nullable": false,
+                  "valueSet": {
+                    "entityKind": "valueSet",
+                    "entityName": "MemoryConfig",
+                    "namespaceId": "public",
+                    "plane": "storage"
+                  }
                 },
                 "name": {
                   "codecId": "pg/text@1",
@@ -8027,6 +8082,14 @@
                 "http"
               ]
             },
+            "MemoryConfig": {
+              "kind": "valueSet",
+              "values": [
+                "nouse",
+                "thread",
+                "bot"
+              ]
+            },
             "PublicIdSlot": {
               "kind": "valueSet",
               "values": [
@@ -8066,7 +8129,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "5b83f74e93b19a74c7a3f3406c46ac136899570c4b2c752f1b42a867047c32f2"
+    "storageHash": "6d497b7048bdcb8ccfd230e67cf46d2ea9a0e7e4eb2be48693d14a7156a8e2db"
   },
   "execution": {
     "executionHash": "d1cef966cba620d770cced85ebaf6075292f48c77f2dc79d6537bcbbcceb5241",
