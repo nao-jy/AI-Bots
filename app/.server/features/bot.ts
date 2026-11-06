@@ -2,7 +2,8 @@ import { createMCPClient } from "@ai-sdk/mcp";
 import { generateText, stepCountIs, type ModelMessage, type ToolSet } from "ai";
 import { toAiMessages } from "chat/ai";
 import { Message, parseMarkdown, type Chat, type Thread } from "chat";
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
+import { resolve } from "node:path";
 import {
   createPersistentSandboxInstance,
   getChatBotSandbox,
@@ -24,6 +25,8 @@ import { getSearXNGWebSearch } from "./toolsets/tools/web/search-searxng";
 import { getChatTools } from "./toolsets/chat-tools";
 import type { FileHandleReaderMap } from "./toolsets/helpers/file-handle";
 import { ToolSetFactoryRegistry } from "./toolsets";
+import { LocalFileSystem } from "./filesystem/local";
+import { buildMemoryPrompt, getMemoryTools } from "./toolsets/memory";
 import { t } from "~/.server/i18n";
 
 const MAX_AGENT_STEPS = 8;
@@ -200,9 +203,26 @@ async function processBotMessage(
     }
 
     const fileHandles: FileHandleReaderMap = new Map();
+    const memoryScope = createHash("sha256")
+      .update(adapterId)
+      .update("\0")
+      .update(thread.id)
+      .digest("hex");
+    const memoryFs = new LocalFileSystem(
+      resolve(
+        process.env.MEMORY_DIR || "data/memory",
+        chatbot.organizationId,
+        chatbot.id,
+        memoryScope,
+      ),
+    );
     const tools = {
       ...getChatTools(chat, adapterPlatform, thread, fileHandles),
       ...getFileParseTools(fileHandles),
+      ...getMemoryTools(memoryFs, {
+        onUnexpectedError: (error, toolName) =>
+          appLogger.error(`Memory tool ${toolName} failed for chatbot ${botId}`, error),
+      }),
       searchWeb: getSearXNGWebSearch(),
     } as ToolSet;
 
@@ -297,7 +317,7 @@ async function processBotMessage(
     const result = await generateText({
       model: modelInfo.model,
       providerOptions: modelInfo.options,
-      system: chatbot.instruction,
+      system: `${chatbot.instruction}\n\n${await buildMemoryPrompt(memoryFs)}`,
       prompt: inputMessages,
       tools,
       stopWhen: stepCountIs(MAX_AGENT_STEPS),

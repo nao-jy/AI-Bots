@@ -5,6 +5,7 @@
 # React Router
 /.react-router/
 /build/
+/data/memory/
 node_modules/
 dist/
 logs

@@ -82,6 +82,7 @@ The provided Compose configuration uses PostgreSQL 16. SearXNG and OpenSandbox a
 | `RESEND_FROM_EMAIL` | Optional | Sender address for Resend. Defaults to its test sender; configure an address on a verified domain for production. |
 | `CLOUDFLARE_TOKEN` | Optional | Cloudflare Tunnel token used by `npm run dev`. |
 | `LOG_DIR` | Optional | Log directory; defaults to `logs`. |
+| `MEMORY_DIR` | Optional | Persistent directory for bot memories; defaults to `data/memory`. Memories are separated by organization, bot, adapter, and thread. |
 
 `infra/compose.yaml` defines PostgreSQL, SearXNG, and OpenSandbox. To start the optional services as well, make sure `infra/.env` exists (copy `infra/sample.env` if needed) and run:
 
@@ -110,4 +111,4 @@ docker build -t ai-bots .
 docker run --env-file .env -p 3000:3000 ai-bots
 ```
 
-Provide a production `DATABASE_URL`, `CREDENTIALS_ENCRYPTION_KEY`, and any integration-specific settings to the container. Use HTTPS at the public ingress and set `OAUTH_BASE_URL` to that public origin when using OAuth.
+Provide a production `DATABASE_URL`, `CREDENTIALS_ENCRYPTION_KEY`, and any integration-specific settings to the container. Mount a persistent volume at `MEMORY_DIR` (for example, `-v bot-memories:/app/data/memory`) so memories survive container replacement. Use HTTPS at the public ingress and set `OAUTH_BASE_URL` to that public origin when using OAuth.

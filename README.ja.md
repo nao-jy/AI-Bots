@@ -83,6 +83,7 @@
 | `RESEND_FROM_EMAIL` | 任意 | Resendの送信元アドレス。未設定時はResendのテスト用送信元を使用します。本番では検証済みドメインのアドレスを設定してください。 |
 | `CLOUDFLARE_TOKEN` | 任意 | `npm run dev` で使用するCloudflare Tunnelのトークン。 |
 | `LOG_DIR` | 任意 | ログ出力先。既定値は `logs`。 |
+| `MEMORY_DIR` | 任意 | ボットのメモリ保存先。既定値は `data/memory`。組織・ボット・アダプター・スレッドごとに分離します。 |
 
 `infra/compose.yaml` にはPostgreSQL、SearXNG、OpenSandboxが定義されています。オプションのサービスも起動する場合は、`infra/.env` があることを確認してください（必要であれば `infra/sample.env` をコピーします）。
 
@@ -111,4 +112,4 @@ docker build -t ai-bots .
 docker run --env-file .env -p 3000:3000 ai-bots
 ```
 
-コンテナに本番用の `DATABASE_URL`、`CREDENTIALS_ENCRYPTION_KEY` と、利用する連携サービス固有の設定を渡してください。公開環境ではHTTPSを使用し、OAuthを利用する場合は `OAUTH_BASE_URL` に公開オリジンを設定してください。
+コンテナに本番用の `DATABASE_URL`、`CREDENTIALS_ENCRYPTION_KEY` と、利用する連携サービス固有の設定を渡してください。コンテナを更新してもメモリが残るよう、`MEMORY_DIR` に永続ボリュームをマウントしてください（例: `-v bot-memories:/app/data/memory`）。公開環境ではHTTPSを使用し、OAuthを利用する場合は `OAUTH_BASE_URL` に公開オリジンを設定してください。

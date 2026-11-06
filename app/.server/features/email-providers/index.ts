@@ -1,5 +1,5 @@
 import { appLogger } from "~/.server/logger/app-logger";
-import { createSMTPRelayEmailProvider } from "./smtp-relay";
+import { SMTPRelayEmailProvider } from "./smtp-relay";
 
 export type EmailVerificationMessage = {
   to: string;
@@ -26,7 +26,7 @@ export function getEmailProvider(): EmailProvider | null {
     const user = process.env.SMTP_RELAY_USER!;
     const pass = process.env.SMTP_RELAY_PASS!;
     const domainFrom = process.env.SMTP_RELAY_DOMAIN_FROM!;
-    return createSMTPRelayEmailProvider(
+    return new SMTPRelayEmailProvider(
       host,
       port,
       secure,
