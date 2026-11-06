@@ -463,6 +463,7 @@ export function EntityPageDialogs({
   onClose: () => void;
 }) {
   const canTest = ["adapters", "agents", "mcp"].includes(page.icon);
+  const [selectedOAuthClientId, setSelectedOAuthClientId] = useState("");
   const changesAdmin = page.columns.some(
     (column) => column.presentation === "admin-toggle",
   ) || page.tableFeatures?.adminToggle === true;
@@ -473,6 +474,10 @@ export function EntityPageDialogs({
     intent?: string;
     notification?: "verification-email";
   }>();
+
+  useEffect(() => {
+    if (mode !== "create") setSelectedOAuthClientId("");
+  }, [mode]);
 
   useEffect(() => {
     if (
@@ -675,6 +680,12 @@ export function EntityPageDialogs({
                         ) || null
                       }
                       required={field.required}
+                      onChange={
+                        page.icon === "oauth_authentications" &&
+                        field.key === "oauthId"
+                          ? (value) => setSelectedOAuthClientId(value ?? "")
+                          : undefined
+                      }
                       clearable={
                         field.key === "agentId" || field.key === "authId"
                       }
@@ -801,7 +812,12 @@ export function EntityPageDialogs({
             <Button
               type="submit"
               className="primary-button"
-              disabled={fetcher.state !== "idle"}
+              disabled={
+                fetcher.state !== "idle" ||
+                (page.icon === "oauth_authentications" &&
+                  mode === "create" &&
+                  !selectedOAuthClientId)
+              }
             >
               {fetcher.state !== "idle"
                 ? t("components.entityPage.dialogs.saving")
