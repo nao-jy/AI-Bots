@@ -24,7 +24,8 @@ export function jsonbToStringRecord(value: unknown): Record<string, string> {
 
 export function timestamp(value: string) {
   const date = new Date(value);
-  return Number.isNaN(date.valueOf()) ? value : date.toLocaleString("ja-JP");
+  const locale = Intl.DateTimeFormat().resolvedOptions().locale;
+  return Number.isNaN(date.valueOf()) ? value : date.toLocaleString(locale);
 }
 
 export function idList(value: string | null) {
@@ -33,13 +34,19 @@ export function idList(value: string | null) {
       (value ?? "")
         .split(",")
         .map((item) => item.trim())
-        .filter((item) => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(item)),
+        .filter((item) =>
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+            item,
+          ),
+        ),
     ),
   ];
 }
 
 export function isUuid(value: string): boolean {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+    value,
+  );
 }
 
 export function generateResourceId() {
@@ -51,7 +58,13 @@ export function record(
   updatedAt: string | Date,
   fields: Record<string, string | number | boolean>,
 ): EntityRecord {
-  return { id: String(id), updated: timestamp(updatedAt instanceof Date ? updatedAt.toISOString() : updatedAt), ...fields };
+  return {
+    id: String(id),
+    updated: timestamp(
+      updatedAt instanceof Date ? updatedAt.toISOString() : updatedAt,
+    ),
+    ...fields,
+  };
 }
 
 export function encryptCredential(credential: string) {
