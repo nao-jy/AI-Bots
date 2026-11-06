@@ -32,6 +32,8 @@ import { appLogger } from "../.server/logger/app-logger";
 import { logAuditEvent } from "../.server/logger/audit-logger";
 import { APP_NAME } from "~/const";
 import { LanguageSwitcher } from "~/components/language-switcher";
+import { PasswordStrengthInput } from "~/components/password-strength-input";
+import { meetsPasswordPolicy } from "../.server/password-policy";
 
 export function meta() {
   return [
@@ -45,8 +47,11 @@ export function meta() {
 
 export async function loader({ request }: Route.LoaderArgs) {
   if (await getSessionUser(request)) throw redirect("/");
+  const setupRequired = !(await hasUsers());
+  const settings = setupRequired ? await getAppSettings() : null;
   return {
-    setupRequired: !(await hasUsers()),
+    setupRequired,
+    minimumPasswordStrength: settings?.minimumPasswordStrength ?? 2,
     passwordResetEnabled: isPasswordResetEnabled(),
   };
 }
@@ -73,7 +78,14 @@ export async function action({ request }: Route.ActionArgs) {
         { status: 401 },
       );
     }
-    if (name.length < 1 || organizationName.length < 1 || password.length < 12) {
+    if (
+      name.length < 1 ||
+      organizationName.length < 1 ||
+      !meetsPasswordPolicy(
+        password,
+        (await getAppSettings()).minimumPasswordStrength,
+      )
+    ) {
       return data(
         { error: t("pages.login.firstAccountRequirements") },
         { status: 400 },
@@ -237,17 +249,22 @@ export default function Login({ loaderData }: Route.ComponentProps) {
               autoComplete="email"
               required
             />
-            <PasswordInput
-              name="password"
-              label={
-                setupRequired
-                  ? t("pages.login.passwordMinimumLabel")
-                  : t("pages.login.passwordLabel")
-              }
-              autoComplete={setupRequired ? "new-password" : "current-password"}
-              minLength={setupRequired ? 12 : undefined}
-              required
-            />
+            {setupRequired ? (
+              <PasswordStrengthInput
+                name="password"
+                label={t("pages.login.passwordMinimumLabel")}
+                autoComplete="new-password"
+                minimumStrength={loaderData.minimumPasswordStrength}
+                required
+              />
+            ) : (
+              <PasswordInput
+                name="password"
+                label={t("pages.login.passwordLabel")}
+                autoComplete="current-password"
+                required
+              />
+            )}
             {actionData?.error && <Alert color="red">{actionData.error}</Alert>}
             {loaderData.passwordResetEnabled && !setupRequired && (
               <Link to="/forgot-password" className="forgot-password-link">

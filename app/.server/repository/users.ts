@@ -3,6 +3,8 @@ import { db } from "./db";
 import { hashPassword } from "../auth";
 import { generateResourceId, record, timestamp } from "../utils";
 import { logAuditEvent } from "../logger/audit-logger";
+import { getAppSettings } from "./app-settings";
+import { meetsPasswordPolicy } from "../password-policy";
 
 export async function hasUsers() {
   return Boolean(await db.orm.aibot.User.first());
@@ -184,8 +186,9 @@ export async function saveUser(
   if (!name || !/^\S+@\S+\.\S+$/.test(email))
     return { error: "server.displayNameAndValidEmailRequired" };
   if (id === null) {
-    if (password.length < 12)
-      return { error: "server.passwordTooShort" };
+    const settings = await getAppSettings(organizationId);
+    if (!meetsPasswordPolicy(password, settings.minimumPasswordStrength))
+      return { error: "server.passwordStrengthInsufficient" };
     const emailVerified = !emailVerificationEnabled;
     const user = await createUser({
       name,
@@ -200,8 +203,11 @@ export async function saveUser(
     const user = await db.orm.aibot.User.first({ id, organizationId });
     if (!user)
       return { error: "server.userNotFound" };
-    if (password && password.length < 12)
-      return { error: "server.passwordTooShort" };
+    if (password) {
+      const settings = await getAppSettings(organizationId);
+      if (!meetsPasswordPolicy(password, settings.minimumPasswordStrength))
+        return { error: "server.passwordStrengthInsufficient" };
+    }
     const emailChanged = user.email !== email;
     const emailVerified = emailChanged
       ? !emailVerificationEnabled

@@ -1,5 +1,5 @@
 import { t } from "~/i18n";
-import { Alert, Button, PasswordInput, Title } from "@mantine/core";
+import { Alert, Button, Title } from "@mantine/core";
 import { data, Form, Link, useActionData } from "react-router";
 import type { Route } from "./+types/reset-password";
 import {
@@ -7,6 +7,7 @@ import {
   inspectPasswordReset,
 } from "../.server/features/password-reset";
 import { APP_NAME } from "~/const";
+import { PasswordStrengthInput } from "~/components/password-strength-input";
 
 type ResetStatus =
   | "ready"
@@ -28,8 +29,9 @@ export function meta() {
 
 export async function loader({ request }: Route.LoaderArgs) {
   const token = new URL(request.url).searchParams.get("token") ?? "";
+  const reset = await inspectPasswordReset(token);
   return data(
-    { status: await inspectPasswordReset(token), token },
+    { ...reset, token },
     { headers: noStoreHeaders() },
   );
 }
@@ -88,11 +90,11 @@ export default function ResetPassword({ loaderData }: Route.ComponentProps) {
                   name="token"
                   value={loaderData.token}
                 />
-                <PasswordInput
+                <PasswordStrengthInput
                   name="password"
                   label={t("pages.resetPassword.newPasswordLabel")}
                   autoComplete="new-password"
-                  minLength={12}
+                  minimumStrength={loaderData.minimumPasswordStrength}
                   required
                 />
                 <Button type="submit" fullWidth>

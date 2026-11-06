@@ -1,11 +1,23 @@
 import { requireUser } from "../.server/auth";
 import { db } from "../.server/repository/db";
 import Dashboard from "../components/dashboard";
-import type { Route } from "./+types/index";
+import { t } from "~/i18n";
+import { APP_NAME } from "~/const";
+import type { Route } from "./+types/dashboard";
 import { filterResourcesByRole } from "../.server/authorization";
 
 const DAY_MS = 24 * 60 * 60 * 1_000;
 const PERIOD_DAYS = 30;
+
+export function meta() {
+  return [
+    { title: t("pages.dashboard.documentTitle", { 0: APP_NAME }) },
+    {
+      name: "description",
+      content: t("pages.dashboard.description"),
+    },
+  ];
+}
 
 export async function loader({ request }: Route.LoaderArgs) {
   const user = await requireUser(request);

@@ -26,9 +26,11 @@ function localizeOptions(options?: string[] | EntityOption[]) {
 export function EntityPageView({
   page,
   dialogResetKey,
+  minimumPasswordStrength,
 }: {
   page: EntityPageDefinition;
   dialogResetKey?: number;
+  minimumPasswordStrength?: number;
 }) {
   const [dialog, setDialog] = useState<EntityDialogMode>(null);
   const [selected, setSelected] = useState<EntityRecord | null>(null);
@@ -157,6 +159,7 @@ export function EntityPageView({
       />
       <EntityPageDialogs
         page={localizedPage}
+        minimumPasswordStrength={minimumPasswordStrength}
         mode={dialog}
         selected={selected}
         nextEnabled={nextEnabled}

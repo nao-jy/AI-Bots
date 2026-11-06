@@ -82,6 +82,7 @@ export async function loader({ request }: Route.LoaderArgs) {
       currentUser.organizationId,
     ),
     currentUserId: currentUser.id,
+    minimumPasswordStrength: settings.minimumPasswordStrength,
   };
 }
 
@@ -206,6 +207,7 @@ export default function Users({ loaderData }: Route.ComponentProps) {
         records: loaderData.users,
         protectedRecordId: loaderData.currentUserId,
       }}
+      minimumPasswordStrength={loaderData.minimumPasswordStrength}
     />
   );
 }

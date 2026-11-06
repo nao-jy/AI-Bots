@@ -23,7 +23,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'726ad70a297a784fb504d67aadabd271b7a0b1ef9db63bfc4afc8bf37f6c04a7'>;
+  StorageHashBase<'5b83f74e93b19a74c7a3f3406c46ac136899570c4b2c752f1b42a867047c32f2'>;
 export type ExecutionHash =
   ExecutionHashBase<'d1cef966cba620d770cced85ebaf6075292f48c77f2dc79d6537bcbbcceb5241'>;
 export type ProfileHash =
@@ -646,6 +646,7 @@ export namespace Models {
     id: FieldOutputTypes['aibot']['Organization']['id'];
     maxLoginAttempts: FieldOutputTypes['aibot']['Organization']['maxLoginAttempts'];
     mfaEnabled: FieldOutputTypes['aibot']['Organization']['mfaEnabled'];
+    minimumPasswordStrength: FieldOutputTypes['aibot']['Organization']['minimumPasswordStrength'];
     name: FieldOutputTypes['aibot']['Organization']['name'];
     sessionDurationSeconds: FieldOutputTypes['aibot']['Organization']['sessionDurationSeconds'];
     updatedAt: FieldOutputTypes['aibot']['Organization']['updatedAt'];
@@ -2874,6 +2875,16 @@ type ContractBase = Omit<
                   readonly default: {
                     readonly kind: 'literal';
                     readonly value: DefaultLiteralValue<'pg/bool@1', false>;
+                  };
+                  readonly many: false;
+                };
+                readonly minimumPasswordStrength: {
+                  readonly dataType: 'pg/int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/int4@1', 2>;
                   };
                   readonly many: false;
                 };
@@ -5602,6 +5613,10 @@ type ContractBase = Omit<
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/bool@1' };
               };
+              readonly minimumPasswordStrength: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
               readonly name: {
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
@@ -5755,6 +5770,7 @@ type ContractBase = Omit<
                 readonly id: { readonly column: 'id' };
                 readonly maxLoginAttempts: { readonly column: 'maxLoginAttempts' };
                 readonly mfaEnabled: { readonly column: 'mfaEnabled' };
+                readonly minimumPasswordStrength: { readonly column: 'minimumPasswordStrength' };
                 readonly name: { readonly column: 'name' };
                 readonly sessionDurationSeconds: { readonly column: 'sessionDurationSeconds' };
                 readonly updatedAt: { readonly column: 'updatedAt' };

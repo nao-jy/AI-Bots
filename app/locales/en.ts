@@ -48,6 +48,16 @@ export const en = {
     fallbackTitle: "Something went wrong",
   },
   components: {
+    passwordStrength: {
+      label: "Password strength",
+      noMinimum: "No minimum strength",
+      minimum: "Required strength: {{strength}} or higher",
+      veryWeak: "Very weak",
+      weak: "Weak",
+      fair: "Fair",
+      strong: "Strong",
+      veryStrong: "Very strong",
+    },
     resourceGrants: {
       title: "Access for {{0}}",
       description: "Grant a role on this resource to a user or group. When a user has multiple grants, their highest role applies.",
@@ -467,7 +477,8 @@ export const en = {
     userNotFound: "User not found.",
     displayNameAndValidEmailRequired:
       "Enter a display name and valid email address.",
-    passwordTooShort: "Passwords must be at least 12 characters.",
+    passwordStrengthInsufficient:
+      "The password does not meet the configured strength requirement.",
     cannotRevokeOwnAdmin:
       "You cannot remove your own administrator privileges.",
     atLeastOneAdminRequired: "At least one administrator is required.",
@@ -622,6 +633,7 @@ export const en = {
   },
   pages: {
     dashboard: {
+      documentTitle: "Dashboard | {{0}}",
       eyebrow: "WORKSPACE OVERVIEW",
       title: "Dashboard",
       description: "A clear view of your agents and their recent activity.",
@@ -737,7 +749,7 @@ export const en = {
       loginInstructions: "Enter your email address and password.",
       invalidCredentials: "The email address or password is incorrect.",
       firstAccountRequirements:
-        "Enter an organization name, a display name, and a password of at least 12 characters.",
+        "Enter an organization name and a display name, and choose a password that meets the required strength.",
       firstAccountCreationFailed:
         "Could not create the first account. Please try again.",
       verificationEmailSendFailedAfterSignup:
@@ -754,7 +766,7 @@ export const en = {
       organizationNamePlaceholder: "e.g. Support team",
       emailLabel: "Email address",
       emailPlaceholder: "name@company.com",
-      passwordMinimumLabel: "Password (at least 12 characters)",
+      passwordMinimumLabel: "Password",
       passwordLabel: "Password",
       forgotPasswordLink: "Forgot your password?",
       createAccount: "Create account",
@@ -914,8 +926,9 @@ export const en = {
       invalidLinkTitle: "Unable to verify link",
       invalidLinkMessage: "The link is invalid or has already been used.",
       formTitle: "Set a new password",
-      passwordHint: "Enter at least 12 characters.",
-      passwordValidationError: "The password must be at least 12 characters.",
+      passwordHint: "Choose a password that meets the required strength.",
+      passwordValidationError:
+        "The password does not meet the configured strength requirement.",
       newPasswordLabel: "New password",
       submit: "Reset password",
       backToLogin: "Back to login",
@@ -969,6 +982,7 @@ export const en = {
         "Session duration must be an integer from 1 to 365 days.",
       invalidLoginAttemptLimit:
         "The login failure limit must be a positive integer.",
+      invalidPasswordStrength: "Select a valid minimum password strength.",
       title: "Settings",
       saved: "Settings saved.",
       organizationNameLabel: "Organization name",
@@ -982,6 +996,9 @@ export const en = {
       loginAttemptLimitLabel: "Maximum failed login attempts",
       loginAttemptLimitHelp:
         "Logins are locked after this many failures. An administrator can unlock users from the user list.",
+      minimumPasswordStrengthLabel: "Minimum password strength",
+      minimumPasswordStrengthHelp:
+        "Applies to sign-up, user creation, and password resets. Uses zxcvbn's score and the existing 12-character minimum.",
       mfaSettingsPreservedHelp:
         "Disabling MFA does not remove authenticator app settings from user accounts.",
       save: "Save settings",
@@ -1002,7 +1019,7 @@ export const en = {
       emailPlaceholder: "name@example.com",
       passwordLabel: "Password",
       passwordHint:
-        "At least 12 characters when creating; enter only when changing it during editing",
+        "Meet the required strength when creating; enter only when changing it during editing",
       documentTitle: "Users | {{0}}",
       notFound: "User not found.",
       invalidChanges: "Review the changes and try again.",

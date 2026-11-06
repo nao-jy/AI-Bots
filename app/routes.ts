@@ -3,7 +3,7 @@ import { OAUTH_CALLBACK_PATH } from "./const";
 
 export default [
   route("/", "routes/layout.tsx", [
-    index("routes/index.tsx"),
+    index("routes/dashboard.tsx"),
     route("bots", "routes/bots.tsx"),
     route("adapters", "routes/adapters.tsx"),
     route("providers", "routes/providers.tsx"),

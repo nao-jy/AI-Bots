@@ -1,5 +1,5 @@
 import { t } from "~/i18n";
-import { Alert, Button, NumberInput, Switch, Text, TextInput } from "@mantine/core";
+import { Alert, Button, NumberInput, Select, Switch, Text, TextInput } from "@mantine/core";
 import { Form, useActionData } from "react-router";
 import type { Route } from "./+types/settings";
 import { requireAdmin } from "../.server/auth";
@@ -21,6 +21,7 @@ export async function loader({ request }: Route.LoaderArgs) {
     mfaEnabled: settings.mfaEnabled,
     sessionDurationDays: settings.sessionDurationSeconds / 86400,
     maxLoginAttempts: settings.maxLoginAttempts,
+    minimumPasswordStrength: settings.minimumPasswordStrength,
   };
 }
 
@@ -36,6 +37,18 @@ export async function action({ request }: Route.ActionArgs) {
   const maxLoginAttempts = Number(form.get("maxLoginAttempts"));
   if (!Number.isSafeInteger(maxLoginAttempts) || maxLoginAttempts < 1)
     return { error: t("pages.settings.invalidLoginAttemptLimit") };
+  const minimumPasswordStrengthInput = form.get("minimumPasswordStrength");
+  const minimumPasswordStrength =
+    typeof minimumPasswordStrengthInput === "string" &&
+    minimumPasswordStrengthInput.trim() !== ""
+      ? Number(minimumPasswordStrengthInput)
+      : Number.NaN;
+  if (
+    !Number.isSafeInteger(minimumPasswordStrength) ||
+    minimumPasswordStrength < 0 ||
+    minimumPasswordStrength > 4
+  )
+    return { error: t("pages.settings.invalidPasswordStrength") };
 
   await saveAppSettings({
     organizationId: user.organizationId,
@@ -43,6 +56,7 @@ export async function action({ request }: Route.ActionArgs) {
     mfaEnabled: form.get("mfaEnabled") === "on",
     sessionDurationSeconds: durationDays * 86400,
     maxLoginAttempts,
+    minimumPasswordStrength,
   });
   return { ok: true };
 }
@@ -93,6 +107,22 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
             step={1}
             defaultValue={loaderData.sessionDurationDays}
             allowDecimal={false}
+            required
+            mb="lg"
+          />
+          <Select
+            name="minimumPasswordStrength"
+            label={t("pages.settings.minimumPasswordStrengthLabel")}
+            description={t("pages.settings.minimumPasswordStrengthHelp")}
+            data={[
+              { value: "0", label: t("components.passwordStrength.noMinimum") },
+              { value: "1", label: t("components.passwordStrength.weak") },
+              { value: "2", label: t("components.passwordStrength.fair") },
+              { value: "3", label: t("components.passwordStrength.strong") },
+              { value: "4", label: t("components.passwordStrength.veryStrong") },
+            ]}
+            defaultValue={String(loaderData.minimumPasswordStrength)}
+            allowDeselect={false}
             required
             mb="lg"
           />

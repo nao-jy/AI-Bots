@@ -24,6 +24,7 @@ import { ToolSetContextEditor } from "./toolset-context-editor";
 import { McpServerEditor } from "./mcp-server-editor";
 import { CronScheduleEditor } from "./cron-schedule-editor";
 import { ScheduleTargetsEditor } from "./schedule-targets-editor";
+import { PasswordStrengthInput } from "~/components/password-strength-input";
 
 type KeyValuePair = { key: string; value: string };
 
@@ -448,12 +449,14 @@ function StringListEditor({
 
 export function EntityPageDialogs({
   page,
+  minimumPasswordStrength,
   mode,
   selected,
   nextEnabled,
   onClose,
 }: {
   page: EntityPageDefinition;
+  minimumPasswordStrength?: number;
   mode: EntityDialogMode;
   selected: EntityRecord | null;
   nextEnabled: boolean;
@@ -698,13 +701,24 @@ export function EntityPageDialogs({
                       )}
                     />
                   ) : field.type === "password" ? (
-                    <PasswordInput
-                      name={field.key}
-                      label={field.label}
-                      placeholder={field.placeholder}
-                      autoComplete="new-password"
-                      required={field.required && mode === "create"}
-                    />
+                    field.key === "password" ? (
+                      <PasswordStrengthInput
+                        name={field.key}
+                        label={field.label}
+                        placeholder={field.placeholder}
+                        autoComplete="new-password"
+                        minimumStrength={minimumPasswordStrength}
+                        required={field.required && mode === "create"}
+                      />
+                    ) : (
+                      <PasswordInput
+                        name={field.key}
+                        label={field.label}
+                        placeholder={field.placeholder}
+                        autoComplete="new-password"
+                        required={field.required && mode === "create"}
+                      />
+                    )
                   ) : (
                     <TextInput
                       name={field.key}

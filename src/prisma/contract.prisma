@@ -83,25 +83,26 @@ namespace aibot {
   }
 
   model Organization {
-    id                     Uuid              @id @onCreate(uuid(7))
-    name                   String
-    groups                 Group[]
-    users                  User[]
-    chatbots               ChatBot[]
-    providers              Provider[]
-    adapters               ChatAdapter[]
-    mcpServers             McpServer[]
-    agents                 AgentDefinition[]
-    usage                  AgentUsage[]
-    rateLimits             RateLimit[]
-    oauthClients           OAuthClient[]
-    sandboxes              Sandbox[]
-    schedules              ChatBotSchedule[]
+    id                      Uuid              @id @onCreate(uuid(7))
+    name                    String
+    groups                  Group[]
+    users                   User[]
+    chatbots                ChatBot[]
+    providers               Provider[]
+    adapters                ChatAdapter[]
+    mcpServers              McpServer[]
+    agents                  AgentDefinition[]
+    usage                   AgentUsage[]
+    rateLimits              RateLimit[]
+    oauthClients            OAuthClient[]
+    sandboxes               Sandbox[]
+    schedules               ChatBotSchedule[]
     +Timestamps
 
-    mfaEnabled             Boolean           @default(false)
-    sessionDurationSeconds Int               @default(2592000)
-    maxLoginAttempts       Int               @default(5)
+    mfaEnabled              Boolean           @default(false)
+    sessionDurationSeconds  Int               @default(2592000)
+    maxLoginAttempts        Int               @default(5)
+    minimumPasswordStrength Int               @default(2)
   }
 
   model Group {

@@ -50,6 +50,7 @@ export const ja = {
 
   pages: {
     dashboard: {
+      documentTitle: "ダッシュボード | {{0}}",
       eyebrow: "WORKSPACE OVERVIEW",
       title: "ダッシュボード",
       description:
@@ -169,7 +170,7 @@ export const ja = {
       loginInstructions: "メールアドレスとパスワードを入力してください。",
       invalidCredentials: "メールアドレスまたはパスワードが正しくありません。",
       firstAccountRequirements:
-        "組織名、ユーザー名、12文字以上のパスワードを入力してください。",
+        "組織名とユーザー名を入力し、必要な強度を満たすパスワードを設定してください。",
       firstAccountCreationFailed:
         "初回アカウントを作成できませんでした。もう一度お試しください。",
       verificationEmailSendFailedAfterSignup:
@@ -187,7 +188,7 @@ export const ja = {
       organizationNamePlaceholder: "例：サポートチーム",
       emailLabel: "メールアドレス",
       emailPlaceholder: "name@company.com",
-      passwordMinimumLabel: "パスワード（12文字以上）",
+      passwordMinimumLabel: "パスワード",
       passwordLabel: "パスワード",
       forgotPasswordLink: "パスワードをお忘れですか？",
       createAccount: "アカウントを作成",
@@ -341,8 +342,8 @@ export const ja = {
       invalidLinkTitle: "リンクを確認できません",
       invalidLinkMessage: "リンクが無効か、すでに使用されています。",
       formTitle: "新しいパスワードを設定",
-      passwordHint: "12文字以上で入力してください。",
-      passwordValidationError: "パスワードは12文字以上で入力してください。",
+      passwordHint: "必要な強度を満たすパスワードを入力してください。",
+      passwordValidationError: "パスワードが設定された強度条件を満たしていません。",
       newPasswordLabel: "新しいパスワード",
       submit: "パスワードを再設定",
       backToLogin: "ログイン画面へ",
@@ -395,6 +396,7 @@ export const ja = {
         "セッション持続時間は1〜365日の整数で指定してください。",
       invalidLoginAttemptLimit:
         "ログイン失敗の上限は1以上の整数で指定してください。",
+      invalidPasswordStrength: "必要なパスワード強度を選択してください。",
       title: "設定",
       saved: "設定を保存しました。",
       organizationNameLabel: "組織名",
@@ -408,6 +410,9 @@ export const ja = {
       loginAttemptLimitLabel: "ログイン失敗の上限回数",
       loginAttemptLimitHelp:
         "この回数失敗するとログインをロックします。ユーザー一覧から解除できます。",
+      minimumPasswordStrengthLabel: "パスワードの必要強度",
+      minimumPasswordStrengthHelp:
+        "新規登録、ユーザー作成、パスワード再設定に適用します。zxcvbnの評価スコアで判定します。",
       mfaSettingsPreservedHelp:
         "MFAを無効にしても、各ユーザーの認証アプリ設定は保持されます。",
       save: "設定を保存",
@@ -427,7 +432,7 @@ export const ja = {
       displayNamePlaceholder: "例：山田 花子",
       emailPlaceholder: "name@example.com",
       passwordLabel: "パスワード",
-      passwordHint: "作成時は12文字以上、編集時は変更する場合のみ入力",
+      passwordHint: "作成時は必要な強度を満たすパスワードを入力。編集時は変更する場合のみ入力",
       documentTitle: "ユーザー | {{0}}",
       notFound: "ユーザーが見つかりません。",
       invalidChanges: "変更内容を確認してください。",
@@ -490,6 +495,16 @@ export const ja = {
     },
   },
   components: {
+    passwordStrength: {
+      label: "パスワード強度",
+      noMinimum: "強度の下限なし",
+      minimum: "必要な強度: {{strength}}以上",
+      veryWeak: "非常に弱い",
+      weak: "弱い",
+      fair: "普通",
+      strong: "強い",
+      veryStrong: "非常に強い",
+    },
     resourceGrants: {
       title: "{{0}} のアクセス権",
       description:
@@ -919,7 +934,7 @@ export const ja = {
     userNotFound: "ユーザーが見つかりません。",
     displayNameAndValidEmailRequired:
       "ユーザー名と有効なメールアドレスを入力してください。",
-    passwordTooShort: "パスワードは12文字以上で入力してください。",
+    passwordStrengthInsufficient: "パスワードが設定された強度条件を満たしていません。",
     cannotRevokeOwnAdmin: "自分の管理者権限は解除できません。",
     atLeastOneAdminRequired: "管理者は最低1人必要です。",
     cannotDeleteOwnAccount: "自分のアカウントは削除できません。",

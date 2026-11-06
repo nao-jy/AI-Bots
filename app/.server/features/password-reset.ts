@@ -7,6 +7,8 @@ import {
 } from "../repository/users";
 import { getEmailProvider } from "./email-providers";
 import { sign, hash } from "../utils";
+import { getAppSettings } from "../repository/app-settings";
+import { meetsPasswordPolicy } from "../password-policy";
 
 const PASSWORD_RESET_TTL_MS = 1000 * 60 * 60;
 
@@ -111,17 +113,31 @@ async function resolvePasswordReset(token: string) {
     hash(user.passwordHash) !== passwordHashDigest
   )
     return { status: "invalid" as const };
-  return { status: "ready" as const, userId, passwordHashDigest };
+  return {
+    status: "ready" as const,
+    userId,
+    organizationId: user.organizationId,
+    passwordHashDigest,
+  };
 }
 
 export async function inspectPasswordReset(token: string) {
-  return (await resolvePasswordReset(token)).status;
+  const resolved = await resolvePasswordReset(token);
+  if (resolved.status !== "ready")
+    return { status: resolved.status, minimumPasswordStrength: 0 };
+  const settings = await getAppSettings(resolved.organizationId);
+  return {
+    status: resolved.status,
+    minimumPasswordStrength: settings.minimumPasswordStrength,
+  };
 }
 
 export async function completePasswordReset(token: string, password: string) {
   const resolved = await resolvePasswordReset(token);
   if (resolved.status !== "ready") return resolved;
-  if (password.length < 12) return { status: "weak-password" as const };
+  const settings = await getAppSettings(resolved.organizationId);
+  if (!meetsPasswordPolicy(password, settings.minimumPasswordStrength))
+    return { status: "weak-password" as const };
 
   const updated = await resetUserPassword(
     resolved.userId,

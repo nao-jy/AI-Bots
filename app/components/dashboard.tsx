@@ -3,7 +3,7 @@ import { ArrowUpRightIcon, ArrowsLeftRightIcon, ChatCircleDotsIcon, CpuIcon, Rob
 import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import type { Route } from "../routes/+types/index";
+import type { Route } from "../routes/+types/dashboard";
 
 export default function Dashboard({
   loaderData,
