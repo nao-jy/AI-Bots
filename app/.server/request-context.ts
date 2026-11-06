@@ -6,7 +6,7 @@ import type { Locale } from "../i18n";
 export type RequestContext = {
   requestId: string;
   clientIp: string | null;
-  userId: number | null;
+  userId: string | null;
   locale: Locale;
 };
 

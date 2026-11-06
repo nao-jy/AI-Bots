@@ -6,12 +6,12 @@ import { hash, sign } from "../utils";
 const EMAIL_VERIFICATION_TTL_MS = 1000 * 60 * 60 * 24;
 
 type EmailVerificationPayload = {
-  userId: number;
+  userId: string;
   emailHash: string;
   expiresAt: number;
 };
 
-function createVerificationToken(userId: number, email: string) {
+function createVerificationToken(userId: string, email: string) {
   const payload = Buffer.from(
     JSON.stringify({
       userId,
@@ -46,7 +46,7 @@ function decodeVerificationToken(token: string): {
     if (
       !value ||
       typeof value !== "object" ||
-      !Number.isSafeInteger((value as EmailVerificationPayload).userId) ||
+      typeof (value as EmailVerificationPayload).userId !== "string" ||
       typeof (value as EmailVerificationPayload).emailHash !== "string" ||
       !Number.isSafeInteger((value as EmailVerificationPayload).expiresAt)
     )
@@ -67,7 +67,7 @@ export function isEmailVerificationEnabled() {
 }
 
 export async function sendEmailVerification(
-  user: { id: number; email: string; name: string | null },
+  user: { id: string; email: string; name: string | null },
   requestUrl: string,
 ) {
   const provider = getEmailProvider();

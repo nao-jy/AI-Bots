@@ -115,7 +115,9 @@ export async function action({ request }: Route.ActionArgs) {
       }
     }
   } else {
-    const maxLoginAttempts = (await getAppSettings()).maxLoginAttempts;
+    const maxLoginAttempts = (
+      await getAppSettings(user.organizationId)
+    ).maxLoginAttempts;
     if (user.loginAttempts >= maxLoginAttempts) {
       logAuditEvent("auth.login.rejected", "user", user.id);
       return data(
@@ -150,7 +152,7 @@ export async function action({ request }: Route.ActionArgs) {
     }
   }
 
-  if ((await getAppSettings()).mfaEnabled) {
+  if ((await getAppSettings(user.organizationId)).mfaEnabled) {
     const challenge = await createMfaLoginChallenge(
       user.id,
       user.mfaSecret ? undefined : createMfaSecret(),
@@ -164,7 +166,7 @@ export async function action({ request }: Route.ActionArgs) {
     return redirect("/mfa", { headers });
   }
 
-  const session = await createSession(user.id);
+  const session = await createSession(user.id, user.organizationId);
   logAuditEvent("auth.login.succeeded", "user", user.id, user.id);
   return redirect("/", {
     headers: {

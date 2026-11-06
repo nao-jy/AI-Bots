@@ -4,19 +4,22 @@ import type { PublicIdSlot } from "../../types/entities";
 import {
   decryptAdapterEnvs,
   encryptStringMap,
+  generateResourceId,
   generatePublicId,
+  isUuid,
   jsonb,
   record,
 } from "../utils";
 import { toDisplayNameAdapter } from "../features/chat-adapter";
 import { logAuditEvent } from "../logger/audit-logger";
+import { filterResourcesByRole, grantResourceRole, hasResourceAccess } from "../authorization";
 
 export async function listAdapters(user: AuthUser) {
   const [adapters, authentications] = await Promise.all([
-    db.orm.aibot.ChatAdapter.where({ ownerId: user.id })
+    filterResourcesByRole(user, await db.orm.aibot.ChatAdapter.where({ organizationId: user.organizationId })
       .include("publicIds")
-      .all(),
-    db.orm.aibot.OAuthAuthentication.where({ ownerId: user.id }).all(),
+      .all()),
+    filterResourcesByRole(user, await db.orm.aibot.OAuthAuthentication.where({ organizationId: user.organizationId }).all()),
   ]);
   const authNames = new Map(
     authentications.map((auth) => [auth.id, auth.name]),
@@ -36,7 +39,7 @@ export async function listAdapters(user: AuthUser) {
         config: JSON.stringify(config),
         configured: Object.keys(config).length ? "server.configured" : "server.notConfigured",
         publicIds: JSON.stringify(
-          adapter.publicIds.map(({ slot, id }) => ({ slot, id })),
+          adapter.publicIds.map(({ slot, publicId }) => ({ slot, id: publicId })),
         ),
       });
     }),
@@ -49,7 +52,7 @@ export async function listAdapters(user: AuthUser) {
 
 export async function saveAdapter(
   user: AuthUser,
-  id: number | null,
+  id: string | null,
   values: FormData,
 ) {
   const name = String(values.get("name") ?? "").trim();
@@ -58,7 +61,7 @@ export async function saveAdapter(
   ).trim();
   const configValue = String(values.get("config") ?? "{}").trim();
   const authValue = String(values.get("authId") ?? "").trim();
-  const authId = authValue ? Number(authValue) : null;
+  const authId = authValue || null;
   if (!name || !platform)
     return { error: "server.adapterNameAndPlatformRequired" };
   let config: Record<string, string>;
@@ -76,16 +79,17 @@ export async function saveAdapter(
     return { error: "server.invalidEnvironmentVariables" };
   }
   if (id !== null) {
-    if (!(await db.orm.aibot.ChatAdapter.first({ id, ownerId: user.id })))
+    if (!(await db.orm.aibot.ChatAdapter.first({ id, organizationId: user.organizationId })) ||
+      !(await hasResourceAccess(user, id, "update")))
       return { error: "server.adapterNotFound" };
   }
   if (authId !== null) {
     if (
-      !Number.isInteger(authId) ||
+      !isUuid(authId) ||
       !(await db.orm.aibot.OAuthAuthentication.first({
         id: authId,
-        ownerId: user.id,
-      }))
+        organizationId: user.organizationId,
+      })) || !(await hasResourceAccess(user, authId, "read"))
     )
       return { error: "server.selectedOauthAuthenticationNotFound" };
   }
@@ -104,24 +108,27 @@ export async function saveAdapter(
   if (id === null) {
     const adapterId = await db.transaction(async (tx) => {
       const adapter = await tx.orm.aibot.ChatAdapter.create({
+        id: generateResourceId(),
         name,
         platform,
-        ownerId: user.id,
+        organizationId: user.organizationId,
         config: storedEnvs,
         authId,
       });
       for (const slot of ["first", "second"] as const) {
         await tx.orm.aibot.ChatAdapterPublicId.create({
-          id: generatePublicId(),
+          organizationId: user.organizationId,
+          publicId: generatePublicId(),
           slot,
           adapterId: adapter.id,
         });
       }
       return adapter.id;
     });
+    await grantResourceRole(user, adapterId, "manager");
     logAuditEvent("adapter.created", "adapter", adapterId, user.id);
   } else {
-    await db.orm.aibot.ChatAdapter.where({ id, ownerId: user.id }).update({
+    await db.orm.aibot.ChatAdapter.where({ id, organizationId: user.organizationId }).update({
       name,
       platform,
       config: storedEnvs,
@@ -132,25 +139,26 @@ export async function saveAdapter(
   return { ok: true };
 }
 
-export async function deleteAdapter(user: AuthUser, id: number) {
-  if (!(await db.orm.aibot.ChatAdapter.first({ id, ownerId: user.id })))
+export async function deleteAdapter(user: AuthUser, id: string) {
+  if (!(await db.orm.aibot.ChatAdapter.first({ id, organizationId: user.organizationId })) ||
+    !(await hasResourceAccess(user, id, "delete")))
     return false;
-  await db.orm.aibot.ChatAdapter.where({ id, ownerId: user.id }).delete();
+  await db.orm.aibot.ChatAdapter.where({ id, organizationId: user.organizationId }).delete();
   logAuditEvent("adapter.deleted", "adapter", id, user.id);
   return true;
 }
 
 export async function regenerateAdapterPublicIds(
   user: AuthUser,
-  id: number,
+  id: string,
   slot: PublicIdSlot,
 ) {
   const updated = await db.transaction(async (tx) => {
     const adapter = await tx.orm.aibot.ChatAdapter.first({
       id,
-      ownerId: user.id,
+      organizationId: user.organizationId,
     });
-    if (!adapter) return false;
+    if (!adapter || !(await hasResourceAccess(user, id, "manageGrant"))) return false;
 
     const publicIds = await tx.orm.aibot.ChatAdapterPublicId.where({
       adapterId: id,
@@ -160,11 +168,12 @@ export async function regenerateAdapterPublicIds(
       await tx.orm.aibot.ChatAdapterPublicId.where({
         id: publicId.id,
       }).update({
-        id: generatePublicId(),
+        publicId: generatePublicId(),
       });
     } else {
       await tx.orm.aibot.ChatAdapterPublicId.create({
-        id: generatePublicId(),
+        organizationId: user.organizationId,
+        publicId: generatePublicId(),
         slot,
         adapterId: id,
       });

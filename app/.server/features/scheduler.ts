@@ -9,7 +9,7 @@ import { decryptAdapterEnvs } from "../utils";
 import { appLogger } from "../logger/app-logger";
 
 const jobs = new Map<
-  number,
+  string,
   {
     cronParam: string;
     timezone: string;
@@ -88,7 +88,7 @@ async function refreshJobs() {
   }
 }
 
-async function executeSchedule(id: number) {
+async function executeSchedule(id: string) {
   try {
     const schedule = await getScheduleForExecution(id);
     if (!schedule) return;
@@ -97,8 +97,8 @@ async function executeSchedule(id: number) {
       const link = target.chatbotAdapter;
       if (
         !link ||
-        link.chatbot.ownerId !== schedule.ownerId ||
-        link.adapter.ownerId !== schedule.ownerId ||
+        link.chatbot.organizationId !== schedule.organizationId ||
+        link.adapter.organizationId !== schedule.organizationId ||
         !link.chatbot.isEnabled
       )
         continue;

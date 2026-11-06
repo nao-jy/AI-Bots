@@ -14,7 +14,7 @@ import {
 } from "./helpers/gdrive";
 import { t } from "~/.server/i18n";
 
-async function getSchema(userId: number) {
+async function getSchema(organizationId: string, principalId?: string) {
   const schema = z.object({
     service: z
       .string()
@@ -28,7 +28,7 @@ async function getSchema(userId: number) {
         title: t("server.openDalServiceConfig"),
       })
       .describe(t("server.openDalServiceConfigDescription")),
-    ...(await ReservedParams.getAuthIdOptionalSchema(userId)),
+    ...(await ReservedParams.getAuthIdOptionalSchema(organizationId, principalId)),
   });
   return schema;
 }
@@ -47,8 +47,8 @@ function serializeMetadata(metadata: Metadata) {
   };
 }
 
-export async function getToolSetFactory(userId: number) {
-  const schema = await getSchema(userId);
+export async function getToolSetFactory(organizationId: string, principalId?: string) {
+  const schema = await getSchema(organizationId, principalId);
   const ret: ToolSetFactory = {
     name: "remote-files-opendal",
     displayName: t("server.openDalRemoteFileTools"),

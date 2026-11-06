@@ -22,218 +22,283 @@ enum RateLimitCriteria {
   provider = "provider"
 }
 
+enum Role {
+  viewer = "viewer" // read
+  editor = "editor" // read, update
+  manager = "manager" // read, update, delete, manage grant
+}
+
 namespace aibot {
-  model User {
-    id            Int                      @id @default(autoincrement())
-    email         String                   @unique
-    passwordHash  String
-    name          String?
-    chatbots      ChatBot[]
-    providers     Provider[]
-    adapters      ChatAdapter[]
-    mcpServers    McpServer[]
-    sessions      Session[]
-    createdAt     TimestamptzString        @default(now())
-    updatedAt     temporal.UpdatedAtString
-    isAdmin       Boolean                  @default(false)
-    emailVerified Boolean                  @default(false)
-    mfaSecret     String?                  @unique
-    loginAttempts Int                      @default(0)
+  model mixin Timestamps {
+    createdAt TimestamptzString  @default(now())
+    updatedAt temporal.UpdatedAt
   }
 
-  model AppSettings {
-    id                     String  @id @default("global")
-    mfaEnabled             Boolean @default(false)
-    sessionDurationSeconds Int     @default(2592000)
-    maxLoginAttempts       Int     @default(5)
+  model ResourceBase {
+    id     Uuid    @id @onCreate(uuid(7))
+    grants Grant[]
+  }
+
+  model mixin Resource {
+    id             Uuid         @id
+    resource       ResourceBase @relation(fields: [id], references: [id], onDelete: Cascade)
+    name           String
+    organizationId Uuid
+    organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+    @@index([organizationId])
+    @@unique([organizationId, name])
+  }
+
+  model PrincipalBase {
+    id     Uuid    @id @onCreate(uuid(7))
+    grants Grant[] @relation("grants")
+  }
+
+  model mixin Principal {
+    id             Uuid          @id
+    principal      PrincipalBase @relation(fields: [id], references: [id], onDelete: Cascade)
+    name           String
+    organizationId Uuid
+    organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+    @@index([organizationId])
+    @@unique([organizationId, name])
+  }
+
+  model mixin Junction {
+    id             Int          @id @default(autoincrement())
+    organizationId Uuid
+    organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+    @@index([organizationId])
+  }
+
+  model mixin Owned {
+    id             Int          @id @default(autoincrement())
+    organizationId Uuid
+    organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+    @@index([organizationId])
+  }
+
+  model Organization {
+    id                     Uuid              @id @onCreate(uuid(7))
+    name                   String
+    groups                 Group[]
+    users                  User[]
+    chatbots               ChatBot[]
+    providers              Provider[]
+    adapters               ChatAdapter[]
+    mcpServers             McpServer[]
+    agents                 AgentDefinition[]
+    usage                  AgentUsage[]
+    rateLimits             RateLimit[]
+    oauthClients           OAuthClient[]
+    sandboxes              Sandbox[]
+    schedules              ChatBotSchedule[]
+    +Timestamps
+
+    mfaEnabled             Boolean           @default(false)
+    sessionDurationSeconds Int               @default(2592000)
+    maxLoginAttempts       Int               @default(5)
+  }
+
+  model Group {
+    +Principal
+    +Timestamps
+  }
+
+  model User {
+    +Principal
+    email         String    @unique
+    passwordHash  String
+    sessions      Session[]
+    isAdmin       Boolean   @default(false)
+    emailVerified Boolean   @default(false)
+    mfaSecret     String?   @unique
+    loginAttempts Int       @default(0)
+    +Timestamps
+  }
+
+  model Membership {
+    +Junction
+    groupId Uuid
+    group   Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+    userId  Uuid
+    user    User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+    +Timestamps
+  }
+
+  model Grant {
+    +Junction
+    principalId Uuid
+    principal   PrincipalBase  @relation(name: "grants", fields: [principalId], references: [id], onDelete: Cascade)
+    resourceId  Uuid
+    resource    ResourceBase   @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+    role        Role
+    grantedById Uuid?
+    grantedBy   PrincipalBase? @relation(fields: [grantedById], references: [id], onDelete: SetNull)
+    +Timestamps
   }
 
   model Session {
-    id          Int               @id @default(autoincrement())
+    +Owned
     tokenHash   String            @unique
     expiresAt   TimestamptzString
     user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-    userId      Int
-    createdAt   TimestamptzString @default(now())
+    userId      Uuid
     mfaVerified Boolean           @default(true)
     mfaAttempts Int               @default(0)
+
+    +Timestamps
 
     @@index([userId])
     @@index([expiresAt])
   }
 
   model ChatBotPublicId {
-    id        String            @unique
+    +Owned
+    publicId  String       @unique
     slot      PublicIdSlot
-    chatbotId Int
-    chatbot   ChatBot           @relation(fields: [chatbotId], references: [id], onDelete: Cascade)
-    createdAt TimestamptzString @default(now())
+    chatbotId Uuid
+    chatbot   ChatBot      @relation(fields: [chatbotId], references: [id], onDelete: Cascade)
+
+    +Timestamps
 
     @@unique([chatbotId, slot])
   }
 
   model ChatBot {
-    id               Int                      @id @default(autoincrement())
-    name             String
+    +Resource
     description      String?
     instruction      String
     onFailedMessage  String
     lookbackMessages Int
-    isEnabled        Boolean                  @default(true)
-    owner            User                     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-    ownerId          Int
-    agent            AgentDefinition?         @relation(fields: [agentId], references: [id], onDelete: SetNull)
-    agentId          Int?                     @unique
+    isEnabled        Boolean                 @default(true)
+    agent            AgentDefinition?        @relation(fields: [agentId], references: [id], onDelete: SetNull)
+    agentId          Uuid?                   @unique
     adapters         ChatBotAdapter[]
     mcpServers       ChatBotMcpServer[]
     toolSets         ChatBotToolSetContext[]
-    createdAt        TimestamptzString        @default(now())
-    updatedAt        temporal.UpdatedAtString
-
+    +Timestamps
     publicIds        ChatBotPublicId[]
     usage            AgentUsage[]
-
-    @@index([ownerId])
   }
 
   model ChatAdapterPublicId {
-    id        String            @unique
+    +Owned
+    publicId  String       @unique
     slot      PublicIdSlot
-    adapterId Int
-    adapter   ChatAdapter       @relation(fields: [adapterId], references: [id], onDelete: Cascade)
-    createdAt TimestamptzString @default(now())
+    adapterId Uuid
+    adapter   ChatAdapter  @relation(fields: [adapterId], references: [id], onDelete: Cascade)
+    +Timestamps
 
     @@unique([adapterId, slot])
   }
 
   model ChatAdapter {
-    id             Int                      @id @default(autoincrement())
-    name           String
+    +Resource
     platform       String
     config         Jsonb?
-    owner          User                     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-    ownerId        Int
-    authentication OAuthAuthentication?     @relation(fields: [authId], references: [id], onDelete: SetNull)
-    authId         Int?
-    createdAt      TimestamptzString        @default(now())
-    updatedAt      temporal.UpdatedAtString
-
+    authentication OAuthAuthentication?  @relation(fields: [authId], references: [id], onDelete: SetNull)
+    authId         Uuid?
+    +Timestamps
     chatbots       ChatBotAdapter[]
     publicIds      ChatAdapterPublicId[]
 
-    @@index([ownerId])
     @@index([platform])
   }
 
   model ChatBotAdapter {
-    id        Int               @id @default(autoincrement())
-    chatbot   ChatBot           @relation(fields: [chatbotId], references: [id], onDelete: Cascade)
-    chatbotId Int
-    adapter   ChatAdapter       @relation(fields: [adapterId], references: [id], onDelete: Cascade)
-    adapterId Int
-    createdAt TimestamptzString @default(now())
-
+    +Junction
+    chatbot   ChatBot      @relation(fields: [chatbotId], references: [id], onDelete: Cascade)
+    chatbotId Uuid
+    adapter   ChatAdapter  @relation(fields: [adapterId], references: [id], onDelete: Cascade)
+    adapterId Uuid
+    +Timestamps
     schedules ChatTarget[]
 
     @@index([adapterId])
   }
 
   model Provider {
-    id           Int                      @id @default(autoincrement())
-    name         String
+    +Resource
     providerName String
     args         Jsonb?
     headers      Jsonb?
-    owner        User                     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-    ownerId      Int
     agents       AgentDefinition[]
-    createdAt    TimestamptzString        @default(now())
-    updatedAt    temporal.UpdatedAtString
-
-    @@index([ownerId])
-    @@unique([ownerId, name])
+    +Timestamps
   }
 
   model AgentDefinition {
-    id         Int                      @id @default(autoincrement())
-    name       String
-    provider   Provider                 @relation(fields: [providerId], references: [id], onDelete: Restrict)
-    providerId Int
+    +Resource
+    provider   Provider     @relation(fields: [providerId], references: [id], onDelete: Restrict)
+    providerId Uuid
     modelId    String
     options    Jsonb?
-    chatbot    ChatBot?
-    owner      User                     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-    ownerId    Int
-    createdAt  TimestamptzString        @default(now())
-    updatedAt  temporal.UpdatedAtString
+    chatbots   ChatBot[]
     usage      AgentUsage[]
+
+    +Timestamps
 
     @@index([providerId])
   }
 
   model AgentUsage {
-    id            Int               @id @default(autoincrement())
-    agentId       Int?
-    agent         AgentDefinition?  @relation(fields: [agentId], references: [id], onDelete: SetNull)
-    chatbotId     Int?
-    chatbot       ChatBot?          @relation(fields: [chatbotId], references: [id], onDelete: SetNull)
-    providerId    Int?
-    provider      Provider?         @relation(fields: [providerId], references: [id], onDelete: SetNull)
+    +Owned
+    agentId       Uuid?
+    agent         AgentDefinition? @relation(fields: [agentId], references: [id], onDelete: SetNull)
+    chatbotId     Uuid?
+    chatbot       ChatBot?         @relation(fields: [chatbotId], references: [id], onDelete: SetNull)
+    providerId    Uuid?
+    provider      Provider?        @relation(fields: [providerId], references: [id], onDelete: SetNull)
     inputTokens   Int
     inputDetails  Jsonb
     outputTokens  Int
     outputDetails Jsonb
     toolHistory   Jsonb
-    createdAt     TimestamptzString @default(now())
-
     platform      String
     threadId      String
+    +Timestamps
 
     @@index([agentId])
     @@index([chatbotId])
   }
 
   model RateLimit {
-    id                   Int               @id @default(autoincrement())
+    +Resource
     criteria             RateLimitCriteria
-    criteriaId           Int?
+    criteriaId           Uuid?
     perThread            Boolean
     coefficient          Jsonb // JSON of { variableNameFromAgentUsage: coefficient (decimal) }
     limit                Decimal
     limitExceededMessage String
     resetOnCron          String // cron expression for when the limit should reset, e.g. "0 0 * * *" for daily reset at midnight
     timezone             String
-
-    owner                User              @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-    ownerId              Int
+    +Timestamps
 
     @@unique([criteria, criteriaId])
   }
 
   model McpServer {
-    id          Int                      @id @default(autoincrement())
-    name        String
+    +Resource
     description String?
     transport   MCPTransport
     endpoint    String?
     headers     Jsonb?
-    owner       User                     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-    ownerId     Int
     bots        ChatBotMcpServer[]
-    createdAt   TimestamptzString        @default(now())
-    updatedAt   temporal.UpdatedAtString
-
-    @@index([ownerId])
+    +Timestamps
   }
 
   model ChatBotMcpServer {
-    id             Int                  @id @default(autoincrement())
+    +Junction
     chatbot        ChatBot              @relation(fields: [chatbotId], references: [id], onDelete: Cascade)
-    chatbotId      Int
+    chatbotId      Uuid
     mcpServer      McpServer            @relation(fields: [mcpServerId], references: [id], onDelete: Cascade)
-    mcpServerId    Int
+    mcpServerId    Uuid
     authentication OAuthAuthentication? @relation(fields: [authId], references: [id], onDelete: SetNull)
-    authId         Int?
+    authId         Uuid?
     createdAt      TimestamptzString    @default(now())
 
     @@unique([chatbotId, mcpServerId, authId])
@@ -241,10 +306,7 @@ namespace aibot {
   }
 
   model OAuthClient {
-    id                    Int                      @id @default(autoincrement())
-    owner                 User                     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-    ownerId               Int
-    name                  String
+    +Resource
     clientId              String
     clientSecret          String?
     authorizationEndpoint String
@@ -252,42 +314,30 @@ namespace aibot {
     refreshEndpoint       String?
     revocationEndpoint    String?
     scopes                String[]
-    createdAt             TimestamptzString        @default(now())
-    updatedAt             temporal.UpdatedAtString
-
+    +Timestamps
     authentications       OAuthAuthentication[]
-
-    @@index([ownerId])
   }
 
   model OAuthAuthentication {
-    id           Int                      @id @default(autoincrement())
-    owner        User                     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-    ownerId      Int
-    oauth        OAuthClient              @relation(fields: [oauthId], references: [id], onDelete: Cascade)
-    oauthId      Int
-    name         String
+    +Resource
+    oauth        OAuthClient        @relation(fields: [oauthId], references: [id], onDelete: Cascade)
+    oauthId      Uuid
     accessToken  String
     expiresAt    TimestamptzString?
     refreshToken String?
-    createdAt    TimestamptzString        @default(now())
-    updatedAt    temporal.UpdatedAtString
+    +Timestamps
 
-    @@index([ownerId])
     @@index([oauthId])
   }
 
   model Sandbox {
-    id                Int                         @id @default(autoincrement())
+    +Resource
     sandboxType       String
-    name              String
     envs              Jsonb?
     allowedDomainList String[]
     initCommands      String[]                    @default([])
     sandboxScope      SandboxScope
-    owner             User                        @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-    ownerId           Int
-
+    +Timestamps
     instances         PersistentSandboxInstance[]
   }
 
@@ -297,57 +347,59 @@ namespace aibot {
   // bot           null       null  not null 
   // all           null       null      null  
   model PersistentSandboxInstance {
-    instanceId String       @id
-    sandboxId  Int
+    +Owned
+    instanceId String       @unique
+    sandboxId  Uuid
     sandbox    Sandbox      @relation(fields: [sandboxId], references: [id], onDelete: Cascade)
     threadId   String?
-    adapterId  Int?
+    adapterId  Uuid?
     adapter    ChatAdapter? @relation(fields: [adapterId], references: [id], onDelete: Cascade)
-    chatbotId  Int?
+    chatbotId  Uuid?
     chatbot    ChatBot?     @relation(fields: [chatbotId], references: [id], onDelete: Cascade)
+    +Timestamps
   }
 
   model ChatBotToolSandbox {
-    chatbotId Int
+    +Junction
+    chatbotId Uuid
     chatbot   ChatBot @relation(fields: [chatbotId], references: [id], onDelete: Cascade)
-    sandboxId Int
+    sandboxId Uuid
     sandBox   Sandbox @relation(fields: [sandboxId], references: [id], onDelete: Cascade)
+    +Timestamps
 
-    @@id([sandboxId, chatbotId])
+    @@unique([sandboxId, chatbotId])
     @@index([chatbotId])
   }
 
   model ChatBotToolSetContext {
-    id             Int     @id @default(autoincrement())
+    +Resource
     toolSetName    String
-    chatbotId      Int
+    chatbotId      Uuid
     chatbot        ChatBot @relation(fields: [chatbotId], references: [id], onDelete: Cascade)
     toolSetContext Jsonb   @default(json`{}`)
+    +Timestamps
 
     @@unique([toolSetName, chatbotId, toolSetContext])
     @@index([chatbotId])
   }
 
   model ChatBotSchedule {
-    id          Int               @id @default(autoincrement())
-    name        String
+    +Resource
     prompt      String
     cronParam   String
     timezone    String
-    owner       User              @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-    ownerId     Int
-    createdAt   TimestamptzString @default(now())
-
+    +Timestamps
     chatTargets ChatTarget[]
   }
 
   model ChatTarget {
-    id               Int             @id @default(autoincrement())
+    +Junction
     chatbotAdapterId Int
     chatbotAdapter   ChatBotAdapter  @relation(fields: [chatbotAdapterId], references: [id], onDelete: Cascade)
     threadId         String
-    scheduleId       Int
+    scheduleId       Uuid
     schedule         ChatBotSchedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+    +Timestamps
 
     @@unique([chatbotAdapterId, threadId, scheduleId])
   }

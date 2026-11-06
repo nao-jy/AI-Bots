@@ -74,11 +74,12 @@ export function meta() {
 
 export async function loader({ request }: Route.LoaderArgs) {
   const currentUser = await requireAdmin(request);
-  const settings = await getAppSettings();
+  const settings = await getAppSettings(currentUser.organizationId);
   return {
     users: await listUsers(
       isEmailVerificationEnabled(),
       settings.maxLoginAttempts,
+      currentUser.organizationId,
     ),
     currentUserId: currentUser.id,
   };
@@ -88,36 +89,37 @@ export async function action({ request }: Route.ActionArgs) {
   const actor = await requireAdmin(request);
   const form = await request.formData();
   const intent = String(form.get("_intent") ?? "");
-  const id = Number(form.get("id"));
+  const id = String(form.get("id") ?? "");
+  const validId = /^[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(id);
   if (intent === "delete") {
-    return Number.isInteger(id)
-      ? deleteUser(id, actor.id)
+    return validId
+      ? deleteUser(id, actor.id, actor.organizationId)
       : { ok: false, error: t("pages.users.notFound") };
   }
   if (intent === "toggle-admin") {
     const isAdminValue = String(form.get("isAdmin") ?? "");
-    if (!Number.isInteger(id) || !["true", "false"].includes(isAdminValue))
+    if (!validId || !["true", "false"].includes(isAdminValue))
       return { ok: false, error: t("pages.users.invalidChanges") };
-    return setUserAdmin(id, isAdminValue === "true", actor.id);
+    return setUserAdmin(id, isAdminValue === "true", actor.id, actor.organizationId);
   }
   if (intent === "force-logout") {
-    return Number.isInteger(id)
-      ? forceLogoutUser(id, actor.id)
+    return validId
+      ? forceLogoutUser(id, actor.id, actor.organizationId)
       : { ok: false, error: t("pages.users.notFound") };
   }
   if (intent === "reset-mfa")
-    return Number.isInteger(id)
-      ? resetUserMfa(id)
+    return validId
+      ? resetUserMfa(id, actor.organizationId)
       : { ok: false, error: t("pages.users.notFound") };
   if (intent === "unlock-login")
-    return Number.isInteger(id)
-      ? unlockUserLogin(id)
+    return validId
+      ? unlockUserLogin(id, actor.organizationId)
       : { ok: false, error: t("pages.users.notFound") };
   if (intent === "send-verification") {
-    if (!Number.isInteger(id))
+    if (!validId)
       return { ok: false, error: t("pages.users.notFound") };
     const user = await findUserById(id);
-    if (!user) return { ok: false, error: t("pages.users.notFound") };
+    if (!user || user.organizationId !== actor.organizationId) return { ok: false, error: t("pages.users.notFound") };
     if (user.emailVerified)
       return { ok: false, error: t("pages.users.emailAlreadyVerified") };
     try {
@@ -142,7 +144,7 @@ export async function action({ request }: Route.ActionArgs) {
     }
   }
   if (intent === "create") {
-    const result = await saveUser(null, form, isEmailVerificationEnabled());
+    const result = await saveUser(null, form, isEmailVerificationEnabled(), actor.organizationId);
     if ("error" in result || !result.verificationRequired) return result;
     return sendNewUserVerification(
       String(form.get("email") ?? "")
@@ -152,9 +154,9 @@ export async function action({ request }: Route.ActionArgs) {
     );
   }
   if (intent === "update") {
-    if (!Number.isInteger(id))
+    if (!validId)
       return { ok: false, error: t("pages.users.notFound") };
-    const result = await saveUser(id, form, isEmailVerificationEnabled());
+    const result = await saveUser(id, form, isEmailVerificationEnabled(), actor.organizationId);
     if ("error" in result || !result.verificationRequired) return result;
     return sendNewUserVerification(
       String(form.get("email") ?? "")

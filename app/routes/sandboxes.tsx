@@ -1,3 +1,4 @@
+import { isUuid } from "../.server/utils";
 import { t } from "~/i18n";
 import type { Route } from "./+types/sandboxes";
 import type { ShouldRevalidateFunctionArgs } from "react-router";
@@ -77,7 +78,7 @@ export async function action({ request }: Route.ActionArgs) {
   const user = await requireUser(request);
   const form = await request.formData();
   const intent = String(form.get("_intent") ?? "");
-  const id = Number(form.get("id"));
+  const id = String(form.get("id") ?? "");
   if (intent === "run-command")
     return runPersistentSandboxCommand(
       user,
@@ -103,12 +104,12 @@ export async function action({ request }: Route.ActionArgs) {
       : { ok: false, error: t("pages.sandboxes.persistentInstanceNotFound") };
   }
   if (intent === "delete")
-    return Number.isInteger(id) && (await deleteSandbox(user, id))
+    return isUuid(id) && (await deleteSandbox(user, id))
       ? { ok: true }
       : { ok: false, error: t("pages.sandboxes.notFound") };
   if (intent === "create") return saveSandbox(user, null, form);
   if (intent === "update")
-    return Number.isInteger(id)
+    return isUuid(id)
       ? saveSandbox(user, id, form)
       : { ok: false, error: t("pages.sandboxes.notFound") };
   return { ok: false, error: t("pages.sandboxes.unknownAction") };

@@ -5,6 +5,7 @@ import {
   createHmac,
   randomBytes,
 } from "node:crypto";
+import { randomUUID } from "node:crypto";
 import type { CodecTypes } from "../../src/prisma/contract";
 import type { EntityRecord } from "../types/entities";
 import { type TranslationMessage } from "../i18n";
@@ -31,19 +32,26 @@ export function idList(value: string | null) {
     ...new Set(
       (value ?? "")
         .split(",")
-        .filter((item) => item.trim() !== "")
-        .map(Number)
-        .filter(Number.isInteger),
+        .map((item) => item.trim())
+        .filter((item) => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(item)),
     ),
   ];
 }
 
+export function isUuid(value: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+}
+
+export function generateResourceId() {
+  return randomUUID();
+}
+
 export function record(
-  id: number,
-  updatedAt: string,
+  id: number | string,
+  updatedAt: string | Date,
   fields: Record<string, string | number>,
 ): EntityRecord {
-  return { id, updated: timestamp(updatedAt), ...fields };
+  return { id: String(id), updated: timestamp(updatedAt instanceof Date ? updatedAt.toISOString() : updatedAt), ...fields };
 }
 
 export function encryptCredential(credential: string) {

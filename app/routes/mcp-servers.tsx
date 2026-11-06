@@ -1,3 +1,4 @@
+import { isUuid } from "../.server/utils";
 import { t } from "~/i18n";
 import type { Route } from "./+types/mcp-servers";
 import {
@@ -72,15 +73,15 @@ export async function action({ request }: Route.ActionArgs) {
   const user = await requireUser(request);
   const form = await request.formData();
   const intent = String(form.get("_intent") ?? "");
-  const id = Number(form.get("id"));
+  const id = String(form.get("id") ?? "");
   if (intent === "test") return testMcpServer(user, form);
   if (intent === "delete")
-    return Number.isInteger(id) && (await deleteMcpServer(user, id))
+    return isUuid(id) && (await deleteMcpServer(user, id))
       ? { ok: true }
       : { ok: false, error: t("pages.mcpServers.notFound") };
   if (intent === "create") return saveMcpServer(user, null, form);
   if (intent === "update")
-    return Number.isInteger(id)
+    return isUuid(id)
       ? saveMcpServer(user, id, form)
       : { ok: false, error: t("pages.mcpServers.notFound") };
   return { ok: false, error: t("pages.mcpServers.unknownAction") };

@@ -2,16 +2,21 @@ import { requireUser } from "../.server/auth";
 import { db } from "../.server/repository/db";
 import Dashboard from "../components/dashboard";
 import type { Route } from "./+types/index";
+import { filterResourcesByRole } from "../.server/authorization";
 
 const DAY_MS = 24 * 60 * 60 * 1_000;
 const PERIOD_DAYS = 30;
 
 export async function loader({ request }: Route.LoaderArgs) {
   const user = await requireUser(request);
-  const [bots, agents, usageRows] = await Promise.all([
-    db.orm.aibot.ChatBot.where({ ownerId: user.id }).all(),
-    db.orm.aibot.AgentDefinition.where({ ownerId: user.id }).include("provider").all(),
+  const [botRows, agentRows, usageRows] = await Promise.all([
+    db.orm.aibot.ChatBot.where({ organizationId: user.organizationId }).all(),
+    db.orm.aibot.AgentDefinition.where({ organizationId: user.organizationId }).include("provider").all(),
     db.orm.aibot.AgentUsage.all(),
+  ]);
+  const [bots, agents] = await Promise.all([
+    filterResourcesByRole(user, botRows),
+    filterResourcesByRole(user, agentRows),
   ]);
 
   const botNames = new Map(bots.map((bot) => [bot.id, bot.name]));
@@ -40,7 +45,7 @@ export async function loader({ request }: Route.LoaderArgs) {
     return { date: date.toISOString().slice(0, 10), input: 0, output: 0, calls: 0 };
   });
   const dayMap = new Map(days.map((day) => [day.date, day]));
-  const byAgent = new Map<number, { name: string; provider: string; tokens: number; calls: number }>();
+  const byAgent = new Map<string, { name: string; provider: string; tokens: number; calls: number }>();
   const byPlatform = new Map<string, { tokens: number; calls: number }>();
 
   for (const row of usage) {

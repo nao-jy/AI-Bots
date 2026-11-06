@@ -46,7 +46,7 @@ export function EntityTable({
     ? page.records.flatMap((record) =>
         parsePersistentInstances(record.instances).map((instance) => ({
           ...instance,
-          sandboxId: record.id,
+          sandboxId: String(record.id),
           sandboxName: String(record.name ?? t("components.entityPage.table.unnamedRecord")),
         })),
       )

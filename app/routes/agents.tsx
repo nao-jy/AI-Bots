@@ -1,3 +1,4 @@
+import { isUuid } from "../.server/utils";
 import { t } from "~/i18n";
 import type { Route } from "./+types/agents";
 import {
@@ -64,15 +65,15 @@ export async function action({ request }: Route.ActionArgs) {
   const user = await requireUser(request);
   const form = await request.formData();
   const intent = String(form.get("_intent") ?? "");
-  const id = Number(form.get("id"));
+  const id = String(form.get("id") ?? "");
   if (intent === "test") return testAgent(user, form);
   if (intent === "delete")
-    return Number.isInteger(id) && (await deleteAgent(user, id))
+    return isUuid(id) && (await deleteAgent(user, id))
       ? { ok: true }
       : { ok: false, error: t("pages.agents.notFound") };
   if (intent === "create") return saveAgent(user, null, form);
   if (intent === "update")
-    return Number.isInteger(id)
+    return isUuid(id)
       ? saveAgent(user, id, form)
       : { ok: false, error: t("pages.agents.notFound") };
   return { ok: false, error: t("pages.agents.unknownAction") };

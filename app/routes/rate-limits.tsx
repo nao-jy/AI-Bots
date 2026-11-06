@@ -1,3 +1,4 @@
+import { isUuid } from "../.server/utils";
 import { t } from "~/i18n";
 import type { Route } from "./+types/rate-limits";
 import {
@@ -131,14 +132,14 @@ export async function action({ request }: Route.ActionArgs) {
   const user = await requireUser(request);
   const form = await request.formData();
   const intent = String(form.get("_intent") ?? "");
-  const id = Number(form.get("id"));
+  const id = String(form.get("id") ?? "");
   if (intent === "delete")
-    return Number.isInteger(id) && (await deleteRateLimit(user, id))
+    return isUuid(id) && (await deleteRateLimit(user, id))
       ? { ok: true }
       : { ok: false, error: t("pages.rateLimits.notFound") };
   if (intent === "create") return saveRateLimit(user, null, form);
   if (intent === "update")
-    return Number.isInteger(id)
+    return isUuid(id)
       ? saveRateLimit(user, id, form)
       : { ok: false, error: t("pages.rateLimits.notFound") };
   return { ok: false, error: t("pages.rateLimits.unknownAction") };

@@ -5,7 +5,7 @@ export async function getMcpClient(
   transportType: "http",
   url: string,
   headers: Record<string, string>,
-  authId: number | null,
+  authId: string | null,
 ) {
   const auth = authId !== null ? await getAccessToken(authId) : null;
   if (auth !== null) {

@@ -22,7 +22,7 @@ export async function action({ request, params }: Route.ActionArgs) {
 
   const adapter = chatbot?.adapters.find(
     (link) =>
-      link.adapter?.publicIds.some((publicId) => publicId.id === adapterId) ??
+      link.adapter?.publicIds.some((publicId) => publicId.publicId === adapterId) ??
       false,
   )?.adapter;
   if (!chatbot || !adapter) {

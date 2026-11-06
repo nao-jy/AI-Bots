@@ -18,9 +18,9 @@ import {
 import { ReservedParams } from "./helpers/reserved-params";
 import { t } from "~/.server/i18n";
 
-async function getSchema(userId: number) {
+async function getSchema(organizationId: string, principalId?: string) {
   return z.object({
-    ...(await ReservedParams.getAuthIdOptionalSchema(userId)),
+    ...(await ReservedParams.getAuthIdOptionalSchema(organizationId, principalId)),
   });
 }
 
@@ -55,8 +55,8 @@ function requireAccessToken(
   return accessToken;
 }
 
-export async function getToolSetFactory(userId: number) {
-  const schema = await getSchema(userId);
+export async function getToolSetFactory(organizationId: string, principalId?: string) {
+  const schema = await getSchema(organizationId, principalId);
   const ret: ToolSetFactory = {
     name: "gdrive",
     displayName: t("server.googleDriveRemoteFileTools"),

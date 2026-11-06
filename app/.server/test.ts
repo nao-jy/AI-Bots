@@ -9,6 +9,7 @@ import {
   parseStringMap,
   testFailure,
   testSuccess,
+  isUuid,
 } from "./utils";
 import { generateText } from "ai";
 import { localizedMessage } from "../i18n";
@@ -20,11 +21,11 @@ export async function testAdapter(user: AuthUser, values: FormData) {
     const platformId = String(values.get("platformId") ?? "").trim();
     const conf = parseStringMap(values.get("config"));
     const authId = values.get("authId")?.toString().trim();
-    let authIdNum: number | null = null;
+    let authIdValue: string | null = null;
     if (authId !== undefined && authId.length !== 0) {
-      authIdNum = Number(authId);
+      authIdValue = authId;
     }
-    const bot = await getBotInfo(platformId, name, conf, authIdNum);
+    const bot = await getBotInfo(platformId, name, conf, authIdValue);
     if (!bot) {
       throw new Error("server.botNotFound");
     }
@@ -46,9 +47,9 @@ export async function testMcpServer(user: AuthUser, values: FormData) {
     const endpoint = String(values.get("endpoint") ?? "").trim();
     const transport = String(values.get("transportId") ?? "").trim();
     let authId = values.get("authId")?.toString().trim();
-    let authIdNum: number | null = null;
+    let authIdValue: string | null = null;
     if (authId !== undefined && authId.length !== 0) {
-      authIdNum = Number(authId);
+      authIdValue = authId;
     }
     if (!endpoint) return testFailure("server.endpointRequired");
     if (transport !== "http")
@@ -58,7 +59,7 @@ export async function testMcpServer(user: AuthUser, values: FormData) {
       transport,
       endpoint,
       headers,
-      authIdNum,
+      authIdValue,
     );
 
     const tools = await mcpClient.listTools();
@@ -79,11 +80,11 @@ export async function testMcpServer(user: AuthUser, values: FormData) {
 export async function testAgent(user: AuthUser, values: FormData) {
   try {
     const name = String(values.get("name") ?? "").trim();
-    const providerId = Number(values.get("providerId"));
+    const providerId = String(values.get("providerId") ?? "");
     const modelId = String(values.get("modelId") ?? "").trim();
-    if (!Number.isInteger(providerId) || !modelId)
+    if (!isUuid(providerId) || !modelId)
       return testFailure("server.providerAndModelRequired");
-    const provider = await getProvider(providerId, user.id);
+    const provider = await getProvider(providerId, user);
     if (!provider) return testFailure("server.selectedProviderNotFound");
     const args = (
       provider.args && typeof provider.args === "object" ? provider.args : {}

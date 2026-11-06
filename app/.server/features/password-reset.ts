@@ -11,14 +11,14 @@ import { sign, hash } from "../utils";
 const PASSWORD_RESET_TTL_MS = 1000 * 60 * 60;
 
 type PasswordResetPayload = {
-  userId: number;
+  userId: string;
   emailHash: string;
   passwordHashDigest: string;
   expiresAt: number;
 };
 
 function createPasswordResetToken(user: {
-  id: number;
+  id: string;
   email: string;
   passwordHash: string;
 }) {
@@ -54,7 +54,7 @@ function decodePasswordResetToken(token: string) {
     if (
       !value ||
       typeof value !== "object" ||
-      !Number.isSafeInteger((value as PasswordResetPayload).userId) ||
+      typeof (value as PasswordResetPayload).userId !== "string" ||
       typeof (value as PasswordResetPayload).emailHash !== "string" ||
       typeof (value as PasswordResetPayload).passwordHashDigest !== "string" ||
       !Number.isSafeInteger((value as PasswordResetPayload).expiresAt)

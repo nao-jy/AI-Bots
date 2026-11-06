@@ -1,3 +1,4 @@
+import { isUuid } from "../.server/utils";
 import { t } from "~/i18n";
 import type { Route } from "./+types/schedules";
 import { requireUser } from "../.server/auth";
@@ -87,17 +88,17 @@ export async function action({ request }: Route.ActionArgs) {
   const user = await requireUser(request);
   const form = await request.formData();
   const intent = String(form.get("_intent") ?? "");
-  const id = Number(form.get("id"));
+  const id = String(form.get("id") ?? "");
 
   let result: { ok?: boolean; error?: string };
   if (intent === "create") {
     result = await saveSchedule(user, null, form);
   } else if (intent === "update") {
-    if (!Number.isInteger(id) || id < 1)
+    if (!isUuid(id))
       return { ok: false, error: t("pages.schedules.notFound") };
     result = await saveSchedule(user, id, form);
   } else if (intent === "delete") {
-    if (!Number.isInteger(id) || id < 1 || !(await deleteSchedule(user, id)))
+    if (!isUuid(id) || !(await deleteSchedule(user, id)))
       return { ok: false, error: t("pages.schedules.notFound") };
     result = { ok: true };
   } else {

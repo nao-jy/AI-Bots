@@ -18,7 +18,7 @@ const LEGACY_MFA_SETUP_COOKIE_PATH = "/mfa";
 const MFA_CHALLENGE_TTL_MS = 10 * 60 * 1000;
 
 type SetupChallenge = {
-  userId: number;
+  userId: string;
   secret: string;
   expiresAt: number;
 };
@@ -47,7 +47,7 @@ function encodeSetupChallenge(challenge: SetupChallenge) {
 }
 
 function createSetupCookie(
-  userId: number,
+  userId: string,
   secret: string,
   expiresAt: Date,
 ) {
@@ -77,7 +77,7 @@ function decodeSetupChallenge(request: Request): SetupChallenge | null {
     if (
       !decoded ||
       typeof decoded !== "object" ||
-      !Number.isSafeInteger((decoded as SetupChallenge).userId) ||
+      typeof (decoded as SetupChallenge).userId !== "string" ||
       typeof (decoded as SetupChallenge).secret !== "string" ||
       !Number.isSafeInteger((decoded as SetupChallenge).expiresAt) ||
       (decoded as SetupChallenge).expiresAt <= Date.now()
@@ -90,7 +90,7 @@ function decodeSetupChallenge(request: Request): SetupChallenge | null {
 }
 
 export async function createMfaLoginChallenge(
-  userId: number,
+  userId: string,
   secret?: string,
 ) {
   const token = randomBytes(32).toString("base64url");
@@ -175,7 +175,7 @@ export async function recordMfaFailure(request: Request) {
 
 export async function finishMfaSetup(
   request: Request,
-  userId: number,
+  userId: string,
   secret: string,
 ) {
   const token = getSessionToken(request);
@@ -188,8 +188,10 @@ export async function finishMfaSetup(
   return finishMfaLogin(token, userId);
 }
 
-export async function finishMfaLogin(token: string, userId: number) {
-  const settings = await getAppSettings();
+export async function finishMfaLogin(token: string, userId: string) {
+  const session = await getPendingSession(hashSessionToken(token));
+  if (!session || session.user.id !== userId) return null;
+  const settings = await getAppSettings(session.user.organizationId);
   const expiresAt = new Date(
     Date.now() + settings.sessionDurationSeconds * 1000,
   );

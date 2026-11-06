@@ -19,7 +19,8 @@ const SESSION_COOKIE = "bot_manager_session";
 const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 30;
 
 export type AuthUser = {
-  id: number;
+  id: string;
+  organizationId: string;
   email: string;
   name: string | null;
   isAdmin: boolean;
@@ -44,14 +45,14 @@ export function clearSessionCookie() {
   return clearCookie(SESSION_COOKIE, { httpOnly: true });
 }
 
-export async function createSession(userId: number) {
+export async function createSession(userId: string, organizationId: string) {
   const token = randomBytes(32).toString("base64url");
-  const settings = await getAppSettings();
+  const settings = await getAppSettings(organizationId);
   const expiresAt = new Date(
     Date.now() +
       (settings.sessionDurationSeconds * 1000 || SESSION_TTL_MS),
   );
-  await createSessionInner(hashSessionToken(token), userId, expiresAt);
+  await createSessionInner(hashSessionToken(token), userId, expiresAt, organizationId);
   return { token, expiresAt };
 }
 
@@ -74,6 +75,7 @@ export async function getSessionUser(
 
   return {
     id: session.user.id,
+    organizationId: session.user.organizationId,
     email: session.user.email,
     name: session.user.name,
     isAdmin: session.user.isAdmin,

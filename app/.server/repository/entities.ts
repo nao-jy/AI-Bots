@@ -6,4 +6,5 @@ export * from "./rate-limits";
 export * from "./mcp-servers";
 export * from "./oauth";
 export * from "./users";
+export * from "./groups";
 export * from "./sandboxes";

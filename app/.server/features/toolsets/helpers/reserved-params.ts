@@ -3,8 +3,8 @@ import { listOauth } from "~/.server/repository/oauth";
 import { t } from "~/.server/i18n";
 
 export namespace ReservedParams {
-  export async function getAuthIdSchema(ownerId: number) {
-    const oauthClients = await listOauth(ownerId);
+  export async function getAuthIdSchema(organizationId: string, principalId?: string) {
+    const oauthClients = await listOauth(organizationId, principalId);
     const authentications = oauthClients.flatMap((client) =>
       client.authentications.map((authentication) => ({
         id: authentication.id,
@@ -20,8 +20,8 @@ export namespace ReservedParams {
     };
   }
 
-  export async function getAuthIdOptionalSchema(ownerId: number) {
-    const oauthClients = await listOauth(ownerId);
+  export async function getAuthIdOptionalSchema(organizationId: string, principalId?: string) {
+    const oauthClients = await listOauth(organizationId, principalId);
     const authentications = oauthClients.flatMap((client) =>
       client.authentications.map((authentication) => ({
         id: authentication.id,

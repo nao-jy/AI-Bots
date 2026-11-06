@@ -14,8 +14,8 @@ export function meta() {
 }
 
 export async function loader({ request }: Route.LoaderArgs) {
-  await requireAdmin(request);
-  const settings = await getAppSettings();
+  const user = await requireAdmin(request);
+  const settings = await getAppSettings(user.organizationId);
   return {
     mfaEnabled: settings.mfaEnabled,
     sessionDurationDays: settings.sessionDurationSeconds / 86400,
@@ -24,7 +24,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 }
 
 export async function action({ request }: Route.ActionArgs) {
-  await requireAdmin(request);
+  const user = await requireAdmin(request);
   const form = await request.formData();
   const durationDays = Number(form.get("sessionDurationDays"));
   if (!Number.isInteger(durationDays) || durationDays < 1 || durationDays > 365)
@@ -34,6 +34,7 @@ export async function action({ request }: Route.ActionArgs) {
     return { error: t("pages.settings.invalidLoginAttemptLimit") };
 
   await saveAppSettings({
+    organizationId: user.organizationId,
     mfaEnabled: form.get("mfaEnabled") === "on",
     sessionDurationSeconds: durationDays * 86400,
     maxLoginAttempts,

@@ -14,7 +14,7 @@ type OutputSubscriber = (chunk: OutputChunk) => void;
 
 type ManagedTerminal = {
   id: string;
-  userId: number;
+  userId: string;
   instanceId: string;
   backend: SandboxTerminalSession | null;
   chunks: OutputChunk[];
@@ -61,7 +61,7 @@ function refreshIdleTimeout(session: ManagedTerminal) {
 }
 
 export async function openSandboxTerminal(
-  userId: number,
+  userId: string,
   sandboxType: string,
   instanceId: string,
   envs: Record<string, string>,
@@ -120,13 +120,13 @@ export async function openSandboxTerminal(
   }
 }
 
-function getOwnedSession(userId: number, id: string) {
+function getOwnedSession(userId: string, id: string) {
   const session = sessions.get(id);
   return session?.userId === userId ? session : null;
 }
 
 export async function sendSandboxTerminalInput(
-  userId: number,
+  userId: string,
   id: string,
   data: string,
 ) {
@@ -150,7 +150,7 @@ export async function sendSandboxTerminalInput(
 }
 
 export async function resizeSandboxTerminal(
-  userId: number,
+  userId: string,
   id: string,
   size: TerminalSize,
 ) {
@@ -171,7 +171,7 @@ export async function resizeSandboxTerminal(
   refreshIdleTimeout(session);
 }
 
-export async function closeSandboxTerminal(userId: number, id: string) {
+export async function closeSandboxTerminal(userId: string, id: string) {
   const session = getOwnedSession(userId, id);
   if (!session || session.closed) return;
   session.closed = true;
@@ -193,7 +193,7 @@ export async function closeSandboxTerminal(userId: number, id: string) {
 }
 
 export async function closeSandboxTerminalsForInstance(
-  userId: number,
+  userId: string,
   instanceId: string,
 ) {
   const instanceSessions = [...sessions.values()].filter(
@@ -203,13 +203,13 @@ export async function closeSandboxTerminalsForInstance(
     await closeSandboxTerminal(userId, session.id);
 }
 
-export function hasOwnedSandboxTerminal(userId: number, id: string) {
+export function hasOwnedSandboxTerminal(userId: string, id: string) {
   const session = getOwnedSession(userId, id);
   return Boolean(session && !session.closed);
 }
 
 export function subscribeSandboxTerminal(
-  userId: number,
+  userId: string,
   id: string,
   lastEventId: number,
   subscriber: OutputSubscriber,

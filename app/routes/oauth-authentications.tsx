@@ -1,3 +1,4 @@
+import { isUuid } from "../.server/utils";
 import { t } from "~/i18n";
 import { useEffect, useState } from "react";
 import { useRevalidator } from "react-router";
@@ -79,10 +80,10 @@ export async function action({ request }: Route.ActionArgs) {
   const user = await requireUser(request);
   const form = await request.formData();
   const intent = String(form.get("_intent") ?? "");
-  const id = Number(form.get("id"));
+  const id = String(form.get("id") ?? "");
   if (intent === "authorize") return prepareOAuthAuthorization(user, form);
   if (intent === "delete") {
-    if (!Number.isInteger(id))
+    if (!isUuid(id))
       return { ok: false, error: t("pages.oauthAuthentications.notFound") };
     try {
       return (await deleteOAuthAuthentication(user, id))
@@ -99,7 +100,7 @@ export async function action({ request }: Route.ActionArgs) {
     }
   }
   if (intent === "update")
-    return Number.isInteger(id)
+    return isUuid(id)
       ? renameOAuthAuthentication(user, id, form)
       : { ok: false, error: t("pages.oauthAuthentications.notFound") };
   if (intent === "create")

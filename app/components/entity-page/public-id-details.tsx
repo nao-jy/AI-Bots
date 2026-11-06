@@ -18,7 +18,7 @@ export function PublicIdDetails({
   webhookEndpointsValue,
   showWebhooks,
 }: {
-  recordId: number;
+  recordId: string | number;
   publicIdsValue: string | number | undefined;
   webhookEndpointsValue: string | number | undefined;
   showWebhooks: boolean;

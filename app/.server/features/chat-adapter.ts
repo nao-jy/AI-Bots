@@ -17,7 +17,7 @@ interface ChatAdapterFactory {
   getBot: (
     botName: string,
     adapterConfig: Record<string, string>,
-    authId: number | null,
+    authId: string | null,
   ) => Promise<Chat>;
 }
 
@@ -58,7 +58,7 @@ function getState() {
 
 async function getAdapterArgs(
   config: Record<string, string>,
-  authId: number | null,
+  authId: string | null,
 ) {
   if (authId === null) return config;
   const info = await getAdapterOAuthInfo(authId);
@@ -173,7 +173,7 @@ export async function getBotInfo(
   adapterName: string,
   botName: string,
   adapterConfig: Record<string, string>,
-  authId: number | null,
+  authId: string | null,
 ) {
   const factory = FACTORIES.find(
     (v) => v.adapterName.toLowerCase() === adapterName.toLowerCase(),

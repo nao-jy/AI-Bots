@@ -1,3 +1,4 @@
+import { isUuid } from "../.server/utils";
 import { t } from "~/i18n";
 import type { Route } from "./+types/oauth-clients";
 import { requireUser } from "../.server/auth";
@@ -79,9 +80,9 @@ export async function action({ request }: Route.ActionArgs) {
   const user = await requireUser(request);
   const form = await request.formData();
   const intent = String(form.get("_intent") ?? "");
-  const id = Number(form.get("id"));
+  const id = String(form.get("id") ?? "");
   if (intent === "delete") {
-    if (!Number.isInteger(id))
+    if (!isUuid(id))
       return { ok: false, error: t("pages.oauthClients.notFound") };
     try {
       return (await deleteOAuthClient(user, id))
@@ -99,7 +100,7 @@ export async function action({ request }: Route.ActionArgs) {
   }
   if (intent === "create") return saveOAuthClient(user, null, form);
   if (intent === "update")
-    return Number.isInteger(id)
+    return isUuid(id)
       ? saveOAuthClient(user, id, form)
       : { ok: false, error: t("pages.oauthClients.notFound") };
   return { ok: false, error: t("pages.oauthClients.unknownAction") };

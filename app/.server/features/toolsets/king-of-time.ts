@@ -151,7 +151,7 @@ function makeEmployeeMonthTool<
   });
 }
 
-export async function getToolSetFactory(userId: number) {
+export async function getToolSetFactory(userId: string) {
   const contextSchema = z.object({
     apiKey: z.string().min(1).meta({ title: t("server.kingOfTimeApiKey") }),
   });

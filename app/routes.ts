@@ -29,4 +29,6 @@ export default [
   route("locale", "routes/locale.tsx"),
   route("api/webhooks/:botId/:adapterId", "routes/webhook.tsx"),
   route("api/sandbox-terminals/:terminalId", "routes/sandbox-terminal.tsx"),
+  route("api/groups", "routes/api.groups.ts"),
+  route("api/resource-grants", "routes/api.resource-grants.ts"),
 ] satisfies RouteConfig;

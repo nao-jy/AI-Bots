@@ -40,8 +40,8 @@ function safeToolName(value: string) {
 
 function getScopedIds(
   scope: SandboxScope,
-  chatbotId: number,
-  adapterId: number,
+  chatbotId: string,
+  adapterId: string,
   threadId: string,
 ) {
   switch (scope) {
@@ -78,12 +78,12 @@ function getScopedIds(
 }
 
 async function getBotSandbox(
-  ownerId: number,
-  chatbotId: number,
-  adapterId: number,
+  organizationId: string,
+  chatbotId: string,
+  adapterId: string,
   threadId: string,
 ) {
-  const sandbox = await getChatBotSandbox(chatbotId, ownerId);
+  const sandbox = await getChatBotSandbox(chatbotId, organizationId);
   if (!sandbox) return null;
 
   const scopedIds = getScopedIds(
@@ -154,8 +154,8 @@ async function getBotSandbox(
 
 async function processBotMessage(
   chat: Chat,
-  botId: number,
-  adapterId: number,
+  botId: string,
+  adapterId: string,
   adapterPlatform: string,
   thread: Thread<Record<string, unknown>, unknown>,
   message: Message<unknown>,
@@ -168,13 +168,13 @@ async function processBotMessage(
     const chatbot = await getAvailableBot(botId);
     const agent = chatbot?.agent;
 
-    if (!chatbot || !agent || agent.provider.ownerId !== chatbot.ownerId) {
+    if (!chatbot || !agent || agent.provider.organizationId !== chatbot.organizationId) {
       await thread.post("Service Unavailable");
       return;
     }
     onFailedMessage = chatbot.onFailedMessage;
     const exceededMessage = await getExceededRateLimit(
-      chatbot.ownerId,
+      chatbot.organizationId,
       chatbot.id,
       agent.id,
       agent.providerId,
@@ -207,7 +207,7 @@ async function processBotMessage(
     } as ToolSet;
 
     turnSandbox = await getBotSandbox(
-      chatbot.ownerId,
+      chatbot.organizationId,
       chatbot.id,
       adapterId,
       thread.id,
@@ -221,7 +221,7 @@ async function processBotMessage(
 
     for (const link of chatbot.mcpServers) {
       const server = link.mcpServer;
-      if (server.ownerId !== chatbot.ownerId) continue;
+      if (server.organizationId !== chatbot.organizationId) continue;
       if (!server.endpoint) {
         throw new Error(`MCP server "${server.name}" has no endpoint`);
       }
@@ -257,7 +257,7 @@ async function processBotMessage(
         .get(toolSet.toolSetName)
         ?.push(asRecord(toolSet.toolSetContext));
     });
-    const registry = new ToolSetFactoryRegistry(chatbot.ownerId);
+    const registry = new ToolSetFactoryRegistry(chatbot.organizationId);
     for (const [toolSetName, contexts] of toolSetContexts.entries()) {
       for (const context of contexts) {
         const t = await registry.getTools(toolSetName, context, fileHandles);
@@ -328,7 +328,7 @@ async function processBotMessage(
     }
 
     const postUsageExceededMessage = await getExceededRateLimit(
-      chatbot.ownerId,
+      chatbot.organizationId,
       chatbot.id,
       agent.id,
       agent.providerId,
@@ -412,8 +412,8 @@ async function processBotMessage(
 
 export async function runScheduledPrompt(
   chat: Chat,
-  botId: number,
-  adapterId: number,
+  botId: string,
+  adapterId: string,
   adapterPlatform: string,
   threadId: string,
   prompt: string,
@@ -446,8 +446,8 @@ export async function runScheduledPrompt(
 
 export function registerBotHandlers(
   chat: Chat,
-  botId: number,
-  adapterId: number,
+  botId: string,
+  adapterId: string,
   adapterPlatform: string,
 ) {
   const process = (

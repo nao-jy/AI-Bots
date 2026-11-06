@@ -1,12 +1,13 @@
 import { db } from "./db";
 import type { AuthUser } from "../auth";
-import { decryptMcpHeaders, encryptStringMap, jsonb, record } from "../utils";
+import { decryptMcpHeaders, encryptStringMap, generateResourceId, jsonb, record } from "../utils";
 import { logAuditEvent } from "../logger/audit-logger";
+import { filterResourcesByRole, grantResourceRole, hasResourceAccess } from "../authorization";
 
 export async function listProviders(user: AuthUser) {
-  const providers = await db.orm.aibot.Provider.where({ ownerId: user.id })
+  const providers = await filterResourcesByRole(user, await db.orm.aibot.Provider.where({ organizationId: user.organizationId })
     .orderBy((provider) => provider.updatedAt.desc())
-    .all();
+    .all());
   return {
     records: providers.map((provider) => {
       const headers = decryptMcpHeaders(provider.headers);
@@ -23,7 +24,7 @@ export async function listProviders(user: AuthUser) {
 
 export async function saveProvider(
   user: AuthUser,
-  id: number | null,
+  id: string | null,
   values: FormData,
 ) {
   const name = String(values.get("name") ?? "").trim();
@@ -53,11 +54,12 @@ export async function saveProvider(
   }
   if (
     id !== null &&
-    !(await db.orm.aibot.Provider.first({ id, ownerId: user.id }))
+    (!(await db.orm.aibot.Provider.first({ id, organizationId: user.organizationId })) ||
+      !(await hasResourceAccess(user, id, "update")))
   )
     return { error: "server.providerNotFound" };
   const duplicate = await db.orm.aibot.Provider.first({
-    ownerId: user.id,
+    organizationId: user.organizationId,
     name,
   });
   if (duplicate && duplicate.id !== id)
@@ -81,31 +83,35 @@ export async function saveProvider(
   };
   if (id === null) {
     const provider = await db.orm.aibot.Provider.create({
+      id: generateResourceId(),
       ...saved,
-      ownerId: user.id,
+      organizationId: user.organizationId,
     });
+    await grantResourceRole(user, provider.id, "manager");
     logAuditEvent("provider.created", "provider", provider.id, user.id);
   } else {
-    await db.orm.aibot.Provider.where({ id, ownerId: user.id }).update(saved);
+    await db.orm.aibot.Provider.where({ id, organizationId: user.organizationId }).update(saved);
     logAuditEvent("provider.updated", "provider", id, user.id);
   }
   return { ok: true };
 }
 
-export async function deleteProvider(user: AuthUser, id: number) {
-  if (!(await db.orm.aibot.Provider.first({ id, ownerId: user.id })))
+export async function deleteProvider(user: AuthUser, id: string) {
+  if (!(await db.orm.aibot.Provider.first({ id, organizationId: user.organizationId })) ||
+      !(await hasResourceAccess(user, id, "delete")))
     return false;
   if (await db.orm.aibot.AgentDefinition.first({ providerId: id }))
     return false;
-  await db.orm.aibot.Provider.where({ id, ownerId: user.id }).delete();
+  await db.orm.aibot.Provider.where({ id, organizationId: user.organizationId }).delete();
   logAuditEvent("provider.deleted", "provider", id, user.id);
   return true;
 }
 
-export async function getProvider(providerId: number, ownerId: number) {
+export async function getProvider(providerId: string, user: AuthUser) {
   const provider = await db.orm.aibot.Provider.first({
     id: providerId,
-    ownerId: ownerId,
+    organizationId: user.organizationId,
   });
+  if (!provider || !(await hasResourceAccess(user, providerId, "read"))) return null;
   return provider;
 }

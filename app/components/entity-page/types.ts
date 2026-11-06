@@ -77,7 +77,7 @@ export type EntityPageDefinition = {
   title: string;
   description: string;
   icon: EntitySection;
-  protectedRecordId?: number;
+  protectedRecordId?: string | number;
   columns: EntityColumn[];
   tableFeatures?: EntityTableFeatures;
   fields: EntityField[];

@@ -1,8 +1,9 @@
 import { db } from "./db";
 import type { AuthUser } from "../auth";
-import { idList, jsonb, record } from "../utils";
+import { generateResourceId, idList, isUuid, jsonb, record } from "../utils";
 import { logAuditEvent } from "../logger/audit-logger";
 import { t } from "~/.server/i18n";
+import { filterResourcesByRole, grantResourceRole, hasResourceAccess } from "../authorization";
 import type {
   LanguageModelUsage,
   ToolSet,
@@ -11,12 +12,15 @@ import type {
 } from "ai";
 
 export async function listAgents(user: AuthUser) {
-  const agents = await db.orm.aibot.AgentDefinition.where({
-    ownerId: user.id,
-  })
-    .include("chatbot")
-    .include("provider")
-    .all();
+  const agents = await filterResourcesByRole(
+    user,
+    await db.orm.aibot.AgentDefinition.where({
+      organizationId: user.organizationId,
+    })
+      .include("chatbots")
+      .include("provider")
+      .all(),
+  );
   return {
     records: agents.map((agent) => {
       return record(agent.id, agent.updatedAt, {
@@ -26,14 +30,14 @@ export async function listAgents(user: AuthUser) {
         provider: agent.provider.name,
         providerId: agent.provider.id,
         options: JSON.stringify(agent.options ?? {}, null, 2),
-        status: agent.chatbot
-          ? t("server.usedByBot", { 0: agent.chatbot.name })
+        status: agent.chatbots.length
+          ? t("server.usedByBot", { 0: "" })
           : "server.unused",
       });
     }),
-    providerOptions: (
-      await db.orm.aibot.Provider.where({ ownerId: user.id }).all()
-    ).map((provider) => ({
+    providerOptions: (await filterResourcesByRole(user,
+      await db.orm.aibot.Provider.where({ organizationId: user.organizationId }).all(),
+    )).map((provider) => ({
       label: `${provider.name} (${provider.providerName})`,
       value: String(provider.id),
     })),
@@ -42,15 +46,15 @@ export async function listAgents(user: AuthUser) {
 
 export async function saveAgent(
   user: AuthUser,
-  id: number | null,
+  id: string | null,
   values: FormData,
 ) {
   const name = String(values.get("name") ?? "").trim();
-  const providerId = Number(values.get("providerId"));
+  const providerId = String(values.get("providerId") ?? "");
   const modelId = String(values.get("modelId") ?? "").trim();
   const optionsValue = String(values.get("options") ?? "{}").trim();
   const serverIds = idList(values.get("mcpServerIds")?.toString() ?? null);
-  let mcpAuthIds: Record<string, number>;
+  let mcpAuthIds: Record<string, string>;
   try {
     const parsed: unknown = JSON.parse(
       String(values.get("mcpAuthIds") ?? "{}"),
@@ -59,9 +63,9 @@ export async function saveAgent(
       throw new Error();
     mcpAuthIds = Object.fromEntries(
       Object.entries(parsed).map(([serverId, authId]) => {
-        const key = Number(serverId);
-        const value = Number(authId);
-        if (!Number.isInteger(key) || !Number.isInteger(value))
+        const key = serverId;
+        const value = String(authId);
+        if (!isUuid(key) || !isUuid(value))
           throw new Error();
         return [String(key), value];
       }),
@@ -73,13 +77,13 @@ export async function saveAgent(
     };
   }
   if (!name) return { error: "server.agentNameRequired" };
-  if (!Number.isInteger(providerId) || !modelId)
+  if (!isUuid(providerId) || !modelId)
     return { error: "server.providerAndModelRequired" };
   if (
     !(await db.orm.aibot.Provider.first({
       id: providerId,
-      ownerId: user.id,
-    }))
+      organizationId: user.organizationId,
+    })) || !(await hasResourceAccess(user, providerId, "read"))
   )
     return { error: "server.selectedProviderNotFound" };
   let options: unknown;
@@ -91,22 +95,24 @@ export async function saveAgent(
     return { error: "server.invalidOptionsJson" };
   }
   const servers = await db.orm.aibot.McpServer.where({
-    ownerId: user.id,
+    organizationId: user.organizationId,
   }).all();
   const ownedBots = await db.orm.aibot.ChatBot.where({
-    ownerId: user.id,
+    organizationId: user.organizationId,
   }).all();
   const allowedIds = new Set(servers.map((server) => server.id));
-  if (serverIds.some((serverId) => !allowedIds.has(serverId)))
+  if (serverIds.some((serverId) => !allowedIds.has(serverId)) ||
+    (await Promise.all(serverIds.map((resourceId) => hasResourceAccess(user, resourceId, "read")))).some((allowed) => !allowed))
     return { error: "server.selectedMcpServerUnavailable" };
   const authentications = await db.orm.aibot.OAuthAuthentication.where({
-    ownerId: user.id,
+    organizationId: user.organizationId,
   }).all();
   const allowedAuthIds = new Set(authentications.map((auth) => auth.id));
   if (
     Object.values(mcpAuthIds).some((authId) => !allowedAuthIds.has(authId)) ||
+    (await Promise.all(Object.values(mcpAuthIds).map((authId) => hasResourceAccess(user, authId, "read")))).some((allowed) => !allowed) ||
     Object.keys(mcpAuthIds).some(
-      (serverId) => !serverIds.includes(Number(serverId)),
+      (serverId) => !serverIds.includes(serverId),
     )
   )
     return {
@@ -117,7 +123,8 @@ export async function saveAgent(
     const existing = await db.orm.aibot.AgentDefinition.where({ id })
       .include("provider")
       .first();
-    if (!existing || existing.provider.ownerId !== user.id)
+    if (!existing || existing.provider.organizationId !== user.organizationId ||
+      !(await hasResourceAccess(user, id, "update")))
       return { error: "server.agentNotFound" };
   }
   if (id !== null) {
@@ -126,11 +133,12 @@ export async function saveAgent(
       return { error: "server.agentEditForbidden" };
   }
   const valuesToSave = {
+    id: id ?? generateResourceId(),
     name,
     providerId,
     modelId: modelId,
     options: jsonb(options),
-    ownerId: user.id,
+    organizationId: user.organizationId,
   };
   const agentId = await db.transaction(async (tx) => {
     const agentId =
@@ -141,6 +149,7 @@ export async function saveAgent(
       await tx.orm.aibot.AgentDefinition.where({ id }).update(valuesToSave);
     return agentId;
   });
+  if (id === null) await grantResourceRole(user, agentId, "manager");
   logAuditEvent(
     id === null ? "agent.created" : "agent.updated",
     "agent",
@@ -150,11 +159,12 @@ export async function saveAgent(
   return { ok: true };
 }
 
-export async function deleteAgent(user: AuthUser, id: number) {
+export async function deleteAgent(user: AuthUser, id: string) {
   const agent = await db.orm.aibot.AgentDefinition.where({ id })
     .include("provider")
     .first();
-  if (!agent || agent.provider.ownerId !== user.id) return false;
+  if (!agent || agent.provider.organizationId !== user.organizationId ||
+    !(await hasResourceAccess(user, id, "delete"))) return false;
   const bot = await db.orm.aibot.ChatBot.first({ agentId: id });
   if (bot) return false;
   await db.orm.aibot.AgentDefinition.where({ id }).delete();
@@ -163,15 +173,18 @@ export async function deleteAgent(user: AuthUser, id: number) {
 }
 
 export async function insertUsage(
-  chatbotId: number,
-  agentId: number,
-  providerId: number,
+  chatbotId: string,
+  agentId: string,
+  providerId: string,
   usage: LanguageModelUsage,
   toolResults: Array<TypedToolResult<ToolSet>>,
   platform: string,
   threadId: string,
 ) {
+  const chatbot = await db.orm.aibot.ChatBot.first({ id: chatbotId });
+  if (!chatbot) throw new Error("server.botNotFound");
   const created = await db.orm.aibot.AgentUsage.create({
+    organizationId: chatbot.organizationId,
     chatbotId: chatbotId,
     agentId: agentId,
     providerId: providerId,

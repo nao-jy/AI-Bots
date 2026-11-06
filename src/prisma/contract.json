@@ -12,10 +12,6 @@
       "model": "AgentUsage",
       "namespace": "aibot"
     },
-    "AppSettings": {
-      "model": "AppSettings",
-      "namespace": "aibot"
-    },
     "ChatAdapter": {
       "model": "ChatAdapter",
       "namespace": "aibot"
@@ -56,8 +52,20 @@
       "model": "ChatTarget",
       "namespace": "aibot"
     },
+    "Grant": {
+      "model": "Grant",
+      "namespace": "aibot"
+    },
+    "Group": {
+      "model": "Group",
+      "namespace": "aibot"
+    },
     "McpServer": {
       "model": "McpServer",
+      "namespace": "aibot"
+    },
+    "Membership": {
+      "model": "Membership",
       "namespace": "aibot"
     },
     "OAuthAuthentication": {
@@ -68,8 +76,16 @@
       "model": "OAuthClient",
       "namespace": "aibot"
     },
+    "Organization": {
+      "model": "Organization",
+      "namespace": "aibot"
+    },
     "PersistentSandboxInstance": {
       "model": "PersistentSandboxInstance",
+      "namespace": "aibot"
+    },
+    "PrincipalBase": {
+      "model": "PrincipalBase",
       "namespace": "aibot"
     },
     "Provider": {
@@ -78,6 +94,10 @@
     },
     "RateLimit": {
       "model": "RateLimit",
+      "namespace": "aibot"
+    },
+    "ResourceBase": {
+      "model": "ResourceBase",
       "namespace": "aibot"
     },
     "Sandbox": {
@@ -109,7 +129,7 @@
               "id": {
                 "nullable": false,
                 "type": {
-                  "codecId": "pg/int4@1",
+                  "codecId": "pg/uuid@1",
                   "kind": "scalar"
                 }
               },
@@ -134,32 +154,34 @@
                   "kind": "scalar"
                 }
               },
-              "ownerId": {
+              "organizationId": {
                 "nullable": false,
                 "type": {
-                  "codecId": "pg/int4@1",
+                  "codecId": "pg/uuid@1",
                   "kind": "scalar"
                 }
               },
               "providerId": {
                 "nullable": false,
                 "type": {
-                  "codecId": "pg/int4@1",
+                  "codecId": "pg/uuid@1",
                   "kind": "scalar"
                 }
               },
               "updatedAt": {
                 "nullable": false,
                 "type": {
-                  "codecId": "pg/timestamptz-string@1",
-                  "kind": "scalar"
+                  "codecId": "pg/timestamptz-date@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 3
+                  }
                 }
               }
             },
             "relations": {
-              "chatbot": {
-                "cardinality": "1:1",
-                "nullable": true,
+              "chatbots": {
+                "cardinality": "1:N",
                 "on": {
                   "localFields": [
                     "id"
@@ -173,19 +195,19 @@
                   "namespace": "aibot"
                 }
               },
-              "owner": {
+              "organization": {
                 "cardinality": "N:1",
                 "nullable": false,
                 "on": {
                   "localFields": [
-                    "ownerId"
+                    "organizationId"
                   ],
                   "targetFields": [
                     "id"
                   ]
                 },
                 "to": {
-                  "model": "User",
+                  "model": "Organization",
                   "namespace": "aibot"
                 }
               },
@@ -202,6 +224,22 @@
                 },
                 "to": {
                   "model": "Provider",
+                  "namespace": "aibot"
+                }
+              },
+              "resource": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "ResourceBase",
                   "namespace": "aibot"
                 }
               },
@@ -238,8 +276,8 @@
                 "options": {
                   "column": "options"
                 },
-                "ownerId": {
-                  "column": "ownerId"
+                "organizationId": {
+                  "column": "organizationId"
                 },
                 "providerId": {
                   "column": "providerId"
@@ -257,14 +295,14 @@
               "agentId": {
                 "nullable": true,
                 "type": {
-                  "codecId": "pg/int4@1",
+                  "codecId": "pg/uuid@1",
                   "kind": "scalar"
                 }
               },
               "chatbotId": {
                 "nullable": true,
                 "type": {
-                  "codecId": "pg/int4@1",
+                  "codecId": "pg/uuid@1",
                   "kind": "scalar"
                 }
               },
@@ -296,6 +334,13 @@
                   "kind": "scalar"
                 }
               },
+              "organizationId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              },
               "outputDetails": {
                 "nullable": false,
                 "type": {
@@ -320,7 +365,7 @@
               "providerId": {
                 "nullable": true,
                 "type": {
-                  "codecId": "pg/int4@1",
+                  "codecId": "pg/uuid@1",
                   "kind": "scalar"
                 }
               },
@@ -336,6 +381,16 @@
                 "type": {
                   "codecId": "pg/jsonb@1",
                   "kind": "scalar"
+                }
+              },
+              "updatedAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-date@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 3
+                  }
                 }
               }
             },
@@ -369,6 +424,22 @@
                 },
                 "to": {
                   "model": "ChatBot",
+                  "namespace": "aibot"
+                }
+              },
+              "organization": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "organizationId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Organization",
                   "namespace": "aibot"
                 }
               },
@@ -409,6 +480,9 @@
                 "inputTokens": {
                   "column": "inputTokens"
                 },
+                "organizationId": {
+                  "column": "organizationId"
+                },
                 "outputDetails": {
                   "column": "outputDetails"
                 },
@@ -426,61 +500,13 @@
                 },
                 "toolHistory": {
                   "column": "toolHistory"
+                },
+                "updatedAt": {
+                  "column": "updatedAt"
                 }
               },
               "namespaceId": "aibot",
               "table": "AgentUsage"
-            }
-          },
-          "AppSettings": {
-            "fields": {
-              "id": {
-                "nullable": false,
-                "type": {
-                  "codecId": "pg/text@1",
-                  "kind": "scalar"
-                }
-              },
-              "maxLoginAttempts": {
-                "nullable": false,
-                "type": {
-                  "codecId": "pg/int4@1",
-                  "kind": "scalar"
-                }
-              },
-              "mfaEnabled": {
-                "nullable": false,
-                "type": {
-                  "codecId": "pg/bool@1",
-                  "kind": "scalar"
-                }
-              },
-              "sessionDurationSeconds": {
-                "nullable": false,
-                "type": {
-                  "codecId": "pg/int4@1",
-                  "kind": "scalar"
-                }
-              }
-            },
-            "relations": {},
-            "storage": {
-              "fields": {
-                "id": {
-                  "column": "id"
-                },
-                "maxLoginAttempts": {
-                  "column": "maxLoginAttempts"
-                },
-                "mfaEnabled": {
-                  "column": "mfaEnabled"
-                },
-                "sessionDurationSeconds": {
-                  "column": "sessionDurationSeconds"
-                }
-              },
-              "namespaceId": "aibot",
-              "table": "AppSettings"
             }
           },
           "ChatAdapter": {
@@ -488,7 +514,7 @@
               "authId": {
                 "nullable": true,
                 "type": {
-                  "codecId": "pg/int4@1",
+                  "codecId": "pg/uuid@1",
                   "kind": "scalar"
                 }
               },
@@ -509,7 +535,7 @@
               "id": {
                 "nullable": false,
                 "type": {
-                  "codecId": "pg/int4@1",
+                  "codecId": "pg/uuid@1",
                   "kind": "scalar"
                 }
               },
@@ -520,10 +546,10 @@
                   "kind": "scalar"
                 }
               },
-              "ownerId": {
+              "organizationId": {
                 "nullable": false,
                 "type": {
-                  "codecId": "pg/int4@1",
+                  "codecId": "pg/uuid@1",
                   "kind": "scalar"
                 }
               },
@@ -537,8 +563,11 @@
               "updatedAt": {
                 "nullable": false,
                 "type": {
-                  "codecId": "pg/timestamptz-string@1",
-                  "kind": "scalar"
+                  "codecId": "pg/timestamptz-date@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 3
+                  }
                 }
               }
             },
@@ -574,19 +603,19 @@
                   "namespace": "aibot"
                 }
               },
-              "owner": {
+              "organization": {
                 "cardinality": "N:1",
                 "nullable": false,
                 "on": {
                   "localFields": [
-                    "ownerId"
+                    "organizationId"
                   ],
                   "targetFields": [
                     "id"
                   ]
                 },
                 "to": {
-                  "model": "User",
+                  "model": "Organization",
                   "namespace": "aibot"
                 }
               },
@@ -602,6 +631,22 @@
                 },
                 "to": {
                   "model": "ChatAdapterPublicId",
+                  "namespace": "aibot"
+                }
+              },
+              "resource": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "ResourceBase",
                   "namespace": "aibot"
                 }
               }
@@ -623,8 +668,8 @@
                 "name": {
                   "column": "name"
                 },
-                "ownerId": {
-                  "column": "ownerId"
+                "organizationId": {
+                  "column": "organizationId"
                 },
                 "platform": {
                   "column": "platform"
@@ -642,7 +687,7 @@
               "adapterId": {
                 "nullable": false,
                 "type": {
-                  "codecId": "pg/int4@1",
+                  "codecId": "pg/uuid@1",
                   "kind": "scalar"
                 }
               },
@@ -654,6 +699,20 @@
                 }
               },
               "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "organizationId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              },
+              "publicId": {
                 "nullable": false,
                 "type": {
                   "codecId": "pg/text@1",
@@ -671,6 +730,16 @@
                   "entityName": "PublicIdSlot",
                   "namespaceId": "public",
                   "plane": "domain"
+                }
+              },
+              "updatedAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-date@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 3
+                  }
                 }
               }
             },
@@ -690,6 +759,22 @@
                   "model": "ChatAdapter",
                   "namespace": "aibot"
                 }
+              },
+              "organization": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "organizationId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Organization",
+                  "namespace": "aibot"
+                }
               }
             },
             "storage": {
@@ -703,8 +788,17 @@
                 "id": {
                   "column": "id"
                 },
+                "organizationId": {
+                  "column": "organizationId"
+                },
+                "publicId": {
+                  "column": "publicId"
+                },
                 "slot": {
                   "column": "slot"
+                },
+                "updatedAt": {
+                  "column": "updatedAt"
                 }
               },
               "namespaceId": "aibot",
@@ -716,7 +810,7 @@
               "agentId": {
                 "nullable": true,
                 "type": {
-                  "codecId": "pg/int4@1",
+                  "codecId": "pg/uuid@1",
                   "kind": "scalar"
                 }
               },
@@ -737,7 +831,7 @@
               "id": {
                 "nullable": false,
                 "type": {
-                  "codecId": "pg/int4@1",
+                  "codecId": "pg/uuid@1",
                   "kind": "scalar"
                 }
               },
@@ -776,18 +870,21 @@
                   "kind": "scalar"
                 }
               },
-              "ownerId": {
+              "organizationId": {
                 "nullable": false,
                 "type": {
-                  "codecId": "pg/int4@1",
+                  "codecId": "pg/uuid@1",
                   "kind": "scalar"
                 }
               },
               "updatedAt": {
                 "nullable": false,
                 "type": {
-                  "codecId": "pg/timestamptz-string@1",
-                  "kind": "scalar"
+                  "codecId": "pg/timestamptz-date@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 3
+                  }
                 }
               }
             },
@@ -838,19 +935,19 @@
                   "namespace": "aibot"
                 }
               },
-              "owner": {
+              "organization": {
                 "cardinality": "N:1",
                 "nullable": false,
                 "on": {
                   "localFields": [
-                    "ownerId"
+                    "organizationId"
                   ],
                   "targetFields": [
                     "id"
                   ]
                 },
                 "to": {
-                  "model": "User",
+                  "model": "Organization",
                   "namespace": "aibot"
                 }
               },
@@ -866,6 +963,22 @@
                 },
                 "to": {
                   "model": "ChatBotPublicId",
+                  "namespace": "aibot"
+                }
+              },
+              "resource": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "ResourceBase",
                   "namespace": "aibot"
                 }
               },
@@ -929,8 +1042,8 @@
                 "onFailedMessage": {
                   "column": "onFailedMessage"
                 },
-                "ownerId": {
-                  "column": "ownerId"
+                "organizationId": {
+                  "column": "organizationId"
                 },
                 "updatedAt": {
                   "column": "updatedAt"
@@ -945,14 +1058,14 @@
               "adapterId": {
                 "nullable": false,
                 "type": {
-                  "codecId": "pg/int4@1",
+                  "codecId": "pg/uuid@1",
                   "kind": "scalar"
                 }
               },
               "chatbotId": {
                 "nullable": false,
                 "type": {
-                  "codecId": "pg/int4@1",
+                  "codecId": "pg/uuid@1",
                   "kind": "scalar"
                 }
               },
@@ -968,6 +1081,23 @@
                 "type": {
                   "codecId": "pg/int4@1",
                   "kind": "scalar"
+                }
+              },
+              "organizationId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              },
+              "updatedAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-date@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 3
+                  }
                 }
               }
             },
@@ -1004,6 +1134,22 @@
                   "namespace": "aibot"
                 }
               },
+              "organization": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "organizationId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Organization",
+                  "namespace": "aibot"
+                }
+              },
               "schedules": {
                 "cardinality": "1:N",
                 "on": {
@@ -1033,6 +1179,12 @@
                 },
                 "id": {
                   "column": "id"
+                },
+                "organizationId": {
+                  "column": "organizationId"
+                },
+                "updatedAt": {
+                  "column": "updatedAt"
                 }
               },
               "namespaceId": "aibot",
@@ -1044,14 +1196,14 @@
               "authId": {
                 "nullable": true,
                 "type": {
-                  "codecId": "pg/int4@1",
+                  "codecId": "pg/uuid@1",
                   "kind": "scalar"
                 }
               },
               "chatbotId": {
                 "nullable": false,
                 "type": {
-                  "codecId": "pg/int4@1",
+                  "codecId": "pg/uuid@1",
                   "kind": "scalar"
                 }
               },
@@ -1072,7 +1224,14 @@
               "mcpServerId": {
                 "nullable": false,
                 "type": {
-                  "codecId": "pg/int4@1",
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              },
+              "organizationId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/uuid@1",
                   "kind": "scalar"
                 }
               }
@@ -1125,6 +1284,22 @@
                   "model": "McpServer",
                   "namespace": "aibot"
                 }
+              },
+              "organization": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "organizationId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Organization",
+                  "namespace": "aibot"
+                }
               }
             },
             "storage": {
@@ -1143,6 +1318,9 @@
                 },
                 "mcpServerId": {
                   "column": "mcpServerId"
+                },
+                "organizationId": {
+                  "column": "organizationId"
                 }
               },
               "namespaceId": "aibot",
@@ -1154,7 +1332,7 @@
               "chatbotId": {
                 "nullable": false,
                 "type": {
-                  "codecId": "pg/int4@1",
+                  "codecId": "pg/uuid@1",
                   "kind": "scalar"
                 }
               },
@@ -1166,6 +1344,20 @@
                 }
               },
               "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "organizationId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              },
+              "publicId": {
                 "nullable": false,
                 "type": {
                   "codecId": "pg/text@1",
@@ -1183,6 +1375,16 @@
                   "entityName": "PublicIdSlot",
                   "namespaceId": "public",
                   "plane": "domain"
+                }
+              },
+              "updatedAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-date@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 3
+                  }
                 }
               }
             },
@@ -1202,6 +1404,22 @@
                   "model": "ChatBot",
                   "namespace": "aibot"
                 }
+              },
+              "organization": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "organizationId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Organization",
+                  "namespace": "aibot"
+                }
               }
             },
             "storage": {
@@ -1215,8 +1433,17 @@
                 "id": {
                   "column": "id"
                 },
+                "organizationId": {
+                  "column": "organizationId"
+                },
+                "publicId": {
+                  "column": "publicId"
+                },
                 "slot": {
                   "column": "slot"
+                },
+                "updatedAt": {
+                  "column": "updatedAt"
                 }
               },
               "namespaceId": "aibot",
@@ -1242,7 +1469,7 @@
               "id": {
                 "nullable": false,
                 "type": {
-                  "codecId": "pg/int4@1",
+                  "codecId": "pg/uuid@1",
                   "kind": "scalar"
                 }
               },
@@ -1253,10 +1480,10 @@
                   "kind": "scalar"
                 }
               },
-              "ownerId": {
+              "organizationId": {
                 "nullable": false,
                 "type": {
-                  "codecId": "pg/int4@1",
+                  "codecId": "pg/uuid@1",
                   "kind": "scalar"
                 }
               },
@@ -1272,6 +1499,16 @@
                 "type": {
                   "codecId": "pg/text@1",
                   "kind": "scalar"
+                }
+              },
+              "updatedAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-date@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 3
+                  }
                 }
               }
             },
@@ -1291,19 +1528,35 @@
                   "namespace": "aibot"
                 }
               },
-              "owner": {
+              "organization": {
                 "cardinality": "N:1",
                 "nullable": false,
                 "on": {
                   "localFields": [
-                    "ownerId"
+                    "organizationId"
                   ],
                   "targetFields": [
                     "id"
                   ]
                 },
                 "to": {
-                  "model": "User",
+                  "model": "Organization",
+                  "namespace": "aibot"
+                }
+              },
+              "resource": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "ResourceBase",
                   "namespace": "aibot"
                 }
               }
@@ -1322,14 +1575,17 @@
                 "name": {
                   "column": "name"
                 },
-                "ownerId": {
-                  "column": "ownerId"
+                "organizationId": {
+                  "column": "organizationId"
                 },
                 "prompt": {
                   "column": "prompt"
                 },
                 "timezone": {
                   "column": "timezone"
+                },
+                "updatedAt": {
+                  "column": "updatedAt"
                 }
               },
               "namespaceId": "aibot",
@@ -1341,15 +1597,46 @@
               "chatbotId": {
                 "nullable": false,
                 "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              },
+              "createdAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
                   "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "organizationId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/uuid@1",
                   "kind": "scalar"
                 }
               },
               "sandboxId": {
                 "nullable": false,
                 "type": {
-                  "codecId": "pg/int4@1",
+                  "codecId": "pg/uuid@1",
                   "kind": "scalar"
+                }
+              },
+              "updatedAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-date@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 3
+                  }
                 }
               }
             },
@@ -1367,6 +1654,22 @@
                 },
                 "to": {
                   "model": "ChatBot",
+                  "namespace": "aibot"
+                }
+              },
+              "organization": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "organizationId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Organization",
                   "namespace": "aibot"
                 }
               },
@@ -1392,8 +1695,20 @@
                 "chatbotId": {
                   "column": "chatbotId"
                 },
+                "createdAt": {
+                  "column": "createdAt"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "organizationId": {
+                  "column": "organizationId"
+                },
                 "sandboxId": {
                   "column": "sandboxId"
+                },
+                "updatedAt": {
+                  "column": "updatedAt"
                 }
               },
               "namespaceId": "aibot",
@@ -1405,14 +1720,35 @@
               "chatbotId": {
                 "nullable": false,
                 "type": {
-                  "codecId": "pg/int4@1",
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              },
+              "createdAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
                   "kind": "scalar"
                 }
               },
               "id": {
                 "nullable": false,
                 "type": {
-                  "codecId": "pg/int4@1",
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              },
+              "name": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "organizationId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/uuid@1",
                   "kind": "scalar"
                 }
               },
@@ -1428,6 +1764,16 @@
                 "type": {
                   "codecId": "pg/text@1",
                   "kind": "scalar"
+                }
+              },
+              "updatedAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-date@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 3
+                  }
                 }
               }
             },
@@ -1447,6 +1793,38 @@
                   "model": "ChatBot",
                   "namespace": "aibot"
                 }
+              },
+              "organization": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "organizationId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Organization",
+                  "namespace": "aibot"
+                }
+              },
+              "resource": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "ResourceBase",
+                  "namespace": "aibot"
+                }
               }
             },
             "storage": {
@@ -1454,14 +1832,26 @@
                 "chatbotId": {
                   "column": "chatbotId"
                 },
+                "createdAt": {
+                  "column": "createdAt"
+                },
                 "id": {
                   "column": "id"
+                },
+                "name": {
+                  "column": "name"
+                },
+                "organizationId": {
+                  "column": "organizationId"
                 },
                 "toolSetContext": {
                   "column": "toolSetContext"
                 },
                 "toolSetName": {
                   "column": "toolSetName"
+                },
+                "updatedAt": {
+                  "column": "updatedAt"
                 }
               },
               "namespaceId": "aibot",
@@ -1477,6 +1867,13 @@
                   "kind": "scalar"
                 }
               },
+              "createdAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              },
               "id": {
                 "nullable": false,
                 "type": {
@@ -1484,10 +1881,17 @@
                   "kind": "scalar"
                 }
               },
+              "organizationId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              },
               "scheduleId": {
                 "nullable": false,
                 "type": {
-                  "codecId": "pg/int4@1",
+                  "codecId": "pg/uuid@1",
                   "kind": "scalar"
                 }
               },
@@ -1496,6 +1900,16 @@
                 "type": {
                   "codecId": "pg/text@1",
                   "kind": "scalar"
+                }
+              },
+              "updatedAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-date@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 3
+                  }
                 }
               }
             },
@@ -1513,6 +1927,22 @@
                 },
                 "to": {
                   "model": "ChatBotAdapter",
+                  "namespace": "aibot"
+                }
+              },
+              "organization": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "organizationId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Organization",
                   "namespace": "aibot"
                 }
               },
@@ -1538,18 +1968,289 @@
                 "chatbotAdapterId": {
                   "column": "chatbotAdapterId"
                 },
+                "createdAt": {
+                  "column": "createdAt"
+                },
                 "id": {
                   "column": "id"
+                },
+                "organizationId": {
+                  "column": "organizationId"
                 },
                 "scheduleId": {
                   "column": "scheduleId"
                 },
                 "threadId": {
                   "column": "threadId"
+                },
+                "updatedAt": {
+                  "column": "updatedAt"
                 }
               },
               "namespaceId": "aibot",
               "table": "ChatTarget"
+            }
+          },
+          "Grant": {
+            "fields": {
+              "createdAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              },
+              "grantedById": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "organizationId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              },
+              "principalId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              },
+              "resourceId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              },
+              "role": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                },
+                "valueSet": {
+                  "entityKind": "enum",
+                  "entityName": "Role",
+                  "namespaceId": "public",
+                  "plane": "domain"
+                }
+              },
+              "updatedAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-date@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 3
+                  }
+                }
+              }
+            },
+            "relations": {
+              "grantedBy": {
+                "cardinality": "N:1",
+                "nullable": true,
+                "on": {
+                  "localFields": [
+                    "grantedById"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "PrincipalBase",
+                  "namespace": "aibot"
+                }
+              },
+              "organization": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "organizationId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Organization",
+                  "namespace": "aibot"
+                }
+              },
+              "principal": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "principalId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "PrincipalBase",
+                  "namespace": "aibot"
+                }
+              },
+              "resource": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "resourceId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "ResourceBase",
+                  "namespace": "aibot"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "createdAt": {
+                  "column": "createdAt"
+                },
+                "grantedById": {
+                  "column": "grantedById"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "organizationId": {
+                  "column": "organizationId"
+                },
+                "principalId": {
+                  "column": "principalId"
+                },
+                "resourceId": {
+                  "column": "resourceId"
+                },
+                "role": {
+                  "column": "role"
+                },
+                "updatedAt": {
+                  "column": "updatedAt"
+                }
+              },
+              "namespaceId": "aibot",
+              "table": "Grant"
+            }
+          },
+          "Group": {
+            "fields": {
+              "createdAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              },
+              "name": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "organizationId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              },
+              "updatedAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-date@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 3
+                  }
+                }
+              }
+            },
+            "relations": {
+              "organization": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "organizationId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Organization",
+                  "namespace": "aibot"
+                }
+              },
+              "principal": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "PrincipalBase",
+                  "namespace": "aibot"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "createdAt": {
+                  "column": "createdAt"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "name": {
+                  "column": "name"
+                },
+                "organizationId": {
+                  "column": "organizationId"
+                },
+                "updatedAt": {
+                  "column": "updatedAt"
+                }
+              },
+              "namespaceId": "aibot",
+              "table": "Group"
             }
           },
           "McpServer": {
@@ -1585,7 +2286,7 @@
               "id": {
                 "nullable": false,
                 "type": {
-                  "codecId": "pg/int4@1",
+                  "codecId": "pg/uuid@1",
                   "kind": "scalar"
                 }
               },
@@ -1596,10 +2297,10 @@
                   "kind": "scalar"
                 }
               },
-              "ownerId": {
+              "organizationId": {
                 "nullable": false,
                 "type": {
-                  "codecId": "pg/int4@1",
+                  "codecId": "pg/uuid@1",
                   "kind": "scalar"
                 }
               },
@@ -1619,8 +2320,11 @@
               "updatedAt": {
                 "nullable": false,
                 "type": {
-                  "codecId": "pg/timestamptz-string@1",
-                  "kind": "scalar"
+                  "codecId": "pg/timestamptz-date@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 3
+                  }
                 }
               }
             },
@@ -1640,19 +2344,35 @@
                   "namespace": "aibot"
                 }
               },
-              "owner": {
+              "organization": {
                 "cardinality": "N:1",
                 "nullable": false,
                 "on": {
                   "localFields": [
-                    "ownerId"
+                    "organizationId"
                   ],
                   "targetFields": [
                     "id"
                   ]
                 },
                 "to": {
-                  "model": "User",
+                  "model": "Organization",
+                  "namespace": "aibot"
+                }
+              },
+              "resource": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "ResourceBase",
                   "namespace": "aibot"
                 }
               }
@@ -1677,8 +2397,8 @@
                 "name": {
                   "column": "name"
                 },
-                "ownerId": {
-                  "column": "ownerId"
+                "organizationId": {
+                  "column": "organizationId"
                 },
                 "transport": {
                   "column": "transport"
@@ -1689,6 +2409,129 @@
               },
               "namespaceId": "aibot",
               "table": "McpServer"
+            }
+          },
+          "Membership": {
+            "fields": {
+              "createdAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              },
+              "groupId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "organizationId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              },
+              "updatedAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-date@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 3
+                  }
+                }
+              },
+              "userId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "group": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "groupId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Group",
+                  "namespace": "aibot"
+                }
+              },
+              "organization": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "organizationId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Organization",
+                  "namespace": "aibot"
+                }
+              },
+              "user": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "userId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "User",
+                  "namespace": "aibot"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "createdAt": {
+                  "column": "createdAt"
+                },
+                "groupId": {
+                  "column": "groupId"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "organizationId": {
+                  "column": "organizationId"
+                },
+                "updatedAt": {
+                  "column": "updatedAt"
+                },
+                "userId": {
+                  "column": "userId"
+                }
+              },
+              "namespaceId": "aibot",
+              "table": "Membership"
             }
           },
           "OAuthAuthentication": {
@@ -1717,7 +2560,7 @@
               "id": {
                 "nullable": false,
                 "type": {
-                  "codecId": "pg/int4@1",
+                  "codecId": "pg/uuid@1",
                   "kind": "scalar"
                 }
               },
@@ -1731,14 +2574,14 @@
               "oauthId": {
                 "nullable": false,
                 "type": {
-                  "codecId": "pg/int4@1",
+                  "codecId": "pg/uuid@1",
                   "kind": "scalar"
                 }
               },
-              "ownerId": {
+              "organizationId": {
                 "nullable": false,
                 "type": {
-                  "codecId": "pg/int4@1",
+                  "codecId": "pg/uuid@1",
                   "kind": "scalar"
                 }
               },
@@ -1752,8 +2595,11 @@
               "updatedAt": {
                 "nullable": false,
                 "type": {
-                  "codecId": "pg/timestamptz-string@1",
-                  "kind": "scalar"
+                  "codecId": "pg/timestamptz-date@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 3
+                  }
                 }
               }
             },
@@ -1774,19 +2620,35 @@
                   "namespace": "aibot"
                 }
               },
-              "owner": {
+              "organization": {
                 "cardinality": "N:1",
                 "nullable": false,
                 "on": {
                   "localFields": [
-                    "ownerId"
+                    "organizationId"
                   ],
                   "targetFields": [
                     "id"
                   ]
                 },
                 "to": {
-                  "model": "User",
+                  "model": "Organization",
+                  "namespace": "aibot"
+                }
+              },
+              "resource": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "ResourceBase",
                   "namespace": "aibot"
                 }
               }
@@ -1811,8 +2673,8 @@
                 "oauthId": {
                   "column": "oauthId"
                 },
-                "ownerId": {
-                  "column": "ownerId"
+                "organizationId": {
+                  "column": "organizationId"
                 },
                 "refreshToken": {
                   "column": "refreshToken"
@@ -1858,7 +2720,7 @@
               "id": {
                 "nullable": false,
                 "type": {
-                  "codecId": "pg/int4@1",
+                  "codecId": "pg/uuid@1",
                   "kind": "scalar"
                 }
               },
@@ -1869,10 +2731,10 @@
                   "kind": "scalar"
                 }
               },
-              "ownerId": {
+              "organizationId": {
                 "nullable": false,
                 "type": {
-                  "codecId": "pg/int4@1",
+                  "codecId": "pg/uuid@1",
                   "kind": "scalar"
                 }
               },
@@ -1910,8 +2772,11 @@
               "updatedAt": {
                 "nullable": false,
                 "type": {
-                  "codecId": "pg/timestamptz-string@1",
-                  "kind": "scalar"
+                  "codecId": "pg/timestamptz-date@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 3
+                  }
                 }
               }
             },
@@ -1931,19 +2796,35 @@
                   "namespace": "aibot"
                 }
               },
-              "owner": {
+              "organization": {
                 "cardinality": "N:1",
                 "nullable": false,
                 "on": {
                   "localFields": [
-                    "ownerId"
+                    "organizationId"
                   ],
                   "targetFields": [
                     "id"
                   ]
                 },
                 "to": {
-                  "model": "User",
+                  "model": "Organization",
+                  "namespace": "aibot"
+                }
+              },
+              "resource": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "ResourceBase",
                   "namespace": "aibot"
                 }
               }
@@ -1968,8 +2849,8 @@
                 "name": {
                   "column": "name"
                 },
-                "ownerId": {
-                  "column": "ownerId"
+                "organizationId": {
+                  "column": "organizationId"
                 },
                 "refreshEndpoint": {
                   "column": "refreshEndpoint"
@@ -1991,17 +2872,296 @@
               "table": "OAuthClient"
             }
           },
-          "PersistentSandboxInstance": {
+          "Organization": {
             "fields": {
-              "adapterId": {
-                "nullable": true,
+              "createdAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              },
+              "maxLoginAttempts": {
+                "nullable": false,
                 "type": {
                   "codecId": "pg/int4@1",
                   "kind": "scalar"
                 }
               },
+              "mfaEnabled": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/bool@1",
+                  "kind": "scalar"
+                }
+              },
+              "name": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "sessionDurationSeconds": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "updatedAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-date@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 3
+                  }
+                }
+              }
+            },
+            "relations": {
+              "adapters": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "organizationId"
+                  ]
+                },
+                "to": {
+                  "model": "ChatAdapter",
+                  "namespace": "aibot"
+                }
+              },
+              "agents": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "organizationId"
+                  ]
+                },
+                "to": {
+                  "model": "AgentDefinition",
+                  "namespace": "aibot"
+                }
+              },
+              "chatbots": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "organizationId"
+                  ]
+                },
+                "to": {
+                  "model": "ChatBot",
+                  "namespace": "aibot"
+                }
+              },
+              "groups": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "organizationId"
+                  ]
+                },
+                "to": {
+                  "model": "Group",
+                  "namespace": "aibot"
+                }
+              },
+              "mcpServers": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "organizationId"
+                  ]
+                },
+                "to": {
+                  "model": "McpServer",
+                  "namespace": "aibot"
+                }
+              },
+              "oauthClients": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "organizationId"
+                  ]
+                },
+                "to": {
+                  "model": "OAuthClient",
+                  "namespace": "aibot"
+                }
+              },
+              "providers": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "organizationId"
+                  ]
+                },
+                "to": {
+                  "model": "Provider",
+                  "namespace": "aibot"
+                }
+              },
+              "rateLimits": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "organizationId"
+                  ]
+                },
+                "to": {
+                  "model": "RateLimit",
+                  "namespace": "aibot"
+                }
+              },
+              "sandboxes": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "organizationId"
+                  ]
+                },
+                "to": {
+                  "model": "Sandbox",
+                  "namespace": "aibot"
+                }
+              },
+              "schedules": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "organizationId"
+                  ]
+                },
+                "to": {
+                  "model": "ChatBotSchedule",
+                  "namespace": "aibot"
+                }
+              },
+              "usage": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "organizationId"
+                  ]
+                },
+                "to": {
+                  "model": "AgentUsage",
+                  "namespace": "aibot"
+                }
+              },
+              "users": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "organizationId"
+                  ]
+                },
+                "to": {
+                  "model": "User",
+                  "namespace": "aibot"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "createdAt": {
+                  "column": "createdAt"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "maxLoginAttempts": {
+                  "column": "maxLoginAttempts"
+                },
+                "mfaEnabled": {
+                  "column": "mfaEnabled"
+                },
+                "name": {
+                  "column": "name"
+                },
+                "sessionDurationSeconds": {
+                  "column": "sessionDurationSeconds"
+                },
+                "updatedAt": {
+                  "column": "updatedAt"
+                }
+              },
+              "namespaceId": "aibot",
+              "table": "Organization"
+            }
+          },
+          "PersistentSandboxInstance": {
+            "fields": {
+              "adapterId": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              },
               "chatbotId": {
                 "nullable": true,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              },
+              "createdAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
                 "type": {
                   "codecId": "pg/int4@1",
                   "kind": "scalar"
@@ -2014,10 +3174,17 @@
                   "kind": "scalar"
                 }
               },
+              "organizationId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              },
               "sandboxId": {
                 "nullable": false,
                 "type": {
-                  "codecId": "pg/int4@1",
+                  "codecId": "pg/uuid@1",
                   "kind": "scalar"
                 }
               },
@@ -2026,6 +3193,16 @@
                 "type": {
                   "codecId": "pg/text@1",
                   "kind": "scalar"
+                }
+              },
+              "updatedAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-date@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 3
+                  }
                 }
               }
             },
@@ -2062,6 +3239,22 @@
                   "namespace": "aibot"
                 }
               },
+              "organization": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "organizationId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Organization",
+                  "namespace": "aibot"
+                }
+              },
               "sandbox": {
                 "cardinality": "N:1",
                 "nullable": false,
@@ -2087,18 +3280,67 @@
                 "chatbotId": {
                   "column": "chatbotId"
                 },
+                "createdAt": {
+                  "column": "createdAt"
+                },
+                "id": {
+                  "column": "id"
+                },
                 "instanceId": {
                   "column": "instanceId"
+                },
+                "organizationId": {
+                  "column": "organizationId"
                 },
                 "sandboxId": {
                   "column": "sandboxId"
                 },
                 "threadId": {
                   "column": "threadId"
+                },
+                "updatedAt": {
+                  "column": "updatedAt"
                 }
               },
               "namespaceId": "aibot",
               "table": "PersistentSandboxInstance"
+            }
+          },
+          "PrincipalBase": {
+            "fields": {
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "grants": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "principalId"
+                  ]
+                },
+                "to": {
+                  "model": "Grant",
+                  "namespace": "aibot"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "id": {
+                  "column": "id"
+                }
+              },
+              "namespaceId": "aibot",
+              "table": "PrincipalBase"
             }
           },
           "Provider": {
@@ -2127,7 +3369,7 @@
               "id": {
                 "nullable": false,
                 "type": {
-                  "codecId": "pg/int4@1",
+                  "codecId": "pg/uuid@1",
                   "kind": "scalar"
                 }
               },
@@ -2138,10 +3380,10 @@
                   "kind": "scalar"
                 }
               },
-              "ownerId": {
+              "organizationId": {
                 "nullable": false,
                 "type": {
-                  "codecId": "pg/int4@1",
+                  "codecId": "pg/uuid@1",
                   "kind": "scalar"
                 }
               },
@@ -2155,8 +3397,11 @@
               "updatedAt": {
                 "nullable": false,
                 "type": {
-                  "codecId": "pg/timestamptz-string@1",
-                  "kind": "scalar"
+                  "codecId": "pg/timestamptz-date@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 3
+                  }
                 }
               }
             },
@@ -2176,19 +3421,35 @@
                   "namespace": "aibot"
                 }
               },
-              "owner": {
+              "organization": {
                 "cardinality": "N:1",
                 "nullable": false,
                 "on": {
                   "localFields": [
-                    "ownerId"
+                    "organizationId"
                   ],
                   "targetFields": [
                     "id"
                   ]
                 },
                 "to": {
-                  "model": "User",
+                  "model": "Organization",
+                  "namespace": "aibot"
+                }
+              },
+              "resource": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "ResourceBase",
                   "namespace": "aibot"
                 }
               }
@@ -2210,8 +3471,8 @@
                 "name": {
                   "column": "name"
                 },
-                "ownerId": {
-                  "column": "ownerId"
+                "organizationId": {
+                  "column": "organizationId"
                 },
                 "providerName": {
                   "column": "providerName"
@@ -2233,6 +3494,13 @@
                   "kind": "scalar"
                 }
               },
+              "createdAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              },
               "criteria": {
                 "nullable": false,
                 "type": {
@@ -2249,14 +3517,14 @@
               "criteriaId": {
                 "nullable": true,
                 "type": {
-                  "codecId": "pg/int4@1",
+                  "codecId": "pg/uuid@1",
                   "kind": "scalar"
                 }
               },
               "id": {
                 "nullable": false,
                 "type": {
-                  "codecId": "pg/int4@1",
+                  "codecId": "pg/uuid@1",
                   "kind": "scalar"
                 }
               },
@@ -2274,10 +3542,17 @@
                   "kind": "scalar"
                 }
               },
-              "ownerId": {
+              "name": {
                 "nullable": false,
                 "type": {
-                  "codecId": "pg/int4@1",
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "organizationId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/uuid@1",
                   "kind": "scalar"
                 }
               },
@@ -2301,22 +3576,48 @@
                   "codecId": "pg/text@1",
                   "kind": "scalar"
                 }
+              },
+              "updatedAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-date@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 3
+                  }
+                }
               }
             },
             "relations": {
-              "owner": {
+              "organization": {
                 "cardinality": "N:1",
                 "nullable": false,
                 "on": {
                   "localFields": [
-                    "ownerId"
+                    "organizationId"
                   ],
                   "targetFields": [
                     "id"
                   ]
                 },
                 "to": {
-                  "model": "User",
+                  "model": "Organization",
+                  "namespace": "aibot"
+                }
+              },
+              "resource": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "ResourceBase",
                   "namespace": "aibot"
                 }
               }
@@ -2325,6 +3626,9 @@
               "fields": {
                 "coefficient": {
                   "column": "coefficient"
+                },
+                "createdAt": {
+                  "column": "createdAt"
                 },
                 "criteria": {
                   "column": "criteria"
@@ -2341,8 +3645,11 @@
                 "limitExceededMessage": {
                   "column": "limitExceededMessage"
                 },
-                "ownerId": {
-                  "column": "ownerId"
+                "name": {
+                  "column": "name"
+                },
+                "organizationId": {
+                  "column": "organizationId"
                 },
                 "perThread": {
                   "column": "perThread"
@@ -2352,10 +3659,50 @@
                 },
                 "timezone": {
                   "column": "timezone"
+                },
+                "updatedAt": {
+                  "column": "updatedAt"
                 }
               },
               "namespaceId": "aibot",
               "table": "RateLimit"
+            }
+          },
+          "ResourceBase": {
+            "fields": {
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "grants": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "resourceId"
+                  ]
+                },
+                "to": {
+                  "model": "Grant",
+                  "namespace": "aibot"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "id": {
+                  "column": "id"
+                }
+              },
+              "namespaceId": "aibot",
+              "table": "ResourceBase"
             }
           },
           "Sandbox": {
@@ -2370,6 +3717,13 @@
                   "kind": "scalar"
                 }
               },
+              "createdAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              },
               "envs": {
                 "nullable": true,
                 "type": {
@@ -2380,7 +3734,7 @@
               "id": {
                 "nullable": false,
                 "type": {
-                  "codecId": "pg/int4@1",
+                  "codecId": "pg/uuid@1",
                   "kind": "scalar"
                 }
               },
@@ -2401,10 +3755,10 @@
                   "kind": "scalar"
                 }
               },
-              "ownerId": {
+              "organizationId": {
                 "nullable": false,
                 "type": {
-                  "codecId": "pg/int4@1",
+                  "codecId": "pg/uuid@1",
                   "kind": "scalar"
                 }
               },
@@ -2427,6 +3781,16 @@
                   "codecId": "pg/text@1",
                   "kind": "scalar"
                 }
+              },
+              "updatedAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-date@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 3
+                  }
+                }
               }
             },
             "relations": {
@@ -2445,19 +3809,35 @@
                   "namespace": "aibot"
                 }
               },
-              "owner": {
+              "organization": {
                 "cardinality": "N:1",
                 "nullable": false,
                 "on": {
                   "localFields": [
-                    "ownerId"
+                    "organizationId"
                   ],
                   "targetFields": [
                     "id"
                   ]
                 },
                 "to": {
-                  "model": "User",
+                  "model": "Organization",
+                  "namespace": "aibot"
+                }
+              },
+              "resource": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "ResourceBase",
                   "namespace": "aibot"
                 }
               }
@@ -2466,6 +3846,9 @@
               "fields": {
                 "allowedDomainList": {
                   "column": "allowedDomainList"
+                },
+                "createdAt": {
+                  "column": "createdAt"
                 },
                 "envs": {
                   "column": "envs"
@@ -2479,14 +3862,17 @@
                 "name": {
                   "column": "name"
                 },
-                "ownerId": {
-                  "column": "ownerId"
+                "organizationId": {
+                  "column": "organizationId"
                 },
                 "sandboxScope": {
                   "column": "sandboxScope"
                 },
                 "sandboxType": {
                   "column": "sandboxType"
+                },
+                "updatedAt": {
+                  "column": "updatedAt"
                 }
               },
               "namespaceId": "aibot",
@@ -2530,6 +3916,13 @@
                   "kind": "scalar"
                 }
               },
+              "organizationId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              },
               "tokenHash": {
                 "nullable": false,
                 "type": {
@@ -2537,15 +3930,41 @@
                   "kind": "scalar"
                 }
               },
+              "updatedAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-date@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 3
+                  }
+                }
+              },
               "userId": {
                 "nullable": false,
                 "type": {
-                  "codecId": "pg/int4@1",
+                  "codecId": "pg/uuid@1",
                   "kind": "scalar"
                 }
               }
             },
             "relations": {
+              "organization": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "organizationId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Organization",
+                  "namespace": "aibot"
+                }
+              },
               "user": {
                 "cardinality": "N:1",
                 "nullable": false,
@@ -2580,8 +3999,14 @@
                 "mfaVerified": {
                   "column": "mfaVerified"
                 },
+                "organizationId": {
+                  "column": "organizationId"
+                },
                 "tokenHash": {
                   "column": "tokenHash"
+                },
+                "updatedAt": {
+                  "column": "updatedAt"
                 },
                 "userId": {
                   "column": "userId"
@@ -2617,7 +4042,7 @@
               "id": {
                 "nullable": false,
                 "type": {
-                  "codecId": "pg/int4@1",
+                  "codecId": "pg/uuid@1",
                   "kind": "scalar"
                 }
               },
@@ -2643,9 +4068,16 @@
                 }
               },
               "name": {
-                "nullable": true,
+                "nullable": false,
                 "type": {
                   "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "organizationId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/uuid@1",
                   "kind": "scalar"
                 }
               },
@@ -2659,69 +4091,44 @@
               "updatedAt": {
                 "nullable": false,
                 "type": {
-                  "codecId": "pg/timestamptz-string@1",
-                  "kind": "scalar"
+                  "codecId": "pg/timestamptz-date@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 3
+                  }
                 }
               }
             },
             "relations": {
-              "adapters": {
-                "cardinality": "1:N",
+              "organization": {
+                "cardinality": "N:1",
+                "nullable": false,
                 "on": {
                   "localFields": [
-                    "id"
+                    "organizationId"
                   ],
                   "targetFields": [
-                    "ownerId"
+                    "id"
                   ]
                 },
                 "to": {
-                  "model": "ChatAdapter",
+                  "model": "Organization",
                   "namespace": "aibot"
                 }
               },
-              "chatbots": {
-                "cardinality": "1:N",
+              "principal": {
+                "cardinality": "N:1",
+                "nullable": false,
                 "on": {
                   "localFields": [
                     "id"
                   ],
                   "targetFields": [
-                    "ownerId"
-                  ]
-                },
-                "to": {
-                  "model": "ChatBot",
-                  "namespace": "aibot"
-                }
-              },
-              "mcpServers": {
-                "cardinality": "1:N",
-                "on": {
-                  "localFields": [
                     "id"
-                  ],
-                  "targetFields": [
-                    "ownerId"
                   ]
                 },
                 "to": {
-                  "model": "McpServer",
-                  "namespace": "aibot"
-                }
-              },
-              "providers": {
-                "cardinality": "1:N",
-                "on": {
-                  "localFields": [
-                    "id"
-                  ],
-                  "targetFields": [
-                    "ownerId"
-                  ]
-                },
-                "to": {
-                  "model": "Provider",
+                  "model": "PrincipalBase",
                   "namespace": "aibot"
                 }
               },
@@ -2766,6 +4173,9 @@
                 },
                 "name": {
                   "column": "name"
+                },
+                "organizationId": {
+                  "column": "organizationId"
                 },
                 "passwordHash": {
                   "column": "passwordHash"
@@ -2821,6 +4231,23 @@
               }
             ]
           },
+          "Role": {
+            "codecId": "pg/text@1",
+            "members": [
+              {
+                "name": "viewer",
+                "value": "viewer"
+              },
+              {
+                "name": "editor",
+                "value": "editor"
+              },
+              {
+                "name": "manager",
+                "value": "manager"
+              }
+            ]
+          },
           "SandboxScope": {
             "codecId": "pg/text@1",
             "members": [
@@ -2868,12 +4295,8 @@
                   "nullable": false
                 },
                 "id": {
-                  "codecId": "pg/int4@1",
-                  "dataType": "pg/int4",
-                  "default": {
-                    "expression": "autoincrement()",
-                    "kind": "function"
-                  },
+                  "codecId": "pg/uuid@1",
+                  "dataType": "pg/uuid",
                   "nullable": false
                 },
                 "modelId": {
@@ -2891,23 +4314,66 @@
                   "dataType": "pg/jsonb",
                   "nullable": true
                 },
-                "ownerId": {
-                  "codecId": "pg/int4@1",
-                  "dataType": "pg/int4",
+                "organizationId": {
+                  "codecId": "pg/uuid@1",
+                  "dataType": "pg/uuid",
                   "nullable": false
                 },
                 "providerId": {
-                  "codecId": "pg/int4@1",
-                  "dataType": "pg/int4",
+                  "codecId": "pg/uuid@1",
+                  "dataType": "pg/uuid",
                   "nullable": false
                 },
                 "updatedAt": {
-                  "codecId": "pg/timestamptz-string@1",
+                  "codecId": "pg/timestamptz-date@1",
                   "dataType": "pg/timestamptz",
-                  "nullable": false
+                  "nullable": false,
+                  "typeParams": {
+                    "precision": 3
+                  }
                 }
               },
               "foreignKeys": [
+                {
+                  "index": {
+                    "primaryKey": true
+                  },
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "AgentDefinition"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "ResourceBase"
+                  }
+                },
+                {
+                  "index": {
+                    "name": "AgentDefinition_organizationId_idx_2e17ef41"
+                  },
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "organizationId"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "AgentDefinition"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "Organization"
+                  }
+                },
                 {
                   "index": {
                     "name": "AgentDefinition_providerId_idx_d1904c54"
@@ -2927,35 +4393,15 @@
                     "namespaceId": "aibot",
                     "tableName": "Provider"
                   }
-                },
-                {
-                  "index": {
-                    "name": "AgentDefinition_ownerId_idx_e2d0c1ef"
-                  },
-                  "onDelete": "cascade",
-                  "source": {
-                    "columns": [
-                      "ownerId"
-                    ],
-                    "namespaceId": "aibot",
-                    "tableName": "AgentDefinition"
-                  },
-                  "target": {
-                    "columns": [
-                      "id"
-                    ],
-                    "namespaceId": "aibot",
-                    "tableName": "User"
-                  }
                 }
               ],
               "indexes": [
                 {
                   "columns": [
-                    "ownerId"
+                    "organizationId"
                   ],
-                  "name": "AgentDefinition_ownerId_idx_e2d0c1ef",
-                  "prefix": "AgentDefinition_ownerId_idx",
+                  "name": "AgentDefinition_organizationId_idx_2e17ef41",
+                  "prefix": "AgentDefinition_organizationId_idx",
                   "unique": false
                 },
                 {
@@ -2972,18 +4418,25 @@
                   "id"
                 ]
               },
-              "uniques": []
+              "uniques": [
+                {
+                  "columns": [
+                    "organizationId",
+                    "name"
+                  ]
+                }
+              ]
             },
             "AgentUsage": {
               "columns": {
                 "agentId": {
-                  "codecId": "pg/int4@1",
-                  "dataType": "pg/int4",
+                  "codecId": "pg/uuid@1",
+                  "dataType": "pg/uuid",
                   "nullable": true
                 },
                 "chatbotId": {
-                  "codecId": "pg/int4@1",
-                  "dataType": "pg/int4",
+                  "codecId": "pg/uuid@1",
+                  "dataType": "pg/uuid",
                   "nullable": true
                 },
                 "createdAt": {
@@ -3014,6 +4467,11 @@
                   "dataType": "pg/int4",
                   "nullable": false
                 },
+                "organizationId": {
+                  "codecId": "pg/uuid@1",
+                  "dataType": "pg/uuid",
+                  "nullable": false
+                },
                 "outputDetails": {
                   "codecId": "pg/jsonb@1",
                   "dataType": "pg/jsonb",
@@ -3030,8 +4488,8 @@
                   "nullable": false
                 },
                 "providerId": {
-                  "codecId": "pg/int4@1",
-                  "dataType": "pg/int4",
+                  "codecId": "pg/uuid@1",
+                  "dataType": "pg/uuid",
                   "nullable": true
                 },
                 "threadId": {
@@ -3043,9 +4501,37 @@
                   "codecId": "pg/jsonb@1",
                   "dataType": "pg/jsonb",
                   "nullable": false
+                },
+                "updatedAt": {
+                  "codecId": "pg/timestamptz-date@1",
+                  "dataType": "pg/timestamptz",
+                  "nullable": false,
+                  "typeParams": {
+                    "precision": 3
+                  }
                 }
               },
               "foreignKeys": [
+                {
+                  "index": {
+                    "name": "AgentUsage_organizationId_idx_2e17ef41"
+                  },
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "organizationId"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "AgentUsage"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "Organization"
+                  }
+                },
                 {
                   "index": {
                     "name": "AgentUsage_agentId_idx_8d0ba4f0"
@@ -3126,6 +4612,14 @@
                 },
                 {
                   "columns": [
+                    "organizationId"
+                  ],
+                  "name": "AgentUsage_organizationId_idx_2e17ef41",
+                  "prefix": "AgentUsage_organizationId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
                     "providerId"
                   ],
                   "name": "AgentUsage_providerId_idx_d1904c54",
@@ -3140,59 +4634,11 @@
               },
               "uniques": []
             },
-            "AppSettings": {
-              "columns": {
-                "id": {
-                  "codecId": "pg/text@1",
-                  "dataType": "pg/text",
-                  "default": {
-                    "kind": "literal",
-                    "value": "global"
-                  },
-                  "nullable": false
-                },
-                "maxLoginAttempts": {
-                  "codecId": "pg/int4@1",
-                  "dataType": "pg/int4",
-                  "default": {
-                    "kind": "literal",
-                    "value": 5
-                  },
-                  "nullable": false
-                },
-                "mfaEnabled": {
-                  "codecId": "pg/bool@1",
-                  "dataType": "pg/bool",
-                  "default": {
-                    "kind": "literal",
-                    "value": false
-                  },
-                  "nullable": false
-                },
-                "sessionDurationSeconds": {
-                  "codecId": "pg/int4@1",
-                  "dataType": "pg/int4",
-                  "default": {
-                    "kind": "literal",
-                    "value": 2592000
-                  },
-                  "nullable": false
-                }
-              },
-              "foreignKeys": [],
-              "indexes": [],
-              "primaryKey": {
-                "columns": [
-                  "id"
-                ]
-              },
-              "uniques": []
-            },
             "ChatAdapter": {
               "columns": {
                 "authId": {
-                  "codecId": "pg/int4@1",
-                  "dataType": "pg/int4",
+                  "codecId": "pg/uuid@1",
+                  "dataType": "pg/uuid",
                   "nullable": true
                 },
                 "config": {
@@ -3210,12 +4656,8 @@
                   "nullable": false
                 },
                 "id": {
-                  "codecId": "pg/int4@1",
-                  "dataType": "pg/int4",
-                  "default": {
-                    "expression": "autoincrement()",
-                    "kind": "function"
-                  },
+                  "codecId": "pg/uuid@1",
+                  "dataType": "pg/uuid",
                   "nullable": false
                 },
                 "name": {
@@ -3223,9 +4665,9 @@
                   "dataType": "pg/text",
                   "nullable": false
                 },
-                "ownerId": {
-                  "codecId": "pg/int4@1",
-                  "dataType": "pg/int4",
+                "organizationId": {
+                  "codecId": "pg/uuid@1",
+                  "dataType": "pg/uuid",
                   "nullable": false
                 },
                 "platform": {
@@ -3234,20 +4676,23 @@
                   "nullable": false
                 },
                 "updatedAt": {
-                  "codecId": "pg/timestamptz-string@1",
+                  "codecId": "pg/timestamptz-date@1",
                   "dataType": "pg/timestamptz",
-                  "nullable": false
+                  "nullable": false,
+                  "typeParams": {
+                    "precision": 3
+                  }
                 }
               },
               "foreignKeys": [
                 {
                   "index": {
-                    "name": "ChatAdapter_ownerId_idx_e2d0c1ef"
+                    "primaryKey": true
                   },
                   "onDelete": "cascade",
                   "source": {
                     "columns": [
-                      "ownerId"
+                      "id"
                     ],
                     "namespaceId": "aibot",
                     "tableName": "ChatAdapter"
@@ -3257,7 +4702,27 @@
                       "id"
                     ],
                     "namespaceId": "aibot",
-                    "tableName": "User"
+                    "tableName": "ResourceBase"
+                  }
+                },
+                {
+                  "index": {
+                    "name": "ChatAdapter_organizationId_idx_2e17ef41"
+                  },
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "organizationId"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "ChatAdapter"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "Organization"
                   }
                 },
                 {
@@ -3292,10 +4757,10 @@
                 },
                 {
                   "columns": [
-                    "ownerId"
+                    "organizationId"
                   ],
-                  "name": "ChatAdapter_ownerId_idx_e2d0c1ef",
-                  "prefix": "ChatAdapter_ownerId_idx",
+                  "name": "ChatAdapter_organizationId_idx_2e17ef41",
+                  "prefix": "ChatAdapter_organizationId_idx",
                   "unique": false
                 },
                 {
@@ -3312,7 +4777,14 @@
                   "id"
                 ]
               },
-              "uniques": []
+              "uniques": [
+                {
+                  "columns": [
+                    "organizationId",
+                    "name"
+                  ]
+                }
+              ]
             },
             "ChatAdapterPublicId": {
               "checks": [
@@ -3324,8 +4796,8 @@
               ],
               "columns": {
                 "adapterId": {
-                  "codecId": "pg/int4@1",
-                  "dataType": "pg/int4",
+                  "codecId": "pg/uuid@1",
+                  "dataType": "pg/uuid",
                   "nullable": false
                 },
                 "createdAt": {
@@ -3338,6 +4810,20 @@
                   "nullable": false
                 },
                 "id": {
+                  "codecId": "pg/int4@1",
+                  "dataType": "pg/int4",
+                  "default": {
+                    "expression": "autoincrement()",
+                    "kind": "function"
+                  },
+                  "nullable": false
+                },
+                "organizationId": {
+                  "codecId": "pg/uuid@1",
+                  "dataType": "pg/uuid",
+                  "nullable": false
+                },
+                "publicId": {
                   "codecId": "pg/text@1",
                   "dataType": "pg/text",
                   "nullable": false
@@ -3352,9 +4838,37 @@
                     "namespaceId": "public",
                     "plane": "storage"
                   }
+                },
+                "updatedAt": {
+                  "codecId": "pg/timestamptz-date@1",
+                  "dataType": "pg/timestamptz",
+                  "nullable": false,
+                  "typeParams": {
+                    "precision": 3
+                  }
                 }
               },
               "foreignKeys": [
+                {
+                  "index": {
+                    "name": "ChatAdapterPublicId_organizationId_idx_2e17ef41"
+                  },
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "organizationId"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "ChatAdapterPublicId"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "Organization"
+                  }
+                },
                 {
                   "index": {
                     "name": "ChatAdapterPublicId_adapterId_idx_f5208af9"
@@ -3384,12 +4898,25 @@
                   "name": "ChatAdapterPublicId_adapterId_idx_f5208af9",
                   "prefix": "ChatAdapterPublicId_adapterId_idx",
                   "unique": false
+                },
+                {
+                  "columns": [
+                    "organizationId"
+                  ],
+                  "name": "ChatAdapterPublicId_organizationId_idx_2e17ef41",
+                  "prefix": "ChatAdapterPublicId_organizationId_idx",
+                  "unique": false
                 }
               ],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
               "uniques": [
                 {
                   "columns": [
-                    "id"
+                    "publicId"
                   ]
                 },
                 {
@@ -3403,8 +4930,8 @@
             "ChatBot": {
               "columns": {
                 "agentId": {
-                  "codecId": "pg/int4@1",
-                  "dataType": "pg/int4",
+                  "codecId": "pg/uuid@1",
+                  "dataType": "pg/uuid",
                   "nullable": true
                 },
                 "createdAt": {
@@ -3422,12 +4949,8 @@
                   "nullable": true
                 },
                 "id": {
-                  "codecId": "pg/int4@1",
-                  "dataType": "pg/int4",
-                  "default": {
-                    "expression": "autoincrement()",
-                    "kind": "function"
-                  },
+                  "codecId": "pg/uuid@1",
+                  "dataType": "pg/uuid",
                   "nullable": false
                 },
                 "instruction": {
@@ -3459,26 +4982,29 @@
                   "dataType": "pg/text",
                   "nullable": false
                 },
-                "ownerId": {
-                  "codecId": "pg/int4@1",
-                  "dataType": "pg/int4",
+                "organizationId": {
+                  "codecId": "pg/uuid@1",
+                  "dataType": "pg/uuid",
                   "nullable": false
                 },
                 "updatedAt": {
-                  "codecId": "pg/timestamptz-string@1",
+                  "codecId": "pg/timestamptz-date@1",
                   "dataType": "pg/timestamptz",
-                  "nullable": false
+                  "nullable": false,
+                  "typeParams": {
+                    "precision": 3
+                  }
                 }
               },
               "foreignKeys": [
                 {
                   "index": {
-                    "name": "ChatBot_ownerId_idx_e2d0c1ef"
+                    "primaryKey": true
                   },
                   "onDelete": "cascade",
                   "source": {
                     "columns": [
-                      "ownerId"
+                      "id"
                     ],
                     "namespaceId": "aibot",
                     "tableName": "ChatBot"
@@ -3488,7 +5014,27 @@
                       "id"
                     ],
                     "namespaceId": "aibot",
-                    "tableName": "User"
+                    "tableName": "ResourceBase"
+                  }
+                },
+                {
+                  "index": {
+                    "name": "ChatBot_organizationId_idx_2e17ef41"
+                  },
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "organizationId"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "ChatBot"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "Organization"
                   }
                 },
                 {
@@ -3517,10 +5063,10 @@
               "indexes": [
                 {
                   "columns": [
-                    "ownerId"
+                    "organizationId"
                   ],
-                  "name": "ChatBot_ownerId_idx_e2d0c1ef",
-                  "prefix": "ChatBot_ownerId_idx",
+                  "name": "ChatBot_organizationId_idx_2e17ef41",
+                  "prefix": "ChatBot_organizationId_idx",
                   "unique": false
                 }
               ],
@@ -3534,19 +5080,25 @@
                   "columns": [
                     "agentId"
                   ]
+                },
+                {
+                  "columns": [
+                    "organizationId",
+                    "name"
+                  ]
                 }
               ]
             },
             "ChatBotAdapter": {
               "columns": {
                 "adapterId": {
-                  "codecId": "pg/int4@1",
-                  "dataType": "pg/int4",
+                  "codecId": "pg/uuid@1",
+                  "dataType": "pg/uuid",
                   "nullable": false
                 },
                 "chatbotId": {
-                  "codecId": "pg/int4@1",
-                  "dataType": "pg/int4",
+                  "codecId": "pg/uuid@1",
+                  "dataType": "pg/uuid",
                   "nullable": false
                 },
                 "createdAt": {
@@ -3566,9 +5118,42 @@
                     "kind": "function"
                   },
                   "nullable": false
+                },
+                "organizationId": {
+                  "codecId": "pg/uuid@1",
+                  "dataType": "pg/uuid",
+                  "nullable": false
+                },
+                "updatedAt": {
+                  "codecId": "pg/timestamptz-date@1",
+                  "dataType": "pg/timestamptz",
+                  "nullable": false,
+                  "typeParams": {
+                    "precision": 3
+                  }
                 }
               },
               "foreignKeys": [
+                {
+                  "index": {
+                    "name": "ChatBotAdapter_organizationId_idx_2e17ef41"
+                  },
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "organizationId"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "ChatBotAdapter"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "Organization"
+                  }
+                },
                 {
                   "index": {
                     "name": "ChatBotAdapter_chatbotId_idx_52db07ea"
@@ -3626,6 +5211,14 @@
                   "name": "ChatBotAdapter_chatbotId_idx_52db07ea",
                   "prefix": "ChatBotAdapter_chatbotId_idx",
                   "unique": false
+                },
+                {
+                  "columns": [
+                    "organizationId"
+                  ],
+                  "name": "ChatBotAdapter_organizationId_idx_2e17ef41",
+                  "prefix": "ChatBotAdapter_organizationId_idx",
+                  "unique": false
                 }
               ],
               "primaryKey": {
@@ -3638,13 +5231,13 @@
             "ChatBotMcpServer": {
               "columns": {
                 "authId": {
-                  "codecId": "pg/int4@1",
-                  "dataType": "pg/int4",
+                  "codecId": "pg/uuid@1",
+                  "dataType": "pg/uuid",
                   "nullable": true
                 },
                 "chatbotId": {
-                  "codecId": "pg/int4@1",
-                  "dataType": "pg/int4",
+                  "codecId": "pg/uuid@1",
+                  "dataType": "pg/uuid",
                   "nullable": false
                 },
                 "createdAt": {
@@ -3666,12 +5259,37 @@
                   "nullable": false
                 },
                 "mcpServerId": {
-                  "codecId": "pg/int4@1",
-                  "dataType": "pg/int4",
+                  "codecId": "pg/uuid@1",
+                  "dataType": "pg/uuid",
+                  "nullable": false
+                },
+                "organizationId": {
+                  "codecId": "pg/uuid@1",
+                  "dataType": "pg/uuid",
                   "nullable": false
                 }
               },
               "foreignKeys": [
+                {
+                  "index": {
+                    "name": "ChatBotMcpServer_organizationId_idx_2e17ef41"
+                  },
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "organizationId"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "ChatBotMcpServer"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "Organization"
+                  }
+                },
                 {
                   "index": {
                     "name": "ChatBotMcpServer_chatbotId_idx_52db07ea"
@@ -3757,6 +5375,14 @@
                   "name": "ChatBotMcpServer_mcpServerId_idx_1c0baf24",
                   "prefix": "ChatBotMcpServer_mcpServerId_idx",
                   "unique": false
+                },
+                {
+                  "columns": [
+                    "organizationId"
+                  ],
+                  "name": "ChatBotMcpServer_organizationId_idx_2e17ef41",
+                  "prefix": "ChatBotMcpServer_organizationId_idx",
+                  "unique": false
                 }
               ],
               "primaryKey": {
@@ -3784,8 +5410,8 @@
               ],
               "columns": {
                 "chatbotId": {
-                  "codecId": "pg/int4@1",
-                  "dataType": "pg/int4",
+                  "codecId": "pg/uuid@1",
+                  "dataType": "pg/uuid",
                   "nullable": false
                 },
                 "createdAt": {
@@ -3798,6 +5424,20 @@
                   "nullable": false
                 },
                 "id": {
+                  "codecId": "pg/int4@1",
+                  "dataType": "pg/int4",
+                  "default": {
+                    "expression": "autoincrement()",
+                    "kind": "function"
+                  },
+                  "nullable": false
+                },
+                "organizationId": {
+                  "codecId": "pg/uuid@1",
+                  "dataType": "pg/uuid",
+                  "nullable": false
+                },
+                "publicId": {
                   "codecId": "pg/text@1",
                   "dataType": "pg/text",
                   "nullable": false
@@ -3812,9 +5452,37 @@
                     "namespaceId": "public",
                     "plane": "storage"
                   }
+                },
+                "updatedAt": {
+                  "codecId": "pg/timestamptz-date@1",
+                  "dataType": "pg/timestamptz",
+                  "nullable": false,
+                  "typeParams": {
+                    "precision": 3
+                  }
                 }
               },
               "foreignKeys": [
+                {
+                  "index": {
+                    "name": "ChatBotPublicId_organizationId_idx_2e17ef41"
+                  },
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "organizationId"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "ChatBotPublicId"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "Organization"
+                  }
+                },
                 {
                   "index": {
                     "name": "ChatBotPublicId_chatbotId_idx_52db07ea"
@@ -3844,12 +5512,25 @@
                   "name": "ChatBotPublicId_chatbotId_idx_52db07ea",
                   "prefix": "ChatBotPublicId_chatbotId_idx",
                   "unique": false
+                },
+                {
+                  "columns": [
+                    "organizationId"
+                  ],
+                  "name": "ChatBotPublicId_organizationId_idx_2e17ef41",
+                  "prefix": "ChatBotPublicId_organizationId_idx",
+                  "unique": false
                 }
               ],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
               "uniques": [
                 {
                   "columns": [
-                    "id"
+                    "publicId"
                   ]
                 },
                 {
@@ -3877,12 +5558,8 @@
                   "nullable": false
                 },
                 "id": {
-                  "codecId": "pg/int4@1",
-                  "dataType": "pg/int4",
-                  "default": {
-                    "expression": "autoincrement()",
-                    "kind": "function"
-                  },
+                  "codecId": "pg/uuid@1",
+                  "dataType": "pg/uuid",
                   "nullable": false
                 },
                 "name": {
@@ -3890,9 +5567,9 @@
                   "dataType": "pg/text",
                   "nullable": false
                 },
-                "ownerId": {
-                  "codecId": "pg/int4@1",
-                  "dataType": "pg/int4",
+                "organizationId": {
+                  "codecId": "pg/uuid@1",
+                  "dataType": "pg/uuid",
                   "nullable": false
                 },
                 "prompt": {
@@ -3904,17 +5581,25 @@
                   "codecId": "pg/text@1",
                   "dataType": "pg/text",
                   "nullable": false
+                },
+                "updatedAt": {
+                  "codecId": "pg/timestamptz-date@1",
+                  "dataType": "pg/timestamptz",
+                  "nullable": false,
+                  "typeParams": {
+                    "precision": 3
+                  }
                 }
               },
               "foreignKeys": [
                 {
                   "index": {
-                    "name": "ChatBotSchedule_ownerId_idx_e2d0c1ef"
+                    "primaryKey": true
                   },
                   "onDelete": "cascade",
                   "source": {
                     "columns": [
-                      "ownerId"
+                      "id"
                     ],
                     "namespaceId": "aibot",
                     "tableName": "ChatBotSchedule"
@@ -3924,17 +5609,37 @@
                       "id"
                     ],
                     "namespaceId": "aibot",
-                    "tableName": "User"
+                    "tableName": "ResourceBase"
+                  }
+                },
+                {
+                  "index": {
+                    "name": "ChatBotSchedule_organizationId_idx_2e17ef41"
+                  },
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "organizationId"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "ChatBotSchedule"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "Organization"
                   }
                 }
               ],
               "indexes": [
                 {
                   "columns": [
-                    "ownerId"
+                    "organizationId"
                   ],
-                  "name": "ChatBotSchedule_ownerId_idx_e2d0c1ef",
-                  "prefix": "ChatBotSchedule_ownerId_idx",
+                  "name": "ChatBotSchedule_organizationId_idx_2e17ef41",
+                  "prefix": "ChatBotSchedule_organizationId_idx",
                   "unique": false
                 }
               ],
@@ -3943,22 +5648,80 @@
                   "id"
                 ]
               },
-              "uniques": []
+              "uniques": [
+                {
+                  "columns": [
+                    "organizationId",
+                    "name"
+                  ]
+                }
+              ]
             },
             "ChatBotToolSandbox": {
               "columns": {
                 "chatbotId": {
+                  "codecId": "pg/uuid@1",
+                  "dataType": "pg/uuid",
+                  "nullable": false
+                },
+                "createdAt": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "dataType": "pg/timestamptz",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nullable": false
+                },
+                "id": {
                   "codecId": "pg/int4@1",
                   "dataType": "pg/int4",
+                  "default": {
+                    "expression": "autoincrement()",
+                    "kind": "function"
+                  },
+                  "nullable": false
+                },
+                "organizationId": {
+                  "codecId": "pg/uuid@1",
+                  "dataType": "pg/uuid",
                   "nullable": false
                 },
                 "sandboxId": {
-                  "codecId": "pg/int4@1",
-                  "dataType": "pg/int4",
+                  "codecId": "pg/uuid@1",
+                  "dataType": "pg/uuid",
                   "nullable": false
+                },
+                "updatedAt": {
+                  "codecId": "pg/timestamptz-date@1",
+                  "dataType": "pg/timestamptz",
+                  "nullable": false,
+                  "typeParams": {
+                    "precision": 3
+                  }
                 }
               },
               "foreignKeys": [
+                {
+                  "index": {
+                    "name": "ChatBotToolSandbox_organizationId_idx_2e17ef41"
+                  },
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "organizationId"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "ChatBotToolSandbox"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "Organization"
+                  }
+                },
                 {
                   "index": {
                     "name": "ChatBotToolSandbox_chatbotId_idx_52db07ea"
@@ -4011,6 +5774,14 @@
                 },
                 {
                   "columns": [
+                    "organizationId"
+                  ],
+                  "name": "ChatBotToolSandbox_organizationId_idx_2e17ef41",
+                  "prefix": "ChatBotToolSandbox_organizationId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
                     "sandboxId"
                   ],
                   "name": "ChatBotToolSandbox_sandboxId_idx_2b30d542",
@@ -4020,26 +5791,47 @@
               ],
               "primaryKey": {
                 "columns": [
-                  "sandboxId",
-                  "chatbotId"
+                  "id"
                 ]
               },
-              "uniques": []
+              "uniques": [
+                {
+                  "columns": [
+                    "sandboxId",
+                    "chatbotId"
+                  ]
+                }
+              ]
             },
             "ChatBotToolSetContext": {
               "columns": {
                 "chatbotId": {
-                  "codecId": "pg/int4@1",
-                  "dataType": "pg/int4",
+                  "codecId": "pg/uuid@1",
+                  "dataType": "pg/uuid",
+                  "nullable": false
+                },
+                "createdAt": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "dataType": "pg/timestamptz",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
                   "nullable": false
                 },
                 "id": {
-                  "codecId": "pg/int4@1",
-                  "dataType": "pg/int4",
-                  "default": {
-                    "expression": "autoincrement()",
-                    "kind": "function"
-                  },
+                  "codecId": "pg/uuid@1",
+                  "dataType": "pg/uuid",
+                  "nullable": false
+                },
+                "name": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "nullable": false
+                },
+                "organizationId": {
+                  "codecId": "pg/uuid@1",
+                  "dataType": "pg/uuid",
                   "nullable": false
                 },
                 "toolSetContext": {
@@ -4055,9 +5847,57 @@
                   "codecId": "pg/text@1",
                   "dataType": "pg/text",
                   "nullable": false
+                },
+                "updatedAt": {
+                  "codecId": "pg/timestamptz-date@1",
+                  "dataType": "pg/timestamptz",
+                  "nullable": false,
+                  "typeParams": {
+                    "precision": 3
+                  }
                 }
               },
               "foreignKeys": [
+                {
+                  "index": {
+                    "primaryKey": true
+                  },
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "ChatBotToolSetContext"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "ResourceBase"
+                  }
+                },
+                {
+                  "index": {
+                    "name": "ChatBotToolSetContext_organizationId_idx_2e17ef41"
+                  },
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "organizationId"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "ChatBotToolSetContext"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "Organization"
+                  }
+                },
                 {
                   "index": {
                     "name": "ChatBotToolSetContext_chatbotId_idx_52db07ea"
@@ -4087,6 +5927,14 @@
                   "name": "ChatBotToolSetContext_chatbotId_idx_52db07ea",
                   "prefix": "ChatBotToolSetContext_chatbotId_idx",
                   "unique": false
+                },
+                {
+                  "columns": [
+                    "organizationId"
+                  ],
+                  "name": "ChatBotToolSetContext_organizationId_idx_2e17ef41",
+                  "prefix": "ChatBotToolSetContext_organizationId_idx",
+                  "unique": false
                 }
               ],
               "primaryKey": {
@@ -4095,6 +5943,12 @@
                 ]
               },
               "uniques": [
+                {
+                  "columns": [
+                    "organizationId",
+                    "name"
+                  ]
+                },
                 {
                   "columns": [
                     "toolSetName",
@@ -4111,6 +5965,15 @@
                   "dataType": "pg/int4",
                   "nullable": false
                 },
+                "createdAt": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "dataType": "pg/timestamptz",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nullable": false
+                },
                 "id": {
                   "codecId": "pg/int4@1",
                   "dataType": "pg/int4",
@@ -4120,18 +5983,51 @@
                   },
                   "nullable": false
                 },
+                "organizationId": {
+                  "codecId": "pg/uuid@1",
+                  "dataType": "pg/uuid",
+                  "nullable": false
+                },
                 "scheduleId": {
-                  "codecId": "pg/int4@1",
-                  "dataType": "pg/int4",
+                  "codecId": "pg/uuid@1",
+                  "dataType": "pg/uuid",
                   "nullable": false
                 },
                 "threadId": {
                   "codecId": "pg/text@1",
                   "dataType": "pg/text",
                   "nullable": false
+                },
+                "updatedAt": {
+                  "codecId": "pg/timestamptz-date@1",
+                  "dataType": "pg/timestamptz",
+                  "nullable": false,
+                  "typeParams": {
+                    "precision": 3
+                  }
                 }
               },
               "foreignKeys": [
+                {
+                  "index": {
+                    "name": "ChatTarget_organizationId_idx_2e17ef41"
+                  },
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "organizationId"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "ChatTarget"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "Organization"
+                  }
+                },
                 {
                   "index": {
                     "name": "ChatTarget_chatbotAdapterId_idx_d49b51ac"
@@ -4184,6 +6080,14 @@
                 },
                 {
                   "columns": [
+                    "organizationId"
+                  ],
+                  "name": "ChatTarget_organizationId_idx_2e17ef41",
+                  "prefix": "ChatTarget_organizationId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
                     "scheduleId"
                   ],
                   "name": "ChatTarget_scheduleId_idx_5a3bfbcb",
@@ -4202,6 +6106,297 @@
                     "chatbotAdapterId",
                     "threadId",
                     "scheduleId"
+                  ]
+                }
+              ]
+            },
+            "Grant": {
+              "checks": [
+                {
+                  "expression": "\"role\" IN ('viewer', 'editor', 'manager')",
+                  "name": "Grant_role_check_4a2d79b9",
+                  "prefix": "Grant_role_check"
+                }
+              ],
+              "columns": {
+                "createdAt": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "dataType": "pg/timestamptz",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nullable": false
+                },
+                "grantedById": {
+                  "codecId": "pg/uuid@1",
+                  "dataType": "pg/uuid",
+                  "nullable": true
+                },
+                "id": {
+                  "codecId": "pg/int4@1",
+                  "dataType": "pg/int4",
+                  "default": {
+                    "expression": "autoincrement()",
+                    "kind": "function"
+                  },
+                  "nullable": false
+                },
+                "organizationId": {
+                  "codecId": "pg/uuid@1",
+                  "dataType": "pg/uuid",
+                  "nullable": false
+                },
+                "principalId": {
+                  "codecId": "pg/uuid@1",
+                  "dataType": "pg/uuid",
+                  "nullable": false
+                },
+                "resourceId": {
+                  "codecId": "pg/uuid@1",
+                  "dataType": "pg/uuid",
+                  "nullable": false
+                },
+                "role": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "nullable": false,
+                  "valueSet": {
+                    "entityKind": "valueSet",
+                    "entityName": "Role",
+                    "namespaceId": "public",
+                    "plane": "storage"
+                  }
+                },
+                "updatedAt": {
+                  "codecId": "pg/timestamptz-date@1",
+                  "dataType": "pg/timestamptz",
+                  "nullable": false,
+                  "typeParams": {
+                    "precision": 3
+                  }
+                }
+              },
+              "foreignKeys": [
+                {
+                  "index": {
+                    "name": "Grant_organizationId_idx_2e17ef41"
+                  },
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "organizationId"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "Grant"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "Organization"
+                  }
+                },
+                {
+                  "index": {
+                    "name": "Grant_principalId_idx_51ead3c5"
+                  },
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "principalId"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "Grant"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "PrincipalBase"
+                  }
+                },
+                {
+                  "index": {
+                    "name": "Grant_resourceId_idx_72964925"
+                  },
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "resourceId"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "Grant"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "ResourceBase"
+                  }
+                },
+                {
+                  "index": {
+                    "name": "Grant_grantedById_idx_416f9b2b"
+                  },
+                  "onDelete": "setNull",
+                  "source": {
+                    "columns": [
+                      "grantedById"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "Grant"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "PrincipalBase"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "grantedById"
+                  ],
+                  "name": "Grant_grantedById_idx_416f9b2b",
+                  "prefix": "Grant_grantedById_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "organizationId"
+                  ],
+                  "name": "Grant_organizationId_idx_2e17ef41",
+                  "prefix": "Grant_organizationId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "principalId"
+                  ],
+                  "name": "Grant_principalId_idx_51ead3c5",
+                  "prefix": "Grant_principalId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "resourceId"
+                  ],
+                  "name": "Grant_resourceId_idx_72964925",
+                  "prefix": "Grant_resourceId_idx",
+                  "unique": false
+                }
+              ],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "uniques": []
+            },
+            "Group": {
+              "columns": {
+                "createdAt": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "dataType": "pg/timestamptz",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nullable": false
+                },
+                "id": {
+                  "codecId": "pg/uuid@1",
+                  "dataType": "pg/uuid",
+                  "nullable": false
+                },
+                "name": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "nullable": false
+                },
+                "organizationId": {
+                  "codecId": "pg/uuid@1",
+                  "dataType": "pg/uuid",
+                  "nullable": false
+                },
+                "updatedAt": {
+                  "codecId": "pg/timestamptz-date@1",
+                  "dataType": "pg/timestamptz",
+                  "nullable": false,
+                  "typeParams": {
+                    "precision": 3
+                  }
+                }
+              },
+              "foreignKeys": [
+                {
+                  "index": {
+                    "primaryKey": true
+                  },
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "Group"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "PrincipalBase"
+                  }
+                },
+                {
+                  "index": {
+                    "name": "Group_organizationId_idx_2e17ef41"
+                  },
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "organizationId"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "Group"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "Organization"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "organizationId"
+                  ],
+                  "name": "Group_organizationId_idx_2e17ef41",
+                  "prefix": "Group_organizationId_idx",
+                  "unique": false
+                }
+              ],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "uniques": [
+                {
+                  "columns": [
+                    "organizationId",
+                    "name"
                   ]
                 }
               ]
@@ -4240,12 +6435,8 @@
                   "nullable": true
                 },
                 "id": {
-                  "codecId": "pg/int4@1",
-                  "dataType": "pg/int4",
-                  "default": {
-                    "expression": "autoincrement()",
-                    "kind": "function"
-                  },
+                  "codecId": "pg/uuid@1",
+                  "dataType": "pg/uuid",
                   "nullable": false
                 },
                 "name": {
@@ -4253,9 +6444,9 @@
                   "dataType": "pg/text",
                   "nullable": false
                 },
-                "ownerId": {
-                  "codecId": "pg/int4@1",
-                  "dataType": "pg/int4",
+                "organizationId": {
+                  "codecId": "pg/uuid@1",
+                  "dataType": "pg/uuid",
                   "nullable": false
                 },
                 "transport": {
@@ -4270,23 +6461,176 @@
                   }
                 },
                 "updatedAt": {
+                  "codecId": "pg/timestamptz-date@1",
+                  "dataType": "pg/timestamptz",
+                  "nullable": false,
+                  "typeParams": {
+                    "precision": 3
+                  }
+                }
+              },
+              "foreignKeys": [
+                {
+                  "index": {
+                    "primaryKey": true
+                  },
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "McpServer"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "ResourceBase"
+                  }
+                },
+                {
+                  "index": {
+                    "name": "McpServer_organizationId_idx_2e17ef41"
+                  },
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "organizationId"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "McpServer"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "Organization"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "organizationId"
+                  ],
+                  "name": "McpServer_organizationId_idx_2e17ef41",
+                  "prefix": "McpServer_organizationId_idx",
+                  "unique": false
+                }
+              ],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "uniques": [
+                {
+                  "columns": [
+                    "organizationId",
+                    "name"
+                  ]
+                }
+              ]
+            },
+            "Membership": {
+              "columns": {
+                "createdAt": {
                   "codecId": "pg/timestamptz-string@1",
                   "dataType": "pg/timestamptz",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nullable": false
+                },
+                "groupId": {
+                  "codecId": "pg/uuid@1",
+                  "dataType": "pg/uuid",
+                  "nullable": false
+                },
+                "id": {
+                  "codecId": "pg/int4@1",
+                  "dataType": "pg/int4",
+                  "default": {
+                    "expression": "autoincrement()",
+                    "kind": "function"
+                  },
+                  "nullable": false
+                },
+                "organizationId": {
+                  "codecId": "pg/uuid@1",
+                  "dataType": "pg/uuid",
+                  "nullable": false
+                },
+                "updatedAt": {
+                  "codecId": "pg/timestamptz-date@1",
+                  "dataType": "pg/timestamptz",
+                  "nullable": false,
+                  "typeParams": {
+                    "precision": 3
+                  }
+                },
+                "userId": {
+                  "codecId": "pg/uuid@1",
+                  "dataType": "pg/uuid",
                   "nullable": false
                 }
               },
               "foreignKeys": [
                 {
                   "index": {
-                    "name": "McpServer_ownerId_idx_e2d0c1ef"
+                    "name": "Membership_organizationId_idx_2e17ef41"
                   },
                   "onDelete": "cascade",
                   "source": {
                     "columns": [
-                      "ownerId"
+                      "organizationId"
                     ],
                     "namespaceId": "aibot",
-                    "tableName": "McpServer"
+                    "tableName": "Membership"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "Organization"
+                  }
+                },
+                {
+                  "index": {
+                    "name": "Membership_groupId_idx_e2fb5578"
+                  },
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "groupId"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "Membership"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "Group"
+                  }
+                },
+                {
+                  "index": {
+                    "name": "Membership_userId_idx_a489d58a"
+                  },
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "userId"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "Membership"
                   },
                   "target": {
                     "columns": [
@@ -4300,10 +6644,26 @@
               "indexes": [
                 {
                   "columns": [
-                    "ownerId"
+                    "groupId"
                   ],
-                  "name": "McpServer_ownerId_idx_e2d0c1ef",
-                  "prefix": "McpServer_ownerId_idx",
+                  "name": "Membership_groupId_idx_e2fb5578",
+                  "prefix": "Membership_groupId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "organizationId"
+                  ],
+                  "name": "Membership_organizationId_idx_2e17ef41",
+                  "prefix": "Membership_organizationId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "userId"
+                  ],
+                  "name": "Membership_userId_idx_a489d58a",
+                  "prefix": "Membership_userId_idx",
                   "unique": false
                 }
               ],
@@ -4336,12 +6696,8 @@
                   "nullable": true
                 },
                 "id": {
-                  "codecId": "pg/int4@1",
-                  "dataType": "pg/int4",
-                  "default": {
-                    "expression": "autoincrement()",
-                    "kind": "function"
-                  },
+                  "codecId": "pg/uuid@1",
+                  "dataType": "pg/uuid",
                   "nullable": false
                 },
                 "name": {
@@ -4350,13 +6706,13 @@
                   "nullable": false
                 },
                 "oauthId": {
-                  "codecId": "pg/int4@1",
-                  "dataType": "pg/int4",
+                  "codecId": "pg/uuid@1",
+                  "dataType": "pg/uuid",
                   "nullable": false
                 },
-                "ownerId": {
-                  "codecId": "pg/int4@1",
-                  "dataType": "pg/int4",
+                "organizationId": {
+                  "codecId": "pg/uuid@1",
+                  "dataType": "pg/uuid",
                   "nullable": false
                 },
                 "refreshToken": {
@@ -4365,20 +6721,23 @@
                   "nullable": true
                 },
                 "updatedAt": {
-                  "codecId": "pg/timestamptz-string@1",
+                  "codecId": "pg/timestamptz-date@1",
                   "dataType": "pg/timestamptz",
-                  "nullable": false
+                  "nullable": false,
+                  "typeParams": {
+                    "precision": 3
+                  }
                 }
               },
               "foreignKeys": [
                 {
                   "index": {
-                    "name": "OAuthAuthentication_ownerId_idx_e2d0c1ef"
+                    "primaryKey": true
                   },
                   "onDelete": "cascade",
                   "source": {
                     "columns": [
-                      "ownerId"
+                      "id"
                     ],
                     "namespaceId": "aibot",
                     "tableName": "OAuthAuthentication"
@@ -4388,7 +6747,27 @@
                       "id"
                     ],
                     "namespaceId": "aibot",
-                    "tableName": "User"
+                    "tableName": "ResourceBase"
+                  }
+                },
+                {
+                  "index": {
+                    "name": "OAuthAuthentication_organizationId_idx_2e17ef41"
+                  },
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "organizationId"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "OAuthAuthentication"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "Organization"
                   }
                 },
                 {
@@ -4423,10 +6802,10 @@
                 },
                 {
                   "columns": [
-                    "ownerId"
+                    "organizationId"
                   ],
-                  "name": "OAuthAuthentication_ownerId_idx_e2d0c1ef",
-                  "prefix": "OAuthAuthentication_ownerId_idx",
+                  "name": "OAuthAuthentication_organizationId_idx_2e17ef41",
+                  "prefix": "OAuthAuthentication_organizationId_idx",
                   "unique": false
                 }
               ],
@@ -4435,7 +6814,14 @@
                   "id"
                 ]
               },
-              "uniques": []
+              "uniques": [
+                {
+                  "columns": [
+                    "organizationId",
+                    "name"
+                  ]
+                }
+              ]
             },
             "OAuthClient": {
               "checks": [
@@ -4471,12 +6857,8 @@
                   "nullable": false
                 },
                 "id": {
-                  "codecId": "pg/int4@1",
-                  "dataType": "pg/int4",
-                  "default": {
-                    "expression": "autoincrement()",
-                    "kind": "function"
-                  },
+                  "codecId": "pg/uuid@1",
+                  "dataType": "pg/uuid",
                   "nullable": false
                 },
                 "name": {
@@ -4484,9 +6866,9 @@
                   "dataType": "pg/text",
                   "nullable": false
                 },
-                "ownerId": {
-                  "codecId": "pg/int4@1",
-                  "dataType": "pg/int4",
+                "organizationId": {
+                  "codecId": "pg/uuid@1",
+                  "dataType": "pg/uuid",
                   "nullable": false
                 },
                 "refreshEndpoint": {
@@ -4513,20 +6895,23 @@
                   "nullable": false
                 },
                 "updatedAt": {
-                  "codecId": "pg/timestamptz-string@1",
+                  "codecId": "pg/timestamptz-date@1",
                   "dataType": "pg/timestamptz",
-                  "nullable": false
+                  "nullable": false,
+                  "typeParams": {
+                    "precision": 3
+                  }
                 }
               },
               "foreignKeys": [
                 {
                   "index": {
-                    "name": "OAuthClient_ownerId_idx_e2d0c1ef"
+                    "primaryKey": true
                   },
                   "onDelete": "cascade",
                   "source": {
                     "columns": [
-                      "ownerId"
+                      "id"
                     ],
                     "namespaceId": "aibot",
                     "tableName": "OAuthClient"
@@ -4536,20 +6921,113 @@
                       "id"
                     ],
                     "namespaceId": "aibot",
-                    "tableName": "User"
+                    "tableName": "ResourceBase"
+                  }
+                },
+                {
+                  "index": {
+                    "name": "OAuthClient_organizationId_idx_2e17ef41"
+                  },
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "organizationId"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "OAuthClient"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "Organization"
                   }
                 }
               ],
               "indexes": [
                 {
                   "columns": [
-                    "ownerId"
+                    "organizationId"
                   ],
-                  "name": "OAuthClient_ownerId_idx_e2d0c1ef",
-                  "prefix": "OAuthClient_ownerId_idx",
+                  "name": "OAuthClient_organizationId_idx_2e17ef41",
+                  "prefix": "OAuthClient_organizationId_idx",
                   "unique": false
                 }
               ],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "uniques": [
+                {
+                  "columns": [
+                    "organizationId",
+                    "name"
+                  ]
+                }
+              ]
+            },
+            "Organization": {
+              "columns": {
+                "createdAt": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "dataType": "pg/timestamptz",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nullable": false
+                },
+                "id": {
+                  "codecId": "pg/uuid@1",
+                  "dataType": "pg/uuid",
+                  "nullable": false
+                },
+                "maxLoginAttempts": {
+                  "codecId": "pg/int4@1",
+                  "dataType": "pg/int4",
+                  "default": {
+                    "kind": "literal",
+                    "value": 5
+                  },
+                  "nullable": false
+                },
+                "mfaEnabled": {
+                  "codecId": "pg/bool@1",
+                  "dataType": "pg/bool",
+                  "default": {
+                    "kind": "literal",
+                    "value": false
+                  },
+                  "nullable": false
+                },
+                "name": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "nullable": false
+                },
+                "sessionDurationSeconds": {
+                  "codecId": "pg/int4@1",
+                  "dataType": "pg/int4",
+                  "default": {
+                    "kind": "literal",
+                    "value": 2592000
+                  },
+                  "nullable": false
+                },
+                "updatedAt": {
+                  "codecId": "pg/timestamptz-date@1",
+                  "dataType": "pg/timestamptz",
+                  "nullable": false,
+                  "typeParams": {
+                    "precision": 3
+                  }
+                }
+              },
+              "foreignKeys": [],
+              "indexes": [],
               "primaryKey": {
                 "columns": [
                   "id"
@@ -4560,32 +7038,83 @@
             "PersistentSandboxInstance": {
               "columns": {
                 "adapterId": {
-                  "codecId": "pg/int4@1",
-                  "dataType": "pg/int4",
+                  "codecId": "pg/uuid@1",
+                  "dataType": "pg/uuid",
                   "nullable": true
                 },
                 "chatbotId": {
+                  "codecId": "pg/uuid@1",
+                  "dataType": "pg/uuid",
+                  "nullable": true
+                },
+                "createdAt": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "dataType": "pg/timestamptz",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nullable": false
+                },
+                "id": {
                   "codecId": "pg/int4@1",
                   "dataType": "pg/int4",
-                  "nullable": true
+                  "default": {
+                    "expression": "autoincrement()",
+                    "kind": "function"
+                  },
+                  "nullable": false
                 },
                 "instanceId": {
                   "codecId": "pg/text@1",
                   "dataType": "pg/text",
                   "nullable": false
                 },
+                "organizationId": {
+                  "codecId": "pg/uuid@1",
+                  "dataType": "pg/uuid",
+                  "nullable": false
+                },
                 "sandboxId": {
-                  "codecId": "pg/int4@1",
-                  "dataType": "pg/int4",
+                  "codecId": "pg/uuid@1",
+                  "dataType": "pg/uuid",
                   "nullable": false
                 },
                 "threadId": {
                   "codecId": "pg/text@1",
                   "dataType": "pg/text",
                   "nullable": true
+                },
+                "updatedAt": {
+                  "codecId": "pg/timestamptz-date@1",
+                  "dataType": "pg/timestamptz",
+                  "nullable": false,
+                  "typeParams": {
+                    "precision": 3
+                  }
                 }
               },
               "foreignKeys": [
+                {
+                  "index": {
+                    "name": "PersistentSandboxInstance_organizationId_idx_2e17ef41"
+                  },
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "organizationId"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "PersistentSandboxInstance"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "Organization"
+                  }
+                },
                 {
                   "index": {
                     "name": "PersistentSandboxInstance_sandboxId_idx_2b30d542"
@@ -4666,6 +7195,14 @@
                 },
                 {
                   "columns": [
+                    "organizationId"
+                  ],
+                  "name": "PersistentSandboxInstance_organizationId_idx_2e17ef41",
+                  "prefix": "PersistentSandboxInstance_organizationId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
                     "sandboxId"
                   ],
                   "name": "PersistentSandboxInstance_sandboxId_idx_2b30d542",
@@ -4675,7 +7212,30 @@
               ],
               "primaryKey": {
                 "columns": [
-                  "instanceId"
+                  "id"
+                ]
+              },
+              "uniques": [
+                {
+                  "columns": [
+                    "instanceId"
+                  ]
+                }
+              ]
+            },
+            "PrincipalBase": {
+              "columns": {
+                "id": {
+                  "codecId": "pg/uuid@1",
+                  "dataType": "pg/uuid",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [],
+              "indexes": [],
+              "primaryKey": {
+                "columns": [
+                  "id"
                 ]
               },
               "uniques": []
@@ -4702,12 +7262,8 @@
                   "nullable": true
                 },
                 "id": {
-                  "codecId": "pg/int4@1",
-                  "dataType": "pg/int4",
-                  "default": {
-                    "expression": "autoincrement()",
-                    "kind": "function"
-                  },
+                  "codecId": "pg/uuid@1",
+                  "dataType": "pg/uuid",
                   "nullable": false
                 },
                 "name": {
@@ -4715,9 +7271,9 @@
                   "dataType": "pg/text",
                   "nullable": false
                 },
-                "ownerId": {
-                  "codecId": "pg/int4@1",
-                  "dataType": "pg/int4",
+                "organizationId": {
+                  "codecId": "pg/uuid@1",
+                  "dataType": "pg/uuid",
                   "nullable": false
                 },
                 "providerName": {
@@ -4726,20 +7282,23 @@
                   "nullable": false
                 },
                 "updatedAt": {
-                  "codecId": "pg/timestamptz-string@1",
+                  "codecId": "pg/timestamptz-date@1",
                   "dataType": "pg/timestamptz",
-                  "nullable": false
+                  "nullable": false,
+                  "typeParams": {
+                    "precision": 3
+                  }
                 }
               },
               "foreignKeys": [
                 {
                   "index": {
-                    "name": "Provider_ownerId_idx_e2d0c1ef"
+                    "primaryKey": true
                   },
                   "onDelete": "cascade",
                   "source": {
                     "columns": [
-                      "ownerId"
+                      "id"
                     ],
                     "namespaceId": "aibot",
                     "tableName": "Provider"
@@ -4749,17 +7308,37 @@
                       "id"
                     ],
                     "namespaceId": "aibot",
-                    "tableName": "User"
+                    "tableName": "ResourceBase"
+                  }
+                },
+                {
+                  "index": {
+                    "name": "Provider_organizationId_idx_2e17ef41"
+                  },
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "organizationId"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "Provider"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "Organization"
                   }
                 }
               ],
               "indexes": [
                 {
                   "columns": [
-                    "ownerId"
+                    "organizationId"
                   ],
-                  "name": "Provider_ownerId_idx_e2d0c1ef",
-                  "prefix": "Provider_ownerId_idx",
+                  "name": "Provider_organizationId_idx_2e17ef41",
+                  "prefix": "Provider_organizationId_idx",
                   "unique": false
                 }
               ],
@@ -4771,7 +7350,7 @@
               "uniques": [
                 {
                   "columns": [
-                    "ownerId",
+                    "organizationId",
                     "name"
                   ]
                 }
@@ -4791,6 +7370,15 @@
                   "dataType": "pg/jsonb",
                   "nullable": false
                 },
+                "createdAt": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "dataType": "pg/timestamptz",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nullable": false
+                },
                 "criteria": {
                   "codecId": "pg/text@1",
                   "dataType": "pg/text",
@@ -4803,17 +7391,13 @@
                   }
                 },
                 "criteriaId": {
-                  "codecId": "pg/int4@1",
-                  "dataType": "pg/int4",
+                  "codecId": "pg/uuid@1",
+                  "dataType": "pg/uuid",
                   "nullable": true
                 },
                 "id": {
-                  "codecId": "pg/int4@1",
-                  "dataType": "pg/int4",
-                  "default": {
-                    "expression": "autoincrement()",
-                    "kind": "function"
-                  },
+                  "codecId": "pg/uuid@1",
+                  "dataType": "pg/uuid",
                   "nullable": false
                 },
                 "limit": {
@@ -4826,9 +7410,14 @@
                   "dataType": "pg/text",
                   "nullable": false
                 },
-                "ownerId": {
-                  "codecId": "pg/int4@1",
-                  "dataType": "pg/int4",
+                "name": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "nullable": false
+                },
+                "organizationId": {
+                  "codecId": "pg/uuid@1",
+                  "dataType": "pg/uuid",
                   "nullable": false
                 },
                 "perThread": {
@@ -4845,17 +7434,25 @@
                   "codecId": "pg/text@1",
                   "dataType": "pg/text",
                   "nullable": false
+                },
+                "updatedAt": {
+                  "codecId": "pg/timestamptz-date@1",
+                  "dataType": "pg/timestamptz",
+                  "nullable": false,
+                  "typeParams": {
+                    "precision": 3
+                  }
                 }
               },
               "foreignKeys": [
                 {
                   "index": {
-                    "name": "RateLimit_ownerId_idx_e2d0c1ef"
+                    "primaryKey": true
                   },
                   "onDelete": "cascade",
                   "source": {
                     "columns": [
-                      "ownerId"
+                      "id"
                     ],
                     "namespaceId": "aibot",
                     "tableName": "RateLimit"
@@ -4865,17 +7462,37 @@
                       "id"
                     ],
                     "namespaceId": "aibot",
-                    "tableName": "User"
+                    "tableName": "ResourceBase"
+                  }
+                },
+                {
+                  "index": {
+                    "name": "RateLimit_organizationId_idx_2e17ef41"
+                  },
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "organizationId"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "RateLimit"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "Organization"
                   }
                 }
               ],
               "indexes": [
                 {
                   "columns": [
-                    "ownerId"
+                    "organizationId"
                   ],
-                  "name": "RateLimit_ownerId_idx_e2d0c1ef",
-                  "prefix": "RateLimit_ownerId_idx",
+                  "name": "RateLimit_organizationId_idx_2e17ef41",
+                  "prefix": "RateLimit_organizationId_idx",
                   "unique": false
                 }
               ],
@@ -4887,11 +7504,34 @@
               "uniques": [
                 {
                   "columns": [
+                    "organizationId",
+                    "name"
+                  ]
+                },
+                {
+                  "columns": [
                     "criteria",
                     "criteriaId"
                   ]
                 }
               ]
+            },
+            "ResourceBase": {
+              "columns": {
+                "id": {
+                  "codecId": "pg/uuid@1",
+                  "dataType": "pg/uuid",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [],
+              "indexes": [],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "uniques": []
             },
             "Sandbox": {
               "checks": [
@@ -4920,18 +7560,23 @@
                   },
                   "nullable": false
                 },
+                "createdAt": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "dataType": "pg/timestamptz",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nullable": false
+                },
                 "envs": {
                   "codecId": "pg/jsonb@1",
                   "dataType": "pg/jsonb",
                   "nullable": true
                 },
                 "id": {
-                  "codecId": "pg/int4@1",
-                  "dataType": "pg/int4",
-                  "default": {
-                    "expression": "autoincrement()",
-                    "kind": "function"
-                  },
+                  "codecId": "pg/uuid@1",
+                  "dataType": "pg/uuid",
                   "nullable": false
                 },
                 "initCommands": {
@@ -4951,9 +7596,9 @@
                   "dataType": "pg/text",
                   "nullable": false
                 },
-                "ownerId": {
-                  "codecId": "pg/int4@1",
-                  "dataType": "pg/int4",
+                "organizationId": {
+                  "codecId": "pg/uuid@1",
+                  "dataType": "pg/uuid",
                   "nullable": false
                 },
                 "sandboxScope": {
@@ -4971,17 +7616,25 @@
                   "codecId": "pg/text@1",
                   "dataType": "pg/text",
                   "nullable": false
+                },
+                "updatedAt": {
+                  "codecId": "pg/timestamptz-date@1",
+                  "dataType": "pg/timestamptz",
+                  "nullable": false,
+                  "typeParams": {
+                    "precision": 3
+                  }
                 }
               },
               "foreignKeys": [
                 {
                   "index": {
-                    "name": "Sandbox_ownerId_idx_e2d0c1ef"
+                    "primaryKey": true
                   },
                   "onDelete": "cascade",
                   "source": {
                     "columns": [
-                      "ownerId"
+                      "id"
                     ],
                     "namespaceId": "aibot",
                     "tableName": "Sandbox"
@@ -4991,17 +7644,37 @@
                       "id"
                     ],
                     "namespaceId": "aibot",
-                    "tableName": "User"
+                    "tableName": "ResourceBase"
+                  }
+                },
+                {
+                  "index": {
+                    "name": "Sandbox_organizationId_idx_2e17ef41"
+                  },
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "organizationId"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "Sandbox"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "Organization"
                   }
                 }
               ],
               "indexes": [
                 {
                   "columns": [
-                    "ownerId"
+                    "organizationId"
                   ],
-                  "name": "Sandbox_ownerId_idx_e2d0c1ef",
-                  "prefix": "Sandbox_ownerId_idx",
+                  "name": "Sandbox_organizationId_idx_2e17ef41",
+                  "prefix": "Sandbox_organizationId_idx",
                   "unique": false
                 }
               ],
@@ -5010,7 +7683,14 @@
                   "id"
                 ]
               },
-              "uniques": []
+              "uniques": [
+                {
+                  "columns": [
+                    "organizationId",
+                    "name"
+                  ]
+                }
+              ]
             },
             "Session": {
               "columns": {
@@ -5055,18 +7735,51 @@
                   },
                   "nullable": false
                 },
+                "organizationId": {
+                  "codecId": "pg/uuid@1",
+                  "dataType": "pg/uuid",
+                  "nullable": false
+                },
                 "tokenHash": {
                   "codecId": "pg/text@1",
                   "dataType": "pg/text",
                   "nullable": false
                 },
+                "updatedAt": {
+                  "codecId": "pg/timestamptz-date@1",
+                  "dataType": "pg/timestamptz",
+                  "nullable": false,
+                  "typeParams": {
+                    "precision": 3
+                  }
+                },
                 "userId": {
-                  "codecId": "pg/int4@1",
-                  "dataType": "pg/int4",
+                  "codecId": "pg/uuid@1",
+                  "dataType": "pg/uuid",
                   "nullable": false
                 }
               },
               "foreignKeys": [
+                {
+                  "index": {
+                    "name": "Session_organizationId_idx_2e17ef41"
+                  },
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "organizationId"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "Session"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "Organization"
+                  }
+                },
                 {
                   "index": {
                     "name": "Session_userId_idx_a489d58a"
@@ -5095,6 +7808,14 @@
                   ],
                   "name": "Session_expiresAt_idx_6b6b8c10",
                   "prefix": "Session_expiresAt_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "organizationId"
+                  ],
+                  "name": "Session_organizationId_idx_2e17ef41",
+                  "prefix": "Session_organizationId_idx",
                   "unique": false
                 },
                 {
@@ -5145,12 +7866,8 @@
                   "nullable": false
                 },
                 "id": {
-                  "codecId": "pg/int4@1",
-                  "dataType": "pg/int4",
-                  "default": {
-                    "expression": "autoincrement()",
-                    "kind": "function"
-                  },
+                  "codecId": "pg/uuid@1",
+                  "dataType": "pg/uuid",
                   "nullable": false
                 },
                 "isAdmin": {
@@ -5179,7 +7896,12 @@
                 "name": {
                   "codecId": "pg/text@1",
                   "dataType": "pg/text",
-                  "nullable": true
+                  "nullable": false
+                },
+                "organizationId": {
+                  "codecId": "pg/uuid@1",
+                  "dataType": "pg/uuid",
+                  "nullable": false
                 },
                 "passwordHash": {
                   "codecId": "pg/text@1",
@@ -5187,13 +7909,66 @@
                   "nullable": false
                 },
                 "updatedAt": {
-                  "codecId": "pg/timestamptz-string@1",
+                  "codecId": "pg/timestamptz-date@1",
                   "dataType": "pg/timestamptz",
-                  "nullable": false
+                  "nullable": false,
+                  "typeParams": {
+                    "precision": 3
+                  }
                 }
               },
-              "foreignKeys": [],
-              "indexes": [],
+              "foreignKeys": [
+                {
+                  "index": {
+                    "primaryKey": true
+                  },
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "User"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "PrincipalBase"
+                  }
+                },
+                {
+                  "index": {
+                    "name": "User_organizationId_idx_2e17ef41"
+                  },
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "organizationId"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "User"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "Organization"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "organizationId"
+                  ],
+                  "name": "User_organizationId_idx_2e17ef41",
+                  "prefix": "User_organizationId_idx",
+                  "unique": false
+                }
+              ],
               "primaryKey": {
                 "columns": [
                   "id"
@@ -5208,6 +7983,12 @@
                 {
                   "columns": [
                     "mfaSecret"
+                  ]
+                },
+                {
+                  "columns": [
+                    "organizationId",
+                    "name"
                   ]
                 }
               ]
@@ -5242,6 +8023,14 @@
                 "provider"
               ]
             },
+            "Role": {
+              "kind": "valueSet",
+              "values": [
+                "viewer",
+                "editor",
+                "manager"
+              ]
+            },
             "SandboxScope": {
               "kind": "valueSet",
               "values": [
@@ -5258,20 +8047,26 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "cb6bd65d225d85ca0bfe7932b85023bb2ac4b27685f9e6d5f7141319f7c17cc4"
+    "storageHash": "726ad70a297a784fb504d67aadabd271b7a0b1ef9db63bfc4afc8bf37f6c04a7"
   },
   "execution": {
-    "executionHash": "2edef0a9e649f7d4fec54fb6e1236cb304696ca7f4e909082a496d8d33430a90",
+    "executionHash": "d1cef966cba620d770cced85ebaf6075292f48c77f2dc79d6537bcbbcceb5241",
     "mutations": {
       "defaults": [
         {
           "onCreate": {
-            "id": "timestamptzStringNow",
-            "kind": "generator"
+            "id": "timestampNow",
+            "kind": "generator",
+            "params": {
+              "precision": 3
+            }
           },
           "onUpdate": {
-            "id": "timestamptzStringNow",
-            "kind": "generator"
+            "id": "timestampNow",
+            "kind": "generator",
+            "params": {
+              "precision": 3
+            }
           },
           "ref": {
             "entry": "AgentDefinition",
@@ -5281,12 +8076,39 @@
         },
         {
           "onCreate": {
-            "id": "timestamptzStringNow",
-            "kind": "generator"
+            "id": "timestampNow",
+            "kind": "generator",
+            "params": {
+              "precision": 3
+            }
           },
           "onUpdate": {
-            "id": "timestamptzStringNow",
-            "kind": "generator"
+            "id": "timestampNow",
+            "kind": "generator",
+            "params": {
+              "precision": 3
+            }
+          },
+          "ref": {
+            "entry": "AgentUsage",
+            "field": "updatedAt",
+            "namespace": "aibot"
+          }
+        },
+        {
+          "onCreate": {
+            "id": "timestampNow",
+            "kind": "generator",
+            "params": {
+              "precision": 3
+            }
+          },
+          "onUpdate": {
+            "id": "timestampNow",
+            "kind": "generator",
+            "params": {
+              "precision": 3
+            }
           },
           "ref": {
             "entry": "ChatAdapter",
@@ -5296,12 +8118,39 @@
         },
         {
           "onCreate": {
-            "id": "timestamptzStringNow",
-            "kind": "generator"
+            "id": "timestampNow",
+            "kind": "generator",
+            "params": {
+              "precision": 3
+            }
           },
           "onUpdate": {
-            "id": "timestamptzStringNow",
-            "kind": "generator"
+            "id": "timestampNow",
+            "kind": "generator",
+            "params": {
+              "precision": 3
+            }
+          },
+          "ref": {
+            "entry": "ChatAdapterPublicId",
+            "field": "updatedAt",
+            "namespace": "aibot"
+          }
+        },
+        {
+          "onCreate": {
+            "id": "timestampNow",
+            "kind": "generator",
+            "params": {
+              "precision": 3
+            }
+          },
+          "onUpdate": {
+            "id": "timestampNow",
+            "kind": "generator",
+            "params": {
+              "precision": 3
+            }
           },
           "ref": {
             "entry": "ChatBot",
@@ -5311,12 +8160,186 @@
         },
         {
           "onCreate": {
-            "id": "timestamptzStringNow",
-            "kind": "generator"
+            "id": "timestampNow",
+            "kind": "generator",
+            "params": {
+              "precision": 3
+            }
           },
           "onUpdate": {
-            "id": "timestamptzStringNow",
-            "kind": "generator"
+            "id": "timestampNow",
+            "kind": "generator",
+            "params": {
+              "precision": 3
+            }
+          },
+          "ref": {
+            "entry": "ChatBotAdapter",
+            "field": "updatedAt",
+            "namespace": "aibot"
+          }
+        },
+        {
+          "onCreate": {
+            "id": "timestampNow",
+            "kind": "generator",
+            "params": {
+              "precision": 3
+            }
+          },
+          "onUpdate": {
+            "id": "timestampNow",
+            "kind": "generator",
+            "params": {
+              "precision": 3
+            }
+          },
+          "ref": {
+            "entry": "ChatBotPublicId",
+            "field": "updatedAt",
+            "namespace": "aibot"
+          }
+        },
+        {
+          "onCreate": {
+            "id": "timestampNow",
+            "kind": "generator",
+            "params": {
+              "precision": 3
+            }
+          },
+          "onUpdate": {
+            "id": "timestampNow",
+            "kind": "generator",
+            "params": {
+              "precision": 3
+            }
+          },
+          "ref": {
+            "entry": "ChatBotSchedule",
+            "field": "updatedAt",
+            "namespace": "aibot"
+          }
+        },
+        {
+          "onCreate": {
+            "id": "timestampNow",
+            "kind": "generator",
+            "params": {
+              "precision": 3
+            }
+          },
+          "onUpdate": {
+            "id": "timestampNow",
+            "kind": "generator",
+            "params": {
+              "precision": 3
+            }
+          },
+          "ref": {
+            "entry": "ChatBotToolSandbox",
+            "field": "updatedAt",
+            "namespace": "aibot"
+          }
+        },
+        {
+          "onCreate": {
+            "id": "timestampNow",
+            "kind": "generator",
+            "params": {
+              "precision": 3
+            }
+          },
+          "onUpdate": {
+            "id": "timestampNow",
+            "kind": "generator",
+            "params": {
+              "precision": 3
+            }
+          },
+          "ref": {
+            "entry": "ChatBotToolSetContext",
+            "field": "updatedAt",
+            "namespace": "aibot"
+          }
+        },
+        {
+          "onCreate": {
+            "id": "timestampNow",
+            "kind": "generator",
+            "params": {
+              "precision": 3
+            }
+          },
+          "onUpdate": {
+            "id": "timestampNow",
+            "kind": "generator",
+            "params": {
+              "precision": 3
+            }
+          },
+          "ref": {
+            "entry": "ChatTarget",
+            "field": "updatedAt",
+            "namespace": "aibot"
+          }
+        },
+        {
+          "onCreate": {
+            "id": "timestampNow",
+            "kind": "generator",
+            "params": {
+              "precision": 3
+            }
+          },
+          "onUpdate": {
+            "id": "timestampNow",
+            "kind": "generator",
+            "params": {
+              "precision": 3
+            }
+          },
+          "ref": {
+            "entry": "Grant",
+            "field": "updatedAt",
+            "namespace": "aibot"
+          }
+        },
+        {
+          "onCreate": {
+            "id": "timestampNow",
+            "kind": "generator",
+            "params": {
+              "precision": 3
+            }
+          },
+          "onUpdate": {
+            "id": "timestampNow",
+            "kind": "generator",
+            "params": {
+              "precision": 3
+            }
+          },
+          "ref": {
+            "entry": "Group",
+            "field": "updatedAt",
+            "namespace": "aibot"
+          }
+        },
+        {
+          "onCreate": {
+            "id": "timestampNow",
+            "kind": "generator",
+            "params": {
+              "precision": 3
+            }
+          },
+          "onUpdate": {
+            "id": "timestampNow",
+            "kind": "generator",
+            "params": {
+              "precision": 3
+            }
           },
           "ref": {
             "entry": "McpServer",
@@ -5326,12 +8349,39 @@
         },
         {
           "onCreate": {
-            "id": "timestamptzStringNow",
-            "kind": "generator"
+            "id": "timestampNow",
+            "kind": "generator",
+            "params": {
+              "precision": 3
+            }
           },
           "onUpdate": {
-            "id": "timestamptzStringNow",
-            "kind": "generator"
+            "id": "timestampNow",
+            "kind": "generator",
+            "params": {
+              "precision": 3
+            }
+          },
+          "ref": {
+            "entry": "Membership",
+            "field": "updatedAt",
+            "namespace": "aibot"
+          }
+        },
+        {
+          "onCreate": {
+            "id": "timestampNow",
+            "kind": "generator",
+            "params": {
+              "precision": 3
+            }
+          },
+          "onUpdate": {
+            "id": "timestampNow",
+            "kind": "generator",
+            "params": {
+              "precision": 3
+            }
           },
           "ref": {
             "entry": "OAuthAuthentication",
@@ -5341,12 +8391,18 @@
         },
         {
           "onCreate": {
-            "id": "timestamptzStringNow",
-            "kind": "generator"
+            "id": "timestampNow",
+            "kind": "generator",
+            "params": {
+              "precision": 3
+            }
           },
           "onUpdate": {
-            "id": "timestamptzStringNow",
-            "kind": "generator"
+            "id": "timestampNow",
+            "kind": "generator",
+            "params": {
+              "precision": 3
+            }
           },
           "ref": {
             "entry": "OAuthClient",
@@ -5356,12 +8412,82 @@
         },
         {
           "onCreate": {
-            "id": "timestamptzStringNow",
+            "id": "uuidv7",
             "kind": "generator"
           },
+          "ref": {
+            "entry": "Organization",
+            "field": "id",
+            "namespace": "aibot"
+          }
+        },
+        {
+          "onCreate": {
+            "id": "timestampNow",
+            "kind": "generator",
+            "params": {
+              "precision": 3
+            }
+          },
           "onUpdate": {
-            "id": "timestamptzStringNow",
+            "id": "timestampNow",
+            "kind": "generator",
+            "params": {
+              "precision": 3
+            }
+          },
+          "ref": {
+            "entry": "Organization",
+            "field": "updatedAt",
+            "namespace": "aibot"
+          }
+        },
+        {
+          "onCreate": {
+            "id": "timestampNow",
+            "kind": "generator",
+            "params": {
+              "precision": 3
+            }
+          },
+          "onUpdate": {
+            "id": "timestampNow",
+            "kind": "generator",
+            "params": {
+              "precision": 3
+            }
+          },
+          "ref": {
+            "entry": "PersistentSandboxInstance",
+            "field": "updatedAt",
+            "namespace": "aibot"
+          }
+        },
+        {
+          "onCreate": {
+            "id": "uuidv7",
             "kind": "generator"
+          },
+          "ref": {
+            "entry": "PrincipalBase",
+            "field": "id",
+            "namespace": "aibot"
+          }
+        },
+        {
+          "onCreate": {
+            "id": "timestampNow",
+            "kind": "generator",
+            "params": {
+              "precision": 3
+            }
+          },
+          "onUpdate": {
+            "id": "timestampNow",
+            "kind": "generator",
+            "params": {
+              "precision": 3
+            }
           },
           "ref": {
             "entry": "Provider",
@@ -5371,12 +8497,92 @@
         },
         {
           "onCreate": {
-            "id": "timestamptzStringNow",
-            "kind": "generator"
+            "id": "timestampNow",
+            "kind": "generator",
+            "params": {
+              "precision": 3
+            }
           },
           "onUpdate": {
-            "id": "timestamptzStringNow",
+            "id": "timestampNow",
+            "kind": "generator",
+            "params": {
+              "precision": 3
+            }
+          },
+          "ref": {
+            "entry": "RateLimit",
+            "field": "updatedAt",
+            "namespace": "aibot"
+          }
+        },
+        {
+          "onCreate": {
+            "id": "uuidv7",
             "kind": "generator"
+          },
+          "ref": {
+            "entry": "ResourceBase",
+            "field": "id",
+            "namespace": "aibot"
+          }
+        },
+        {
+          "onCreate": {
+            "id": "timestampNow",
+            "kind": "generator",
+            "params": {
+              "precision": 3
+            }
+          },
+          "onUpdate": {
+            "id": "timestampNow",
+            "kind": "generator",
+            "params": {
+              "precision": 3
+            }
+          },
+          "ref": {
+            "entry": "Sandbox",
+            "field": "updatedAt",
+            "namespace": "aibot"
+          }
+        },
+        {
+          "onCreate": {
+            "id": "timestampNow",
+            "kind": "generator",
+            "params": {
+              "precision": 3
+            }
+          },
+          "onUpdate": {
+            "id": "timestampNow",
+            "kind": "generator",
+            "params": {
+              "precision": 3
+            }
+          },
+          "ref": {
+            "entry": "Session",
+            "field": "updatedAt",
+            "namespace": "aibot"
+          }
+        },
+        {
+          "onCreate": {
+            "id": "timestampNow",
+            "kind": "generator",
+            "params": {
+              "precision": 3
+            }
+          },
+          "onUpdate": {
+            "id": "timestampNow",
+            "kind": "generator",
+            "params": {
+              "precision": 3
+            }
           },
           "ref": {
             "entry": "User",

@@ -17,14 +17,16 @@ export interface ToolSetFactory {
 }
 
 export class ToolSetFactoryRegistry {
-  private userId: number;
-  constructor(userId: number) {
-    this.userId = userId;
+  private organizationId: string;
+  private principalId?: string;
+  constructor(organizationId: string, principalId?: string) {
+    this.organizationId = organizationId;
+    this.principalId = principalId;
   }
   private async getToolSetFactories() {
-    const remoteFilesFactory = await getRemoteFilesToolSetFactory(this.userId);
-    const gdriveFactory = await getGdriveToolSetFactory(this.userId);
-    const kingOfTimeFactory = await getKingOfTimeToolSetFactory(this.userId);
+    const remoteFilesFactory = await getRemoteFilesToolSetFactory(this.organizationId, this.principalId);
+    const gdriveFactory = await getGdriveToolSetFactory(this.organizationId, this.principalId);
+    const kingOfTimeFactory = await getKingOfTimeToolSetFactory(this.organizationId);
     return [remoteFilesFactory, gdriveFactory, kingOfTimeFactory];
   }
 

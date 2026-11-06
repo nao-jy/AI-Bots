@@ -31,7 +31,7 @@ export function logAuditEvent(
   action: string,
   targetType: string,
   targetId: number | string | null,
-  actorId?: number,
+  actorId?: number | string,
 ) {
   const context = getRequestContext();
   const effectiveActorId = actorId ?? context?.userId ?? null;

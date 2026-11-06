@@ -10,6 +10,7 @@ import {
   saveOAuthAuthentication,
 } from "../repository/oauth";
 import { decryptCredential, encryptCredential, sign } from "../utils";
+import { hasResourceAccess } from "../authorization";
 
 const FLOW_COOKIE = "oauth_authorization_flow";
 const FLOW_TTL_SECONDS = 10 * 60;
@@ -19,9 +20,10 @@ export const OAUTH_START_PATH = "/oauth/start";
 type OAuthFlow = {
   state: string;
   codeVerifier: string;
-  userId: number;
-  oauthId: number;
-  authenticationId: number | null;
+  userId: string;
+  organizationId: string;
+  oauthId: string;
+  authenticationId: string | null;
   name: string;
   expiresAt: number;
 };
@@ -61,13 +63,12 @@ function verifyFlowPayload(value: string): OAuthFlow | null {
       typeof decoded !== "object" ||
       typeof (decoded as OAuthFlow).state !== "string" ||
       typeof (decoded as OAuthFlow).codeVerifier !== "string" ||
-      typeof (decoded as OAuthFlow).userId !== "number" ||
-      typeof (decoded as OAuthFlow).oauthId !== "number" ||
-      !Number.isInteger((decoded as OAuthFlow).userId) ||
-      !Number.isInteger((decoded as OAuthFlow).oauthId) ||
+      typeof (decoded as OAuthFlow).userId !== "string" ||
+      typeof (decoded as OAuthFlow).organizationId !== "string" ||
+      typeof (decoded as OAuthFlow).oauthId !== "string" ||
       !(
         (decoded as OAuthFlow).authenticationId === null ||
-        Number.isInteger((decoded as OAuthFlow).authenticationId)
+        typeof (decoded as OAuthFlow).authenticationId === "string"
       ) ||
       typeof (decoded as OAuthFlow).name !== "string" ||
       typeof (decoded as OAuthFlow).expiresAt !== "number"
@@ -139,22 +140,25 @@ function configuration(client: {
 export async function prepareOAuthAuthorization(user: AuthUser, form: FormData) {
   const name = String(form.get("name") ?? "").trim();
   const idValue = String(form.get("id") ?? "").trim();
-  const authenticationId = idValue ? Number(idValue) : null;
-  const selectedClientId = Number(form.get("oauthId"));
+  const authenticationId = idValue || null;
+  const selectedClientId = String(form.get("oauthId") ?? "");
   if (!name) return { error: "server.oauthAuthenticationNameRequired" };
-  if (authenticationId !== null && !Number.isInteger(authenticationId))
+  if (authenticationId !== null && !/^[0-9a-f-]{36}$/i.test(authenticationId))
     return { error: "server.oauthAuthenticationNotFound" };
   const existing =
     authenticationId === null
       ? null
-      : await getOwnedOAuthAuthentication(authenticationId, user.id);
+      : await getOwnedOAuthAuthentication(authenticationId, user.organizationId);
   if (authenticationId !== null && !existing)
     return { error: "server.oauthAuthenticationNotFound" };
+  if (authenticationId !== null && !(await hasResourceAccess(user, authenticationId, "update")))
+    return { error: "server.oauthAuthenticationNotFound" };
   const oauthId = existing?.oauthId ?? selectedClientId;
-  if (!Number.isInteger(oauthId))
+  if (!/^[0-9a-f-]{36}$/i.test(oauthId))
     return { error: "server.oauthClientRequired" };
-  const oauthClient = await getOwnedOAuthClient(oauthId, user.id);
-  if (!oauthClient) return { error: "server.selectedOauthClientNotFound" };
+  const oauthClient = await getOwnedOAuthClient(oauthId, user.organizationId);
+  if (!oauthClient || !(await hasResourceAccess(user, oauthId, "read")))
+    return { error: "server.selectedOauthClientNotFound" };
 
   try {
     getCallbackUrl();
@@ -165,6 +169,7 @@ export async function prepareOAuthAuthorization(user: AuthUser, form: FormData) 
       state,
       codeVerifier,
       userId: user.id,
+      organizationId: user.organizationId,
       oauthId,
       authenticationId,
       name,
@@ -192,8 +197,8 @@ export async function launchOAuthAuthorization(payloadValue: string) {
   if (!flow) return redirect("/oauth-authentications?oauth=error");
 
   try {
-    const oauthClient = await getOwnedOAuthClient(flow.oauthId, flow.userId);
-    if (!oauthClient) throw new Error("server.oauthClientNotFound");
+    const oauthClient = await getOwnedOAuthClient(flow.oauthId, flow.organizationId);
+    if (!oauthClient || !(await hasResourceAccess({ id: flow.userId, organizationId: flow.organizationId }, flow.oauthId, "read"))) throw new Error("server.oauthClientNotFound");
     const callbackUrl = getCallbackUrl();
     const config = configuration(oauthClient);
     const authorizationHost = new URL(oauthClient.authorizationEndpoint)
@@ -243,8 +248,8 @@ export async function completeOAuthAuthorization(request: Request) {
     });
 
   try {
-    const oauthClient = await getOwnedOAuthClient(flow.oauthId, flow.userId);
-    if (!oauthClient) throw new Error("server.oauthClientNotFound");
+    const oauthClient = await getOwnedOAuthClient(flow.oauthId, flow.organizationId);
+    if (!oauthClient || !(await hasResourceAccess({ id: flow.userId, organizationId: flow.organizationId }, flow.oauthId, "read"))) throw new Error("server.oauthClientNotFound");
     const config = configuration(oauthClient);
     const tokens = await oidc.authorizationCodeGrant(
       config,
@@ -259,10 +264,12 @@ export async function completeOAuthAuthorization(request: Request) {
     const existing = flow.authenticationId
       ? await getOwnedOAuthAuthentication(
           flow.authenticationId,
-          flow.userId,
+          flow.organizationId,
         )
       : null;
     if (flow.authenticationId && !existing)
+      throw new Error("server.oauthAuthenticationNotFound");
+    if (flow.authenticationId && !(await hasResourceAccess({ id: flow.userId, organizationId: flow.organizationId }, flow.authenticationId, "update")))
       throw new Error("server.oauthAuthenticationNotFound");
     const expiresAt =
       typeof tokens.expires_in === "number"
@@ -277,7 +284,7 @@ export async function completeOAuthAuthorization(request: Request) {
         : (existing?.refreshToken ?? null),
       expiresAt,
     };
-    await saveOAuthAuthentication(flow.userId, existing?.id ?? null, saved);
+    await saveOAuthAuthentication(flow.organizationId, flow.userId, existing?.id ?? null, saved);
     return redirect("/oauth/complete?status=success", {
       headers: { "Set-Cookie": clearCookieHeader },
     });

@@ -346,7 +346,7 @@ function EmailVerificationAction({
   recordId,
   recordName,
 }: {
-  recordId: number;
+  recordId: string | number;
   recordName: string;
 }) {
   const fetcher = useFetcher<{ ok?: boolean; error?: string }>();
@@ -390,7 +390,7 @@ function MfaResetAction({
   recordId,
   recordName,
 }: {
-  recordId: number;
+  recordId: string | number;
   recordName: string;
 }) {
   const fetcher = useFetcher<{ ok?: boolean; error?: string }>();
@@ -443,7 +443,7 @@ function LoginUnlockAction({
   recordId,
   recordName,
 }: {
-  recordId: number;
+  recordId: string | number;
   recordName: string;
 }) {
   const fetcher = useFetcher<{ ok?: boolean; error?: string }>();

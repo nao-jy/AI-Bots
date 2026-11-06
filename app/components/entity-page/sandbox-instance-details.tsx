@@ -17,7 +17,7 @@ export function SandboxInstanceDetails({
   onOpenShell,
   onDeleted,
 }: {
-  sandboxId: number;
+  sandboxId: string | number;
   instances: PersistentInstance[];
   onOpenShell: (instanceId: string) => void;
   onDeleted: (instanceId: string) => void;

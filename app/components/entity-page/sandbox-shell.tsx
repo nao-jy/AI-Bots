@@ -10,7 +10,7 @@ export type PersistentInstance = {
   scopeLabel: string;
 };
 export type SandboxShellInstance = PersistentInstance & {
-  sandboxId: number;
+  sandboxId: string;
   sandboxName: string;
 };
 type TerminalStartResponse = {

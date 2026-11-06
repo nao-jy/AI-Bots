@@ -1,6 +1,6 @@
 import { db } from "./db";
 import type { AuthUser } from "../auth";
-import { jsonb, jsonbToStringRecord, parseStringList, record } from "../utils";
+import { generateResourceId, jsonb, jsonbToStringRecord, parseStringList, record } from "../utils";
 import {
   executeSandboxCommand,
   getSandbox,
@@ -14,6 +14,7 @@ import { appLogger } from "~/.server/logger/app-logger";
 import { logAuditEvent } from "../logger/audit-logger";
 import { SANDBOX_SCOPES } from "~/const";
 import { t } from "~/.server/i18n";
+import { filterResourcesByRole, grantResourceRole, hasResourceAccess } from "../authorization";
 export type SandboxScope = keyof typeof SANDBOX_SCOPES;
 
 function isSandboxScope(value: string): value is SandboxScope {
@@ -21,9 +22,9 @@ function isSandboxScope(value: string): value is SandboxScope {
 }
 
 export async function listSandboxes(user: AuthUser) {
-  const sandboxes = await db.orm.aibot.Sandbox.where({
-    ownerId: user.id,
-  }).all();
+  const sandboxes = await filterResourcesByRole(user, await db.orm.aibot.Sandbox.where({
+    organizationId: user.organizationId,
+  }).all());
   const sandboxNames = await listSandboxNames();
   return {
     sandboxTypeOptions: sandboxNames.map((name) => ({
@@ -72,11 +73,11 @@ function limitShellOutput(value: string) {
 
 export async function runPersistentSandboxCommand(
   user: AuthUser,
-  sandboxId: number,
+  sandboxId: string,
   instanceId: string,
   command: string,
 ) {
-  if (!Number.isInteger(sandboxId) || sandboxId <= 0)
+  if (!/^[0-9a-f-]{36}$/i.test(sandboxId))
     return { ok: false, error: "server.sandboxNotFound" };
   if (!instanceId.trim())
     return { ok: false, error: "server.sandboxInstanceRequired" };
@@ -87,9 +88,10 @@ export async function runPersistentSandboxCommand(
 
   const sandbox = await db.orm.aibot.Sandbox.first({
     id: sandboxId,
-    ownerId: user.id,
+    organizationId: user.organizationId,
   });
   if (!sandbox) return { ok: false, error: "server.sandboxNotFound" };
+  if (!(await hasResourceAccess(user, sandboxId, "update"))) return { ok: false, error: "server.sandboxNotFound" };
 
   const instance = await db.orm.aibot.PersistentSandboxInstance.whereUnique({
     instanceId,
@@ -137,12 +139,12 @@ export async function runPersistentSandboxCommand(
 
 export async function startPersistentSandboxTerminal(
   user: AuthUser,
-  sandboxId: number,
+  sandboxId: string,
   instanceId: string,
   cols: number,
   rows: number,
 ) {
-  if (!Number.isInteger(sandboxId) || sandboxId <= 0)
+  if (!/^[0-9a-f-]{36}$/i.test(sandboxId))
     return { ok: false, error: "server.sandboxNotFound" };
   if (!instanceId.trim())
     return { ok: false, error: "server.sandboxInstanceRequired" };
@@ -159,9 +161,10 @@ export async function startPersistentSandboxTerminal(
 
   const sandbox = await db.orm.aibot.Sandbox.first({
     id: sandboxId,
-    ownerId: user.id,
+    organizationId: user.organizationId,
   });
   if (!sandbox) return { ok: false, error: "server.sandboxNotFound" };
+  if (!(await hasResourceAccess(user, sandboxId, "update"))) return { ok: false, error: "server.sandboxNotFound" };
 
   const instance = await db.orm.aibot.PersistentSandboxInstance.whereUnique({
     instanceId,
@@ -203,7 +206,7 @@ export async function startPersistentSandboxTerminal(
 
 export async function saveSandbox(
   user: AuthUser,
-  id: number | null,
+  id: string | null,
   values: FormData,
 ) {
   const sandboxType = String(values.get("sandboxType") ?? "").trim();
@@ -243,7 +246,8 @@ export async function saveSandbox(
   }
   if (
     id !== null &&
-    !(await db.orm.aibot.Sandbox.first({ id, ownerId: user.id }))
+    (!(await db.orm.aibot.Sandbox.first({ id, organizationId: user.organizationId })) ||
+      !(await hasResourceAccess(user, id, "update")))
   )
     return { error: "server.sandboxNotFound" };
   const saved = {
@@ -256,23 +260,25 @@ export async function saveSandbox(
   };
   if (id === null) {
     const sandbox = await db.orm.aibot.Sandbox.create({
+      id: generateResourceId(),
       ...saved,
-      ownerId: user.id,
+      organizationId: user.organizationId,
     });
+    await grantResourceRole(user, sandbox.id, "manager");
     logAuditEvent("sandbox.created", "sandbox", sandbox.id, user.id);
   } else {
-    await db.orm.aibot.Sandbox.where({ id, ownerId: user.id }).update(saved);
+    await db.orm.aibot.Sandbox.where({ id, organizationId: user.organizationId }).update(saved);
     logAuditEvent("sandbox.updated", "sandbox", id, user.id);
   }
   return { ok: true };
 }
 
-export async function deleteSandbox(user: AuthUser, id: number) {
+export async function deleteSandbox(user: AuthUser, id: string) {
   const sandbox = await db.orm.aibot.Sandbox.first({
     id,
-    ownerId: user.id,
+    organizationId: user.organizationId,
   });
-  if (!sandbox) return false;
+  if (!sandbox || !(await hasResourceAccess(user, id, "delete"))) return false;
 
   const instances = await db.orm.aibot.PersistentSandboxInstance.where({
     sandboxId: id,
@@ -280,7 +286,7 @@ export async function deleteSandbox(user: AuthUser, id: number) {
   for (const instance of instances)
     await destroySandboxInstance(sandbox.sandboxType, instance.instanceId);
 
-  await db.orm.aibot.Sandbox.where({ id, ownerId: user.id }).delete();
+  await db.orm.aibot.Sandbox.where({ id, organizationId: user.organizationId }).delete();
   logAuditEvent("sandbox.deleted", "sandbox", id, user.id);
   return true;
 }
@@ -294,21 +300,21 @@ export async function getSandboxInstance(instanceId: string) {
   return instance;
 }
 
-export async function getChatBotSandbox(chatbotId: number, ownerId: number) {
+export async function getChatBotSandbox(chatbotId: string, organizationId: string) {
   const links = await db.orm.aibot.ChatBotToolSandbox.where({ chatbotId })
     .include("sandBox")
     .all();
   return (
-    links.find((link) => link.sandBox.ownerId === ownerId)?.sandBox ?? null
+    links.find((link) => link.sandBox.organizationId === organizationId)?.sandBox ?? null
   );
 }
 
 export async function getPersistentSandboxInstance(
-  sandboxId: number,
+  sandboxId: string,
   sandboxScope: SandboxScope,
   threadId: string | null,
-  adapterId: number | null,
-  chatbotId: number | null,
+  adapterId: string | null,
+  chatbotId: string | null,
 ) {
   if (sandboxScope === "turn") return null;
 
@@ -350,14 +356,19 @@ export async function getPersistentSandboxInstance(
 }
 
 export async function createPersistentSandboxInstance(values: {
+  organizationId?: string;
   instanceId: string;
-  sandboxId: number;
-  chatbotId: number | null;
-  adapterId: number | null;
+  sandboxId: string;
+  chatbotId: string | null;
+  adapterId: string | null;
   threadId: string | null;
 }) {
-  const instance =
-    await db.orm.aibot.PersistentSandboxInstance.create(values);
+  const sandbox = await db.orm.aibot.Sandbox.first({ id: values.sandboxId });
+  if (!sandbox) throw new Error("server.sandboxNotFound");
+  const instance = await db.orm.aibot.PersistentSandboxInstance.create({
+    ...values,
+    organizationId: sandbox.organizationId,
+  });
   logAuditEvent(
     "sandbox_instance.created",
     "sandbox_instance",
@@ -368,10 +379,10 @@ export async function createPersistentSandboxInstance(values: {
 
 export async function deleteSandboxInstance(
   user: AuthUser,
-  sandboxId: number,
+  sandboxId: string,
   instanceId: string,
 ) {
-  if (!Number.isInteger(sandboxId) || sandboxId <= 0 || !instanceId.trim())
+  if (!/^[0-9a-f-]{36}$/i.test(sandboxId) || !instanceId.trim())
     return false;
   const instance = await db.orm.aibot.PersistentSandboxInstance.whereUnique({
     instanceId,
@@ -381,7 +392,8 @@ export async function deleteSandboxInstance(
   if (
     !instance ||
     instance.sandboxId !== sandboxId ||
-    instance.sandbox.ownerId !== user.id
+    instance.sandbox.organizationId !== user.organizationId ||
+    !(await hasResourceAccess(user, sandboxId, "update"))
   )
     return false;
 

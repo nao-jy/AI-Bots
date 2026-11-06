@@ -3,13 +3,15 @@ import { logAuditEvent } from "../logger/audit-logger";
 
 export async function createSession(
   tokenHash: string,
-  userId: number,
+  userId: string,
   expiresAt: Date,
+  organizationId: string,
   mfaVerified = true,
 ) {
   await db.orm.aibot.Session.create({
     tokenHash: tokenHash,
     userId,
+    organizationId,
     expiresAt: expiresAt.toISOString(),
     mfaVerified,
   });
@@ -23,10 +25,12 @@ export async function createSession(
 
 export async function createPendingSession(
   tokenHash: string,
-  userId: number,
+  userId: string,
   expiresAt: Date,
 ) {
-  return createSession(tokenHash, userId, expiresAt, false);
+  const user = await db.orm.aibot.User.first({ id: userId });
+  if (!user) throw new Error("User not found");
+  return createSession(tokenHash, userId, expiresAt, user.organizationId, false);
 }
 
 export async function getPendingSession(tokenHash: string) {
@@ -39,7 +43,7 @@ export async function getPendingSession(tokenHash: string) {
 
 export async function completePendingSession(
   tokenHash: string,
-  userId: number,
+  userId: string,
   expiresAt: Date,
 ) {
   const completed = await db.transaction(async (tx) => {

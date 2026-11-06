@@ -1,9 +1,10 @@
 import cron from "node-cron";
 import { db } from "./db";
 import type { AuthUser } from "../auth";
-import { record } from "../utils";
+import { generateResourceId, record } from "../utils";
 import { logAuditEvent } from "../logger/audit-logger";
 import { localizedMessage } from "../../i18n";
+import { filterResourcesByRole, grantResourceRole, hasResourceAccess } from "../authorization";
 
 export type ScheduleTargetInput = {
   chatbotAdapterId: number;
@@ -42,8 +43,8 @@ function parseTargets(value: FormDataEntryValue | null) {
 }
 
 export async function listSchedules(user: AuthUser) {
-  const [schedules, chatbotAdapters] = await Promise.all([
-    db.orm.aibot.ChatBotSchedule.where({ ownerId: user.id })
+  const [scheduleRows, chatbotAdapters] = await Promise.all([
+    db.orm.aibot.ChatBotSchedule.where({ organizationId: user.organizationId })
       .include("chatTargets", (targets) =>
         targets.include("chatbotAdapter", (link) =>
           link.include("chatbot").include("adapter"),
@@ -53,14 +54,25 @@ export async function listSchedules(user: AuthUser) {
       .all(),
     db.orm.aibot.ChatBotAdapter.include("chatbot").include("adapter").all(),
   ]);
+  const schedules = await filterResourcesByRole(user, scheduleRows);
+  const accessibleLinkIds = new Set(
+    (await Promise.all(chatbotAdapters.map(async (link) => ({
+      id: link.id,
+      allowed: link.chatbot.organizationId === user.organizationId &&
+        link.adapter.organizationId === user.organizationId &&
+        await hasResourceAccess(user, link.chatbotId, "read") &&
+        await hasResourceAccess(user, link.adapterId, "read"),
+    })))).filter(({ allowed }) => allowed).map(({ id }) => id),
+  );
   return {
     records: schedules.map((schedule) => {
       const targets = schedule.chatTargets.flatMap((target) => {
         const link = target.chatbotAdapter;
         if (
           !link ||
-          link.chatbot.ownerId !== user.id ||
-          link.adapter.ownerId !== user.id
+          !accessibleLinkIds.has(link.id) ||
+          link.chatbot.organizationId !== user.organizationId ||
+          link.adapter.organizationId !== user.organizationId
         )
           return [];
         return [
@@ -90,7 +102,7 @@ export async function listSchedules(user: AuthUser) {
     targetOptions: chatbotAdapters
       .filter(
         (link) =>
-          link.chatbot.ownerId === user.id && link.adapter.ownerId === user.id,
+          accessibleLinkIds.has(link.id),
       )
       .map((link) => ({
         label: localizedMessage(
@@ -104,7 +116,7 @@ export async function listSchedules(user: AuthUser) {
   };
 }
 
-export async function getScheduleForExecution(id: number) {
+export async function getScheduleForExecution(id: string) {
   return db.orm.aibot.ChatBotSchedule.where({ id })
     .include("chatTargets", (targets) =>
       targets.include("chatbotAdapter", (link) =>
@@ -129,7 +141,7 @@ function isValidTimezone(timezone: string) {
 
 export async function saveSchedule(
   user: AuthUser,
-  id: number | null,
+  id: string | null,
   values: FormData,
 ) {
   const name = String(values.get("name") ?? "").trim();
@@ -162,15 +174,18 @@ export async function saveSchedule(
       .first();
     if (
       !link ||
-      link.chatbot.ownerId !== user.id ||
-      link.adapter.ownerId !== user.id
+      link.chatbot.organizationId !== user.organizationId ||
+      link.adapter.organizationId !== user.organizationId ||
+      !(await hasResourceAccess(user, link.chatbotId, "read")) ||
+      !(await hasResourceAccess(user, link.adapterId, "read"))
     )
       return { error: "server.invalidBotAdapterPair" };
   }
 
   if (
     id !== null &&
-    !(await db.orm.aibot.ChatBotSchedule.first({ id, ownerId: user.id }))
+    (!(await db.orm.aibot.ChatBotSchedule.first({ id, organizationId: user.organizationId })) ||
+      !(await hasResourceAccess(user, id, "update")))
   )
     return { error: "server.scheduleNotFound" };
 
@@ -178,23 +193,25 @@ export async function saveSchedule(
     let scheduleId = id;
     if (scheduleId === null) {
       const schedule = await tx.orm.aibot.ChatBotSchedule.create({
+        id: generateResourceId(),
         name,
         prompt,
         cronParam,
         timezone,
-        ownerId: user.id,
+        organizationId: user.organizationId,
       });
       scheduleId = schedule.id;
     } else {
       await tx.orm.aibot.ChatBotSchedule.where({
         id: scheduleId,
-        ownerId: user.id,
+        organizationId: user.organizationId,
       }).update({ name, prompt, cronParam, timezone });
       await tx.orm.aibot.ChatTarget.where({ scheduleId }).delete();
     }
 
     for (const target of targets) {
       await tx.orm.aibot.ChatTarget.create({
+        organizationId: user.organizationId,
         scheduleId,
         chatbotAdapterId: target.chatbotAdapterId,
         threadId: target.threadId,
@@ -202,6 +219,7 @@ export async function saveSchedule(
     }
     return scheduleId;
   });
+  if (id === null) await grantResourceRole(user, scheduleId, "manager");
   logAuditEvent(
     id === null ? "schedule.created" : "schedule.updated",
     "schedule",
@@ -211,15 +229,15 @@ export async function saveSchedule(
   return { ok: true };
 }
 
-export async function deleteSchedule(user: AuthUser, id: number) {
+export async function deleteSchedule(user: AuthUser, id: string) {
   const schedule = await db.orm.aibot.ChatBotSchedule.first({
     id,
-    ownerId: user.id,
+    organizationId: user.organizationId,
   });
-  if (!schedule) return false;
+  if (!schedule || !(await hasResourceAccess(user, id, "delete"))) return false;
   await db.orm.aibot.ChatBotSchedule.where({
     id,
-    ownerId: user.id,
+    organizationId: user.organizationId,
   }).delete();
   logAuditEvent("schedule.deleted", "schedule", id, user.id);
   return true;
