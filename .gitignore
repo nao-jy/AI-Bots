@@ -8,4 +8,4 @@
 /data/memory/
 node_modules/
 dist/
-logs
+/data
