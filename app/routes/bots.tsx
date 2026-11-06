@@ -24,6 +24,7 @@ const page: Omit<EntityPageDefinition, "records"> = {
     subtitleKeys: ["description"],
     publicIds: true,
     webhookDetails: true,
+    resourceGrants: true,
   },
   columns: [
     { key: "name", label: "pages.bots.nameLabel" },

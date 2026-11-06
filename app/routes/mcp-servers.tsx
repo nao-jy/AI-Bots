@@ -20,7 +20,7 @@ function getPage(transport: Record<string, string>) {
     title: t("pages.mcpServers.title"),
     description: t("pages.mcpServers.description"),
     icon: "mcp",
-    tableFeatures: { subtitleKeys: ["description", "endpoint"] },
+    tableFeatures: { subtitleKeys: ["description", "endpoint"], resourceGrants: true },
     columns: [
       { key: "name", label: t("pages.mcpServers.nameLabel") },
       { key: "transport", label: t("pages.mcpServers.transportLabel") },

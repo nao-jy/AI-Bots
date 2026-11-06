@@ -2,14 +2,14 @@ import { db } from "./db";
 import type { AuthUser } from "../auth";
 import { decryptMcpHeaders, encryptStringMap, generateResourceId, jsonb, record } from "../utils";
 import { logAuditEvent } from "../logger/audit-logger";
-import { filterResourcesByRole, grantResourceRole, hasResourceAccess } from "../authorization";
+import { filterResourcesByRole, hasResourceAccess, includeResourcePermissions } from "../authorization";
 
 export async function listProviders(user: AuthUser) {
   const providers = await filterResourcesByRole(user, await db.orm.aibot.Provider.where({ organizationId: user.organizationId })
     .orderBy((provider) => provider.updatedAt.desc())
     .all());
   return {
-    records: providers.map((provider) => {
+    records: await includeResourcePermissions(user, providers.map((provider) => {
       const headers = decryptMcpHeaders(provider.headers);
       return record(provider.id, provider.updatedAt, {
         name: provider.name,
@@ -18,7 +18,7 @@ export async function listProviders(user: AuthUser) {
         headers: JSON.stringify(headers, null, 2),
         headersConfigured: Object.keys(headers).length ? "server.configured" : "server.notConfigured",
       });
-    }),
+    })),
   };
 }
 
@@ -82,12 +82,23 @@ export async function saveProvider(
     headers: jsonb(encryptedHeaders),
   };
   if (id === null) {
-    const provider = await db.orm.aibot.Provider.create({
-      id: generateResourceId(),
-      ...saved,
-      organizationId: user.organizationId,
+    const provider = await db.transaction(async (tx) => {
+      const id = generateResourceId();
+      await tx.orm.aibot.ResourceBase.create({ id });
+      const created = await tx.orm.aibot.Provider.create({
+        id,
+        ...saved,
+        organizationId: user.organizationId,
+      });
+      await tx.orm.aibot.Grant.create({
+        organizationId: user.organizationId,
+        principalId: user.id,
+        resourceId: id,
+        role: "manager",
+        grantedById: user.id,
+      });
+      return created;
     });
-    await grantResourceRole(user, provider.id, "manager");
     logAuditEvent("provider.created", "provider", provider.id, user.id);
   } else {
     await db.orm.aibot.Provider.where({ id, organizationId: user.organizationId }).update(saved);

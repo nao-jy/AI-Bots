@@ -3,7 +3,7 @@ import type { AuthUser } from "../auth";
 import { generateResourceId, idList, isUuid, jsonb, record } from "../utils";
 import { logAuditEvent } from "../logger/audit-logger";
 import { t } from "~/.server/i18n";
-import { filterResourcesByRole, grantResourceRole, hasResourceAccess } from "../authorization";
+import { filterResourcesByRole, hasResourceAccess, includeResourcePermissions } from "../authorization";
 import type {
   LanguageModelUsage,
   ToolSet,
@@ -22,7 +22,7 @@ export async function listAgents(user: AuthUser) {
       .all(),
   );
   return {
-    records: agents.map((agent) => {
+    records: await includeResourcePermissions(user, agents.map((agent) => {
       return record(agent.id, agent.updatedAt, {
         name: agent.name,
         model: agent.modelId,
@@ -34,7 +34,7 @@ export async function listAgents(user: AuthUser) {
           ? t("server.usedByBot", { 0: "" })
           : "server.unused",
       });
-    }),
+    })),
     providerOptions: (await filterResourcesByRole(user,
       await db.orm.aibot.Provider.where({ organizationId: user.organizationId }).all(),
     )).map((provider) => ({
@@ -141,15 +141,23 @@ export async function saveAgent(
     organizationId: user.organizationId,
   };
   const agentId = await db.transaction(async (tx) => {
-    const agentId =
-      id === null
-        ? (await tx.orm.aibot.AgentDefinition.create(valuesToSave)).id
-        : id;
+    let agentId = id;
+    if (agentId === null) {
+      agentId = generateResourceId();
+      await tx.orm.aibot.ResourceBase.create({ id: agentId });
+      await tx.orm.aibot.AgentDefinition.create({ ...valuesToSave, id: agentId });
+      await tx.orm.aibot.Grant.create({
+        organizationId: user.organizationId,
+        principalId: user.id,
+        resourceId: agentId,
+        role: "manager",
+        grantedById: user.id,
+      });
+    }
     if (id !== null)
       await tx.orm.aibot.AgentDefinition.where({ id }).update(valuesToSave);
     return agentId;
   });
-  if (id === null) await grantResourceRole(user, agentId, "manager");
   logAuditEvent(
     id === null ? "agent.created" : "agent.updated",
     "agent",

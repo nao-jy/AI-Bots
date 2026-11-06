@@ -1,5 +1,5 @@
 import { t } from "~/i18n";
-import { Alert, Button, NumberInput, Switch, Text } from "@mantine/core";
+import { Alert, Button, NumberInput, Switch, Text, TextInput } from "@mantine/core";
 import { Form, useActionData } from "react-router";
 import type { Route } from "./+types/settings";
 import { requireAdmin } from "../.server/auth";
@@ -17,6 +17,7 @@ export async function loader({ request }: Route.LoaderArgs) {
   const user = await requireAdmin(request);
   const settings = await getAppSettings(user.organizationId);
   return {
+    organizationName: settings.organizationName,
     mfaEnabled: settings.mfaEnabled,
     sessionDurationDays: settings.sessionDurationSeconds / 86400,
     maxLoginAttempts: settings.maxLoginAttempts,
@@ -26,6 +27,9 @@ export async function loader({ request }: Route.LoaderArgs) {
 export async function action({ request }: Route.ActionArgs) {
   const user = await requireAdmin(request);
   const form = await request.formData();
+  const organizationName = String(form.get("organizationName") ?? "").trim();
+  if (!organizationName || organizationName.length > 120)
+    return { error: t("pages.settings.invalidOrganizationName") };
   const durationDays = Number(form.get("sessionDurationDays"));
   if (!Number.isInteger(durationDays) || durationDays < 1 || durationDays > 365)
     return { error: t("pages.settings.invalidSessionDuration") };
@@ -35,6 +39,7 @@ export async function action({ request }: Route.ActionArgs) {
 
   await saveAppSettings({
     organizationId: user.organizationId,
+    organizationName,
     mfaEnabled: form.get("mfaEnabled") === "on",
     sessionDurationSeconds: durationDays * 86400,
     maxLoginAttempts,
@@ -63,6 +68,15 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
             <Alert color="green" role="status" mb="md">
               {t("pages.settings.saved")}</Alert>
           )}
+          <TextInput
+            name="organizationName"
+            label={t("pages.settings.organizationNameLabel")}
+            description={t("pages.settings.organizationNameHelp")}
+            defaultValue={loaderData.organizationName}
+            maxLength={120}
+            required
+            mb="lg"
+          />
           <Switch
             name="mfaEnabled"
             label={t("pages.settings.requireMfaLabel")}

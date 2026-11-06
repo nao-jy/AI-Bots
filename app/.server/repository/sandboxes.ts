@@ -14,7 +14,11 @@ import { appLogger } from "~/.server/logger/app-logger";
 import { logAuditEvent } from "../logger/audit-logger";
 import { SANDBOX_SCOPES } from "~/const";
 import { t } from "~/.server/i18n";
-import { filterResourcesByRole, grantResourceRole, hasResourceAccess } from "../authorization";
+import {
+  filterResourcesByRole,
+  hasResourceAccess,
+  includeResourcePermissions,
+} from "../authorization";
 export type SandboxScope = keyof typeof SANDBOX_SCOPES;
 
 function isSandboxScope(value: string): value is SandboxScope {
@@ -31,7 +35,7 @@ export async function listSandboxes(user: AuthUser) {
       label: name,
       value: name,
     })),
-    records: await Promise.all(
+    records: await includeResourcePermissions(user, await Promise.all(
       sandboxes.map(async (sandbox) => {
         const instances = await db.orm.aibot.PersistentSandboxInstance.where({
           sandboxId: sandbox.id,
@@ -59,7 +63,7 @@ export async function listSandboxes(user: AuthUser) {
           ),
         });
       }),
-    ),
+    )),
   };
 }
 
@@ -259,12 +263,23 @@ export async function saveSandbox(
     name: sandboxName,
   };
   if (id === null) {
-    const sandbox = await db.orm.aibot.Sandbox.create({
-      id: generateResourceId(),
-      ...saved,
-      organizationId: user.organizationId,
+    const sandbox = await db.transaction(async (tx) => {
+      const id = generateResourceId();
+      await tx.orm.aibot.ResourceBase.create({ id });
+      const created = await tx.orm.aibot.Sandbox.create({
+        id,
+        ...saved,
+        organizationId: user.organizationId,
+      });
+      await tx.orm.aibot.Grant.create({
+        organizationId: user.organizationId,
+        principalId: user.id,
+        resourceId: id,
+        role: "manager",
+        grantedById: user.id,
+      });
+      return created;
     });
-    await grantResourceRole(user, sandbox.id, "manager");
     logAuditEvent("sandbox.created", "sandbox", sandbox.id, user.id);
   } else {
     await db.orm.aibot.Sandbox.where({ id, organizationId: user.organizationId }).update(saved);

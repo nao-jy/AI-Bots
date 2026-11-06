@@ -22,7 +22,7 @@ const page: Omit<EntityPageDefinition, "records"> = {
   description:
     "pages.sandboxes.description",
   icon: "sandboxes",
-  tableFeatures: { sandboxShell: true },
+  tableFeatures: { sandboxShell: true, resourceGrants: true },
   columns: [
     { key: "name", label: "pages.sandboxes.title" },
     { key: "type", label: "pages.sandboxes.typeLabel" },

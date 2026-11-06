@@ -10,6 +10,7 @@ export const ja = {
     mcpServers: "MCPサーバー",
     schedules: "スケジュール",
     users: "ユーザー",
+    groups: "グループ",
     rateLimits: "レートリミット",
     sandboxes: "サンドボックス",
     settings: "設定",
@@ -168,7 +169,7 @@ export const ja = {
       loginInstructions: "メールアドレスとパスワードを入力してください。",
       invalidCredentials: "メールアドレスまたはパスワードが正しくありません。",
       firstAccountRequirements:
-        "初回登録では表示名と12文字以上のパスワードが必要です。",
+        "組織名、ユーザー名、12文字以上のパスワードを入力してください。",
       firstAccountCreationFailed:
         "初回アカウントを作成できませんでした。もう一度お試しください。",
       verificationEmailSendFailedAfterSignup:
@@ -181,7 +182,9 @@ export const ja = {
         "最初のアカウントを登録して、ワークスペースを始めましょう。",
       loginIntroduction:
         "アカウントにログインして、ワークスペースを開きましょう。",
-      displayNameLabel: "表示名",
+      displayNameLabel: "ユーザー名",
+      organizationNameLabel: "組織名",
+      organizationNamePlaceholder: "例：サポートチーム",
       emailLabel: "メールアドレス",
       emailPlaceholder: "name@company.com",
       passwordMinimumLabel: "パスワード（12文字以上）",
@@ -387,12 +390,15 @@ export const ja = {
     },
     settings: {
       documentTitle: "設定 | {{0}}",
+      invalidOrganizationName: "組織名は1〜120文字で入力してください。",
       invalidSessionDuration:
         "セッション持続時間は1〜365日の整数で指定してください。",
       invalidLoginAttemptLimit:
         "ログイン失敗の上限は1以上の整数で指定してください。",
       title: "設定",
       saved: "設定を保存しました。",
+      organizationNameLabel: "組織名",
+      organizationNameHelp: "この組織の名前です。",
       requireMfaLabel: "多要素認証を必須にする",
       requireMfaHelp:
         "有効にすると、次回ログイン時に認証アプリの設定または追加認証を求めます。",
@@ -417,7 +423,7 @@ export const ja = {
       loginStatusLabel: "ログイン状態",
       lastLoginLabel: "最終ログイン",
       updatedLabel: "最終更新",
-      displayNameLabel: "表示名",
+      displayNameLabel: "ユーザー名",
       displayNamePlaceholder: "例：山田 花子",
       emailPlaceholder: "name@example.com",
       passwordLabel: "パスワード",
@@ -432,6 +438,39 @@ export const ja = {
       unknownAction: "操作を判定できませんでした。",
       savedButEmailFailed:
         "ユーザーを保存しましたが検証メールを送信できませんでした。ユーザー一覧から再送してください。",
+    },
+    groups: {
+      title: "グループ",
+      description:
+        "ユーザーをグループにまとめ、グループ単位でリソース権限を付与できます。",
+      documentTitle: "グループ | {{0}}",
+      deleteWarning: "グループに付与されているGrantも削除されます。",
+      newGroupName: "新しいグループ名",
+      groupName: "グループ名",
+      groupNamePlaceholder: "例：サポートチーム",
+      createGroup: "グループを作成",
+      renameGroup: "名前を変更",
+      deleteGroup: "グループを削除",
+      deleteConfirmation:
+        "「{{0}}」を削除しますか？このグループへのGrantも削除されます。",
+      memberCount: "{{0}}人",
+      members: "メンバー",
+      memberName: "名前",
+      memberEmail: "メールアドレス",
+      updated: "最終更新",
+      actions: "操作",
+      addMember: "メンバーを追加",
+      selectMember: "ユーザーを選択",
+      removeMember: "削除",
+      emptyMembers: "メンバーはいません。",
+      allUsersAdded: "すべてのユーザーが所属しています。",
+      emptyGroups: "グループはまだありません。",
+      invalidGroup: "グループを確認してください。",
+      invalidMembership: "メンバーを確認してください。",
+      notFound: "グループが見つかりません。",
+      nameRequired: "グループ名を入力してください。",
+      nameTaken: "このグループ名はすでに使われています。",
+      unknownAction: "操作を判定できませんでした。",
     },
     verifyEmail: {
       documentTitle: "メールアドレスの確認 | {{0}}",
@@ -451,6 +490,31 @@ export const ja = {
     },
   },
   components: {
+    resourceGrants: {
+      title: "{{0}} のアクセス権",
+      description:
+        "ユーザーまたはグループに、このリソースへのRoleを付与します。複数の付与元がある場合は最も高いRoleが適用されます。",
+      manageAccess: "アクセス権を管理",
+      manageAccessFor: "{{0}} のアクセス権を管理",
+      principal: "付与先",
+      role: "Role",
+      viewer: "閲覧",
+      editor: "編集",
+      manager: "管理",
+      user: "ユーザー",
+      group: "グループ",
+      addPrincipal: "ユーザーまたはグループを追加",
+      selectPrincipal: "付与先を選択",
+      grant: "付与",
+      save: "保存",
+      remove: "Grantを取り消す",
+      empty: "このリソースに直接付与されたGrantはありません。",
+      noPrincipalsAvailable: "追加できるユーザーまたはグループはありません。",
+      loading: "アクセス権を読み込んでいます…",
+      loadFailed:
+        "アクセス権を読み込めませんでした。管理権限を確認してください。",
+      roleFor: "{{0}} のRole",
+    },
     entityPage: {
       cronScheduleEditor: {
         daily: "毎日",
@@ -548,13 +612,14 @@ export const ja = {
         close: "閉じる",
         show: "表示",
         togglePersistentInstance: "{{0}}のPersistent Instanceを{{1}}",
+        toggleGroupMembers: "{{0}}のグループメンバーを{{1}}",
         togglePublicId: "{{0}}のパブリックIDを{{1}}",
         unnamedRecord: "名称未設定",
         actionsLabel: "操作",
         verificationEmailSendFailed: "検証メールの送信に失敗しました",
         verificationEmailSent: "検証メールを送信しました",
         verificationEmailSentTo: "{{0}}宛に検証メールを送信しました。",
-        resendVerificationEmail: "検証メールを再送",
+        resendVerificationEmail: "検証メールを送信",
         mfaResetFailed: "MFAをリセットできませんでした",
         mfaResetSucceeded: "MFAをリセットしました",
         mfaResetForRecord: "{{0}}のMFA設定をリセットしました。",
@@ -662,6 +727,9 @@ export const ja = {
   },
 
   server: {
+    duplicateGroupName: "グループ名は組織内で一意にしてください。",
+    invalidGrant: "Grantの内容が不正です。",
+    resourceNotFound: "リソースが見つかりません。",
     connectionTestSucceeded: "{{0}}への接続と認証に成功しました。",
     adapterConnectionFailed: "アダプタへの接続に失敗しました。",
     endpointRequired: "エンドポイントを入力してください。",
@@ -850,7 +918,7 @@ export const ja = {
     loggedOut: "ログアウト",
     userNotFound: "ユーザーが見つかりません。",
     displayNameAndValidEmailRequired:
-      "表示名と有効なメールアドレスを入力してください。",
+      "ユーザー名と有効なメールアドレスを入力してください。",
     passwordTooShort: "パスワードは12文字以上で入力してください。",
     cannotRevokeOwnAdmin: "自分の管理者権限は解除できません。",
     atLeastOneAdminRequired: "管理者は最低1人必要です。",

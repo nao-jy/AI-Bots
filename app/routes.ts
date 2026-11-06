@@ -15,6 +15,7 @@ export default [
     route("sandboxes", "routes/sandboxes.tsx"),
     route("schedules", "routes/schedules.tsx"),
     route("users", "routes/users.tsx"),
+    route("groups", "routes/groups.tsx"),
     route("settings", "routes/settings.tsx"),
   ]),
   route("oauth/start", "routes/oauth-start.tsx"),
@@ -29,6 +30,5 @@ export default [
   route("locale", "routes/locale.tsx"),
   route("api/webhooks/:botId/:adapterId", "routes/webhook.tsx"),
   route("api/sandbox-terminals/:terminalId", "routes/sandbox-terminal.tsx"),
-  route("api/groups", "routes/api.groups.ts"),
   route("api/resource-grants", "routes/api.resource-grants.ts"),
 ] satisfies RouteConfig;

@@ -5,7 +5,11 @@ import { generatePublicId, generateResourceId, idList, isUuid, jsonb, record } f
 import { ToolSetFactoryRegistry } from "../features/toolsets";
 import { logAuditEvent } from "../logger/audit-logger";
 import { localizedMessage } from "../../i18n";
-import { filterResourcesByRole, grantResourceRole, hasResourceAccess } from "../authorization";
+import {
+  filterResourcesByRole,
+  hasResourceAccess,
+  includeResourcePermissions,
+} from "../authorization";
 
 type ToolSetContextEntry = {
   toolSetName: string;
@@ -63,7 +67,7 @@ export async function listBots(user: AuthUser, publicOrigin: string) {
   const toolSetRegistry = new ToolSetFactoryRegistry(user.organizationId, user.id);
   const toolSetSchemas = await toolSetRegistry.listToolSetSchemas();
   return {
-    records: bots.map((bot) => {
+    records: await includeResourcePermissions(user, bots.map((bot) => {
       const visibleAdapterLinks = bot.adapters.filter(
         (link) => link.adapter && adapters.some((adapter) => adapter.id === link.adapterId),
       );
@@ -155,7 +159,7 @@ export async function listBots(user: AuthUser, publicOrigin: string) {
         ),
         status: bot.isEnabled ? "server.active" : "server.inactive",
       });
-    }),
+    })),
     agentOptions: agents
       .filter(
         (agent) =>
@@ -389,8 +393,10 @@ export async function saveBot(
   const botId = await db.transaction(async (tx) => {
     let botId = id;
     if (botId === null) {
+      botId = generateResourceId();
+      await tx.orm.aibot.ResourceBase.create({ id: botId });
       const created = await tx.orm.aibot.ChatBot.create({
-        id: generateResourceId(),
+        id: botId,
         name,
         description: description || null,
         instruction: instruction,
@@ -400,6 +406,13 @@ export async function saveBot(
         organizationId: user.organizationId,
       });
       botId = created.id;
+      await tx.orm.aibot.Grant.create({
+        organizationId: user.organizationId,
+        principalId: user.id,
+        resourceId: botId,
+        role: "manager",
+        grantedById: user.id,
+      });
       for (const slot of ["first", "second"] as const) {
         await tx.orm.aibot.ChatBotPublicId.create({
           organizationId: user.organizationId,
@@ -448,6 +461,7 @@ export async function saveBot(
     }).delete();
     for (const { toolSetName, context } of toolSetContexts) {
       const contextId = generateResourceId();
+      await tx.orm.aibot.ResourceBase.create({ id: contextId });
       await tx.orm.aibot.ChatBotToolSetContext.create({
         id: contextId,
         name: `${toolSetName} ${contextId}`,
@@ -466,7 +480,6 @@ export async function saveBot(
     }
     return botId;
   });
-  if (id === null) await grantResourceRole(user, botId, "manager");
   logAuditEvent(
     id === null ? "bot.created" : "bot.updated",
     "bot",

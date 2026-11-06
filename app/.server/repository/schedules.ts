@@ -4,7 +4,11 @@ import type { AuthUser } from "../auth";
 import { generateResourceId, record } from "../utils";
 import { logAuditEvent } from "../logger/audit-logger";
 import { localizedMessage } from "../../i18n";
-import { filterResourcesByRole, grantResourceRole, hasResourceAccess } from "../authorization";
+import {
+  filterResourcesByRole,
+  hasResourceAccess,
+  includeResourcePermissions,
+} from "../authorization";
 
 export type ScheduleTargetInput = {
   chatbotAdapterId: number;
@@ -65,7 +69,7 @@ export async function listSchedules(user: AuthUser) {
     })))).filter(({ allowed }) => allowed).map(({ id }) => id),
   );
   return {
-    records: schedules.map((schedule) => {
+    records: await includeResourcePermissions(user, schedules.map((schedule) => {
       const targets = schedule.chatTargets.flatMap((target) => {
         const link = target.chatbotAdapter;
         if (
@@ -98,7 +102,7 @@ export async function listSchedules(user: AuthUser) {
           })),
         ),
       });
-    }),
+    })),
     targetOptions: chatbotAdapters
       .filter(
         (link) =>
@@ -192,8 +196,10 @@ export async function saveSchedule(
   const scheduleId = await db.transaction(async (tx) => {
     let scheduleId = id;
     if (scheduleId === null) {
+      scheduleId = generateResourceId();
+      await tx.orm.aibot.ResourceBase.create({ id: scheduleId });
       const schedule = await tx.orm.aibot.ChatBotSchedule.create({
-        id: generateResourceId(),
+        id: scheduleId,
         name,
         prompt,
         cronParam,
@@ -201,6 +207,13 @@ export async function saveSchedule(
         organizationId: user.organizationId,
       });
       scheduleId = schedule.id;
+      await tx.orm.aibot.Grant.create({
+        organizationId: user.organizationId,
+        principalId: user.id,
+        resourceId: scheduleId,
+        role: "manager",
+        grantedById: user.id,
+      });
     } else {
       await tx.orm.aibot.ChatBotSchedule.where({
         id: scheduleId,
@@ -219,7 +232,6 @@ export async function saveSchedule(
     }
     return scheduleId;
   });
-  if (id === null) await grantResourceRole(user, scheduleId, "manager");
   logAuditEvent(
     id === null ? "schedule.created" : "schedule.updated",
     "schedule",

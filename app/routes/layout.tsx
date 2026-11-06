@@ -58,6 +58,11 @@ export async function loader({ request }: Route.LoaderArgs) {
             labelKey: "navigation.users",
           },
           {
+            path: "/groups",
+            id: "groups" as const,
+            labelKey: "navigation.groups",
+          },
+          {
             path: "/settings",
             id: "settings" as const,
             labelKey: "navigation.settings",
@@ -95,7 +100,6 @@ export default function Workspace({ loaderData }: Route.ComponentProps) {
           </span>
         </Link>
 
-        <div className="nav-label">{t("navigation.management")}</div>
         <nav className="side-nav" aria-label={t("navigation.entityManagement")}>
           {loaderData.items.map((item) => (
             <NavLink

@@ -2,7 +2,11 @@ import { db } from "./db";
 import type { AuthUser } from "../auth";
 import { decryptMcpHeaders, encryptStringMap, generateResourceId, jsonb, record } from "../utils";
 import { logAuditEvent } from "../logger/audit-logger";
-import { filterResourcesByRole, grantResourceRole, hasResourceAccess } from "../authorization";
+import {
+  filterResourcesByRole,
+  hasResourceAccess,
+  includeResourcePermissions,
+} from "../authorization";
 
 export const TRANSPORTS = {
   http: "Streamable HTTP",
@@ -22,7 +26,7 @@ export async function listMcpServers(user: AuthUser) {
       .all(),
   );
   return {
-    records: servers.map((server) => {
+    records: await includeResourcePermissions(user, servers.map((server) => {
       return record(server.id, server.updatedAt, {
         name: server.name,
         description: server.description ?? "",
@@ -32,7 +36,7 @@ export async function listMcpServers(user: AuthUser) {
         headers: JSON.stringify(decryptMcpHeaders(server.headers), null, 2),
         status: server.endpoint ? "server.endpointConfigured" : "server.endpointMissing",
       });
-    }),
+    })),
   };
 }
 
@@ -86,12 +90,23 @@ export async function saveMcpServer(
     headers: jsonb(encryptedHeaders),
   };
   if (id === null) {
-    const server = await db.orm.aibot.McpServer.create({
-      id: generateResourceId(),
-      ...saved,
-      organizationId: user.organizationId,
+    const server = await db.transaction(async (tx) => {
+      const id = generateResourceId();
+      await tx.orm.aibot.ResourceBase.create({ id });
+      const created = await tx.orm.aibot.McpServer.create({
+        id,
+        ...saved,
+        organizationId: user.organizationId,
+      });
+      await tx.orm.aibot.Grant.create({
+        organizationId: user.organizationId,
+        principalId: user.id,
+        resourceId: id,
+        role: "manager",
+        grantedById: user.id,
+      });
+      return created;
     });
-    await grantResourceRole(user, server.id, "manager");
     logAuditEvent("mcp_server.created", "mcp_server", server.id, user.id);
   } else {
     await db.orm.aibot.McpServer.where({ id, organizationId: user.organizationId }).update(saved);

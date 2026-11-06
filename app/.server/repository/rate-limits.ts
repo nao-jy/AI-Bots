@@ -4,7 +4,11 @@ import { db } from "./db";
 import type { AuthUser } from "../auth";
 import { generateResourceId, isUuid, jsonb, record } from "../utils";
 import { logAuditEvent } from "../logger/audit-logger";
-import { filterResourcesByRole, grantResourceRole, hasResourceAccess } from "../authorization";
+import {
+  filterResourcesByRole,
+  hasResourceAccess,
+  includeResourcePermissions,
+} from "../authorization";
 
 type RateLimitCriteria = "bot" | "agent" | "provider";
 type UsageMetric =
@@ -208,8 +212,7 @@ export async function listRateLimits(user: AuthUser) {
       dependentOptions.provider.map(({ value, label }) => [value, label]),
     ),
   };
-  return {
-    records: limits.map((limit) => {
+  const records = limits.map((limit) => {
       const coefficients =
         limit.coefficient && typeof limit.coefficient === "object"
           ? JSON.stringify(limit.coefficient)
@@ -230,7 +233,9 @@ export async function listRateLimits(user: AuthUser) {
         timezone: limit.timezone,
         limitExceededMessage: limit.limitExceededMessage,
       });
-    }),
+    });
+  return {
+    records: await includeResourcePermissions(user, records),
     criteriaOptions,
     dependentOptions,
   };
@@ -331,12 +336,23 @@ export async function saveRateLimit(
     organizationId: user.organizationId,
   };
   if (id === null) {
-    const created = await db.orm.aibot.RateLimit.create({
-      id: generateResourceId(),
-      name: `${criteria}:${criteriaId}`,
-      ...saved,
+    const created = await db.transaction(async (tx) => {
+      const id = generateResourceId();
+      await tx.orm.aibot.ResourceBase.create({ id });
+      const resource = await tx.orm.aibot.RateLimit.create({
+        id,
+        name: `${criteria}:${criteriaId}`,
+        ...saved,
+      });
+      await tx.orm.aibot.Grant.create({
+        organizationId: user.organizationId,
+        principalId: user.id,
+        resourceId: id,
+        role: "manager",
+        grantedById: user.id,
+      });
+      return resource;
     });
-    await grantResourceRole(user, created.id, "manager");
     logAuditEvent("rate_limit.created", "rate_limit", created.id, user.id);
   } else {
     await db.orm.aibot.RateLimit.where({ id, organizationId: user.organizationId }).update(saved);

@@ -62,9 +62,24 @@ export async function createUser(values: {
   isAdmin: boolean;
   emailVerified: boolean;
   organizationId?: string;
+  organizationName?: string;
 }) {
-  const organizationId = values.organizationId ?? (await db.orm.aibot.Organization.create({ name: values.name })).id;
-  const user = await db.orm.aibot.User.create({ id: generateResourceId(), ...values, organizationId });
+  const user = await db.transaction(async (tx) => {
+    const {
+      organizationId: providedOrganizationId,
+      organizationName,
+      ...userValues
+    } = values;
+    let organizationId = providedOrganizationId;
+    if (!organizationId) {
+      const name = organizationName?.trim();
+      if (!name) throw new Error("Organization name is required for the first account");
+      organizationId = (await tx.orm.aibot.Organization.create({ name })).id;
+    }
+    const id = generateResourceId();
+    await tx.orm.aibot.PrincipalBase.create({ id });
+    return tx.orm.aibot.User.create({ id, ...userValues, organizationId });
+  });
   logAuditEvent("user.created", "user", user.id);
   return user;
 }
@@ -172,8 +187,7 @@ export async function saveUser(
     if (password.length < 12)
       return { error: "server.passwordTooShort" };
     const emailVerified = !emailVerificationEnabled;
-    const user = await db.orm.aibot.User.create({
-      id: generateResourceId(),
+    const user = await createUser({
       name,
       email,
       passwordHash: await hashPassword(password),
@@ -181,7 +195,6 @@ export async function saveUser(
       emailVerified,
       organizationId,
     });
-    logAuditEvent("user.created", "user", user.id);
     return { ok: true, verificationRequired: !emailVerified };
   } else {
     const user = await db.orm.aibot.User.first({ id, organizationId });

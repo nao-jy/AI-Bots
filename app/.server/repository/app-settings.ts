@@ -11,6 +11,7 @@ export async function getAppSettings(organizationId?: string) {
   const sessionDurationSeconds = settings?.sessionDurationSeconds;
   const maxLoginAttempts = settings?.maxLoginAttempts;
   return {
+    organizationName: settings?.name ?? "",
     mfaEnabled: settings?.mfaEnabled ?? false,
     sessionDurationSeconds:
       sessionDurationSeconds &&
@@ -29,11 +30,15 @@ export async function getAppSettings(organizationId?: string) {
 
 export async function saveAppSettings(values: {
   organizationId: string;
+  organizationName: string;
   mfaEnabled: boolean;
   sessionDurationSeconds: number;
   maxLoginAttempts: number;
 }) {
-  const { organizationId, ...settings } = values;
-  await db.orm.aibot.Organization.where({ id: organizationId }).update(settings);
+  const { organizationId, organizationName, ...settings } = values;
+  await db.orm.aibot.Organization.where({ id: organizationId }).update({
+    ...settings,
+    name: organizationName.trim(),
+  });
   logAuditEvent("app_settings.updated", "organization", organizationId);
 }

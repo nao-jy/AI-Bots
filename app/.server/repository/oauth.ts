@@ -11,7 +11,11 @@ import {
 import { logAuditEvent } from "../logger/audit-logger";
 import { t } from "~/.server/i18n";
 import { appLogger } from "../logger/app-logger";
-import { filterResourcesByRole, grantResourceRole, hasResourceAccess } from "../authorization";
+import {
+  filterResourcesByRole,
+  hasResourceAccess,
+  includeResourcePermissions,
+} from "../authorization";
 
 const TOKEN_REFRESH_WINDOW_MS = 60_000;
 
@@ -200,12 +204,23 @@ export async function saveOAuthAuthentication(
   },
 ) {
   if (id === null) {
-    const authentication = await db.orm.aibot.OAuthAuthentication.create({
-      id: generateResourceId(),
-      ...values,
-      organizationId,
+    const authentication = await db.transaction(async (tx) => {
+      const authenticationId = generateResourceId();
+      await tx.orm.aibot.ResourceBase.create({ id: authenticationId });
+      const created = await tx.orm.aibot.OAuthAuthentication.create({
+        id: authenticationId,
+        ...values,
+        organizationId,
+      });
+      await tx.orm.aibot.Grant.create({
+        organizationId,
+        principalId,
+        resourceId: authenticationId,
+        role: "manager",
+        grantedById: principalId,
+      });
+      return created;
     });
-    await grantResourceRole({ id: principalId, organizationId }, authentication.id, "manager");
     logAuditEvent(
       "oauth.authentication.created",
       "oauth_authentication",
@@ -237,7 +252,7 @@ export async function listOAuthClients(user: AuthUser) {
     .orderBy((client) => client.updatedAt.desc())
     .all());
   return {
-    records: clients.map((client) =>
+    records: await includeResourcePermissions(user, clients.map((client) =>
       record(client.id, client.updatedAt, {
         name: client.name,
         clientId: client.clientId,
@@ -250,7 +265,7 @@ export async function listOAuthClients(user: AuthUser) {
           ? "server.configured"
           : "server.notConfigured",
       }),
-    ),
+    )),
   };
 }
 
@@ -317,12 +332,23 @@ export async function saveOAuthClient(
     scopes,
   };
   if (id === null) {
-    const client = await db.orm.aibot.OAuthClient.create({
-      id: generateResourceId(),
-      ...saved,
-      organizationId: user.organizationId,
+    const client = await db.transaction(async (tx) => {
+      const id = generateResourceId();
+      await tx.orm.aibot.ResourceBase.create({ id });
+      const created = await tx.orm.aibot.OAuthClient.create({
+        id,
+        ...saved,
+        organizationId: user.organizationId,
+      });
+      await tx.orm.aibot.Grant.create({
+        organizationId: user.organizationId,
+        principalId: user.id,
+        resourceId: id,
+        role: "manager",
+        grantedById: user.id,
+      });
+      return created;
     });
-    await grantResourceRole(user, client.id, "manager");
     logAuditEvent("oauth.client.created", "oauth_client", client.id, user.id);
   } else {
     await db.orm.aibot.OAuthClient.where({ id, organizationId: user.organizationId }).update(
@@ -395,7 +421,7 @@ export async function listOAuthAuthentications(user: AuthUser) {
     clients.map((client) => [client.id, client.name]),
   );
   return {
-    records: authentications.map((authentication) =>
+    records: await includeResourcePermissions(user, authentications.map((authentication) =>
       record(authentication.id, authentication.updatedAt, {
         name: authentication.name,
         oauthId: String(authentication.oauthId),
@@ -407,7 +433,7 @@ export async function listOAuthAuthentications(user: AuthUser) {
           ? "server.configured"
           : "server.notConfigured",
       }),
-    ),
+    )),
     clientOptions: clients.map((client) => ({
       value: String(client.id),
       label: client.name,

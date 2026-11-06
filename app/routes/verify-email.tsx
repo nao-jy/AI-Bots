@@ -58,7 +58,7 @@ export default function VerifyEmail({ loaderData }: Route.ComponentProps) {
   return (
     <main className="login-page">
       <div className="login-card-wrap">
-        <section className="login-card">
+        <section className="login-card verify-email-card">
           <div className="eyebrow">{APP_NAME}</div>
           <Title order={1}>{messages.title}</Title>
           <Alert color={messages.color} role="status">

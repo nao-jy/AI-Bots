@@ -4,6 +4,7 @@ import {
   PlugsConnectedIcon,
   RobotIcon,
   UserIcon,
+  UsersThreeIcon,
   WrenchIcon,
   KeyIcon,
   HardDrivesIcon,
@@ -43,6 +44,8 @@ export function SectionIcon({
       return <WrenchIcon {...props} />;
     case "users":
       return <UserIcon {...props} />;
+    case "groups":
+      return <UsersThreeIcon {...props} />;
     case "oauth_clients":
       return <KeyIcon {...props} />;
     case "oauth_authentications":

@@ -12,7 +12,7 @@ import {
 } from "../utils";
 import { toDisplayNameAdapter } from "../features/chat-adapter";
 import { logAuditEvent } from "../logger/audit-logger";
-import { filterResourcesByRole, grantResourceRole, hasResourceAccess } from "../authorization";
+import { filterResourcesByRole, hasResourceAccess, includeResourcePermissions } from "../authorization";
 
 export async function listAdapters(user: AuthUser) {
   const [adapters, authentications] = await Promise.all([
@@ -25,7 +25,7 @@ export async function listAdapters(user: AuthUser) {
     authentications.map((auth) => [auth.id, auth.name]),
   );
   return {
-    records: adapters.map((adapter) => {
+    records: await includeResourcePermissions(user, adapters.map((adapter) => {
       const config = decryptAdapterEnvs(adapter.config);
       return record(adapter.id, adapter.updatedAt, {
         name: adapter.name,
@@ -42,7 +42,7 @@ export async function listAdapters(user: AuthUser) {
           adapter.publicIds.map(({ slot, publicId }) => ({ slot, id: publicId })),
         ),
       });
-    }),
+    })),
     authOptions: authentications.map((auth) => ({
       label: auth.name,
       value: String(auth.id),
@@ -107,8 +107,10 @@ export async function saveAdapter(
   const storedEnvs = jsonb(encryptedConfig);
   if (id === null) {
     const adapterId = await db.transaction(async (tx) => {
+      const id = generateResourceId();
+      await tx.orm.aibot.ResourceBase.create({ id });
       const adapter = await tx.orm.aibot.ChatAdapter.create({
-        id: generateResourceId(),
+        id,
         name,
         platform,
         organizationId: user.organizationId,
@@ -123,9 +125,15 @@ export async function saveAdapter(
           adapterId: adapter.id,
         });
       }
+      await tx.orm.aibot.Grant.create({
+        organizationId: user.organizationId,
+        principalId: user.id,
+        resourceId: id,
+        role: "manager",
+        grantedById: user.id,
+      });
       return adapter.id;
     });
-    await grantResourceRole(user, adapterId, "manager");
     logAuditEvent("adapter.created", "adapter", adapterId, user.id);
   } else {
     await db.orm.aibot.ChatAdapter.where({ id, organizationId: user.organizationId }).update({

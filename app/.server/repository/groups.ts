@@ -27,14 +27,28 @@ export async function listGroups(user: AuthUser) {
   }));
 }
 
+export async function listGroupCandidates(user: AuthUser) {
+  requireOrganizationAdmin(user);
+  return (await db.orm.aibot.User.where({ organizationId: user.organizationId })
+    .orderBy((member) => member.name.asc())
+    .all())
+    .map(({ id, name, email }) => ({ id, name, email }));
+}
+
 export async function createGroup(user: AuthUser, nameValue: string) {
   requireOrganizationAdmin(user);
   const name = nameValue.trim();
   if (!name) return { error: "server.groupNameRequired" };
-  const group = await db.orm.aibot.Group.create({
-    id: generateResourceId(),
-    organizationId: user.organizationId,
-    name,
+  if (await db.orm.aibot.Group.first({ organizationId: user.organizationId, name }))
+    return { error: "server.duplicateGroupName" };
+  const group = await db.transaction(async (tx) => {
+    const id = generateResourceId();
+    await tx.orm.aibot.PrincipalBase.create({ id });
+    return tx.orm.aibot.Group.create({
+      id,
+      organizationId: user.organizationId,
+      name,
+    });
   });
   logAuditEvent("group.created", "group", group.id, user.id);
   return { ok: true, id: group.id };
@@ -77,6 +91,8 @@ export async function renameGroup(user: AuthUser, groupId: string, nameValue: st
   if (!name) return { error: "server.groupNameRequired" };
   const group = await db.orm.aibot.Group.first({ id: groupId, organizationId: user.organizationId });
   if (!group) return { error: "server.groupNotFound" };
+  const duplicate = await db.orm.aibot.Group.first({ organizationId: user.organizationId, name });
+  if (duplicate && duplicate.id !== groupId) return { error: "server.duplicateGroupName" };
   await db.orm.aibot.Group.where({ id: groupId, organizationId: user.organizationId }).update({ name });
   logAuditEvent("group.renamed", "group", groupId, user.id);
   return { ok: true };

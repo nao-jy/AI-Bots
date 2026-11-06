@@ -18,6 +18,7 @@ const page: Omit<EntityPageDefinition, "records"> = {
   description:
     "pages.rateLimits.description",
   icon: "rate_limits",
+  tableFeatures: { resourceGrants: true },
   columns: [
     { key: "criteriaLabel", label: "pages.rateLimits.targetTypeLabel" },
     { key: "targetLabel", label: "pages.rateLimits.targetLabel" },

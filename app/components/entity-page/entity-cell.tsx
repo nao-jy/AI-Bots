@@ -7,12 +7,14 @@ export function EntityCell({
   recordName,
   value,
   onStatusChange,
+  canUpdate = true,
   disabled = false,
 }: {
   column: EntityColumn;
   recordName: string | number;
   value: string | number;
   onStatusChange: (enabled: boolean) => void;
+  canUpdate?: boolean;
   disabled?: boolean;
 }) {
   if (column.presentation === "webhook-count") {
@@ -58,6 +60,8 @@ export function EntityCell({
     );
   }
 
+  if (column.presentation === "status-toggle" && !canUpdate)
+    return <span className="table-text">{tMessage(String(value))}</span>;
   if (column.presentation === "status-toggle")
     return (
       <Group gap="xs">

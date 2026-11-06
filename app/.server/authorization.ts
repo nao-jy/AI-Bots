@@ -3,6 +3,8 @@ import type { AuthUser } from "./auth";
 
 export type Role = "viewer" | "editor" | "manager";
 export type ResourceOperation = "read" | "update" | "delete" | "manageGrant";
+type ResourceActor = Pick<AuthUser, "id" | "organizationId"> &
+  Partial<Pick<AuthUser, "isAdmin">>;
 
 const ROLE_LEVEL: Record<Role, number> = {
   viewer: 1,
@@ -22,7 +24,14 @@ export async function getResourceRole(
   userId: string,
   organizationId: string,
   resourceId: string,
+  isAdmin?: boolean,
 ): Promise<Role | null> {
+  const administrator =
+    isAdmin ??
+    (await db.orm.aibot.User.first({ id: userId, organizationId }))?.isAdmin ??
+    false;
+  if (administrator) return "manager";
+
   const [memberships, grants] = await Promise.all([
     db.orm.aibot.Membership.where({ userId, organizationId }).all(),
     db.orm.aibot.Grant.where({ resourceId, organizationId }).all(),
@@ -42,16 +51,51 @@ export async function getResourceRole(
 }
 
 export async function hasResourceAccess(
-  user: Pick<AuthUser, "id" | "organizationId">,
+  user: ResourceActor,
   resourceId: string,
   operation: ResourceOperation,
 ) {
-  const role = await getResourceRole(user.id, user.organizationId, resourceId);
+  const role = await getResourceRole(
+    user.id,
+    user.organizationId,
+    resourceId,
+    user.isAdmin,
+  );
   return role !== null && ROLE_LEVEL[role] >= ROLE_LEVEL[REQUIRED_ROLE[operation]];
 }
 
+export async function includeResourcePermissions<T extends { id: string }>(
+  user: ResourceActor,
+  records: T[],
+): Promise<
+  (T & {
+    canUpdate: string;
+    canDelete: string;
+    canManageGrants: string;
+  })[]
+> {
+  return Promise.all(
+    records.map(async (record) => {
+      const role = await getResourceRole(
+        user.id,
+        user.organizationId,
+        record.id,
+        user.isAdmin,
+      );
+      const canUpdate = role !== null && ROLE_LEVEL[role] >= ROLE_LEVEL.editor;
+      const canDelete = role !== null && ROLE_LEVEL[role] >= ROLE_LEVEL.manager;
+      return {
+        ...record,
+        canUpdate: String(canUpdate),
+        canDelete: String(canDelete),
+        canManageGrants: String(canDelete),
+      };
+    }),
+  );
+}
+
 export async function requireResourceAccess(
-  user: Pick<AuthUser, "id" | "organizationId">,
+  user: ResourceActor,
   resourceId: string,
   operation: ResourceOperation,
 ) {
@@ -74,7 +118,7 @@ export async function grantResourceRole(
 }
 
 export async function setResourceGrant(
-  actor: Pick<AuthUser, "id" | "organizationId">,
+  actor: ResourceActor,
   resourceId: string,
   principalId: string,
   role: Role | null,
@@ -130,7 +174,7 @@ export async function setResourceGrant(
 }
 
 export async function listResourceGrants(
-  actor: Pick<AuthUser, "id" | "organizationId">,
+  actor: ResourceActor,
   resourceId: string,
 ) {
   await requireResourceAccess(actor, resourceId, "manageGrant");
@@ -138,27 +182,30 @@ export async function listResourceGrants(
     organizationId: actor.organizationId,
     resourceId,
   }).all();
-  const principalIds = [...new Set(grants.map((grant) => grant.principalId))];
   const [users, groups] = await Promise.all([
     db.orm.aibot.User.where({ organizationId: actor.organizationId }).all(),
     db.orm.aibot.Group.where({ organizationId: actor.organizationId }).all(),
   ]);
-  const principalNames = new Map<string, { type: "user" | "group"; name: string; email?: string }>();
-  for (const user of users)
-    if (principalIds.includes(user.id))
-      principalNames.set(user.id, { type: "user", name: user.name, email: user.email });
-  for (const group of groups)
-    if (principalIds.includes(group.id))
-      principalNames.set(group.id, { type: "group", name: group.name });
-  return grants.flatMap((grant) => {
-    const principal = principalNames.get(grant.principalId);
-    return principal ? [{ id: grant.id, principalId: grant.principalId, ...principal, role: grant.role as Role }] : [];
-  });
+  const principals = [
+    ...users.map(({ id, name, email }) => ({ id, type: "user" as const, name, email })),
+    ...groups.map(({ id, name }) => ({ id, type: "group" as const, name, email: "" })),
+  ];
+  const principalsById = new Map(principals.map((principal) => [principal.id, principal]));
+  return {
+    resourceId,
+    principals,
+    grants: grants.flatMap((grant) => {
+      const principal = principalsById.get(grant.principalId);
+      return principal
+        ? [{ principalId: grant.principalId, type: principal.type, name: principal.name, email: principal.email, role: grant.role as Role }]
+        : [];
+    }),
+  };
 }
 
 /** Filters a list through the shared effective-role calculation. */
 export async function filterResourcesByRole<T extends { id: string; organizationId: string }>(
-  user: Pick<AuthUser, "id" | "organizationId">,
+  user: ResourceActor,
   resources: T[],
   operation: ResourceOperation = "read",
 ): Promise<T[]> {

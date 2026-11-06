@@ -58,6 +58,7 @@ export async function action({ request }: Route.ActionArgs) {
     .toLowerCase();
   const password = String(form.get("password") ?? "");
   const name = String(form.get("name") ?? "").trim();
+  const organizationName = String(form.get("organizationName") ?? "").trim();
   if (!/^\S+@\S+\.\S+$/.test(email) || !password) {
     logAuditEvent("auth.login.rejected", "account", email || null);
     return data({ error: t("pages.login.loginInstructions") }, { status: 400 });
@@ -72,7 +73,7 @@ export async function action({ request }: Route.ActionArgs) {
         { status: 401 },
       );
     }
-    if (name.length < 1 || password.length < 12) {
+    if (name.length < 1 || organizationName.length < 1 || password.length < 12) {
       return data(
         { error: t("pages.login.firstAccountRequirements") },
         { status: 400 },
@@ -83,11 +84,16 @@ export async function action({ request }: Route.ActionArgs) {
       user = await createUser({
         email,
         name,
+        organizationName,
         passwordHash: await hashPassword(password),
         isAdmin: true,
         emailVerified,
       });
-    } catch {
+    } catch (error) {
+      appLogger.error("Failed to create initial organization administrator", {
+        email,
+        error,
+      });
       return data(
         {
           error: t("pages.login.firstAccountCreationFailed"),
@@ -207,12 +213,21 @@ export default function Login({ loaderData }: Route.ComponentProps) {
           </p>
           <Form method="post" className="login-form">
             {setupRequired && (
-              <TextInput
-                name="name"
-                label={t("pages.login.displayNameLabel")}
-                autoComplete="name"
-                required
-              />
+              <>
+                <TextInput
+                  name="organizationName"
+                  label={t("pages.login.organizationNameLabel")}
+                  placeholder={t("pages.login.organizationNamePlaceholder")}
+                  autoComplete="organization"
+                  required
+                />
+                <TextInput
+                  name="name"
+                  label={t("pages.login.displayNameLabel")}
+                  autoComplete="name"
+                  required
+                />
+              </>
             )}
             <TextInput
               name="email"

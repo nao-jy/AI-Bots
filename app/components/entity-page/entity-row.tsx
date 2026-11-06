@@ -8,6 +8,7 @@ import {
   ArrowCounterClockwiseIcon,
   PencilSimpleIcon,
   SignOutIcon,
+  ShareNetworkIcon,
   TrashIcon,
 } from "@phosphor-icons/react";
 import { useFetcher } from "react-router";
@@ -22,6 +23,7 @@ import {
   type PersistentInstance,
 } from "./sandbox-shell";
 import { SandboxInstanceDetails } from "./sandbox-instance-details";
+import { GroupMembersDetails } from "./group-members-details";
 
 export function EntityRow({
   page,
@@ -30,6 +32,7 @@ export function EntityRow({
   onDelete,
   onForceLogout,
   onStatusChange,
+  onManageGrants,
   onOpenShell,
   onDeleteInstance,
 }: {
@@ -39,19 +42,30 @@ export function EntityRow({
   onDelete: () => void;
   onForceLogout: () => void;
   onStatusChange: (enabled: boolean) => void;
+  onManageGrants: () => void;
   onOpenShell: (instanceId: string) => void;
   onDeleteInstance: (instanceId: string) => void;
 }) {
   const cannotDelete = record.id === page.protectedRecordId;
   const recordName = record[page.columns[0].key];
+  const grantRecordName = String(
+    record.name ?? record.targetLabel ?? recordName ?? record.id,
+  );
   const supportsPublicIds = page.tableFeatures?.publicIds ?? false;
   const supportsSandboxShell = page.tableFeatures?.sandboxShell ?? false;
+  const supportsGroupMembers = page.tableFeatures?.groupMembers ?? false;
   const supportsActions = page.tableFeatures?.expandableActions ?? false;
   const hasExpandedContent =
-    supportsPublicIds || supportsSandboxShell || supportsActions;
+    supportsPublicIds || supportsSandboxShell || supportsActions || supportsGroupMembers;
   const supportsEmailVerification =
     page.tableFeatures?.emailVerification ?? false;
   const supportsLoginUnlock = page.tableFeatures?.loginUnlock ?? false;
+  const supportsResourceGrants = page.tableFeatures?.resourceGrants ?? false;
+  const canUpdate =
+    !supportsResourceGrants || String(record.canUpdate) === "true";
+  const canDelete =
+    !supportsResourceGrants || String(record.canDelete) === "true";
+  const canManageGrants = String(record.canManageGrants) === "true";
   const instances: PersistentInstance[] = parsePersistentInstances(
     record.instances,
   );
@@ -97,6 +111,18 @@ export function EntityRow({
     </div>
   ) : (
     <Group gap={5} justify="flex-end">
+      {supportsResourceGrants && canManageGrants && (
+        <Tooltip label={t("components.resourceGrants.manageAccess")}>
+          <ActionIcon
+            variant="subtle"
+            color="violet"
+            aria-label={t("components.resourceGrants.manageAccessFor", { 0: grantRecordName })}
+            onClick={onManageGrants}
+          >
+            <ShareNetworkIcon size={16} aria-hidden="true" />
+          </ActionIcon>
+        </Tooltip>
+      )}
       {page.tableFeatures?.forceLogout && (
         <Tooltip
           label={
@@ -141,39 +167,45 @@ export function EntityRow({
           recordName={String(recordName ?? "")}
         />
       )}
-      <Tooltip label={t("components.entityPage.entityRow.editRecord", { 0: recordName })}>
-        <ActionIcon
-          variant="subtle"
-          color="gray"
-          aria-label={t("components.entityPage.entityRow.editRecord", { 0: recordName })}
-          onClick={onEdit}
+      {canUpdate && (
+        <Tooltip
+          label={t("components.entityPage.entityRow.editRecord", { 0: recordName })}
         >
-          <PencilSimpleIcon size={16} aria-hidden="true" />
-        </ActionIcon>
-      </Tooltip>
-      <Tooltip
-        label={
-          cannotDelete
-            ? t("components.entityPage.entityRow.cannotDeleteSelf")
-            : t("components.entityPage.entityRow.deleteRecord", { 0: recordName })
-        }
-      >
-        <span style={{ display: "inline-flex" }}>
           <ActionIcon
             variant="subtle"
             color="gray"
-            aria-label={
-              cannotDelete
-                ? t("components.entityPage.entityRow.cannotDeleteSelf")
-                : t("components.entityPage.entityRow.deleteRecord", { 0: recordName })
-            }
-            disabled={cannotDelete}
-            onClick={onDelete}
+            aria-label={t("components.entityPage.entityRow.editRecord", { 0: recordName })}
+            onClick={onEdit}
           >
-            <TrashIcon size={16} aria-hidden="true" />
+            <PencilSimpleIcon size={16} aria-hidden="true" />
           </ActionIcon>
-        </span>
-      </Tooltip>
+        </Tooltip>
+      )}
+      {canDelete && (
+        <Tooltip
+          label={
+            cannotDelete
+              ? t("components.entityPage.entityRow.cannotDeleteSelf")
+              : t("components.entityPage.entityRow.deleteRecord", { 0: recordName })
+          }
+        >
+          <span style={{ display: "inline-flex" }}>
+            <ActionIcon
+              variant="subtle"
+              color="gray"
+              aria-label={
+                cannotDelete
+                  ? t("components.entityPage.entityRow.cannotDeleteSelf")
+                  : t("components.entityPage.entityRow.deleteRecord", { 0: recordName })
+              }
+              disabled={cannotDelete}
+              onClick={onDelete}
+            >
+              <TrashIcon size={16} aria-hidden="true" />
+            </ActionIcon>
+          </span>
+        </Tooltip>
+      )}
     </Group>
   );
 
@@ -194,6 +226,13 @@ export function EntityRow({
                       })
                     : supportsSandboxShell
                       ? t("components.entityPage.entityRow.togglePersistentInstance", {
+                          0: recordName,
+                          1: expanded
+                            ? t("components.entityPage.entityRow.close")
+                            : t("components.entityPage.entityRow.show"),
+                        })
+                    : supportsGroupMembers
+                      ? t("components.entityPage.entityRow.toggleGroupMembers", {
                           0: recordName,
                           1: expanded
                             ? t("components.entityPage.entityRow.close")
@@ -225,7 +264,14 @@ export function EntityRow({
                               ? t("components.entityPage.entityRow.close")
                               : t("components.entityPage.entityRow.show"),
                           })
-                        : t("components.entityPage.entityRow.togglePublicId", {
+                        : supportsGroupMembers
+                          ? t("components.entityPage.entityRow.toggleGroupMembers", {
+                              0: recordName,
+                              1: expanded
+                                ? t("components.entityPage.entityRow.close")
+                                : t("components.entityPage.entityRow.show"),
+                            })
+                          : t("components.entityPage.entityRow.togglePublicId", {
                             0: recordName,
                             1: expanded
                               ? t("components.entityPage.entityRow.close")
@@ -259,6 +305,7 @@ export function EntityRow({
               recordName={String(recordName ?? "")}
               value={record[column.key]}
               onStatusChange={onStatusChange}
+              canUpdate={canUpdate}
               disabled={
                 column.presentation === "admin-toggle" &&
                 record.id === page.protectedRecordId
@@ -269,39 +316,57 @@ export function EntityRow({
         <Table.Td>
           {supportsActions ? (
             <Group gap={5} justify="flex-end">
-              <Tooltip label={t("components.entityPage.entityRow.editRecord", { 0: recordName })}>
-                <ActionIcon
-                  variant="subtle"
-                  color="gray"
-                  aria-label={t("components.entityPage.entityRow.editRecord", { 0: recordName })}
-                  onClick={onEdit}
+              {supportsResourceGrants && canManageGrants && (
+                <Tooltip label={t("components.resourceGrants.manageAccess")}>
+                  <ActionIcon
+                    variant="subtle"
+                    color="violet"
+                    aria-label={t("components.resourceGrants.manageAccessFor", { 0: grantRecordName })}
+                    onClick={onManageGrants}
+                  >
+                    <ShareNetworkIcon size={16} aria-hidden="true" />
+                  </ActionIcon>
+                </Tooltip>
+              )}
+              {canUpdate && (
+                <Tooltip
+                  label={t("components.entityPage.entityRow.editRecord", { 0: recordName })}
                 >
-                  <PencilSimpleIcon size={16} aria-hidden="true" />
-                </ActionIcon>
-              </Tooltip>
-              <Tooltip
-                label={
-                  cannotDelete
-                    ? t("components.entityPage.entityRow.cannotDeleteSelf")
-                    : t("components.entityPage.entityRow.deleteRecord", { 0: recordName })
-                }
-              >
-                <span style={{ display: "inline-flex" }}>
                   <ActionIcon
                     variant="subtle"
                     color="gray"
-                    aria-label={
-                      cannotDelete
-                        ? t("components.entityPage.entityRow.cannotDeleteSelf")
-                        : t("components.entityPage.entityRow.deleteRecord", { 0: recordName })
-                    }
-                    disabled={cannotDelete}
-                    onClick={onDelete}
+                    aria-label={t("components.entityPage.entityRow.editRecord", { 0: recordName })}
+                    onClick={onEdit}
                   >
-                    <TrashIcon size={16} aria-hidden="true" />
+                    <PencilSimpleIcon size={16} aria-hidden="true" />
                   </ActionIcon>
-                </span>
-              </Tooltip>
+                </Tooltip>
+              )}
+              {canDelete && (
+                <Tooltip
+                  label={
+                    cannotDelete
+                      ? t("components.entityPage.entityRow.cannotDeleteSelf")
+                      : t("components.entityPage.entityRow.deleteRecord", { 0: recordName })
+                  }
+                >
+                  <span style={{ display: "inline-flex" }}>
+                    <ActionIcon
+                      variant="subtle"
+                      color="gray"
+                      aria-label={
+                        cannotDelete
+                          ? t("components.entityPage.entityRow.cannotDeleteSelf")
+                          : t("components.entityPage.entityRow.deleteRecord", { 0: recordName })
+                      }
+                      disabled={cannotDelete}
+                      onClick={onDelete}
+                    >
+                      <TrashIcon size={16} aria-hidden="true" />
+                    </ActionIcon>
+                  </span>
+                </Tooltip>
+              )}
             </Group>
           ) : (
             actions
@@ -326,6 +391,14 @@ export function EntityRow({
                   instances={instances}
                   onOpenShell={onOpenShell}
                   onDeleted={onDeleteInstance}
+                />
+              )}
+              {supportsGroupMembers && (
+                <GroupMembersDetails
+                  groupId={record.id}
+                  groupName={String(record[page.columns[0].key] ?? "")}
+                  membersValue={record.members}
+                  memberOptions={page.memberOptions ?? []}
                 />
               )}
               {supportsActions && (

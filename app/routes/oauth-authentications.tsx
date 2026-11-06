@@ -20,6 +20,7 @@ const page: Omit<EntityPageDefinition, "records"> = {
   title: "pages.oauthAuthentications.title",
   description: "pages.oauthAuthentications.description",
   icon: "oauth_authentications",
+  tableFeatures: { resourceGrants: true },
   createIntent: "authorize",
   createSubmitLabel: "pages.oauthAuthentications.createSubmitLabel",
   authorizationInNewTab: true,

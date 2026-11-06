@@ -18,6 +18,7 @@ const page: Omit<EntityPageDefinition, "records"> = {
   title: "pages.agents.title",
   description: "pages.agents.description",
   icon: "agents",
+  tableFeatures: { resourceGrants: true },
   columns: [
     { key: "name", label: "pages.agents.title" },
     { key: "model", label: "pages.agents.modelLabel" },

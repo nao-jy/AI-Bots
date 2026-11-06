@@ -17,12 +17,14 @@ export function EntityTable({
   onDelete,
   onForceLogout,
   onStatusChange,
+  onManageGrants,
 }: {
   page: EntityPageDefinition;
   onEdit: (record: EntityRecord) => void;
   onDelete: (record: EntityRecord) => void;
   onForceLogout: (record: EntityRecord) => void;
   onStatusChange: (record: EntityRecord, enabled: boolean) => void;
+  onManageGrants: (record: EntityRecord) => void;
 }) {
   const [query, setQuery] = useState("");
   const [shellOpen, setShellOpen] = useState(false);
@@ -100,6 +102,7 @@ export function EntityTable({
                   onStatusChange={(enabled) =>
                     onStatusChange(record, enabled)
                   }
+                  onManageGrants={() => onManageGrants(record)}
                   onOpenShell={handleOpenShell}
                   onDeleteInstance={handleDeleteInstance}
                 />

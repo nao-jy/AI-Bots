@@ -911,6 +911,7 @@ export function EntityPageDialogs({
           {selected?.[page.columns[0].key]}
           {t("components.entityPage.dialogs.confirmIrreversibleDelete")}
         </Text>
+        {page.deleteWarning && <Text size="sm" c="orange" mt="sm">{page.deleteWarning}</Text>}
         {fetcher.data?.error && (
           <Alert color="red" mt="md">
             {tMessage(fetcher.data.error)}

@@ -17,6 +17,7 @@ const page: Omit<EntityPageDefinition, "records"> = {
   title: "pages.oauthClients.title",
   description: "pages.oauthClients.description",
   icon: "oauth_clients",
+  tableFeatures: { resourceGrants: true },
   columns: [
     { key: "name", label: "pages.oauthClients.nameLabel" },
     { key: "clientId", label: "pages.oauthClients.clientIdLabel" },

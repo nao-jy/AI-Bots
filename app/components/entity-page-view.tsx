@@ -4,6 +4,7 @@ import { EntityPageDialogs } from "./entity-page/dialogs";
 import { EntityPageHeader } from "./entity-page/header";
 import { SectionIcon } from "./entity-page/section-icon";
 import { EntityTable } from "./entity-page/table";
+import { ResourceGrantsDialog } from "./entity-page/resource-grants-dialog";
 import type {
   EntityDialogMode,
   EntityPageDefinition,
@@ -32,6 +33,7 @@ export function EntityPageView({
   const [dialog, setDialog] = useState<EntityDialogMode>(null);
   const [selected, setSelected] = useState<EntityRecord | null>(null);
   const [nextEnabled, setNextEnabled] = useState(false);
+  const [grantRecord, setGrantRecord] = useState<EntityRecord | null>(null);
   const previousDialogResetKey = useRef(dialogResetKey);
 
   useEffect(() => {
@@ -54,6 +56,7 @@ export function EntityPageView({
       ? tMessage(page.createSubmitLabel)
       : undefined,
     launchLabel: page.launchLabel ? tMessage(page.launchLabel) : undefined,
+    deleteWarning: page.deleteWarning ? tMessage(page.deleteWarning) : undefined,
     columns: page.columns.map((column) => ({
       ...column,
       label: tMessage(column.label),
@@ -93,6 +96,10 @@ export function EntityPageView({
         : undefined,
     })),
     mcpAuthenticationOptions: page.mcpAuthenticationOptions?.map((option) => ({
+      ...option,
+      label: tMessage(option.label),
+    })),
+    memberOptions: page.memberOptions?.map((option) => ({
       ...option,
       label: tMessage(option.label),
     })),
@@ -146,6 +153,7 @@ export function EntityPageView({
         onDelete={openDelete}
         onForceLogout={openForceLogout}
         onStatusChange={confirmStatusChange}
+        onManageGrants={setGrantRecord}
       />
       <EntityPageDialogs
         page={localizedPage}
@@ -154,6 +162,12 @@ export function EntityPageView({
         nextEnabled={nextEnabled}
         onClose={closeDialog}
       />
+      {page.tableFeatures?.resourceGrants && (
+        <ResourceGrantsDialog
+          record={grantRecord}
+          onClose={() => setGrantRecord(null)}
+        />
+      )}
     </div>
   );
 }

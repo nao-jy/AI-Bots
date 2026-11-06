@@ -19,6 +19,7 @@ const page: Omit<EntityPageDefinition, "records"> = {
   title: "pages.schedules.title",
   description: "pages.schedules.description",
   icon: "schedules",
+  tableFeatures: { resourceGrants: true },
   columns: [
     { key: "name", label: "pages.schedules.nameLabel" },
     { key: "cronParam", label: "pages.schedules.frequencyLabel" },

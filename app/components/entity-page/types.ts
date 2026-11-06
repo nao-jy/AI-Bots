@@ -42,6 +42,7 @@ export type EntitySection =
   | "providers"
   | "mcp"
   | "users"
+  | "groups"
   | "oauth_clients"
   | "oauth_authentications"
   | "sandboxes"
@@ -71,6 +72,8 @@ export type EntityTableFeatures = {
   emailVerification?: boolean;
   mfaReset?: boolean;
   loginUnlock?: boolean;
+  resourceGrants?: boolean;
+  groupMembers?: boolean;
 };
 
 export type EntityPageDefinition = {
@@ -82,6 +85,8 @@ export type EntityPageDefinition = {
   tableFeatures?: EntityTableFeatures;
   fields: EntityField[];
   records: EntityRecord[];
+  memberOptions?: EntityOption[];
+  deleteWarning?: string;
   mcpAuthenticationOptions?: EntityOption[];
   createIntent?: string;
   createSubmitLabel?: string;

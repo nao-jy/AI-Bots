@@ -20,7 +20,7 @@ const page: Omit<EntityPageDefinition, "records"> = {
   title: "pages.adapters.title",
   description: "pages.adapters.description",
   icon: "adapters",
-  tableFeatures: { publicIds: true },
+  tableFeatures: { publicIds: true, resourceGrants: true },
   columns: [
     { key: "name", label: "pages.adapters.connectionNameLabel" },
     { key: "platform", label: "pages.adapters.platformLabel" },

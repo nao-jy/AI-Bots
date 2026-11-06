@@ -132,6 +132,7 @@ function getNavigationLabel(pathname: string): NavigationLabelKey {
     "/mcp-servers": "navigation.mcpServers",
     "/schedules": "navigation.schedules",
     "/users": "navigation.users",
+    "/groups": "navigation.groups",
     "/login": "navigation.login",
     "/logout": "navigation.logout",
   };
