@@ -149,11 +149,13 @@ The built-in email provider sends through an SMTP relay. Once configured, it can
 | `TEMP_FILE_STORAGE_SERVICE`  | Optional  | OpenDAL service for temporary files; defaults to `fs`. Set to `s3` to use S3.                                                                                                                           |
 | `TEMP_FILE_STORAGE_CONFIG`   | Optional  | OpenDAL temporary storage options as a JSON object with string values. For `s3`, supply options such as `bucket` and `region`.                                                                          |
 
-`infra/compose.yaml` defines PostgreSQL, SearXNG, and OpenSandbox. To start the optional services as well, make sure `infra/.env` exists (copy `infra/sample.env` if needed) and run:
+`infra/compose.yaml` defines PostgreSQL, SearXNG, and OpenSandbox. From the repository root, start the optional services using the same root `.env`:
 
 ```bash
 docker compose --env-file .env -f infra/compose.yaml up -d
 ```
+
+Optional Compose settings are documented in [`.env.example`](./.env.example). If you change the PostgreSQL credentials, update `DATABASE_URL` to match; existing database volumes retain their original credentials.
 
 Configure each integration's provider credentials and settings in the workspace. Sandbox providers appear in the UI when their corresponding environment variables are set.
 

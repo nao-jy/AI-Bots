@@ -151,11 +151,13 @@ OAuthクライアントを管理し、連携サービスのアカウントを認
 | `TEMP_FILE_STORAGE_SERVICE`  | 任意         | 一時ファイルの OpenDAL サービス名。既定値は `fs`。S3 に保存する場合は `s3` を指定します。                                                                                                              |
 | `TEMP_FILE_STORAGE_CONFIG`   | 任意         | 一時ファイル保存先の OpenDAL 設定を文字列値の JSON オブジェクトで指定します。`s3` では `bucket` などの設定を渡します。                                                                                 |
 
-`infra/compose.yaml` にはPostgreSQL、SearXNG、OpenSandboxが定義されています。オプションのサービスも起動する場合は、`infra/.env` があることを確認してください（必要であれば `infra/sample.env` をコピーします）。
+`infra/compose.yaml` にはPostgreSQL、SearXNG、OpenSandboxが定義されています。オプションのサービスも起動する場合は、リポジトリのルートから同じ `.env` を指定して実行します。
 
 ```bash
 docker compose --env-file .env -f infra/compose.yaml up -d
 ```
+
+Composeの任意設定は [`.env.example`](./.env.example) を参照してください。PostgreSQLの認証情報を変更した場合は `DATABASE_URL` も合わせて変更してください。既存のデータベースボリュームには元の認証情報が保持されます。
 
 各連携サービスの認証情報や設定はワークスペース上で設定してください。サンドボックスプロバイダーは、対応する環境変数を設定するとUIに表示されます。
 
