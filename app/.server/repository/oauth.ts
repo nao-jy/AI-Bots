@@ -10,7 +10,6 @@ import {
 } from "../utils";
 import { logAuditEvent } from "../logger/audit-logger";
 import { t } from "~/.server/i18n";
-import { appLogger } from "../logger/app-logger";
 import {
   filterResourcesByRole,
   hasResourceAccess,
@@ -19,65 +18,15 @@ import {
 
 const TOKEN_REFRESH_WINDOW_MS = 60_000;
 
-export async function getOwnedOAuthAuthentication(id: string, organizationId: string) {
+export async function getOwnedOAuthAuthentication(
+  id: string,
+  organizationId: string,
+) {
   return db.orm.aibot.OAuthAuthentication.first({ id, organizationId });
 }
 
 export async function getOwnedOAuthClient(id: string, organizationId: string) {
   return db.orm.aibot.OAuthClient.first({ id, organizationId });
-}
-
-async function revokeOAuthAuthenticationTokens(
-  authentication: {
-    accessToken: string;
-    refreshToken: string | null;
-  },
-  client: {
-    clientId: string;
-    clientSecret: string | null;
-    revocationEndpoint: string | null;
-  },
-) {
-  if (!client.revocationEndpoint) return;
-
-  let endpoint: URL;
-  try {
-    endpoint = new URL(client.revocationEndpoint);
-  } catch {
-    throw new Error("server.oauthRevocationEndpointInvalid");
-  }
-  if (endpoint.protocol !== "https:" && endpoint.protocol !== "http:")
-    throw new Error("server.oauthRevocationEndpointInvalid");
-
-  const secret = client.clientSecret
-    ? decryptCredential(client.clientSecret)
-    : undefined;
-  const config = new oidc.Configuration(
-    {
-      issuer: endpoint.origin,
-      revocation_endpoint: endpoint.href,
-    } as oidc.ServerMetadata,
-    client.clientId,
-    secret,
-    secret ? oidc.ClientSecretPost(secret) : oidc.None(),
-  );
-
-  try {
-    if (authentication.refreshToken) {
-      await oidc.tokenRevocation(
-        config,
-        decryptCredential(authentication.refreshToken),
-        { token_type_hint: "refresh_token" },
-      );
-    }
-    await oidc.tokenRevocation(
-      config,
-      decryptCredential(authentication.accessToken),
-      { token_type_hint: "access_token" },
-    );
-  } catch (error) {
-    appLogger.error(error);
-  }
 }
 
 function refreshConfiguration(client: {
@@ -206,7 +155,10 @@ export async function saveOAuthAuthentication(
   if (id === null) {
     const authentication = await db.transaction(async (tx) => {
       const authenticationId = generateResourceId();
-      await tx.orm.aibot.ResourceBase.create({ id: authenticationId, organizationId });
+      await tx.orm.aibot.ResourceBase.create({
+        id: authenticationId,
+        organizationId,
+      });
       const created = await tx.orm.aibot.OAuthAuthentication.create({
         id: authenticationId,
         ...values,
@@ -228,7 +180,13 @@ export async function saveOAuthAuthentication(
     );
     return authentication;
   }
-  if (!(await hasResourceAccess({ id: principalId, organizationId }, id, "update")))
+  if (
+    !(await hasResourceAccess(
+      { id: principalId, organizationId },
+      id,
+      "update",
+    ))
+  )
     throw new Response("Forbidden", { status: 403 });
   const updated = await db.orm.aibot.OAuthAuthentication.where({
     id,
@@ -248,25 +206,33 @@ function validHttpUrl(value: string) {
 }
 
 export async function listOAuthClients(user: AuthUser, ids: string[]) {
-  const clients = await filterResourcesByRole(user, await db.orm.aibot.OAuthClient.where({ organizationId: user.organizationId })
-    .where((client) => client.id.in(ids))
-    .orderBy((client) => client.updatedAt.desc())
-    .all());
+  const clients = await filterResourcesByRole(
+    user,
+    await db.orm.aibot.OAuthClient.where({
+      organizationId: user.organizationId,
+    })
+      .where((client) => client.id.in(ids))
+      .orderBy((client) => client.updatedAt.desc())
+      .all(),
+  );
   return {
-    records: await includeResourcePermissions(user, clients.map((client) =>
-      record(client.id, client.updatedAt, {
-        name: client.name,
-        clientId: client.clientId,
-        authorizationEndpoint: client.authorizationEndpoint,
-        tokenEndpoint: client.tokenEndpoint,
-        refreshEndpoint: client.refreshEndpoint ?? "",
-        revocationEndpoint: client.revocationEndpoint ?? "",
-        scopes: JSON.stringify(client.scopes),
-        secretConfigured: client.clientSecret
-          ? "server.configured"
-          : "server.notConfigured",
-      }),
-    )),
+    records: await includeResourcePermissions(
+      user,
+      clients.map((client) =>
+        record(client.id, client.updatedAt, {
+          name: client.name,
+          clientId: client.clientId,
+          authorizationEndpoint: client.authorizationEndpoint,
+          tokenEndpoint: client.tokenEndpoint,
+          refreshEndpoint: client.refreshEndpoint ?? "",
+          revocationEndpoint: client.revocationEndpoint ?? "",
+          scopes: JSON.stringify(client.scopes),
+          secretConfigured: client.clientSecret
+            ? "server.configured"
+            : "server.notConfigured",
+        }),
+      ),
+    ),
   };
 }
 
@@ -305,8 +271,15 @@ export async function saveOAuthClient(
   const existing =
     id === null
       ? null
-      : await db.orm.aibot.OAuthClient.first({ id, organizationId: user.organizationId });
-  if (id !== null && (!existing || !(await hasResourceAccess(user, id, "update")))) return { error: "server.oauthClientNotFound" };
+      : await db.orm.aibot.OAuthClient.first({
+          id,
+          organizationId: user.organizationId,
+        });
+  if (
+    id !== null &&
+    (!existing || !(await hasResourceAccess(user, id, "update")))
+  )
+    return { error: "server.oauthClientNotFound" };
 
   let clientSecret = existing?.clientSecret ?? null;
   if (secret) {
@@ -335,7 +308,10 @@ export async function saveOAuthClient(
   if (id === null) {
     const client = await db.transaction(async (tx) => {
       const id = generateResourceId();
-      await tx.orm.aibot.ResourceBase.create({ id, organizationId: user.organizationId });
+      await tx.orm.aibot.ResourceBase.create({
+        id,
+        organizationId: user.organizationId,
+      });
       const created = await tx.orm.aibot.OAuthClient.create({
         id,
         ...saved,
@@ -352,9 +328,10 @@ export async function saveOAuthClient(
     });
     logAuditEvent("oauth.client.created", "oauth_client", client.id, user.id);
   } else {
-    await db.orm.aibot.OAuthClient.where({ id, organizationId: user.organizationId }).update(
-      saved,
-    );
+    await db.orm.aibot.OAuthClient.where({
+      id,
+      organizationId: user.organizationId,
+    }).update(saved);
     logAuditEvent("oauth.client.updated", "oauth_client", id, user.id);
   }
   return { ok: true };
@@ -370,14 +347,17 @@ export async function deleteOAuthClient(user: AuthUser, id: string) {
     oauthId: id,
     organizationId: user.organizationId,
   }).all();
-  for (const authentication of authentications)
-    await revokeOAuthAuthenticationTokens(authentication, client);
-
   const deleted = await db.transaction(async (tx) => {
-    const client = await tx.orm.aibot.OAuthClient.where({ id, organizationId: user.organizationId })
-      .forUpdate().first();
+    const client = await tx.orm.aibot.OAuthClient.where({
+      id,
+      organizationId: user.organizationId,
+    })
+      .forUpdate()
+      .first();
     if (!client) return false;
-    const children = await tx.orm.aibot.OAuthAuthentication.where({ oauthId: id }).all();
+    const children = await tx.orm.aibot.OAuthAuthentication.where({
+      oauthId: id,
+    }).all();
     for (const child of children)
       await tx.orm.aibot.ResourceBase.where({ id: child.id }).delete();
     await tx.orm.aibot.ResourceBase.where({ id }).delete();
@@ -401,11 +381,18 @@ export async function listOauth(organizationId: string, principalId?: string) {
     .include("authentications")
     .orderBy((authentication) => authentication.updatedAt.desc())
     .all();
-  const data = user ? await filterResourcesByRole(user, clientRows) : clientRows;
+  const data = user
+    ? await filterResourcesByRole(user, clientRows)
+    : clientRows;
   const authRows = user
-    ? await filterResourcesByRole(user, await db.orm.aibot.OAuthAuthentication.where({ organizationId }).all())
+    ? await filterResourcesByRole(
+        user,
+        await db.orm.aibot.OAuthAuthentication.where({ organizationId }).all(),
+      )
     : null;
-  const allowedAuthIds = authRows ? new Set(authRows.map(({ id }) => id)) : null;
+  const allowedAuthIds = authRows
+    ? new Set(authRows.map(({ id }) => id))
+    : null;
   const ret = data
     .sort((a, b) => a.name.localeCompare(b.name))
     .map((client) => ({
@@ -422,30 +409,41 @@ export async function listOauth(organizationId: string, principalId?: string) {
 }
 export async function listOAuthAuthentications(user: AuthUser, ids: string[]) {
   const [authentications, clientRows] = await Promise.all([
-    filterResourcesByRole(user, await db.orm.aibot.OAuthAuthentication.where({ organizationId: user.organizationId })
-      .where((authentication) => authentication.id.in(ids))
-      .orderBy((authentication) => authentication.updatedAt.desc())
-      .all()),
-    db.orm.aibot.OAuthClient.where({ organizationId: user.organizationId }).all(),
+    filterResourcesByRole(
+      user,
+      await db.orm.aibot.OAuthAuthentication.where({
+        organizationId: user.organizationId,
+      })
+        .where((authentication) => authentication.id.in(ids))
+        .orderBy((authentication) => authentication.updatedAt.desc())
+        .all(),
+    ),
+    db.orm.aibot.OAuthClient.where({
+      organizationId: user.organizationId,
+    }).all(),
   ]);
   const clients = await filterResourcesByRole(user, clientRows);
   const clientsById = new Map(
     clients.map((client) => [client.id, client.name]),
   );
   return {
-    records: await includeResourcePermissions(user, authentications.map((authentication) =>
-      record(authentication.id, authentication.updatedAt, {
-        name: authentication.name,
-        oauthId: String(authentication.oauthId),
-        oauthName:
-          clientsById.get(authentication.oauthId) ?? t("server.unknownClient"),
-        expiresAt: authentication.expiresAt ?? "",
-        accessTokenConfigured: "server.configured",
-        refreshTokenConfigured: authentication.refreshToken
-          ? "server.configured"
-          : "server.notConfigured",
-      }),
-    )),
+    records: await includeResourcePermissions(
+      user,
+      authentications.map((authentication) =>
+        record(authentication.id, authentication.updatedAt, {
+          name: authentication.name,
+          oauthId: String(authentication.oauthId),
+          oauthName:
+            clientsById.get(authentication.oauthId) ??
+            t("server.unknownClient"),
+          expiresAt: authentication.expiresAt ?? "",
+          accessTokenConfigured: "server.configured",
+          refreshTokenConfigured: authentication.refreshToken
+            ? "server.configured"
+            : "server.notConfigured",
+        }),
+      ),
+    ),
     clientOptions: clients.map((client) => ({
       value: String(client.id),
       label: client.name,
@@ -460,8 +458,13 @@ export async function renameOAuthAuthentication(
 ) {
   const name = String(values.get("name") ?? "").trim();
   if (!name) return { error: "server.oauthAuthenticationNameRequired" };
-  if (!(await db.orm.aibot.OAuthAuthentication.first({ id, organizationId: user.organizationId })) ||
-    !(await hasResourceAccess(user, id, "update")))
+  if (
+    !(await db.orm.aibot.OAuthAuthentication.first({
+      id,
+      organizationId: user.organizationId,
+    })) ||
+    !(await hasResourceAccess(user, id, "update"))
+  )
     return { error: "server.oauthAuthenticationNotFound" };
   await db.orm.aibot.OAuthAuthentication.where({
     id,
@@ -481,14 +484,8 @@ export async function deleteOAuthAuthentication(user: AuthUser, id: string) {
     id,
     organizationId: user.organizationId,
   });
-  if (!authentication || !(await hasResourceAccess(user, id, "delete"))) return false;
-  const client = await db.orm.aibot.OAuthClient.first({
-    id: authentication.oauthId,
-    organizationId: user.organizationId,
-  });
-  if (!client) throw new Error("server.oauthClientNotFound");
-  await revokeOAuthAuthenticationTokens(authentication, client);
-
+  if (!authentication || !(await hasResourceAccess(user, id, "delete")))
+    return false;
   await db.orm.aibot.ResourceBase.where({ id }).delete();
   logAuditEvent(
     "oauth.authentication.deleted",

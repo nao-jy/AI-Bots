@@ -6,12 +6,15 @@ import { ServerRouter } from "react-router";
 import type { EntryContext } from "react-router";
 import { appLogger } from "./.server/logger/app-logger";
 import { startCronScheduler } from "./.server/features/scheduler";
+import { startOAuthRevocationWorker } from "./.server/features/oauth-revocation";
 import { I18nextProvider } from "react-i18next";
 import { createRequestI18n, getLocaleFromCookie } from "./i18n";
 import { localeStorage } from "./.server/request-context";
 import "./.server/i18n";
 
 export const streamTimeout = 5_000;
+
+startOAuthRevocationWorker();
 
 void startCronScheduler().catch((error: unknown) => {
   appLogger.error("Failed to load scheduled jobs during server startup", error);

@@ -90,7 +90,14 @@ The provided Compose configuration uses PostgreSQL 16. SearXNG and OpenSandbox a
 
    ```bash
    npx prisma db init
+   npm run db:oauth-revocation
    ```
+
+   Also run `npm run db:oauth-revocation` once when upgrading an existing database, before starting the new application version. This installs the deletion triggers and backfills OAuth client snapshots. The database user needs permission to create tables, functions and triggers in the `aibot` schema.
+
+   Deleted OAuth credentials are queued for asynchronous revocation, including when deleted by a cascade. The application retries failures with backoff and logs them. Set a revocation endpoint on every OAuth client; jobs without one remain pending. Pending jobs retain encrypted tokens and client secrets until revocation succeeds, so monitor the logs and the `aibot."OAuthRevocationQueue"` table for persistent failures. Keep `CREDENTIALS_ENCRYPTION_KEY` available to process pending jobs.
+
+   Jobs contain a snapshot taken at deletion: changing the OAuth client later does not change existing jobs. If an endpoint or client setting was wrong, an administrator must correct the corresponding queue row and set `"nextAttemptAt" = now()` to retry immediately. Secrets in the queue use the application's encrypted credential format; do not insert plaintext secrets.
 
 4. Start the application:
 

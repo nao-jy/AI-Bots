@@ -9,6 +9,7 @@
     "start": "react-router-serve ./build/server/index.js",
     "typecheck": "react-router typegen && tsc",
     "contract:emit": "prisma contract emit",
+    "db:oauth-revocation": "node scripts/install-oauth-revocation.mjs",
     "test": "vitest run"
   },
   "dependencies": {
