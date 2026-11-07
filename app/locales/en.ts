@@ -358,7 +358,7 @@ export const en = {
       "The selected OAuth credentials were not found.",
     environmentVariablesEncryptionFailed:
       "Could not encrypt the environment variables.",
-    usedByBot: 'Used by bot "{{0}}"',
+    usedByBot: "Bots using this agent: {{0}}",
     unused: "Unused",
     invalidMcpOauthConfiguration:
       "MCP OAuth settings must be a JSON object containing server and authentication IDs.",
@@ -691,7 +691,6 @@ export const en = {
       title: "Agents",
       description: "Configure the provider, model ID, and options to use.",
       modelLabel: "Model",
-      mcpOauthAuthenticationLabel: "MCP OAuth authentication",
       usageLabel: "Usage",
       nameLabel: "Agent name",
       namePlaceholder: "e.g. Customer support",

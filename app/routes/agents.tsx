@@ -22,7 +22,6 @@ const page: Omit<EntityPageDefinition, "records"> = {
   columns: [
     { key: "name", label: "pages.agents.title" },
     { key: "model", label: "pages.agents.modelLabel" },
-    { key: "mcpAuthentications", label: "pages.agents.mcpOauthAuthenticationLabel" },
     { key: "status", label: "pages.agents.usageLabel" },
   ],
   fields: [

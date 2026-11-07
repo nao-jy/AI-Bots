@@ -31,7 +31,7 @@ export async function listAgents(user: AuthUser) {
         providerId: agent.provider.id,
         options: JSON.stringify(agent.options ?? {}, null, 2),
         status: agent.chatbots.length
-          ? t("server.usedByBot", { 0: "" })
+          ? t("server.usedByBot", { 0: agent.chatbots.length })
           : "server.unused",
       });
     })),

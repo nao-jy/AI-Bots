@@ -106,7 +106,6 @@ export const ja = {
       title: "エージェント",
       description: "利用するプロバイダー、モデルID、オプションを設定します。",
       modelLabel: "モデル",
-      mcpOauthAuthenticationLabel: "MCP OAuth認証",
       usageLabel: "利用状況",
       nameLabel: "エージェント名",
       namePlaceholder: "例：カスタマーサポート",
@@ -816,7 +815,7 @@ export const ja = {
     selectedOauthAuthenticationNotFound:
       "選択したOAuth認証情報が見つかりません。",
     environmentVariablesEncryptionFailed: "環境変数を暗号化できませんでした。",
-    usedByBot: "ボット「{{0}}」で利用中",
+    usedByBot: "{{0}}個のボットで利用中",
     unused: "未使用",
     invalidMcpOauthConfiguration:
       "MCP OAuth認証の設定はサーバーIDと認証IDのJSONオブジェクトで入力してください。",
