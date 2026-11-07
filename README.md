@@ -185,7 +185,12 @@ docker compose --env-file .env.prd -f infra/compose.production.yaml up -d --buil
 
 Run `run --rm --build migrate` before starting a new application version when upgrading. View application logs with `docker compose --env-file .env.prd -f infra/compose.production.yaml logs -f app`.
 
-The production Compose project creates separate volumes from development. PostgreSQL is exposed on `127.0.0.1:5433` for host access; containers use `postgres:5432`. Override the host port with `PRD_POSTGRES_PORT`. SearXNG and OpenSandbox use the internal Compose network. Logs, memories, and temporary files use a production-specific volume.
+The production Compose project creates separate volumes from development. PostgreSQL is not published to the host; containers connect to `postgres:5432`. SearXNG and OpenSandbox also use the internal Compose network. Logs, memories, and temporary files use a production-specific volume. To access PostgreSQL directly, connect from inside its container:
+
+```bash
+docker compose --env-file .env.prd -f infra/compose.production.yaml \
+  exec postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"'
+```
 
 If you change `LOG_DIR` or `MEMORY_DIR`, keep the new locations inside the `/app/data` volume or mount separate volumes there. Rebuild the image to update `cloudflared`.
 

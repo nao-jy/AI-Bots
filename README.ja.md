@@ -187,7 +187,12 @@ docker compose --env-file .env.prd -f infra/compose.production.yaml up -d --buil
 
 更新時もアプリの新バージョンを起動する前に `run --rm --build migrate` を実行してください。アプリのログは `docker compose --env-file .env.prd -f infra/compose.production.yaml logs -f app` で確認できます。
 
-本番Composeは開発環境と別のボリュームを作成します。PostgreSQLはホスト側の `127.0.0.1:5433` に公開し、コンテナ間では `postgres:5432` を使います。ホスト側のポートは `PRD_POSTGRES_PORT` で変更できます。SearXNGとOpenSandboxはComposeの内部ネットワークに接続されます。ログ、メモリ、一時ファイルも本番専用のボリュームに保存されます。
+本番Composeは開発環境と別のボリュームを作成します。PostgreSQLのポートはホストに公開せず、コンテナ間では `postgres:5432` を使います。SearXNGとOpenSandboxもComposeの内部ネットワークに接続されます。ログ、メモリ、一時ファイルも本番専用のボリュームに保存されます。PostgreSQLを直接操作する場合は、次のコマンドでコンテナ内から接続できます。
+
+```bash
+docker compose --env-file .env.prd -f infra/compose.production.yaml \
+  exec postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"'
+```
 
 `LOG_DIR` や `MEMORY_DIR` を変更する場合は、変更先も `/app/data` のボリューム内にするか、別のボリュームをマウントしてください。`cloudflared` を更新するにはイメージの再ビルドが必要です。
 
