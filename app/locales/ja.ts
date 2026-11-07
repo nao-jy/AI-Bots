@@ -307,6 +307,7 @@ export const ja = {
     },
     rateLimits: {
       title: "レートリミット",
+      nameLabel: "名前",
       description:
         "利用量×係数の合計が上限以上になると、設定したメッセージを返します。スレッド単位で集計するか、全スレッドを横断して集計するか選択できます。",
       targetTypeLabel: "対象種別",
@@ -891,6 +892,8 @@ export const ja = {
     targetNotFound: "対象が見つかりません",
     perThread: "スレッドごと",
     acrossAllThreads: "全スレッド横断",
+    rateLimitNameRequired: "レートリミットの名前を入力してください。",
+    duplicateRateLimitName: "同じ名前のレートリミットが既にあります。",
     targetTypeAndTargetRequired: "対象種別と対象を選択してください。",
     threadAggregationMethodRequired:
       "スレッドごとの集計方法を選択してください。",
@@ -1043,7 +1046,7 @@ export const ja = {
     webSearchRequestFailed: "Web検索に失敗しました (HTTP {{0}})。",
     openDalServiceName: "OpenDALサービス名",
     openDalServiceNameDescription:
-      "OpenDALサービス名を指定してください。利用可能なサービス一覧はOpenDALのドキュメントを参照してください。",
+      "OpenDALサービス名を指定してください。https://opendal.apache.org/services/",
     openDalServiceConfig: "OpenDALサービスの設定",
     openDalServiceConfigDescription:
       "選択したサービスに必要な設定をキーと値の組で指定してください。",

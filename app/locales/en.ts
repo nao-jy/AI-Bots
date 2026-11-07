@@ -427,6 +427,8 @@ export const en = {
     targetNotFound: "Target not found",
     perThread: "Per thread",
     acrossAllThreads: "Across all threads",
+    rateLimitNameRequired: "Enter a rate limit name.",
+    duplicateRateLimitName: "A rate limit with this name already exists.",
     targetTypeAndTargetRequired: "Select a target type and target.",
     threadAggregationMethodRequired: "Select an aggregation method per thread.",
     limitMustBePositive: "Enter a limit greater than zero.",
@@ -580,7 +582,7 @@ export const en = {
     webSearchRequestFailed: "Web search failed (HTTP {{0}}).",
     openDalServiceName: "OpenDAL service name",
     openDalServiceNameDescription:
-      "Specify an OpenDAL service name. See the OpenDAL documentation for available services.",
+      "Specify an OpenDAL service name. See https://opendal.apache.org/services/",
     openDalServiceConfig: "OpenDAL service configuration",
     openDalServiceConfigDescription:
       "Provide the selected service's required settings as key-value pairs.",
@@ -893,6 +895,7 @@ export const en = {
     },
     rateLimits: {
       title: "Rate limits",
+      nameLabel: "Name",
       description:
         "A message is returned when the sum of usage multiplied by its weight reaches the limit. Choose whether usage is aggregated per thread or across all threads.",
       targetTypeLabel: "Target type",

@@ -9,6 +9,7 @@ import { createPostgresState } from "@chat-adapter/state-pg";
 import pg from "pg";
 import { STATE_SCHEMA_NAME } from "~/const";
 import { getAdapterOAuthInfo } from "../repository/oauth";
+import { parseAdapterArgs } from "./adapter-args";
 
 interface ChatAdapterFactory {
   adapterName: string;
@@ -56,17 +57,12 @@ function getState() {
   return statePromise;
 }
 
-async function getAdapterArgs(
+async function getAdapterArgs<T extends object>(
   config: Record<string, string>,
   authId: string | null,
-) {
-  if (authId === null) return config;
-  const info = await getAdapterOAuthInfo(authId);
-  if (info === null) return config;
-  return {
-    ...config,
-    ...info,
-  };
+): Promise<T> {
+  const info = authId === null ? null : await getAdapterOAuthInfo(authId);
+  return { ...parseAdapterArgs(config), ...info } as T;
 }
 
 const FACTORIES: ChatAdapterFactory[] = [
@@ -107,17 +103,12 @@ const FACTORIES: ChatAdapterFactory[] = [
     displayName: "Google Chat",
     url: "https://chat-sdk.dev/adapters/official/gchat",
     getBot: async (botName, adapterConfig, authId) => {
-      const rawArgs = await getAdapterArgs(adapterConfig, authId);
-      const args = {
-        ...rawArgs,
-        ...(rawArgs.credentials
-          ? { credentials: JSON.parse(rawArgs.credentials) }
-          : {}),
-      };
       return new Chat({
         userName: botName,
         adapters: {
-          gchat: createGoogleChatAdapter(args),
+          gchat: createGoogleChatAdapter(
+            await getAdapterArgs(adapterConfig, authId),
+          ),
         },
         state: await getState(),
       });

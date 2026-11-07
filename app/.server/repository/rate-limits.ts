@@ -219,6 +219,7 @@ export async function listRateLimits(user: AuthUser) {
           : "{}";
       const criteriaId = String(limit.criteriaId ?? "");
       return record(limit.id, "", {
+        name: limit.name,
         criteria: limit.criteria,
         criteriaId,
         criteriaLabel: criteriaLabels.get(limit.criteria) ?? limit.criteria,
@@ -246,6 +247,7 @@ export async function saveRateLimit(
   id: string | null,
   values: FormData,
 ) {
+  const name = String(values.get("name") ?? "").trim();
   const criteriaValue = String(values.get("criteria") ?? "");
   const criteriaId = String(values.get("criteriaId") ?? "");
   const criteria = isRateLimitCriteria(criteriaValue) ? criteriaValue : null;
@@ -261,6 +263,7 @@ export async function saveRateLimit(
     String(values.get("coefficients") ?? ""),
   );
 
+  if (!name) return { error: "server.rateLimitNameRequired" };
   if (!criteria || !isUuid(criteriaId))
     return { error: "server.targetTypeAndTargetRequired" };
   if (perThreadValue !== "true" && perThreadValue !== "false")
@@ -314,6 +317,8 @@ export async function saveRateLimit(
   const existingLimits = await db.orm.aibot.RateLimit.where({
     organizationId: user.organizationId,
   }).all();
+  if (existingLimits.some((existing) => existing.id !== id && existing.name === name))
+    return { error: "server.duplicateRateLimitName" };
   if (
     existingLimits.some(
       (existing) =>
@@ -325,6 +330,7 @@ export async function saveRateLimit(
     return { error: "server.duplicateRateLimitTarget" };
 
   const saved = {
+    name,
     criteria,
     criteriaId,
     perThread,
@@ -341,7 +347,6 @@ export async function saveRateLimit(
       await tx.orm.aibot.ResourceBase.create({ id });
       const resource = await tx.orm.aibot.RateLimit.create({
         id,
-        name: `${criteria}:${criteriaId}`,
         ...saved,
       });
       await tx.orm.aibot.Grant.create({

@@ -14,6 +14,7 @@ import {
   Textarea,
   TagsInput,
   Title,
+  Input,
 } from "@mantine/core";
 import { useFetcher } from "react-router";
 import { notifications } from "@mantine/notifications";
@@ -163,9 +164,7 @@ function MetricCoefficientsEditor({
 
   return (
     <div>
-      <Text size="sm" fw={500} mb={6}>
-        {label}
-      </Text>
+      <Input.Wrapper label={label}></Input.Wrapper>
       <input type="hidden" name={name} value={serialized} />
       {pairs.map((pair, index) => {
         const optionsForPair = [
@@ -464,9 +463,9 @@ export function EntityPageDialogs({
 }) {
   const canTest = ["adapters", "agents", "mcp"].includes(page.icon);
   const [selectedOAuthClientId, setSelectedOAuthClientId] = useState("");
-  const changesAdmin = page.columns.some(
-    (column) => column.presentation === "admin-toggle",
-  ) || page.tableFeatures?.adminToggle === true;
+  const changesAdmin =
+    page.columns.some((column) => column.presentation === "admin-toggle") ||
+    page.tableFeatures?.adminToggle === true;
   const fetcher = useFetcher<{
     ok?: boolean;
     error?: string | TranslationMessage;
@@ -941,7 +940,11 @@ export function EntityPageDialogs({
           {selected?.[page.columns[0].key]}
           {t("components.entityPage.dialogs.confirmIrreversibleDelete")}
         </Text>
-        {page.deleteWarning && <Text size="sm" c="orange" mt="sm">{page.deleteWarning}</Text>}
+        {page.deleteWarning && (
+          <Text size="sm" c="orange" mt="sm">
+            {page.deleteWarning}
+          </Text>
+        )}
         {fetcher.data?.error && (
           <Alert color="red" mt="md">
             {tMessage(fetcher.data.error)}

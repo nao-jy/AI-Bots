@@ -20,6 +20,7 @@ const page: Omit<EntityPageDefinition, "records"> = {
   icon: "rate_limits",
   tableFeatures: { resourceGrants: true },
   columns: [
+    { key: "name", label: "pages.rateLimits.nameLabel" },
     { key: "criteriaLabel", label: "pages.rateLimits.targetTypeLabel" },
     { key: "targetLabel", label: "pages.rateLimits.targetLabel" },
     { key: "perThreadLabel", label: "pages.rateLimits.aggregationScopeLabel" },
@@ -29,6 +30,11 @@ const page: Omit<EntityPageDefinition, "records"> = {
     { key: "limitExceededMessage", label: "pages.rateLimits.exceededMessageLabel" },
   ],
   fields: [
+    {
+      key: "name",
+      label: "pages.rateLimits.nameLabel",
+      required: true,
+    },
     {
       key: "criteria",
       label: "pages.rateLimits.targetTypeLabel",
