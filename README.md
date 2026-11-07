@@ -1,8 +1,22 @@
 # AI Bots
 
-**AI Bots** is a web workspace for configuring AI-powered chatbots and the services they use. Connect chat platforms, choose an AI model, add tools and MCP servers, run code in managed sandboxes, and schedule prompts for chat threads.
+**Bring a helpful AI bot into the conversations your team already has.**
 
-[日本語](./README.ja.md)
+AI Bots is a web workspace for building and running bots in Slack, Microsoft Teams, and other chat platforms. Choose a model, then configure each bot's access to files and services, code execution, scheduled prompts, and usage limits.
+
+[日本語](./README.ja.md) · [What can you build?](#what-can-you-build) · [Customization](#customization) · [Getting started](#getting-started)
+
+## What can you build?
+
+| Goal                           | Example setup in AI Bots                                                                                       |
+| ------------------------------ | -------------------------------------------------------------------------------------------------------------- |
+| Answer team questions in chat  | Assign a Slack or Teams adapter and an AI agent to a bot; configure its instructions and conversation history. |
+| Find and use documents         | Configure Google Drive credentials or an OpenDAL-backed file store, then assign the file tools to a bot.       |
+| Post to a thread every morning | Schedule a prompt for a selected bot and thread with a Cron expression and timezone.                           |
+| Work with files from chat      | Combine attachment reading, file posting, and optional code execution in a sandbox.                            |
+| Control usage and access       | Set rate limits for bots, agents, or providers and resource permissions for users or groups.                   |
+
+For example, to run a bot that posts a recurring checklist to a team thread on weekday mornings, configure a **chat adapter → AI agent → bot → schedule**. You can also connect Google Drive or an MCP server when that bot needs an external source of information.
 
 ## Features
 
@@ -10,10 +24,28 @@
 - **Chat adapters:** Connect Slack, Microsoft Teams, Google Chat, Discord, X, and LINE. Configure platform-specific settings, optionally link OAuth credentials, and test adapter connections.
 - **AI providers and agents:** Configure OpenAI, Azure OpenAI, Anthropic, or an OpenAI-compatible provider, then define agents with a model ID and model options. Test agents before assigning them to bots.
 - **Tools and files:** Give bots access to chat and attachment tools, Google Drive, OpenDAL-backed remote file stores, and King of Time attendance data. Tool availability depends on each bot's configuration and connected credentials.
+- **Web search and memory:** Enable web search with SearXNG. Choose whether a bot's memory is disabled, kept per thread, or shared across the bot.
 - **MCP servers:** Configure MCP endpoints and HTTP headers, test connections, and make the servers available to bots.
 - **Sandboxes:** Configure E2B or OpenSandbox execution environments, including environment variables, allowed network domains, initialization commands, and sharing scope. Inspect persistent instances and use the built-in terminal.
 - **Scheduled prompts:** Run a prompt on selected bot/adapter threads using a five-field or six-field Cron expression and an IANA timezone. Schedule changes are synchronized with the running scheduler.
-- **OAuth and users:** Manage OAuth clients and authorize accounts for integrations. The first user registered through the login page becomes an administrator; only administrators can manage workspace accounts and grant or revoke administrator privileges. At least one administrator is always required. Administrators can require TOTP-based MFA and configure session duration from Settings; individual MFA credentials can be reset from the users page. Set `RESEND_API_KEY` to send email verification messages when creating the initial administrator, creating users, or changing their email addresses. Verified users can request password reset emails from the login page; links expire after one hour. Administrators can resend verification messages from the users page. Without a configured provider, email verification is skipped and password reset is unavailable.
+- **Usage and rate limits:** View request and token usage over the last 30 days in the dashboard. Set limits for a bot, agent, or provider, aggregate usage per thread or across the target, and choose a Cron expression and timezone for the reset boundary. Configure the message shown when a limit is reached.
+- **Groups and permissions:** Administrators can manage group membership and grant users or groups access to resources such as bots.
+- **OAuth and users:** Manage OAuth accounts for integrations, workspace users, TOTP-based MFA, email verification, and password resets. See [Users and authentication](#users-and-authentication) for details.
+
+## Customization
+
+When you need a service or execution environment that is not included, implement the corresponding interface and wire it into the app. The existing integrations are a starting point. For an OpenAI-compatible API, you can also configure the built-in **OpenAI Compatible** provider without writing a new one.
+
+| Extension | Interface and example | Where to wire it in |
+| --- | --- | --- |
+| Another chat platform | Implement the Chat SDK `Adapter`; see the [Slack adapter integration](./app/.server/features/chat-adapter.ts). | Add a `ChatAdapterFactory` entry to `FACTORIES` in the same file. |
+| Another AI provider | `ModelFactory`; see the [OpenAI implementation](./app/.server/features/provider.ts). | Add an entry to `FACTORIES` in the same file. |
+| Another sandbox | [`Sandbox` interface](./app/.server/features/toolsets/sandboxes/index.ts) and [E2B implementation](./app/.server/features/toolsets/sandboxes/e2b.ts). | Add it to `SANDBOXES` in `sandboxes/index.ts`. |
+| Another memory store | [`FileSystem` interface](./app/.server/features/filesystem/index.ts) and [local file implementation](./app/.server/features/filesystem/local.ts). | Replace the `LocalFileSystem` construction in [bot processing](./app/.server/features/bot.ts). |
+| Another email service | [`EmailProvider` interface](./app/.server/features/email-providers/index.ts) and [SMTP relay implementation](./app/.server/features/email-providers/smtp-relay.ts). | Select it in `getEmailProvider()` in `email-providers/index.ts`. |
+| Another toolset | [`ToolSetFactory` interface](./app/.server/features/toolsets/index.ts) and [Google Drive implementation](./app/.server/features/toolsets/gdrive.ts). | Add it to `getToolSetFactories()` in `toolsets/index.ts`. |
+
+The file system interface currently backs bot memory. Chat attachments and external files such as Google Drive use separate tools.
 
 ## Requirements
 
@@ -66,23 +98,45 @@ The provided Compose configuration uses PostgreSQL 16. SearXNG and OpenSandbox a
 
    Open `http://localhost:5173`. On the first visit, create the initial user account. `npm run dev` also starts the app and runs a Cloudflare Tunnel when `CLOUDFLARE_TOKEN` is set; use `npm run dev:app` for local development without the tunnel.
 
+## Run your first bot
+
+1. In **AI providers**, add credentials for your model. In **Agents**, enter its model ID and run an agent test to check the response.
+2. In **Chat adapters**, add connection details for a platform such as Slack and test the connection.
+3. Create a **Chatbot** and assign the agent and adapter. For example, set its instructions to “Answer briefly; if you do not know, say so instead of guessing.”
+4. Copy that adapter's **Webhook URL** from the bot list and register it with the chat platform. The app needs a publicly reachable URL to receive external webhooks.
+5. Send a message in the connected chat to check the response. Add tools, MCP servers, memory, or schedules as needed.
+
+Follow the chosen platform's instructions for credentials and webhook registration. The included Cloudflare Tunnel setup can expose a local app to external webhooks.
+
+## Users and authentication
+
+Manage OAuth clients and authorize accounts for integrations. The first user registered through the login page becomes an administrator. Only administrators can manage workspace accounts and grant or revoke administrator privileges; at least one administrator is always required.
+
+Administrators can require TOTP-based MFA and configure session duration and the maximum number of failed logins in Settings. Users who reach the failed-login limit are locked and can be unlocked from the users page. Individual MFA credentials can also be reset there.
+
+The built-in email provider sends through an SMTP relay. Once configured, it can send verification messages when creating the initial administrator, creating users, or changing their email addresses. Verified users can request password reset emails from the login page; links expire after one hour. Administrators can resend verification messages from the users page. See [`.env.example`](./.env.example) for an SMTP relay configuration example.
+
 ## Configuration
 
-| Variable | Required | Purpose |
-| --- | --- | --- |
-| `DATABASE_URL` | Yes | PostgreSQL connection string used by the app and chat state store. |
-| `CREDENTIALS_ENCRYPTION_KEY` | Yes | Base64-encoded 32-byte key for encrypting credentials and signing OAuth authorization state. |
-| `OAUTH_BASE_URL` | For OAuth | Public HTTPS origin (no path) used to form the OAuth callback URL, `/oauth/callback`. `http://localhost` is allowed for local development. Register the resulting callback URL with the OAuth provider. |
-| `PUBLIC_APP_URL` | Optional | Public application URL used when generating webhook URLs and email verification links. If unset, the request origin is used. |
-| `E2B_API_KEY` | Optional | Enables the E2B sandbox provider. |
-| `OPEN_SANDBOX_DOMAIN` | Optional | Enables OpenSandbox and sets its connection domain. |
-| `OPEN_SANDBOX_API_KEY` | Optional | API key passed to the OpenSandbox server in the included Compose setup. |
-| `SEARXNG_URL` | Optional | SearXNG endpoint for the web search tool. |
-| `RESEND_API_KEY` | Optional | Enables email verification and password reset messages through Resend. Verification is skipped and password reset is unavailable when unset. |
-| `RESEND_FROM_EMAIL` | Optional | Sender address for Resend. Defaults to its test sender; configure an address on a verified domain for production. |
-| `CLOUDFLARE_TOKEN` | Optional | Cloudflare Tunnel token used by `npm run dev`. |
-| `LOG_DIR` | Optional | Log directory; defaults to `logs`. |
-| `MEMORY_DIR` | Optional | Persistent directory for bot memories; defaults to `data/memory`. A bot's memory setting controls whether memory is disabled, separated by thread, or shared across the bot. |
+| Variable                     | Required  | Purpose                                                                                                                                                                                                 |
+| ---------------------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`               | Yes       | PostgreSQL connection string used by the app and chat state store.                                                                                                                                      |
+| `CREDENTIALS_ENCRYPTION_KEY` | Yes       | Base64-encoded 32-byte key for encrypting credentials and signing OAuth authorization state.                                                                                                            |
+| `OAUTH_BASE_URL`             | For OAuth | Public HTTPS origin (no path) used to form the OAuth callback URL, `/oauth/callback`. `http://localhost` is allowed for local development. Register the resulting callback URL with the OAuth provider. |
+| `PUBLIC_APP_URL`             | Optional  | Public application URL used when generating webhook URLs and email verification links. If unset, the request origin is used.                                                                            |
+| `E2B_API_KEY`                | For E2B   | Enables the E2B sandbox provider.                                                                                                                                                                       |
+| `OPEN_SANDBOX_DOMAIN`        | Optional  | Enables OpenSandbox and sets its connection domain.                                                                                                                                                     |
+| `OPEN_SANDBOX_API_KEY`       | Optional  | API key passed to the OpenSandbox server in the included Compose setup.                                                                                                                                 |
+| `SEARXNG_URL`                | Optional  | SearXNG endpoint for the web search tool.                                                                                                                                                               |
+| `SMTP_RELAY_HOST`            | For email | SMTP relay host.                                                                                                                                                                                        |
+| `SMTP_RELAY_PORT`            | For email | SMTP relay port.                                                                                                                                                                                        |
+| `SMTP_RELAY_SECURE`          | For email | Set to `true` for TLS; when `false`, STARTTLS is required.                                                                                                                                              |
+| `SMTP_RELAY_USER`            | For email | SMTP authentication username.                                                                                                                                                                          |
+| `SMTP_RELAY_PASS`            | For email | SMTP authentication password.                                                                                                                                                                          |
+| `SMTP_RELAY_DOMAIN_FROM`     | For email | Domain used for the `noreply@<domain>` sender address.                                                                                                                                                 |
+| `CLOUDFLARE_TOKEN`           | Optional  | Cloudflare Tunnel token used by `npm run dev`.                                                                                                                                                          |
+| `LOG_DIR`                    | Optional  | Log directory; defaults to `logs`.                                                                                                                                                                      |
+| `MEMORY_DIR`                 | Optional  | Persistent directory for bot memories; defaults to `data/memory`. A bot's memory setting controls whether memory is disabled, separated by thread, or shared across the bot.                            |
 
 `infra/compose.yaml` defines PostgreSQL, SearXNG, and OpenSandbox. To start the optional services as well, make sure `infra/.env` exists (copy `infra/sample.env` if needed) and run:
 
