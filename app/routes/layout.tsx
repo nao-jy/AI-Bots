@@ -1,6 +1,11 @@
 import { AppShell, Avatar, Burger } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
-import { DotsThreeIcon, SignOutIcon } from "@phosphor-icons/react";
+import {
+  CaretDownIcon,
+  DotsThreeIcon,
+  SignOutIcon,
+} from "@phosphor-icons/react";
+import { useEffect, useState } from "react";
 import { Form, Link, NavLink, Outlet, useLocation } from "react-router";
 import type { Route } from "./+types/layout";
 import { requireUser } from "../.server/auth";
@@ -45,6 +50,31 @@ const items: {
   },
 ];
 
+const navigationGroups = [
+  {
+    id: "bots",
+    labelKey: "navigation.groupBots",
+    items: ["bots", "providers", "agents", "adapters", "mcp", "sandboxes"],
+  },
+  {
+    id: "auth",
+    labelKey: "navigation.groupAuth",
+    items: ["oauth_clients", "oauth_authentications"],
+  },
+  {
+    id: "operations",
+    labelKey: "navigation.groupOperations",
+    items: ["schedules", "rate_limits", "executions"],
+  },
+  {
+    id: "admin",
+    labelKey: "navigation.groupAdmin",
+    items: ["users", "groups", "settings"],
+  },
+] as const;
+
+type NavigationGroup = (typeof navigationGroups)[number]["id"];
+
 export async function loader({ request }: Route.LoaderArgs) {
   const user = await requireUser(request);
   return {
@@ -81,6 +111,40 @@ export default function Workspace({ loaderData }: Route.ComponentProps) {
   const current =
     loaderData.items.find((item) => item.path === location.pathname) ??
     loaderData.items[0];
+  const currentGroup = navigationGroups.find((group) =>
+    (group.items as readonly string[]).includes(current.id),
+  )?.id;
+  const [openGroups, setOpenGroups] = useState<NavigationGroup[]>(() => [
+    "bots",
+    "operations",
+    ...(currentGroup && currentGroup !== "bots" && currentGroup !== "operations"
+      ? [currentGroup]
+      : []),
+  ]);
+
+  useEffect(() => {
+    if (currentGroup) {
+      setOpenGroups((groups) =>
+        groups.includes(currentGroup) ? groups : [...groups, currentGroup],
+      );
+    }
+  }, [location.pathname, currentGroup]);
+
+  function renderItem(item: (typeof loaderData.items)[number]) {
+    return (
+      <NavLink
+        key={item.id}
+        to={item.path}
+        onClick={closeMobileNav}
+        className={({ isActive }) => `nav-item ${isActive ? "active" : ""}`}
+      >
+        <span className="nav-icon">
+          <SectionIcon section={item.id} size={17} />
+        </span>
+        <span>{t(item.labelKey)}</span>
+      </NavLink>
+    );
+  }
 
   return (
     <AppShell
@@ -102,21 +166,48 @@ export default function Workspace({ loaderData }: Route.ComponentProps) {
         </Link>
 
         <nav className="side-nav" aria-label={t("navigation.entityManagement")}>
-          {loaderData.items.map((item) => (
-            <NavLink
-              key={item.id}
-              to={item.path}
-              onClick={closeMobileNav}
-              className={({ isActive }) =>
-                `nav-item ${isActive ? "active" : ""}`
-              }
-            >
-              <span className="nav-icon">
-                <SectionIcon section={item.id} size={17} />
-              </span>
-              <span>{t(item.labelKey)}</span>
-            </NavLink>
-          ))}
+          {renderItem(loaderData.items[0])}
+          {navigationGroups.map((group) => {
+            const groupItems = group.items.flatMap((id) => {
+              const item = loaderData.items.find((entry) => entry.id === id);
+              return item ? [item] : [];
+            });
+            if (groupItems.length === 0) return null;
+            const isOpen = openGroups.includes(group.id);
+            return (
+              <div className="nav-group" key={group.id}>
+                <button
+                  type="button"
+                  className="nav-group-toggle"
+                  aria-expanded={isOpen}
+                  aria-controls={`nav-group-${group.id}`}
+                  onClick={() =>
+                    setOpenGroups((groups) =>
+                      groups.includes(group.id)
+                        ? groups.filter((id) => id !== group.id)
+                        : [...groups, group.id],
+                    )
+                  }
+                >
+                  {t(group.labelKey)}
+                  <CaretDownIcon
+                    size={14}
+                    className={
+                      isOpen ? "nav-group-caret open" : "nav-group-caret"
+                    }
+                    aria-hidden="true"
+                  />
+                </button>
+                <div
+                  id={`nav-group-${group.id}`}
+                  className="nav-group-items"
+                  hidden={!isOpen}
+                >
+                  {groupItems.map(renderItem)}
+                </div>
+              </div>
+            );
+          })}
         </nav>
 
         <div className="sidebar-spacer" />

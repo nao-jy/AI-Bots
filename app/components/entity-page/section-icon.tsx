@@ -10,6 +10,7 @@ import {
   HardDrivesIcon,
   ClockIcon,
   GearIcon,
+  GaugeIcon,
   ChartLineIcon,
 } from "@phosphor-icons/react";
 import type { EntitySection } from "./types";
@@ -37,7 +38,7 @@ export function SectionIcon({
     case "agents":
       return <BrainIcon {...props} />;
     case "rate_limits":
-      return <ClockIcon {...props} />;
+      return <GaugeIcon {...props} />;
     case "providers":
       return <CpuIcon {...props} />;
     case "mcp":

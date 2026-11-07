@@ -21,6 +21,10 @@ export const en = {
     management: "Management",
     entityManagement: "Entity management",
     menuToggle: "Toggle menu",
+    groupBots: "Bots",
+    groupAuth: "Authentication",
+    groupOperations: "Operations",
+    groupAdmin: "Administration",
   },
   actions: { logout: "Log out" },
   language: {
