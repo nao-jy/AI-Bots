@@ -41,11 +41,67 @@ describe("tool error results", () => {
     expect(tools).not.toHaveProperty("createTemporaryFileLink");
   });
 
-  it("returns a temporary link without posting it when direct upload fails", async () => {
+  it.each(["gchat", "line"])(
+    "posts a temporary link on %s when direct upload fails",
+    async (platform) => {
+      const dir = await mkdtemp(join(tmpdir(), "bot-upload-fallback-"));
+      vi.stubEnv("TEMP_FILE_DIR", dir);
+      vi.stubEnv("PUBLIC_APP_URL", "https://example.test");
+      const post = vi
+        .fn()
+        .mockRejectedValueOnce(new Error("upload rejected"))
+        .mockResolvedValueOnce({});
+      const chat = {
+        getAdapter: () => ({}),
+        thread: () => ({ post }),
+      } as unknown as Chat;
+      const thread = { id: "test-thread" } as Thread<
+        Record<string, unknown>,
+        unknown
+      >;
+      const fileHandles: FileHandleReaderMap = new Map([
+        [
+          "file",
+          {
+            stream: async function* () {
+              yield Buffer.from("content");
+            },
+          },
+        ],
+      ]);
+
+      try {
+        const result = await runTool(
+          getChatTools(chat, platform, thread, fileHandles).uploadFileToChat,
+          { fileHandle: "file", filename: "test.txt" },
+        );
+
+        expect(result).toMatchObject({
+          success: true,
+          messagePosted: true,
+        });
+        expect(result).not.toHaveProperty("url");
+        expect(post).toHaveBeenCalledTimes(2);
+        expect(post).toHaveBeenLastCalledWith({
+          raw: expect.stringMatching(
+            /^test\.txt\nhttps:\/\/example\.test\/api\/files\//,
+          ),
+        });
+      } finally {
+        vi.unstubAllEnvs();
+        await rm(dir, { recursive: true, force: true });
+      }
+    },
+  );
+
+  it("returns an error if posting the temporary link fails", async () => {
     const dir = await mkdtemp(join(tmpdir(), "bot-upload-fallback-"));
     vi.stubEnv("TEMP_FILE_DIR", dir);
     vi.stubEnv("PUBLIC_APP_URL", "https://example.test");
-    const post = vi.fn().mockRejectedValue(new Error("upload rejected"));
+    const post = vi
+      .fn()
+      .mockRejectedValueOnce(new Error("upload rejected"))
+      .mockRejectedValueOnce(new Error("link post rejected"));
     const chat = {
       getAdapter: () => ({}),
       thread: () => ({ post }),
@@ -70,14 +126,10 @@ describe("tool error results", () => {
         getChatTools(chat, "gchat", thread, fileHandles).uploadFileToChat,
         { fileHandle: "file", filename: "test.txt" },
       );
-
       expect(result).toMatchObject({
-        success: true,
-        delivery: "temporary-link",
-        messagePosted: false,
-        url: expect.stringContaining("/api/files/"),
+        error: expect.stringContaining("link post rejected"),
       });
-      expect(post).toHaveBeenCalledOnce();
+      expect(post).toHaveBeenCalledTimes(2);
     } finally {
       vi.unstubAllEnvs();
       await rm(dir, { recursive: true, force: true });
@@ -112,7 +164,6 @@ describe("tool error results", () => {
 
     expect(result).toMatchObject({
       success: true,
-      delivery: "attachment",
       messagePosted: true,
     });
     expect(post).toHaveBeenCalledOnce();

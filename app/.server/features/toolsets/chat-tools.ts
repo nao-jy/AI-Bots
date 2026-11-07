@@ -1,4 +1,11 @@
-import type { Attachment, Chat, Thread } from "chat";
+import {
+  Actions,
+  Card,
+  LinkButton,
+  type Attachment,
+  type Chat,
+  type Thread,
+} from "chat";
 import { createChatTools } from "chat/ai";
 import {
   generateFileHandle,
@@ -55,7 +62,6 @@ export function getChatTools(
         });
         return {
           success: true,
-          delivery: "attachment",
           messagePosted: true,
           filename,
           threadId: thread.id,
@@ -67,11 +73,14 @@ export function getChatTools(
             filename,
             publicOrigin,
           );
+          await chat
+            .thread(thread.id)
+            .post({ raw: `${link.filename}\n${link.url}` });
           return {
             success: true,
-            delivery: "temporary-link",
-            messagePosted: false,
-            ...link,
+            messagePosted: true,
+            filename: link.filename,
+            expiresAt: link.expiresAt,
             threadId: thread.id,
           };
         } catch (fallbackError) {
