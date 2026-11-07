@@ -1,0 +1,88 @@
+name: bot-manager-prd
+
+services:
+  app:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile
+    restart: unless-stopped
+    env_file:
+      - ${PRD_ENV_FILE:-../.env.prd}
+    environment:
+      OPEN_SANDBOX_DOMAIN: opensandbox-server:3000
+      SEARXNG_URL: http://searxng-core:8080
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - app-data:/app/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  migrate:
+    profiles: [tools]
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile
+      target: build-env
+    env_file:
+      - ${PRD_ENV_FILE:-../.env.prd}
+    command: ["npx", "prisma", "db", "migrate"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?Set POSTGRES_USER in .env.prd}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env.prd}
+      POSTGRES_DB: ${POSTGRES_DB:?Set POSTGRES_DB in .env.prd}
+    ports:
+      - "127.0.0.1:${PRD_POSTGRES_PORT:-5433}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  searxng-core:
+    image: docker.io/searxng/searxng:${SEARXNG_VERSION:-latest}
+    restart: unless-stopped
+    environment:
+      SEARXNG_SETTINGS_PATH: /etc/searxng-production/settings.yml
+      SEARXNG_SECRET: ${SEARXNG_SECRET:?Set SEARXNG_SECRET in .env.prd}
+      SEARXNG_VALKEY_URL: valkey://searxng-valkey:6379/0
+    volumes:
+      - ./searxng-production.yml:/etc/searxng-production/settings.yml:ro
+      - searxng-data:/var/cache/searxng
+    depends_on:
+      - searxng-valkey
+
+  searxng-valkey:
+    image: docker.io/valkey/valkey:9-alpine
+    command: ["valkey-server", "--save", "300", "1", "--save", "60", "1000", "--loglevel", "warning"]
+    restart: unless-stopped
+    volumes:
+      - valkey-data:/data
+
+  opensandbox-server:
+    image: opensandbox/server:release-1.2.0
+    restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./sandbox.toml:/etc/opensandbox/config.toml:ro
+    environment:
+      SANDBOX_CONFIG_PATH: /etc/opensandbox/config.toml
+      OPENSANDBOX_SERVER_API_KEY: ${OPEN_SANDBOX_API_KEY:?Set OPEN_SANDBOX_API_KEY in .env.prd}
+
+volumes:
+  app-data:
+  postgres-data:
+  searxng-data:
+  valkey-data:

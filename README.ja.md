@@ -173,15 +173,22 @@ npm run start
 
 ### Docker
 
-本番用に [`.env.example`](./.env.example) を `.env.prd` にコピーして設定してください。開発用とは別の認証情報とデータベースを使用することもできます。Cloudflareでリモート管理のTunnelを作成し、公開ホスト名のサービスURLを `http://127.0.0.1:3001` に設定してください。Docker用の環境変数ファイルに `CLOUDFLARE_TOKEN` を設定し、`PUBLIC_APP_URL` と、OAuthを使う場合は `OAUTH_BASE_URL` を公開HTTPSオリジンに設定します。初回管理者の作成まではCloudflare Accessなどでアクセスを制限してください。Dockerの `--env-file` は値の引用符を取り除かないため、値を引用符で囲まないでください。
+#### 本番用 Compose
 
-同梱のComposeでPostgreSQLを起動し、`.env.prd` の `DATABASE_URL` のホストを `postgres` に設定したうえで、本番用イメージをビルドして起動します。アプリと `cloudflared` は同じコンテナで起動し、アプリはコンテナ内のループバックで待ち受けます。
+[`.env.prd.example`](./.env.prd.example) を参考に `.env.prd` を設定します。既に `.env.prd` がある場合は上書きせず、`POSTGRES_USER`、`POSTGRES_PASSWORD`、`POSTGRES_DB` と、同じ認証情報を含む `DATABASE_URL`、`SEARXNG_SECRET`、`OPEN_SANDBOX_API_KEY` を確認してください。`DATABASE_URL` のホストは `postgres`、ポートは `5432` です。パスワードにURLの予約文字を使う場合は接続URL内でパーセントエンコードしてください。
+
+新しい本番環境では、本番専用の `CREDENTIALS_ENCRYPTION_KEY` とCloudflare Tunnelを設定します。Tunnelの公開ホスト名はコンテナ内の `http://127.0.0.1:3001` に接続します。開発用と同じTunnelを同時に起動すると異なる環境に振り分けられるため、別のTunnelを使ってください。初回管理者を作成するまではCloudflare Accessなどでアクセスを制限してください。
 
 ```bash
-docker build -t ai-bots .
-docker run -d --name ai-bots --restart unless-stopped --network infra_default --env-file .env.prd -v bot-data:/app/data ai-bots
+docker compose --env-file .env.prd -f infra/compose.production.yaml up -d postgres
+docker compose --env-file .env.prd -f infra/compose.production.yaml run --rm --build migrate
+docker compose --env-file .env.prd -f infra/compose.production.yaml up -d --build
 ```
 
-コンテナに本番用の `DATABASE_URL`、`CREDENTIALS_ENCRYPTION_KEY` と、利用する連携サービス固有の設定を渡してください。`DATABASE_URL` のホストに `localhost` を使うとコンテナ自身を指すため、コンテナから到達可能なDBのホストを指定します。上の `infra_default` は同梱Composeの既定ネットワーク名です。Composeのプロジェクト名が異なる場合や外部DBを使用する場合は環境に合わせて変更してください。`.env.dev` はローカル開発、`.env.prd` は本番用です。既存の `.env` や `.env.docker` は必要に応じてそれぞれのファイルへ移行してください。
+更新時もアプリの新バージョンを起動する前に `run --rm --build migrate` を実行してください。アプリのログは `docker compose --env-file .env.prd -f infra/compose.production.yaml logs -f app` で確認できます。
 
-上の `bot-data` ボリュームは `/app/data` にマウントされ、既定のログ（`/app/data/logs`）、メモリ（`/app/data/memory`）、一時ファイルをコンテナの再作成後も保持します。イメージにも `/app/data` のボリュームを定義していますが、名前付きボリュームを明示すると再作成時に同じデータを使えます。`LOG_DIR` や `MEMORY_DIR` を変更する場合は、変更先もボリューム内にするか、別のボリュームをマウントしてください。ポートや `HOST` を変更した場合はTunnelのサービスURLも合わせて変更してください。`cloudflared` の更新にはイメージの再ビルドが必要です。
+本番Composeは開発環境と別のボリュームを作成します。PostgreSQLはホスト側の `127.0.0.1:5433` に公開し、コンテナ間では `postgres:5432` を使います。ホスト側のポートは `PRD_POSTGRES_PORT` で変更できます。SearXNGとOpenSandboxはComposeの内部ネットワークに接続されます。ログ、メモリ、一時ファイルも本番専用のボリュームに保存されます。
+
+`LOG_DIR` や `MEMORY_DIR` を変更する場合は、変更先も `/app/data` のボリューム内にするか、別のボリュームをマウントしてください。`cloudflared` を更新するにはイメージの再ビルドが必要です。
+
+**既存環境から切り替える場合:** 新しいDBとアプリ用ボリュームは空です。現在のDBや `bot-data` は自動では移行されません。既存データを引き継ぐ場合はバックアップ・復元の手順を別途用意し、暗号化済みデータを復号できるよう元の `CREDENTIALS_ENCRYPTION_KEY` を維持してください。現在の `ai-bots` コンテナもComposeによって自動停止されないため、切り替え時に重複起動しないようにしてください。

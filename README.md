@@ -171,15 +171,22 @@ npm run start
 
 ### Docker
 
-Copy [`.env.example`](./.env.example) to `.env.prd` and configure it for production. You can use separate credentials and a separate database from development. Create a remotely managed Cloudflare Tunnel and configure its public hostname's service URL as `http://127.0.0.1:3001`. Set `CLOUDFLARE_TOKEN` in the Docker environment file to the tunnel token, and set `PUBLIC_APP_URL` and, when using OAuth, `OAUTH_BASE_URL` to the public HTTPS origin. Restrict access with Cloudflare Access or an equivalent policy until the initial administrator is created. Docker's `--env-file` retains quotes in values, so do not surround values with quotes.
+#### Production Compose
 
-Start PostgreSQL using the included Compose file and set the database host in `.env.prd` to `postgres`, then build and run the production image. The app and `cloudflared` run in the same container, and the app listens on the container's loopback interface:
+Configure `.env.prd` using [`.env.prd.example`](./.env.prd.example). If `.env.prd` already exists, preserve it and check `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `DATABASE_URL` with matching credentials, `SEARXNG_SECRET`, and `OPEN_SANDBOX_API_KEY`. The `DATABASE_URL` host and port are `postgres:5432`. Percent-encode reserved characters in database credentials in the URL.
+
+For a new production environment, use a dedicated `CREDENTIALS_ENCRYPTION_KEY` and Cloudflare Tunnel. Configure the Tunnel's public hostname to reach `http://127.0.0.1:3001` inside the container. Use separate development and production Tunnels: running both connectors on the same Tunnel can route requests to either environment. Restrict access with Cloudflare Access or an equivalent policy until the initial administrator is created.
 
 ```bash
-docker build -t ai-bots .
-docker run -d --name ai-bots --restart unless-stopped --network infra_default --env-file .env.prd -v bot-data:/app/data ai-bots
+docker compose --env-file .env.prd -f infra/compose.production.yaml up -d postgres
+docker compose --env-file .env.prd -f infra/compose.production.yaml run --rm --build migrate
+docker compose --env-file .env.prd -f infra/compose.production.yaml up -d --build
 ```
 
-Provide a production `DATABASE_URL`, `CREDENTIALS_ENCRYPTION_KEY`, and any integration-specific settings to the container. A `localhost` database host refers to the container itself, so use a database host reachable from the container. `infra_default` is the included Compose file's default network name; adjust it if the Compose project name differs or you use an external database. Use `.env.dev` for local development and `.env.prd` for production. Migrate existing `.env` and `.env.docker` settings into these files as needed.
+Run `run --rm --build migrate` before starting a new application version when upgrading. View application logs with `docker compose --env-file .env.prd -f infra/compose.production.yaml logs -f app`.
 
-The `bot-data` volume above is mounted at `/app/data` and keeps the default logs (`/app/data/logs`), memories (`/app/data/memory`), and temporary files across container replacements. The image also declares a volume at `/app/data`, but explicitly naming the volume ensures it can be reused when the container is recreated. If you customize `LOG_DIR` or `MEMORY_DIR`, keep the new locations within the volume or mount separate volumes there. If you change the port or `HOST`, update the tunnel's service URL accordingly. Rebuild the image to update `cloudflared`.
+The production Compose project creates separate volumes from development. PostgreSQL is exposed on `127.0.0.1:5433` for host access; containers use `postgres:5432`. Override the host port with `PRD_POSTGRES_PORT`. SearXNG and OpenSandbox use the internal Compose network. Logs, memories, and temporary files use a production-specific volume.
+
+If you change `LOG_DIR` or `MEMORY_DIR`, keep the new locations inside the `/app/data` volume or mount separate volumes there. Rebuild the image to update `cloudflared`.
+
+**Migrating an existing installation:** The new database and application volume start empty. The existing database and `bot-data` volume are not migrated automatically. Prepare a backup and restore procedure to retain them, and keep the original `CREDENTIALS_ENCRYPTION_KEY` to decrypt existing data. Compose does not stop the existing `ai-bots` container, so avoid running both installations during the cutover.
