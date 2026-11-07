@@ -1,8 +1,8 @@
 # AI Bots
 
-**Bring a helpful AI bot into the conversations your team already has.**
+**Bring an AI bot that's yours into the chats you already use.**
 
-AI Bots is a web workspace for building and running bots in Slack, Microsoft Teams, and other chat platforms. Choose a model, then configure each bot's access to files and services, code execution, scheduled prompts, and usage limits.
+AI Bots is a self-hosted web workspace for building and running bots in Slack, Microsoft Teams, and other chat platforms. Keep the database and stored credentials in an environment you control, and deploy it to meet your organization's security requirements. Choose a model, then configure each bot's access to files and services, code execution, scheduled prompts, and usage limits.
 
 [日本語](./README.ja.md) · [What can you build?](#what-can-you-build) · [Customization](#customization) · [Getting started](#getting-started)
 

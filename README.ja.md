@@ -1,8 +1,10 @@
 # AI Bots
 
-**いつものチャットに、仕事を手伝うAIボットを。**
+**いつものチャットに、あなただけのAIボットを。**
 
-AI Botsは、SlackやMicrosoft Teamsなどで動くAIボットを作り、運用するためのWebワークスペースです。モデルを選ぶだけでなく、ファイルや外部サービスへのアクセス、コード実行、定期実行、利用量の上限まで、ボットごとに設定できます。
+AI Botsは、SlackやMicrosoft Teamsなどで動くAIボットを作り、運用するためのセルフホスト型Webワークスペースです。  
+データベースや認証情報を自分の管理する環境に置き、組織のセキュリティ要件に合わせて運用できます。  
+モデルを選ぶだけでなく、ファイルや外部サービスへのアクセス、コード実行、定期実行、利用量の上限まで、ボットごとに設定できます。
 
 [English](./README.md) · [できること](#こんなことができます) · [カスタマイズ](#カスタマイズ) · [セットアップ](#セットアップ)
 
@@ -36,14 +38,14 @@ AI Botsは、SlackやMicrosoft Teamsなどで動くAIボットを作り、運用
 
 標準で対応していないサービスや実行環境が必要になったら、対応するインターフェースを実装して組み込めます。まず既存の実装を手本にしてください。OpenAI互換APIなら、独自プロバイダーを実装せずに「OpenAI Compatible」を設定する方法もあります。
 
-| 拡張したいもの | インターフェースと実装例 | 組み込み位置 |
-| --- | --- | --- |
-| 非対応のチャット | Chat SDKの `Adapter` を実装。[Slackアダプタの組み込み例](./app/.server/features/chat-adapter.ts) | 同じファイルの `ChatAdapterFactory` / `FACTORIES` に追加。 |
-| 非対応のAIプロバイダー | `ModelFactory`。[OpenAIの実装例](./app/.server/features/provider.ts) | 同じファイルの `FACTORIES` に追加。 |
-| 新しいサンドボックス | [`Sandbox` インターフェース](./app/.server/features/toolsets/sandboxes/index.ts)と[E2Bの実装例](./app/.server/features/toolsets/sandboxes/e2b.ts) | `sandboxes/index.ts` の `SANDBOXES` に追加。 |
-| メモリの保存先 | [`FileSystem` インターフェース](./app/.server/features/filesystem/index.ts)と[ローカルファイルの実装例](./app/.server/features/filesystem/local.ts) | [ボットの処理](./app/.server/features/bot.ts)で `LocalFileSystem` の生成箇所を差し替え。 |
-| メールの送信方法 | [`EmailProvider` インターフェース](./app/.server/features/email-providers/index.ts)と[SMTPリレーの実装例](./app/.server/features/email-providers/smtp-relay.ts) | `email-providers/index.ts` の `getEmailProvider()` で選択。 |
-| 新しいツールセット | [`ToolSetFactory` インターフェース](./app/.server/features/toolsets/index.ts)と[Google Driveの実装例](./app/.server/features/toolsets/gdrive.ts) | `toolsets/index.ts` の `getToolSetFactories()` に追加。 |
+| 拡張したいもの         | インターフェースと実装例                                                                                                                                        | 組み込み位置                                                                             |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| 非対応のチャット       | Chat SDKの `Adapter` を実装。[Slackアダプタの組み込み例](./app/.server/features/chat-adapter.ts)                                                                | 同じファイルの `ChatAdapterFactory` / `FACTORIES` に追加。                               |
+| 非対応のAIプロバイダー | `ModelFactory`。[OpenAIの実装例](./app/.server/features/provider.ts)                                                                                            | 同じファイルの `FACTORIES` に追加。                                                      |
+| 新しいサンドボックス   | [`Sandbox` インターフェース](./app/.server/features/toolsets/sandboxes/index.ts)と[E2Bの実装例](./app/.server/features/toolsets/sandboxes/e2b.ts)               | `sandboxes/index.ts` の `SANDBOXES` に追加。                                             |
+| メモリの保存先         | [`FileSystem` インターフェース](./app/.server/features/filesystem/index.ts)と[ローカルファイルの実装例](./app/.server/features/filesystem/local.ts)             | [ボットの処理](./app/.server/features/bot.ts)で `LocalFileSystem` の生成箇所を差し替え。 |
+| メールの送信方法       | [`EmailProvider` インターフェース](./app/.server/features/email-providers/index.ts)と[SMTPリレーの実装例](./app/.server/features/email-providers/smtp-relay.ts) | `email-providers/index.ts` の `getEmailProvider()` で選択。                              |
+| 新しいツールセット     | [`ToolSetFactory` インターフェース](./app/.server/features/toolsets/index.ts)と[Google Driveの実装例](./app/.server/features/toolsets/gdrive.ts)                | `toolsets/index.ts` の `getToolSetFactories()` に追加。                                  |
 
 ファイルシステムは現在ボットのメモリに使われています。チャットの添付ファイルやGoogle Driveなどの外部ファイル連携は、別のツールとして実装されています。
 
@@ -118,25 +120,25 @@ OAuthクライアントを管理し、連携サービスのアカウントを認
 
 ## 環境変数
 
-| 変数                         | 必須        | 用途                                                                                                                                                                                                   |
-| ---------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `DATABASE_URL`               | 必須        | アプリとチャット状態ストアが使用するPostgreSQL接続文字列。                                                                                                                                             |
-| `CREDENTIALS_ENCRYPTION_KEY` | 必須        | 認証情報の暗号化とOAuth認可状態の署名に使用する、Base64形式の32バイトキー。                                                                                                                            |
-| `OAUTH_BASE_URL`             | OAuth利用時 | OAuthコールバックURL `/oauth/callback` の生成に使う公開HTTPSオリジン（パスなし）。ローカル開発では `http://localhost` も使用できます。生成されたコールバックURLをOAuthプロバイダーに登録してください。 |
-| `PUBLIC_APP_URL`             | 任意        | Webhook URLとメール検証リンクの生成に使う公開アプリURL。未設定時はリクエストのオリジンを使用します。                                                                                                   |
-| `E2B_API_KEY`                | E2B利用時  | E2Bサンドボックスプロバイダーを有効にします。                                                                                                                                                           |
-| `OPEN_SANDBOX_DOMAIN`        | 任意        | OpenSandboxを有効にし、接続先ドメインを指定します。                                                                                                                                                    |
-| `OPEN_SANDBOX_API_KEY`       | 任意        | 同梱Compose設定でOpenSandboxサーバーに渡すAPIキー。                                                                                                                                                    |
-| `SEARXNG_URL`                | 任意        | Web検索ツールが使用するSearXNGのエンドポイント。                                                                                                                                                       |
-| `SMTP_RELAY_HOST`            | メール利用時 | SMTPリレーのホスト名。                                                                                                                                                                                  |
-| `SMTP_RELAY_PORT`            | メール利用時 | SMTPリレーのポート番号。                                                                                                                                                                                |
-| `SMTP_RELAY_SECURE`          | メール利用時 | `true` でTLS接続を使用。`false` の場合はSTARTTLSを要求します。                                                                                                                                           |
-| `SMTP_RELAY_USER`            | メール利用時 | SMTP認証のユーザー名。                                                                                                                                                                                  |
-| `SMTP_RELAY_PASS`            | メール利用時 | SMTP認証のパスワード。                                                                                                                                                                                  |
-| `SMTP_RELAY_DOMAIN_FROM`     | メール利用時 | 送信元アドレス `noreply@<ドメイン>` に使用するドメイン。                                                                                                                                                 |
-| `CLOUDFLARE_TOKEN`           | 任意        | `npm run dev` で使用するCloudflare Tunnelのトークン。                                                                                                                                                  |
-| `LOG_DIR`                    | 任意        | ログ出力先。既定値は `logs`。                                                                                                                                                                          |
-| `MEMORY_DIR`                 | 任意        | ボットのメモリ保存先。既定値は `data/memory`。ボットのメモリ設定により、無効・スレッド別・ボット全体で共有を選べます。                                                                                 |
+| 変数                         | 必須         | 用途                                                                                                                                                                                                   |
+| ---------------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `DATABASE_URL`               | 必須         | アプリとチャット状態ストアが使用するPostgreSQL接続文字列。                                                                                                                                             |
+| `CREDENTIALS_ENCRYPTION_KEY` | 必須         | 認証情報の暗号化とOAuth認可状態の署名に使用する、Base64形式の32バイトキー。                                                                                                                            |
+| `OAUTH_BASE_URL`             | OAuth利用時  | OAuthコールバックURL `/oauth/callback` の生成に使う公開HTTPSオリジン（パスなし）。ローカル開発では `http://localhost` も使用できます。生成されたコールバックURLをOAuthプロバイダーに登録してください。 |
+| `PUBLIC_APP_URL`             | 任意         | Webhook URLとメール検証リンクの生成に使う公開アプリURL。未設定時はリクエストのオリジンを使用します。                                                                                                   |
+| `E2B_API_KEY`                | E2B利用時    | E2Bサンドボックスプロバイダーを有効にします。                                                                                                                                                          |
+| `OPEN_SANDBOX_DOMAIN`        | 任意         | OpenSandboxを有効にし、接続先ドメインを指定します。                                                                                                                                                    |
+| `OPEN_SANDBOX_API_KEY`       | 任意         | 同梱Compose設定でOpenSandboxサーバーに渡すAPIキー。                                                                                                                                                    |
+| `SEARXNG_URL`                | 任意         | Web検索ツールが使用するSearXNGのエンドポイント。                                                                                                                                                       |
+| `SMTP_RELAY_HOST`            | メール利用時 | SMTPリレーのホスト名。                                                                                                                                                                                 |
+| `SMTP_RELAY_PORT`            | メール利用時 | SMTPリレーのポート番号。                                                                                                                                                                               |
+| `SMTP_RELAY_SECURE`          | メール利用時 | `true` でTLS接続を使用。`false` の場合はSTARTTLSを要求します。                                                                                                                                         |
+| `SMTP_RELAY_USER`            | メール利用時 | SMTP認証のユーザー名。                                                                                                                                                                                 |
+| `SMTP_RELAY_PASS`            | メール利用時 | SMTP認証のパスワード。                                                                                                                                                                                 |
+| `SMTP_RELAY_DOMAIN_FROM`     | メール利用時 | 送信元アドレス `noreply@<ドメイン>` に使用するドメイン。                                                                                                                                               |
+| `CLOUDFLARE_TOKEN`           | 任意         | `npm run dev` で使用するCloudflare Tunnelのトークン。                                                                                                                                                  |
+| `LOG_DIR`                    | 任意         | ログ出力先。既定値は `logs`。                                                                                                                                                                          |
+| `MEMORY_DIR`                 | 任意         | ボットのメモリ保存先。既定値は `data/memory`。ボットのメモリ設定により、無効・スレッド別・ボット全体で共有を選べます。                                                                                 |
 
 `infra/compose.yaml` にはPostgreSQL、SearXNG、OpenSandboxが定義されています。オプションのサービスも起動する場合は、`infra/.env` があることを確認してください（必要であれば `infra/sample.env` をコピーします）。
 
