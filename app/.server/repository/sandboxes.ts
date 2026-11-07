@@ -215,7 +215,7 @@ export async function saveSandbox(
 ) {
   const sandboxType = String(values.get("sandboxType") ?? "").trim();
   const sandboxScope = String(values.get("sandboxScope") ?? "").trim();
-  const sandboxName = String(values.get("sandboxName") ?? "").trim();
+  const sandboxName = String(values.get("name") ?? "").trim();
   if (!(await listSandboxNames()).includes(sandboxType))
     return { error: "server.unsupportedSandboxType" };
   if (!isSandboxScope(sandboxScope))

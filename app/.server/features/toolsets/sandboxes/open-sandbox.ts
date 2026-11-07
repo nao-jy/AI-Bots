@@ -271,7 +271,7 @@ export const OPEN_SANDBOX: Sandbox = {
         ws.once("close", (code) => {
           clearTimeout(timeout);
           if (ws !== socket)
-          reject(new Error(t("server.ptyConnectionClosed", { 0: code })));
+            reject(new Error(t("server.ptyConnectionClosed", { 0: code })));
         });
       });
       const activeSocket = socket;

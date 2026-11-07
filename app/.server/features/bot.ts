@@ -171,7 +171,11 @@ async function processBotMessage(
     const chatbot = await getAvailableBot(botId);
     const agent = chatbot?.agent;
 
-    if (!chatbot || !agent || agent.provider.organizationId !== chatbot.organizationId) {
+    if (
+      !chatbot ||
+      !agent ||
+      agent.provider.organizationId !== chatbot.organizationId
+    ) {
       await thread.post("Service Unavailable");
       return;
     }

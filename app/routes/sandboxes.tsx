@@ -31,7 +31,7 @@ const page: Omit<EntityPageDefinition, "records"> = {
     { key: "initCommands", label: "pages.sandboxes.initCommandsLabel" },
   ],
   fields: [
-    { key: "sandboxName", label: "pages.sandboxes.nameLabel", type: "text" },
+    { key: "name", label: "pages.sandboxes.nameLabel", type: "text" },
     { key: "sandboxType", label: "pages.sandboxes.typeLabel", type: "select", options: [] },
     {
       key: "sandboxScope",

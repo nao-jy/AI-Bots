@@ -1,7 +1,14 @@
 import { db } from "./db";
 import type { AuthUser } from "../auth";
 import type { PublicIdSlot } from "../../types/entities";
-import { generatePublicId, generateResourceId, idList, isUuid, jsonb, record } from "../utils";
+import {
+  generatePublicId,
+  generateResourceId,
+  idList,
+  isUuid,
+  jsonb,
+  record,
+} from "../utils";
 import { ToolSetFactoryRegistry } from "../features/toolsets";
 import { logAuditEvent } from "../logger/audit-logger";
 import { localizedMessage } from "../../i18n";
@@ -20,8 +27,11 @@ type ToolSetContextEntry = {
 function positiveId(value: unknown): string {
   if (
     typeof value !== "string" ||
-    !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)
-  ) throw new Error();
+    !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+      value,
+    )
+  )
+    throw new Error();
   return value;
 }
 
@@ -37,137 +47,176 @@ function stableJson(value: unknown): string {
 }
 
 export async function listBots(user: AuthUser, publicOrigin: string) {
-  const bots = await filterResourcesByRole(user, await db.orm.aibot.ChatBot.where({
-    organizationId: user.organizationId,
-  })
-    .include("agent")
-    .include("adapters", (links) =>
-      links.include("adapter", (adapter) => adapter.include("publicIds")),
-    )
-    .include("mcpServers", (links) => links.include("mcpServer"))
-    .include("publicIds")
-    .orderBy((bot) => bot.updatedAt.desc())
-    .all());
-  const agents = await filterResourcesByRole(user, await db.orm.aibot.AgentDefinition.where({ organizationId: user.organizationId }).include("chatbots")
-    .include("provider")
-    .all());
-  const adapters = await filterResourcesByRole(user, await db.orm.aibot.ChatAdapter.where({ organizationId: user.organizationId }).all());
-  const mcpServers = await filterResourcesByRole(user, await db.orm.aibot.McpServer.where({ organizationId: user.organizationId }).all());
-  const [sandboxRows, sandboxLinks, contextRows, authRows] =
-    await Promise.all([
-      db.orm.aibot.Sandbox.where({ organizationId: user.organizationId }).all(),
-      db.orm.aibot.ChatBotToolSandbox.all(),
-      db.orm.aibot.ChatBotToolSetContext.all(),
-      db.orm.aibot.OAuthAuthentication.where({ organizationId: user.organizationId }).all(),
-    ]);
+  const bots = await filterResourcesByRole(
+    user,
+    await db.orm.aibot.ChatBot.where({
+      organizationId: user.organizationId,
+    })
+      .include("agent")
+      .include("adapters", (links) =>
+        links.include("adapter", (adapter) => adapter.include("publicIds")),
+      )
+      .include("mcpServers", (links) => links.include("mcpServer"))
+      .include("publicIds")
+      .orderBy((bot) => bot.updatedAt.desc())
+      .all(),
+  );
+  const agents = await filterResourcesByRole(
+    user,
+    await db.orm.aibot.AgentDefinition.where({
+      organizationId: user.organizationId,
+    })
+      .include("chatbots")
+      .include("provider")
+      .all(),
+  );
+  const adapters = await filterResourcesByRole(
+    user,
+    await db.orm.aibot.ChatAdapter.where({
+      organizationId: user.organizationId,
+    }).all(),
+  );
+  const mcpServers = await filterResourcesByRole(
+    user,
+    await db.orm.aibot.McpServer.where({
+      organizationId: user.organizationId,
+    }).all(),
+  );
+  const [sandboxRows, sandboxLinks, contextRows, authRows] = await Promise.all([
+    db.orm.aibot.Sandbox.where({ organizationId: user.organizationId }).all(),
+    db.orm.aibot.ChatBotToolSandbox.all(),
+    db.orm.aibot.ChatBotToolSetContext.all(),
+    db.orm.aibot.OAuthAuthentication.where({
+      organizationId: user.organizationId,
+    }).all(),
+  ]);
   const [sandboxes, toolSetContexts, authentications] = await Promise.all([
     filterResourcesByRole(user, sandboxRows),
     filterResourcesByRole(user, contextRows),
     filterResourcesByRole(user, authRows),
   ]);
-  const toolSetRegistry = new ToolSetFactoryRegistry(user.organizationId, user.id);
+  const toolSetRegistry = new ToolSetFactoryRegistry(
+    user.organizationId,
+    user.id,
+  );
   const toolSetSchemas = await toolSetRegistry.listToolSetSchemas();
   return {
-    records: await includeResourcePermissions(user, bots.map((bot) => {
-      const visibleAdapterLinks = bot.adapters.filter(
-        (link) => link.adapter && adapters.some((adapter) => adapter.id === link.adapterId),
-      );
-      const visibleMcpLinks = bot.mcpServers.filter(
-        (link) => mcpServers.some((server) => server.id === link.mcpServerId) &&
-          (link.authId === null || authentications.some((auth) => auth.id === link.authId)),
-      );
-      const visibleAgent = bot.agent && agents.some((agent) => agent.id === bot.agentId) ? bot.agent : null;
-      return record(bot.id, bot.updatedAt, {
-        name: bot.name,
-        description: bot.description ?? "",
-        agent: visibleAgent?.name ?? "—",
-        agentId: visibleAgent ? (bot.agentId ?? "") : "",
-        adapterIds: visibleAdapterLinks.map((link) => link.adapterId).join(","),
-        mcpConnections: JSON.stringify(
-          visibleMcpLinks.map((link) => ({
-            serverId: link.mcpServerId,
-            authId: link.authId,
-          })),
-        ),
-        mcpServerIds: visibleMcpLinks.map((link) => link.mcpServerId).join(","),
-        mcpAuthIds: JSON.stringify(
-          Object.fromEntries(
-            visibleMcpLinks.flatMap((link) =>
-              link.authId === null
-                ? []
-                : [[String(link.mcpServerId), String(link.authId)]],
+    records: await includeResourcePermissions(
+      user,
+      bots.map((bot) => {
+        const visibleAdapterLinks = bot.adapters.filter(
+          (link) =>
+            link.adapter &&
+            adapters.some((adapter) => adapter.id === link.adapterId),
+        );
+        const visibleMcpLinks = bot.mcpServers.filter(
+          (link) =>
+            mcpServers.some((server) => server.id === link.mcpServerId) &&
+            (link.authId === null ||
+              authentications.some((auth) => auth.id === link.authId)),
+        );
+        const visibleAgent =
+          bot.agent && agents.some((agent) => agent.id === bot.agentId)
+            ? bot.agent
+            : null;
+        return record(bot.id, bot.updatedAt, {
+          name: bot.name,
+          description: bot.description ?? "",
+          agent: visibleAgent?.name ?? "—",
+          agentId: visibleAgent ? (bot.agentId ?? "") : "",
+          adapterIds: visibleAdapterLinks
+            .map((link) => link.adapterId)
+            .join(","),
+          mcpConnections: JSON.stringify(
+            visibleMcpLinks.map((link) => ({
+              serverId: link.mcpServerId,
+              authId: link.authId,
+            })),
+          ),
+          mcpServerIds: visibleMcpLinks
+            .map((link) => link.mcpServerId)
+            .join(","),
+          mcpAuthIds: JSON.stringify(
+            Object.fromEntries(
+              visibleMcpLinks.flatMap((link) =>
+                link.authId === null
+                  ? []
+                  : [[String(link.mcpServerId), String(link.authId)]],
+              ),
             ),
           ),
-        ),
-        instruction: bot.instruction,
-        lookbackMessages: bot.lookbackMessages,
-        memoryConfig: bot.memoryConfig,
-        onFailedMessage: bot.onFailedMessage,
-        sandboxId: sandboxLinks
-          .filter(
-            (link) =>
-              link.chatbotId === bot.id &&
-              sandboxes.some((sandbox) => sandbox.id === link.sandboxId),
-          )
-          .map((link) => link.sandboxId)
-          .join(","),
-        sandboxes:
-          sandboxLinks
-            .filter((link) => link.chatbotId === bot.id)
-            .map(
+          instruction: bot.instruction,
+          lookbackMessages: bot.lookbackMessages,
+          memoryConfig: bot.memoryConfig,
+          onFailedMessage: bot.onFailedMessage,
+          sandboxId: sandboxLinks
+            .filter(
               (link) =>
-                sandboxes.find((sandbox) => sandbox.id === link.sandboxId)
-                  ?.sandboxType,
+                link.chatbotId === bot.id &&
+                sandboxes.some((sandbox) => sandbox.id === link.sandboxId),
             )
-            .filter(Boolean)
-            .join("、") || "—",
-        toolSetContexts: JSON.stringify(
-          toolSetContexts
-            .filter((context) => context.chatbotId === bot.id)
-            .map((context) => ({
-              toolSetName: context.toolSetName,
-              context: context.toolSetContext ?? {},
-            })),
-          null,
-          2,
-        ),
-        publicIds: JSON.stringify(
-          bot.publicIds.map(({ slot, publicId }) => ({ slot, id: publicId })),
-        ),
-        toolsets:
-          toolSetContexts
-            .filter((context) => context.chatbotId === bot.id)
-            .map((context) => context.toolSetName)
-            .join("、") || "—",
-        adapters:
-          visibleAdapterLinks
-            .map((link) => link.adapter?.name)
-            .filter((name): name is string => Boolean(name))
-            .join("、") || "—",
-        webhooks: JSON.stringify(
-          visibleAdapterLinks.flatMap((link) => {
-            const adapter = link.adapter;
-            if (!adapter) return [];
-            return bot.publicIds.flatMap((botPublicId) =>
-              adapter.publicIds.map((adapterPublicId) => ({
-                adapterName: `${adapter.name} (${botPublicId.slot}/${adapterPublicId.slot})`,
-                url: new URL(
-                  `/api/webhooks/${botPublicId.publicId}/${adapterPublicId.publicId}`,
-                  publicOrigin,
-                ).toString(),
+            .map((link) => link.sandboxId)
+            .join(","),
+          sandboxes:
+            sandboxLinks
+              .filter((link) => link.chatbotId === bot.id)
+              .map(
+                (link) =>
+                  sandboxes.find((sandbox) => sandbox.id === link.sandboxId)
+                    ?.sandboxType,
+              )
+              .filter(Boolean)
+              .join("、") || "—",
+          toolSetContexts: JSON.stringify(
+            toolSetContexts
+              .filter((context) => context.chatbotId === bot.id)
+              .map((context) => ({
+                toolSetName: context.toolSetName,
+                context: context.toolSetContext ?? {},
               })),
-            );
-          }),
-        ),
-        status: bot.isEnabled ? "server.active" : "server.inactive",
-      });
-    })),
+            null,
+            2,
+          ),
+          publicIds: JSON.stringify(
+            bot.publicIds.map(({ slot, publicId }) => ({ slot, id: publicId })),
+          ),
+          toolsets:
+            toolSetContexts
+              .filter((context) => context.chatbotId === bot.id)
+              .map((context) => context.toolSetName)
+              .join("、") || "—",
+          adapters:
+            visibleAdapterLinks
+              .map((link) => link.adapter?.name)
+              .filter((name): name is string => Boolean(name))
+              .join("、") || "—",
+          webhooks: JSON.stringify(
+            visibleAdapterLinks.flatMap((link) => {
+              const adapter = link.adapter;
+              if (!adapter) return [];
+              return bot.publicIds.flatMap((botPublicId) =>
+                adapter.publicIds.map((adapterPublicId) => ({
+                  adapterName: `${adapter.name} (${botPublicId.slot}/${adapterPublicId.slot})`,
+                  url: new URL(
+                    `/api/webhooks/${botPublicId.publicId}/${adapterPublicId.publicId}`,
+                    publicOrigin,
+                  ).toString(),
+                })),
+              );
+            }),
+          ),
+          status: bot.isEnabled ? "server.active" : "server.inactive",
+        });
+      }),
+    ),
     agentOptions: agents
       .filter(
         (agent) =>
           agent.provider.organizationId === user.organizationId &&
           (agent.chatbots.length === 0 ||
-            bots.some((bot) => agent.chatbots.some((item) => item.id === bot.id))),
+            bots.some((bot) =>
+              agent.chatbots.some((item) => item.id === bot.id),
+            )),
       )
       .map((agent) => ({ label: agent.name, value: String(agent.id) })),
     adapterOptions: adapters.map((adapter) => ({
@@ -297,7 +346,10 @@ export async function saveBot(
   } catch {
     return { error: "server.toolsetContextMustBeArray" };
   }
-  const toolSetRegistry = new ToolSetFactoryRegistry(user.organizationId, user.id);
+  const toolSetRegistry = new ToolSetFactoryRegistry(
+    user.organizationId,
+    user.id,
+  );
   const supportedToolSetNames = await toolSetRegistry.listToolSetNames();
   if (
     toolSetContexts.some(
@@ -316,15 +368,19 @@ export async function saveBot(
     const agent = await db.orm.aibot.AgentDefinition.where({ id: agentId })
       .include("provider")
       .first();
-    if (!agent || agent.provider.organizationId !== user.organizationId ||
-      !(await hasResourceAccess(user, agentId, "read")))
+    if (
+      !agent ||
+      agent.provider.organizationId !== user.organizationId ||
+      !(await hasResourceAccess(user, agentId, "read"))
+    )
       return { error: "server.selectedAgentNotFound" };
   }
   if (agentId !== null) {
     const assignedBot = await db.orm.aibot.ChatBot.first({ agentId });
     if (
       assignedBot &&
-      (assignedBot.organizationId !== user.organizationId || assignedBot.id !== id)
+      (assignedBot.organizationId !== user.organizationId ||
+        assignedBot.id !== id)
     )
       return { error: "server.selectedAgentAlreadyUsed" };
   }
@@ -332,16 +388,32 @@ export async function saveBot(
     organizationId: user.organizationId,
   }).all();
   const allowedAdapterIds = new Set(adapters.map((adapter) => adapter.id));
-  if (adapterIds.some((adapterId) => !allowedAdapterIds.has(adapterId)) ||
-    (await Promise.all(adapterIds.map((resourceId) => hasResourceAccess(user, resourceId, "read")))).some((allowed) => !allowed)) {
+  if (
+    adapterIds.some((adapterId) => !allowedAdapterIds.has(adapterId)) ||
+    (
+      await Promise.all(
+        adapterIds.map((resourceId) =>
+          hasResourceAccess(user, resourceId, "read"),
+        ),
+      )
+    ).some((allowed) => !allowed)
+  ) {
     return { error: "server.selectedAdapterUnavailable" };
   }
   const mcpServers = await db.orm.aibot.McpServer.where({
     organizationId: user.organizationId,
   }).all();
   const allowedMcpServerIds = new Set(mcpServers.map((data) => data.id));
-  if (mcpServerIds.some((id) => !allowedMcpServerIds.has(id)) ||
-    (await Promise.all(mcpServerIds.map((resourceId) => hasResourceAccess(user, resourceId, "read")))).some((allowed) => !allowed)) {
+  if (
+    mcpServerIds.some((id) => !allowedMcpServerIds.has(id)) ||
+    (
+      await Promise.all(
+        mcpServerIds.map((resourceId) =>
+          hasResourceAccess(user, resourceId, "read"),
+        ),
+      )
+    ).some((allowed) => !allowed)
+  ) {
     return { error: "server.selectedMcpServerUnavailable" };
   }
   const mcpConnectionKeys = mcpConnections.map(
@@ -358,7 +430,14 @@ export async function saveBot(
   if (
     mcpConnections.some(
       ({ authId }) => authId !== null && !allowedAuthenticationIds.has(authId),
-    ) || (await Promise.all(mcpConnections.flatMap(({ authId }) => authId ? [hasResourceAccess(user, authId, "read")] : []))).some((allowed) => !allowed)
+    ) ||
+    (
+      await Promise.all(
+        mcpConnections.flatMap(({ authId }) =>
+          authId ? [hasResourceAccess(user, authId, "read")] : [],
+        ),
+      )
+    ).some((allowed) => !allowed)
   )
     return {
       error: "server.mcpOauthRequiresSelectedServerAndOwnCredentials",
@@ -369,7 +448,12 @@ export async function saveBot(
   const allowedSandboxIds = new Set(
     ownedSandboxes.map((sandbox) => sandbox.id),
   );
-  if (sandboxId !== null && (!isUuid(sandboxId) || !allowedSandboxIds.has(sandboxId) || !(await hasResourceAccess(user, sandboxId, "read"))))
+  if (
+    sandboxId !== null &&
+    (!isUuid(sandboxId) ||
+      !allowedSandboxIds.has(sandboxId) ||
+      !(await hasResourceAccess(user, sandboxId, "read")))
+  )
     return { error: "server.selectedSandboxUnavailable" };
   const toolSetContextKeys = toolSetContexts.map(({ toolSetName, context }) =>
     JSON.stringify([toolSetName, stableJson(context)]),
@@ -390,7 +474,10 @@ export async function saveBot(
   }
   if (
     id !== null &&
-    (!(await db.orm.aibot.ChatBot.first({ id, organizationId: user.organizationId })) ||
+    (!(await db.orm.aibot.ChatBot.first({
+      id,
+      organizationId: user.organizationId,
+    })) ||
       !(await hasResourceAccess(user, id, "update")))
   )
     return { error: "server.botNotFound" };
@@ -428,7 +515,10 @@ export async function saveBot(
         });
       }
     } else {
-      await tx.orm.aibot.ChatBot.where({ id: botId, organizationId: user.organizationId }).update({
+      await tx.orm.aibot.ChatBot.where({
+        id: botId,
+        organizationId: user.organizationId,
+      }).update({
         name,
         description: description || null,
         instruction: instruction,
@@ -463,10 +553,31 @@ export async function saveBot(
         sandboxId,
       });
     }
-    await tx.orm.aibot.ChatBotToolSetContext.where({
+    const existingContexts = await tx.orm.aibot.ChatBotToolSetContext.where({
       chatbotId: botId!,
-    }).delete();
+    }).all();
+    const contextsToDelete = new Map(
+      existingContexts.map((existing) => [
+        JSON.stringify([
+          existing.toolSetName,
+          stableJson(existing.toolSetContext),
+        ]),
+        existing.id,
+      ]),
+    );
+    const contextsToCreate: ToolSetContextEntry[] = [];
     for (const { toolSetName, context } of toolSetContexts) {
+      const key = JSON.stringify([toolSetName, stableJson(context)]);
+      if (contextsToDelete.has(key)) {
+        contextsToDelete.delete(key);
+      } else {
+        contextsToCreate.push({ toolSetName, context });
+      }
+    }
+    for (const contextId of contextsToDelete.values()) {
+      await tx.orm.aibot.ResourceBase.where({ id: contextId }).delete();
+    }
+    for (const { toolSetName, context } of contextsToCreate) {
       const contextId = generateResourceId();
       await tx.orm.aibot.ResourceBase.create({ id: contextId });
       await tx.orm.aibot.ChatBotToolSetContext.create({
@@ -497,9 +608,15 @@ export async function saveBot(
 }
 
 export async function deleteBot(user: AuthUser, id: string) {
-  const bot = await db.orm.aibot.ChatBot.first({ id, organizationId: user.organizationId });
+  const bot = await db.orm.aibot.ChatBot.first({
+    id,
+    organizationId: user.organizationId,
+  });
   if (!bot || !(await hasResourceAccess(user, id, "delete"))) return false;
-  await db.orm.aibot.ChatBot.where({ id, organizationId: user.organizationId }).delete();
+  await db.orm.aibot.ChatBot.where({
+    id,
+    organizationId: user.organizationId,
+  }).delete();
   logAuditEvent("bot.deleted", "bot", id, user.id);
   return true;
 }
@@ -510,8 +627,12 @@ export async function regenerateBotPublicIds(
   slot: PublicIdSlot,
 ) {
   const regenerated = await db.transaction(async (tx) => {
-    const bot = await tx.orm.aibot.ChatBot.first({ id, organizationId: user.organizationId });
-    if (!bot || !(await hasResourceAccess(user, id, "manageGrant"))) return false;
+    const bot = await tx.orm.aibot.ChatBot.first({
+      id,
+      organizationId: user.organizationId,
+    });
+    if (!bot || !(await hasResourceAccess(user, id, "manageGrant")))
+      return false;
 
     const publicIds = await tx.orm.aibot.ChatBotPublicId.where({
       chatbotId: id,
@@ -541,10 +662,18 @@ export async function setBotEnabled(
   id: string,
   isEnabled: boolean,
 ) {
-  if (!(await db.orm.aibot.ChatBot.first({ id, organizationId: user.organizationId })) ||
-    !(await hasResourceAccess(user, id, "update")))
+  if (
+    !(await db.orm.aibot.ChatBot.first({
+      id,
+      organizationId: user.organizationId,
+    })) ||
+    !(await hasResourceAccess(user, id, "update"))
+  )
     return false;
-  await db.orm.aibot.ChatBot.where({ id, organizationId: user.organizationId }).update({
+  await db.orm.aibot.ChatBot.where({
+    id,
+    organizationId: user.organizationId,
+  }).update({
     isEnabled,
   });
   logAuditEvent(isEnabled ? "bot.enabled" : "bot.disabled", "bot", id, user.id);
