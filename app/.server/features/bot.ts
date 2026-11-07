@@ -24,7 +24,7 @@ import { getSearXNGWebSearch } from "./toolsets/tools/web/search-searxng";
 import { getChatTools } from "./toolsets/chat-tools";
 import type { FileHandleReaderMap } from "./toolsets/helpers/file-handle";
 import { ToolSetFactoryRegistry } from "./toolsets";
-import { LocalFileSystem } from "./filesystem/local";
+import { OpenDalFileSystem } from "./filesystem/opendal";
 import { buildMemoryPrompt, getMemoryTools } from "./toolsets/memory";
 import { getMemoryDirectory } from "./memory-config";
 import { t } from "~/.server/i18n";
@@ -170,6 +170,7 @@ async function processBotMessage(
   message: Message<unknown>,
   source: ExecutionSource,
   scheduledExecutionId: string | null = null,
+  publicOrigin?: string,
 ) {
   const mcpClients: Array<Awaited<ReturnType<typeof createMCPClient>>> = [];
   let turnSandbox: Awaited<ReturnType<typeof getBotSandbox>> = null;
@@ -178,7 +179,10 @@ async function processBotMessage(
   let executionId = scheduledExecutionId;
   let usageId: number | null = null;
   let phase: "configuration" | "processing" | "delivery" = "configuration";
-  let outcome: ExecutionOutcome = { status: "failed", errorCode: "processing_error" };
+  let outcome: ExecutionOutcome = {
+    status: "failed",
+    errorCode: "processing_error",
+  };
   try {
     const chatbot = await getAvailableBot(botId);
     const agent = chatbot?.agent;
@@ -242,10 +246,10 @@ async function processBotMessage(
       thread.id,
     );
     const memoryFs = memoryDirectory
-      ? new LocalFileSystem(memoryDirectory)
+      ? new OpenDalFileSystem("fs", { root: memoryDirectory })
       : null;
     const tools = {
-      ...getChatTools(chat, adapterPlatform, thread, fileHandles),
+      ...getChatTools(chat, adapterPlatform, thread, fileHandles, publicOrigin),
       ...getFileParseTools(fileHandles),
       ...(memoryFs
         ? getMemoryTools(memoryFs, {
@@ -441,10 +445,18 @@ async function processBotMessage(
   } catch (error) {
     outcome = {
       status: "failed",
-      errorCode: phase === "delivery" ? "delivery_error" : phase === "configuration" ? "configuration_error" : "processing_error",
+      errorCode:
+        phase === "delivery"
+          ? "delivery_error"
+          : phase === "configuration"
+            ? "configuration_error"
+            : "processing_error",
       usageId,
     };
-    appLogger.error(`Failed to handle execution ${executionId ?? "unrecorded"} for chatbot ${botId}`, error);
+    appLogger.error(
+      `Failed to handle execution ${executionId ?? "unrecorded"} for chatbot ${botId}`,
+      error,
+    );
     if (!replied) {
       try {
         await thread.post(onFailedMessage);
@@ -527,13 +539,24 @@ export function registerBotHandlers(
   botId: string,
   adapterId: string,
   adapterPlatform: string,
+  publicOrigin?: string,
 ) {
   const process = (
     thread: Thread<Record<string, unknown>, unknown>,
     message: Message<unknown>,
     source: ExecutionSource,
   ) =>
-    processBotMessage(chat, botId, adapterId, adapterPlatform, thread, message, source);
+    processBotMessage(
+      chat,
+      botId,
+      adapterId,
+      adapterPlatform,
+      thread,
+      message,
+      source,
+      null,
+      publicOrigin,
+    );
 
   chat.onDirectMessage(async (thread, message) => {
     appLogger.info("[ON_DIRECT_MESSAGE]");

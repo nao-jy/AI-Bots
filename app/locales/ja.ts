@@ -1075,7 +1075,7 @@ export const ja = {
     kingOfTimeUnexpectedHolidayTypes:
       "King of Time APIから予期しない休暇区分一覧が返されました。",
     uploadFileToChatDescription:
-      "ファイルハンドルからチャットにファイルを送信します。",
+      "ファイルハンドルからチャットにファイルを送信します。直接送信できない場合は期限付きのダウンロードリンクを返します。返されたURLは別途メッセージで送信してください。",
     getFileHandleFromAttachmentDescription:
       "メッセージの添付ファイルを参照するファイルハンドルを取得します。",
     fileHandle: "ファイルハンドル",

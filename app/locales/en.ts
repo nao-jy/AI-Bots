@@ -563,7 +563,7 @@ export const en = {
       "The King of Time employee record has no employee identifier.",
     kingOfTimeUnexpectedHolidayTypes:
       "King of Time API returned an unexpected leave type list.",
-    uploadFileToChatDescription: "Send a file to the chat using a file handle.",
+    uploadFileToChatDescription: "Send a file to the chat using a file handle. If direct upload fails, return a temporary download link; send that URL in a separate message.",
     getFileHandleFromAttachmentDescription:
       "Get a file handle to access a message attachment.",
     fileHandle: "File handle",

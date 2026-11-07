@@ -8,6 +8,7 @@ import {
 import { tool } from "ai";
 import z from "zod";
 import { t } from "~/.server/i18n";
+import { createTemporaryFileLink } from "./temporary-file-link";
 
 const MAX_PAGINATION = 5;
 
@@ -16,6 +17,7 @@ export function getChatTools(
   adapterPlatform: string,
   thread: Thread<Record<string, unknown>, unknown>,
   fileHandles: FileHandleReaderMap,
+  publicOrigin?: string,
 ) {
   const adapter = chat.getAdapter(adapterPlatform);
   const tools = createChatTools({
@@ -25,37 +27,66 @@ export function getChatTools(
     scope: thread,
     strictScope: true,
   });
-  return {
-    ...tools,
-    uploadFileToChat: tool({
-      description: t("server.uploadFileToChatDescription"),
-      inputSchema: z.object({
-        fileHandle: z.string().describe(t("server.fileHandle")),
-        filename: z.string().describe(t("server.filenameForUpload")),
-      }),
-      execute: async ({ fileHandle, filename }) => {
+  const uploadFileToChat = tool({
+    description: t("server.uploadFileToChatDescription"),
+    inputSchema: z.object({
+      fileHandle: z.string().describe(t("server.fileHandle")),
+      filename: z.string().describe(t("server.filenameForUpload")),
+    }),
+    execute: async ({ fileHandle, filename }) => {
+      const fileInfo = fileHandles.get(fileHandle);
+      if (fileInfo === undefined) {
+        return { error: t("server.fileNotRegistered") };
+      }
+      let data: Buffer;
+      try {
+        data = await toBuffer(fileInfo.stream());
+      } catch (error) {
+        return {
+          error: t("server.chatFileOperationFailed", {
+            0: error instanceof Error ? error.message : String(error),
+          }),
+        };
+      }
+      try {
+        await chat.thread(thread.id).post({
+          markdown: "",
+          files: [{ data, filename }],
+        });
+        return {
+          success: true,
+          delivery: "attachment",
+          messagePosted: true,
+          filename,
+          threadId: thread.id,
+        };
+      } catch (uploadError) {
         try {
-          const fileInfo = fileHandles.get(fileHandle);
-          if (fileInfo === undefined) {
-            return { error: t("server.fileNotRegistered") };
-          }
-          const data = await toBuffer(fileInfo.stream());
-
-          await chat.thread(thread.id).post({
-            markdown: "",
-            files: [{ data, filename }],
-          });
-
-          return { success: true, filename, threadId: thread.id };
-        } catch (error) {
+          const link = await createTemporaryFileLink(
+            data,
+            filename,
+            publicOrigin,
+          );
+          return {
+            success: true,
+            delivery: "temporary-link",
+            messagePosted: false,
+            ...link,
+            threadId: thread.id,
+          };
+        } catch (fallbackError) {
           return {
             error: t("server.chatFileOperationFailed", {
-              0: error instanceof Error ? error.message : String(error),
+              0: `${uploadError instanceof Error ? uploadError.message : String(uploadError)}; fallback: ${fallbackError instanceof Error ? fallbackError.message : String(fallbackError)}`,
             }),
           };
         }
-      },
-    }),
+      }
+    },
+  });
+  return {
+    ...tools,
+    uploadFileToChat,
     getFileHandleFromAttachment: tool({
       description: t("server.getFileHandleFromAttachmentDescription"),
       inputSchema: z.object({

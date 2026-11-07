@@ -13,3 +13,8 @@ export interface FileSystem {
   list(prefix: string): Promise<FileEntry[]>;
   rename?(from: string, to: string): Promise<void>;
 }
+
+export interface BinaryFileSystem extends FileSystem {
+  readBytes(path: string): Promise<Buffer | null>;
+  writeBytes(path: string, content: Uint8Array): Promise<void>;
+}

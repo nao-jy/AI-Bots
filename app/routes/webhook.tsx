@@ -39,7 +39,7 @@ export async function action({ request, params }: Route.ActionArgs) {
     return new Response("Unsupported adapter", { status: 404 });
   }
 
-  registerBotHandlers(botInfo.bot, chatbot.id, adapter.id, adapter.platform);
+  registerBotHandlers(botInfo.bot, chatbot.id, adapter.id, adapter.platform, new URL(request.url).origin);
   return botInfo.bot.webhooks[adapter.platform](request, {
     waitUntil: (task) => {
       void task.catch((error) => {

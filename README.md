@@ -37,16 +37,16 @@ For example, to run a bot that posts a recurring checklist to a team thread on w
 
 When you need a service or execution environment that is not included, implement the corresponding interface and wire it into the app. The existing integrations are a starting point. For an OpenAI-compatible API, you can also configure the built-in **OpenAI Compatible** provider without writing a new one.
 
-| Extension | Interface and example | Where to wire it in |
-| --- | --- | --- |
-| Another chat platform | Implement the Chat SDK `Adapter`; see the [Slack adapter integration](./app/.server/features/chat-adapter.ts). | Add a `ChatAdapterFactory` entry to `FACTORIES` in the same file. |
-| Another AI provider | `ModelFactory`; see the [OpenAI implementation](./app/.server/features/provider.ts). | Add an entry to `FACTORIES` in the same file. |
-| Another sandbox | [`Sandbox` interface](./app/.server/features/toolsets/sandboxes/index.ts) and [E2B implementation](./app/.server/features/toolsets/sandboxes/e2b.ts). | Add it to `SANDBOXES` in `sandboxes/index.ts`. |
-| Another memory store | [`FileSystem` interface](./app/.server/features/filesystem/index.ts) and [local file implementation](./app/.server/features/filesystem/local.ts). | Replace the `LocalFileSystem` construction in [bot processing](./app/.server/features/bot.ts). |
-| Another email service | [`EmailProvider` interface](./app/.server/features/email-providers/index.ts) and [SMTP relay implementation](./app/.server/features/email-providers/smtp-relay.ts). | Select it in `getEmailProvider()` in `email-providers/index.ts`. |
-| Another toolset | [`ToolSetFactory` interface](./app/.server/features/toolsets/index.ts) and [Google Drive implementation](./app/.server/features/toolsets/gdrive.ts). | Add it to `getToolSetFactories()` in `toolsets/index.ts`. |
+| Extension             | Interface and example                                                                                                                                               | Where to wire it in                                                                              |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| Another chat platform | Implement the Chat SDK `Adapter`; see the [Slack adapter integration](./app/.server/features/chat-adapter.ts).                                                      | Add a `ChatAdapterFactory` entry to `FACTORIES` in the same file.                                |
+| Another AI provider   | `ModelFactory`; see the [OpenAI implementation](./app/.server/features/provider.ts).                                                                                | Add an entry to `FACTORIES` in the same file.                                                    |
+| Another sandbox       | [`Sandbox` interface](./app/.server/features/toolsets/sandboxes/index.ts) and [E2B implementation](./app/.server/features/toolsets/sandboxes/e2b.ts).               | Add it to `SANDBOXES` in `sandboxes/index.ts`.                                                   |
+| Another memory store  | [`FileSystem` interface](./app/.server/features/filesystem/index.ts) and [OpenDAL implementation](./app/.server/features/filesystem/opendal.ts).                    | Replace the `OpenDalFileSystem` construction in [bot processing](./app/.server/features/bot.ts). |
+| Another email service | [`EmailProvider` interface](./app/.server/features/email-providers/index.ts) and [SMTP relay implementation](./app/.server/features/email-providers/smtp-relay.ts). | Select it in `getEmailProvider()` in `email-providers/index.ts`.                                 |
+| Another toolset       | [`ToolSetFactory` interface](./app/.server/features/toolsets/index.ts) and [Google Drive implementation](./app/.server/features/toolsets/gdrive.ts).                | Add it to `getToolSetFactories()` in `toolsets/index.ts`.                                        |
 
-The file system interface currently backs bot memory. Chat attachments and external files such as Google Drive use separate tools.
+The file system interface backs bot memory and temporary file storage. Chat attachments and external files such as Google Drive use separate tools.
 
 ## Requirements
 
@@ -124,7 +124,7 @@ The built-in email provider sends through an SMTP relay. Once configured, it can
 | `DATABASE_URL`               | Yes       | PostgreSQL connection string used by the app and chat state store.                                                                                                                                      |
 | `CREDENTIALS_ENCRYPTION_KEY` | Yes       | Base64-encoded 32-byte key for encrypting credentials and signing OAuth authorization state.                                                                                                            |
 | `OAUTH_BASE_URL`             | For OAuth | Public HTTPS origin (no path) used to form the OAuth callback URL, `/oauth/callback`. `http://localhost` is allowed for local development. Register the resulting callback URL with the OAuth provider. |
-| `PUBLIC_APP_URL`             | Optional  | Public application URL used when generating webhook URLs and email verification links. If unset, the request origin is used.                                                                            |
+| `PUBLIC_APP_URL`             | Optional  | Public application URL used for webhook URLs, email verification links, and temporary file download links. If unset, the request origin is used.                                                        |
 | `E2B_API_KEY`                | For E2B   | Enables the E2B sandbox provider.                                                                                                                                                                       |
 | `OPEN_SANDBOX_DOMAIN`        | Optional  | Enables OpenSandbox and sets its connection domain.                                                                                                                                                     |
 | `OPEN_SANDBOX_API_KEY`       | Optional  | API key passed to the OpenSandbox server in the included Compose setup.                                                                                                                                 |
@@ -132,12 +132,15 @@ The built-in email provider sends through an SMTP relay. Once configured, it can
 | `SMTP_RELAY_HOST`            | For email | SMTP relay host.                                                                                                                                                                                        |
 | `SMTP_RELAY_PORT`            | For email | SMTP relay port.                                                                                                                                                                                        |
 | `SMTP_RELAY_SECURE`          | For email | Set to `true` for TLS; when `false`, STARTTLS is required.                                                                                                                                              |
-| `SMTP_RELAY_USER`            | For email | SMTP authentication username.                                                                                                                                                                          |
-| `SMTP_RELAY_PASS`            | For email | SMTP authentication password.                                                                                                                                                                          |
-| `SMTP_RELAY_DOMAIN_FROM`     | For email | Domain used for the `noreply@<domain>` sender address.                                                                                                                                                 |
+| `SMTP_RELAY_USER`            | For email | SMTP authentication username.                                                                                                                                                                           |
+| `SMTP_RELAY_PASS`            | For email | SMTP authentication password.                                                                                                                                                                           |
+| `SMTP_RELAY_DOMAIN_FROM`     | For email | Domain used for the `noreply@<domain>` sender address.                                                                                                                                                  |
 | `CLOUDFLARE_TOKEN`           | Optional  | Cloudflare Tunnel token used by `npm run dev`.                                                                                                                                                          |
 | `LOG_DIR`                    | Optional  | Log directory; defaults to `logs`.                                                                                                                                                                      |
 | `MEMORY_DIR`                 | Optional  | Persistent directory for bot memories; defaults to `data/memory`. A bot's memory setting controls whether memory is disabled, separated by thread, or shared across the bot.                            |
+| `TEMP_FILE_DIR`              | Optional  | Temporary file directory for OpenDAL's `fs` service; defaults to `data/temporary-files`. Links expire after 24 hours and files are limited to 10 MiB.                                                   |
+| `TEMP_FILE_STORAGE_SERVICE`  | Optional  | OpenDAL service for temporary files; defaults to `fs`. Set to `s3` to use S3.                                                                                                                           |
+| `TEMP_FILE_STORAGE_CONFIG`   | Optional  | OpenDAL temporary storage options as a JSON object with string values. For `s3`, supply options such as `bucket` and `region`.                                                                          |
 
 `infra/compose.yaml` defines PostgreSQL, SearXNG, and OpenSandbox. To start the optional services as well, make sure `infra/.env` exists (copy `infra/sample.env` if needed) and run:
 

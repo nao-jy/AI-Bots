@@ -3,15 +3,21 @@ import type { Chat, Thread } from "chat";
 import { getChatTools } from "./chat-tools";
 import { getFileParseTools } from "./file-parse";
 import type { FileHandleReaderMap } from "./helpers/file-handle";
+import { mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
 vi.mock("chat/ai", () => ({ createChatTools: () => ({}) }));
 
 type ToolWithExecute = {
-  execute: (input: Record<string, unknown>, options: {
-    toolCallId: string;
-    messages: never[];
-    context: undefined;
-  }) => Promise<unknown>;
+  execute: (
+    input: Record<string, unknown>,
+    options: {
+      toolCallId: string;
+      messages: never[];
+      context: undefined;
+    },
+  ) => Promise<unknown>;
 };
 
 function runTool(tool: unknown, input: Record<string, unknown>) {
@@ -23,24 +29,126 @@ function runTool(tool: unknown, input: Record<string, unknown>) {
 }
 
 describe("tool error results", () => {
-  it("returns a result when uploading a file fails", async () => {
+  it("offers the same upload tool in Google Chat", () => {
+    const chat = { getAdapter: () => ({}) } as unknown as Chat;
+    const thread = { id: "test-thread" } as Thread<
+      Record<string, unknown>,
+      unknown
+    >;
+    const tools = getChatTools(chat, "gchat", thread, new Map());
+
+    expect(tools).toHaveProperty("uploadFileToChat");
+    expect(tools).not.toHaveProperty("createTemporaryFileLink");
+  });
+
+  it("returns a temporary link without posting it when direct upload fails", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "bot-upload-fallback-"));
+    vi.stubEnv("TEMP_FILE_DIR", dir);
+    vi.stubEnv("PUBLIC_APP_URL", "https://example.test");
     const post = vi.fn().mockRejectedValue(new Error("upload rejected"));
     const chat = {
       getAdapter: () => ({}),
       thread: () => ({ post }),
     } as unknown as Chat;
-    const thread = { id: "test-thread" } as Thread<Record<string, unknown>, unknown>;
+    const thread = { id: "test-thread" } as Thread<
+      Record<string, unknown>,
+      unknown
+    >;
     const fileHandles: FileHandleReaderMap = new Map([
-      ["file", { stream: async function* () { yield Buffer.from("content"); } }],
+      [
+        "file",
+        {
+          stream: async function* () {
+            yield Buffer.from("content");
+          },
+        },
+      ],
+    ]);
+
+    try {
+      const result = await runTool(
+        getChatTools(chat, "gchat", thread, fileHandles).uploadFileToChat,
+        { fileHandle: "file", filename: "test.txt" },
+      );
+
+      expect(result).toMatchObject({
+        success: true,
+        delivery: "temporary-link",
+        messagePosted: false,
+        url: expect.stringContaining("/api/files/"),
+      });
+      expect(post).toHaveBeenCalledOnce();
+    } finally {
+      vi.unstubAllEnvs();
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("keeps direct attachment delivery when it succeeds", async () => {
+    const post = vi.fn().mockResolvedValue({});
+    const chat = {
+      getAdapter: () => ({}),
+      thread: () => ({ post }),
+    } as unknown as Chat;
+    const thread = { id: "test-thread" } as Thread<
+      Record<string, unknown>,
+      unknown
+    >;
+    const fileHandles: FileHandleReaderMap = new Map([
+      [
+        "file",
+        {
+          stream: async function* () {
+            yield Buffer.from("content");
+          },
+        },
+      ],
     ]);
 
     const result = await runTool(
-      getChatTools(chat, "gchat", thread, fileHandles).uploadFileToChat,
+      getChatTools(chat, "slack", thread, fileHandles).uploadFileToChat,
       { fileHandle: "file", filename: "test.txt" },
     );
 
-    expect(result).toMatchObject({ error: expect.stringContaining("upload rejected") });
+    expect(result).toMatchObject({ success: true, delivery: "attachment", messagePosted: true });
     expect(post).toHaveBeenCalledOnce();
+  });
+
+  it("returns an error if the fallback cannot create a public link", async () => {
+    vi.stubEnv("PUBLIC_APP_URL", "");
+    const post = vi.fn().mockRejectedValue(new Error("upload rejected"));
+    const chat = {
+      getAdapter: () => ({}),
+      thread: () => ({ post }),
+    } as unknown as Chat;
+    const thread = { id: "test-thread" } as Thread<
+      Record<string, unknown>,
+      unknown
+    >;
+    const fileHandles: FileHandleReaderMap = new Map([
+      [
+        "file",
+        {
+          stream: async function* () {
+            yield Buffer.from("content");
+          },
+        },
+      ],
+    ]);
+
+    try {
+      const result = await runTool(
+        getChatTools(chat, "gchat", thread, fileHandles).uploadFileToChat,
+        { fileHandle: "file", filename: "test.txt" },
+      );
+
+      expect(result).toMatchObject({
+        error: expect.stringContaining("upload rejected"),
+      });
+      expect(post).toHaveBeenCalledOnce();
+    } finally {
+      vi.unstubAllEnvs();
+    }
   });
 
   it("returns an error result for an unknown upload handle", async () => {
@@ -49,10 +157,18 @@ describe("tool error results", () => {
       getAdapter: () => ({}),
       thread: () => ({ post }),
     } as unknown as Chat;
-    const thread = { id: "test-thread" } as Thread<Record<string, unknown>, unknown>;
+    const thread = { id: "test-thread" } as Thread<
+      Record<string, unknown>,
+      unknown
+    >;
 
     const result = await runTool(
-      getChatTools(chat, "gchat", thread, new Map()).uploadFileToChat,
+      (
+        getChatTools(chat, "slack", thread, new Map()) as Record<
+          string,
+          unknown
+        >
+      ).uploadFileToChat,
       { fileHandle: "missing", filename: "test.txt" },
     );
 
@@ -62,16 +178,24 @@ describe("tool error results", () => {
 
   it("returns a result when fetching an attachment fails", async () => {
     const chat = {
-      getAdapter: () => ({ fetchMessage: vi.fn().mockRejectedValue(new Error("fetch rejected")) }),
+      getAdapter: () => ({
+        fetchMessage: vi.fn().mockRejectedValue(new Error("fetch rejected")),
+      }),
     } as unknown as Chat;
-    const thread = { id: "test-thread" } as Thread<Record<string, unknown>, unknown>;
+    const thread = { id: "test-thread" } as Thread<
+      Record<string, unknown>,
+      unknown
+    >;
 
     const result = await runTool(
-      getChatTools(chat, "gchat", thread, new Map()).getFileHandleFromAttachment,
+      getChatTools(chat, "gchat", thread, new Map())
+        .getFileHandleFromAttachment,
       { messageId: "message", attachmentIndex: 0 },
     );
 
-    expect(result).toMatchObject({ error: expect.stringContaining("fetch rejected") });
+    expect(result).toMatchObject({
+      error: expect.stringContaining("fetch rejected"),
+    });
   });
 
   it("returns a result for an unknown file handle", async () => {
