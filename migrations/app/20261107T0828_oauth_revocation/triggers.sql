@@ -1,31 +1,3 @@
--- Run as one transaction while writers are excluded, including during backfill.
-LOCK TABLE aibot."OAuthClient", aibot."OAuthAuthentication" IN SHARE ROW EXCLUSIVE MODE;
-
-CREATE TABLE IF NOT EXISTS aibot."OAuthRevocationSnapshot" (
-  "authenticationId" uuid PRIMARY KEY,
-  "oauthId" uuid NOT NULL,
-  "clientId" text NOT NULL,
-  "clientSecret" text,
-  "revocationEndpoint" text
-);
-CREATE INDEX IF NOT EXISTS "OAuthRevocationSnapshot_oauthId_idx"
-  ON aibot."OAuthRevocationSnapshot" ("oauthId");
-
-CREATE TABLE IF NOT EXISTS aibot."OAuthRevocationQueue" (
-  id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-  "authenticationId" uuid NOT NULL,
-  "clientId" text NOT NULL,
-  "clientSecret" text,
-  "revocationEndpoint" text,
-  "accessToken" text NOT NULL,
-  "refreshToken" text,
-  attempts integer NOT NULL DEFAULT 0,
-  "nextAttemptAt" timestamptz NOT NULL DEFAULT now(),
-  "createdAt" timestamptz NOT NULL DEFAULT now()
-);
-CREATE INDEX IF NOT EXISTS "OAuthRevocationQueue_nextAttemptAt_idx"
-  ON aibot."OAuthRevocationQueue" ("nextAttemptAt", id);
-
 CREATE OR REPLACE FUNCTION aibot.oauth_revocation_snapshot_auth() RETURNS trigger
 LANGUAGE plpgsql AS $$
 BEGIN

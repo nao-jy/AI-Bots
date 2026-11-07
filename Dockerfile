@@ -18,7 +18,5 @@ FROM node:24-alpine
 COPY ./package.json package-lock.json /app/
 COPY --from=production-dependencies-env /app/node_modules /app/node_modules
 COPY --from=build-env /app/build /app/build
-COPY ./scripts/install-oauth-revocation.mjs /app/scripts/install-oauth-revocation.mjs
-COPY ./migrations/custom/oauth-revocation.sql /app/migrations/custom/oauth-revocation.sql
 WORKDIR /app
 CMD ["npm", "run", "start"]

@@ -388,6 +388,32 @@ namespace aibot {
     @@index([oauthId])
   }
 
+  // Independent of OAuthClient/Organization so pending revocations survive cascades.
+  model OAuthRevocationSnapshot {
+    authenticationId   Uuid    @id
+    oauthId            Uuid
+    clientId           String
+    clientSecret       String?
+    revocationEndpoint String?
+
+    @@index([oauthId])
+  }
+
+  model OAuthRevocationQueue {
+    id                 BigInt            @id @default(autoincrement())
+    authenticationId   Uuid
+    clientId           String
+    clientSecret       String?
+    revocationEndpoint String?
+    accessToken        String
+    refreshToken       String?
+    attempts           Int               @default(0)
+    nextAttemptAt      TimestamptzString @default(now())
+    createdAt          TimestamptzString @default(now())
+
+    @@index([nextAttemptAt, id])
+  }
+
   model Sandbox {
     +Resource
     sandboxType       String

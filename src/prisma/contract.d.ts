@@ -23,7 +23,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'21e9adf99abf7824f64feb914216c34adb832b84f6f1f320add932808b596595'>;
+  StorageHashBase<'a8c887057b26ed29e31335243867b909e4990512963bec74dbb855acc56287a5'>;
 export type ExecutionHash =
   ExecutionHashBase<'00d003bba395e5a0ffcad6d56df6185110965febfc0a58ce77ce105a9f59097f'>;
 export type ProfileHash =
@@ -705,6 +705,27 @@ export namespace Models {
     resource: aibot_ResourceBase;
     readonly [RelationKeys]?: 'authentications' | 'organization' | 'resource';
   };
+  export type aibot_OAuthRevocationQueue = {
+    accessToken: FieldOutputTypes['aibot']['OAuthRevocationQueue']['accessToken'];
+    attempts: FieldOutputTypes['aibot']['OAuthRevocationQueue']['attempts'];
+    authenticationId: FieldOutputTypes['aibot']['OAuthRevocationQueue']['authenticationId'];
+    clientId: FieldOutputTypes['aibot']['OAuthRevocationQueue']['clientId'];
+    clientSecret: FieldOutputTypes['aibot']['OAuthRevocationQueue']['clientSecret'];
+    createdAt: FieldOutputTypes['aibot']['OAuthRevocationQueue']['createdAt'];
+    id: FieldOutputTypes['aibot']['OAuthRevocationQueue']['id'];
+    nextAttemptAt: FieldOutputTypes['aibot']['OAuthRevocationQueue']['nextAttemptAt'];
+    refreshToken: FieldOutputTypes['aibot']['OAuthRevocationQueue']['refreshToken'];
+    revocationEndpoint: FieldOutputTypes['aibot']['OAuthRevocationQueue']['revocationEndpoint'];
+    readonly [RelationKeys]?: never;
+  };
+  export type aibot_OAuthRevocationSnapshot = {
+    authenticationId: FieldOutputTypes['aibot']['OAuthRevocationSnapshot']['authenticationId'];
+    clientId: FieldOutputTypes['aibot']['OAuthRevocationSnapshot']['clientId'];
+    clientSecret: FieldOutputTypes['aibot']['OAuthRevocationSnapshot']['clientSecret'];
+    oauthId: FieldOutputTypes['aibot']['OAuthRevocationSnapshot']['oauthId'];
+    revocationEndpoint: FieldOutputTypes['aibot']['OAuthRevocationSnapshot']['revocationEndpoint'];
+    readonly [RelationKeys]?: never;
+  };
   export type aibot_Organization = {
     createdAt: FieldOutputTypes['aibot']['Organization']['createdAt'];
     id: FieldOutputTypes['aibot']['Organization']['id'];
@@ -874,6 +895,8 @@ export declare const models: {
     Membership: Models.aibot_Membership;
     OAuthAuthentication: Models.aibot_OAuthAuthentication;
     OAuthClient: Models.aibot_OAuthClient;
+    OAuthRevocationQueue: Models.aibot_OAuthRevocationQueue;
+    OAuthRevocationSnapshot: Models.aibot_OAuthRevocationSnapshot;
     Organization: Models.aibot_Organization;
     PersistentSandboxInstance: Models.aibot_PersistentSandboxInstance;
     PrincipalBase: Models.aibot_PrincipalBase;
@@ -3149,6 +3172,136 @@ type ContractBase = Omit<
                 },
               ];
             };
+            readonly OAuthRevocationQueue: {
+              columns: {
+                readonly accessToken: {
+                  readonly dataType: 'pg/text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly attempts: {
+                  readonly dataType: 'pg/int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/int4@1', 0>;
+                  };
+                  readonly many: false;
+                };
+                readonly authenticationId: {
+                  readonly dataType: 'pg/uuid';
+                  readonly codecId: 'pg/uuid@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly clientId: {
+                  readonly dataType: 'pg/text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly clientSecret: {
+                  readonly dataType: 'pg/text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                  readonly many: false;
+                };
+                readonly createdAt: {
+                  readonly dataType: 'pg/timestamptz';
+                  readonly codecId: 'pg/timestamptz-string@1';
+                  readonly nullable: false;
+                  readonly default: { readonly kind: 'function'; readonly expression: 'now()' };
+                  readonly many: false;
+                };
+                readonly id: {
+                  readonly dataType: 'pg/int8';
+                  readonly codecId: 'pg/int8@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'function';
+                    readonly expression: 'autoincrement()';
+                  };
+                  readonly many: false;
+                };
+                readonly nextAttemptAt: {
+                  readonly dataType: 'pg/timestamptz';
+                  readonly codecId: 'pg/timestamptz-string@1';
+                  readonly nullable: false;
+                  readonly default: { readonly kind: 'function'; readonly expression: 'now()' };
+                  readonly many: false;
+                };
+                readonly refreshToken: {
+                  readonly dataType: 'pg/text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                  readonly many: false;
+                };
+                readonly revocationEndpoint: {
+                  readonly dataType: 'pg/text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                  readonly many: false;
+                };
+              };
+              primaryKey: { readonly columns: readonly ['id'] };
+              uniques: readonly [];
+              indexes: readonly [
+                {
+                  readonly name: 'OAuthRevocationQueue_nextAttemptAt_id_idx_c433e4eb';
+                  readonly prefix: 'OAuthRevocationQueue_nextAttemptAt_id_idx';
+                  readonly columns: readonly ['nextAttemptAt', 'id'];
+                  readonly unique: false;
+                },
+              ];
+              foreignKeys: readonly [];
+            };
+            readonly OAuthRevocationSnapshot: {
+              columns: {
+                readonly authenticationId: {
+                  readonly dataType: 'pg/uuid';
+                  readonly codecId: 'pg/uuid@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly clientId: {
+                  readonly dataType: 'pg/text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly clientSecret: {
+                  readonly dataType: 'pg/text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                  readonly many: false;
+                };
+                readonly oauthId: {
+                  readonly dataType: 'pg/uuid';
+                  readonly codecId: 'pg/uuid@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly revocationEndpoint: {
+                  readonly dataType: 'pg/text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                  readonly many: false;
+                };
+              };
+              primaryKey: { readonly columns: readonly ['authenticationId'] };
+              uniques: readonly [];
+              indexes: readonly [
+                {
+                  readonly name: 'OAuthRevocationSnapshot_oauthId_idx_b3651b5a';
+                  readonly prefix: 'OAuthRevocationSnapshot_oauthId_idx';
+                  readonly columns: readonly ['oauthId'];
+                  readonly unique: false;
+                },
+              ];
+              foreignKeys: readonly [];
+            };
             readonly Organization: {
               columns: {
                 readonly createdAt: {
@@ -4123,6 +4276,14 @@ type ContractBase = Omit<
     readonly OAuthClient: {
       readonly namespace: 'aibot' & NamespaceId;
       readonly model: 'OAuthClient';
+    };
+    readonly OAuthRevocationQueue: {
+      readonly namespace: 'aibot' & NamespaceId;
+      readonly model: 'OAuthRevocationQueue';
+    };
+    readonly OAuthRevocationSnapshot: {
+      readonly namespace: 'aibot' & NamespaceId;
+      readonly model: 'OAuthRevocationSnapshot';
     };
     readonly Organization: {
       readonly namespace: 'aibot' & NamespaceId;
@@ -6184,6 +6345,109 @@ type ContractBase = Omit<
                 readonly scopes: { readonly column: 'scopes' };
                 readonly tokenEndpoint: { readonly column: 'tokenEndpoint' };
                 readonly updatedAt: { readonly column: 'updatedAt' };
+              };
+            };
+          };
+          readonly OAuthRevocationQueue: {
+            readonly fields: {
+              readonly accessToken: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly attempts: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+              readonly authenticationId: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/uuid@1' };
+              };
+              readonly clientId: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly clientSecret: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly createdAt: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-string@1';
+                };
+              };
+              readonly id: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int8@1' };
+              };
+              readonly nextAttemptAt: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-string@1';
+                };
+              };
+              readonly refreshToken: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly revocationEndpoint: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+            };
+            readonly relations: Record<string, never>;
+            readonly storage: {
+              readonly table: 'OAuthRevocationQueue';
+              readonly namespaceId: 'aibot';
+              readonly fields: {
+                readonly accessToken: { readonly column: 'accessToken' };
+                readonly attempts: { readonly column: 'attempts' };
+                readonly authenticationId: { readonly column: 'authenticationId' };
+                readonly clientId: { readonly column: 'clientId' };
+                readonly clientSecret: { readonly column: 'clientSecret' };
+                readonly createdAt: { readonly column: 'createdAt' };
+                readonly id: { readonly column: 'id' };
+                readonly nextAttemptAt: { readonly column: 'nextAttemptAt' };
+                readonly refreshToken: { readonly column: 'refreshToken' };
+                readonly revocationEndpoint: { readonly column: 'revocationEndpoint' };
+              };
+            };
+          };
+          readonly OAuthRevocationSnapshot: {
+            readonly fields: {
+              readonly authenticationId: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/uuid@1' };
+              };
+              readonly clientId: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly clientSecret: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly oauthId: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/uuid@1' };
+              };
+              readonly revocationEndpoint: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+            };
+            readonly relations: Record<string, never>;
+            readonly storage: {
+              readonly table: 'OAuthRevocationSnapshot';
+              readonly namespaceId: 'aibot';
+              readonly fields: {
+                readonly authenticationId: { readonly column: 'authenticationId' };
+                readonly clientId: { readonly column: 'clientId' };
+                readonly clientSecret: { readonly column: 'clientSecret' };
+                readonly oauthId: { readonly column: 'oauthId' };
+                readonly revocationEndpoint: { readonly column: 'revocationEndpoint' };
               };
             };
           };

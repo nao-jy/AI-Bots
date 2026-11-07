@@ -14,14 +14,17 @@ try {
   await client.query(`CREATE TABLE oauth_revocation_test."OAuthAuthentication" (
     id uuid PRIMARY KEY, "oauthId" uuid NOT NULL REFERENCES oauth_revocation_test."OAuthClient" ON DELETE CASCADE,
     "accessToken" text NOT NULL, "refreshToken" text)`);
-  const sql = (await readFile(new URL("../migrations/custom/oauth-revocation.sql", import.meta.url), "utf8"))
-    .replaceAll("aibot.", "oauth_revocation_test.");
+  const operations = JSON.parse(await readFile(new URL("../migrations/app/20261107T0828_oauth_revocation/ops.json", import.meta.url), "utf8"));
+  const runOperation = async (operation) => {
+    for (const step of operation.execute)
+      await client.query(step.sql.replaceAll('"aibot".', '"oauth_revocation_test".').replaceAll("aibot.", "oauth_revocation_test."));
+  };
   const clientId = "00000000-0000-0000-0000-000000000001";
   const authId = "00000000-0000-0000-0000-000000000002";
   await client.query('INSERT INTO oauth_revocation_test."OAuthClient" VALUES ($1, $2, $3, $4)', [clientId, "old", "secret", "https://example.com/revoke"]);
   await client.query('INSERT INTO oauth_revocation_test."OAuthAuthentication" VALUES ($1, $2, $3, $4)', [authId, clientId, "access", "refresh"]);
-  await client.query(sql); // Backfill existing credentials.
-  await client.query(sql); // Installation is repeatable.
+  for (const operation of operations) await runOperation(operation); // Backfill existing credentials.
+  await runOperation(operations.find((operation) => operation.id === "oauth.revocation.triggers"));
   await client.query('UPDATE oauth_revocation_test."OAuthClient" SET "clientId" = $1 WHERE id = $2', ["updated", clientId]);
   await client.query('SAVEPOINT before_delete');
   await client.query('DELETE FROM oauth_revocation_test."OAuthClient" WHERE id = $1', [clientId]);

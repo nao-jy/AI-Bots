@@ -1,0 +1,284 @@
+[
+  {
+    "id": "oauth.revocation.lock",
+    "label": "Lock OAuth tables during revocation setup",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres"
+    },
+    "precheck": [],
+    "postcheck": [],
+    "execute": [
+      {
+        "description": "Lock OAuth tables",
+        "sql": "LOCK TABLE aibot.\"OAuthClient\", aibot.\"OAuthAuthentication\" IN SHARE ROW EXCLUSIVE MODE"
+      }
+    ]
+  },
+  {
+    "id": "table.OAuthRevocationQueue",
+    "label": "Create table \"OAuthRevocationQueue\"",
+    "summary": "Creates table \"OAuthRevocationQueue\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "aibot",
+        "objectType": "table",
+        "name": "OAuthRevocationQueue"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"OAuthRevocationQueue\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"aibot\".\"OAuthRevocationQueue\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "table \"OAuthRevocationQueue\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"OAuthRevocationQueue\"",
+        "sql": "CREATE TABLE \"aibot\".\"OAuthRevocationQueue\" (\n  \"accessToken\" text NOT NULL,\n  \"attempts\" int4 DEFAULT 0 NOT NULL,\n  \"authenticationId\" uuid NOT NULL,\n  \"clientId\" text NOT NULL,\n  \"clientSecret\" text,\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"id\" BIGSERIAL NOT NULL,\n  \"nextAttemptAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"refreshToken\" text,\n  \"revocationEndpoint\" text,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"OAuthRevocationQueue\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_class\" AS \"c\" WHERE (\"c\".\"oid\" = to_regclass($1) AND (\"c\".\"relkind\" = $2 OR \"c\".\"relkind\" = $3))) AS \"result\"",
+        "params": [
+          "\"aibot\".\"OAuthRevocationQueue\"",
+          "r",
+          "p"
+        ],
+        "expectation": {
+          "expects": "present",
+          "object": "table \"OAuthRevocationQueue\""
+        }
+      }
+    ]
+  },
+  {
+    "id": "table.OAuthRevocationSnapshot",
+    "label": "Create table \"OAuthRevocationSnapshot\"",
+    "summary": "Creates table \"OAuthRevocationSnapshot\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "aibot",
+        "objectType": "table",
+        "name": "OAuthRevocationSnapshot"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"OAuthRevocationSnapshot\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"aibot\".\"OAuthRevocationSnapshot\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "table \"OAuthRevocationSnapshot\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"OAuthRevocationSnapshot\"",
+        "sql": "CREATE TABLE \"aibot\".\"OAuthRevocationSnapshot\" (\n  \"authenticationId\" uuid NOT NULL,\n  \"clientId\" text NOT NULL,\n  \"clientSecret\" text,\n  \"oauthId\" uuid NOT NULL,\n  \"revocationEndpoint\" text,\n  PRIMARY KEY (\"authenticationId\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"OAuthRevocationSnapshot\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_class\" AS \"c\" WHERE (\"c\".\"oid\" = to_regclass($1) AND (\"c\".\"relkind\" = $2 OR \"c\".\"relkind\" = $3))) AS \"result\"",
+        "params": [
+          "\"aibot\".\"OAuthRevocationSnapshot\"",
+          "r",
+          "p"
+        ],
+        "expectation": {
+          "expects": "present",
+          "object": "table \"OAuthRevocationSnapshot\""
+        }
+      }
+    ]
+  },
+  {
+    "id": "oauth.revocation.legacy_indexes",
+    "label": "Remove legacy OAuth revocation indexes",
+    "operationClass": "widening",
+    "target": {
+      "id": "postgres"
+    },
+    "precheck": [],
+    "postcheck": [],
+    "execute": [
+      {
+        "description": "Remove legacy queue index",
+        "sql": "DROP INDEX IF EXISTS aibot.\"OAuthRevocationQueue_nextAttemptAt_idx\""
+      },
+      {
+        "description": "Remove legacy snapshot index",
+        "sql": "DROP INDEX IF EXISTS aibot.\"OAuthRevocationSnapshot_oauthId_idx\""
+      }
+    ]
+  },
+  {
+    "id": "index.OAuthRevocationQueue.OAuthRevocationQueue_nextAttemptAt_id_idx_c433e4eb",
+    "label": "Create index \"OAuthRevocationQueue_nextAttemptAt_id_idx_c433e4eb\" on \"OAuthRevocationQueue\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "aibot",
+        "objectType": "index",
+        "name": "OAuthRevocationQueue_nextAttemptAt_id_idx_c433e4eb",
+        "table": "OAuthRevocationQueue"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"OAuthRevocationQueue_nextAttemptAt_id_idx_c433e4eb\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"aibot\".\"OAuthRevocationQueue_nextAttemptAt_id_idx_c433e4eb\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "index \"OAuthRevocationQueue_nextAttemptAt_id_idx_c433e4eb\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"OAuthRevocationQueue_nextAttemptAt_id_idx_c433e4eb\"",
+        "sql": "CREATE INDEX \"OAuthRevocationQueue_nextAttemptAt_id_idx_c433e4eb\" ON \"aibot\".\"OAuthRevocationQueue\" (\"nextAttemptAt\", \"id\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"OAuthRevocationQueue_nextAttemptAt_id_idx_c433e4eb\" exists on \"OAuthRevocationQueue\" with the planned definition",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_class\" AS \"c\" INNER JOIN \"pg_index\" AS \"i\" ON \"i\".\"indexrelid\" = \"c\".\"oid\" INNER JOIN \"pg_am\" AS \"m\" ON \"m\".\"oid\" = \"c\".\"relam\" WHERE (\"c\".\"oid\" = to_regclass($1) AND (\"c\".\"relkind\" = $2 OR \"c\".\"relkind\" = $3) AND \"i\".\"indrelid\" = to_regclass($4) AND NOT (\"i\".\"indisunique\") AND \"m\".\"amname\" = $5 AND (\"i\".\"indexprs\" IS NULL AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"i\".\"indkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"i\".\"indrelid\" AND key_attribute.attnum = key_column.attnum) = ($6)::jsonb) AND \"i\".\"indpred\" IS NULL)) AS \"result\"",
+        "params": [
+          "\"aibot\".\"OAuthRevocationQueue_nextAttemptAt_id_idx_c433e4eb\"",
+          "i",
+          "I",
+          "\"aibot\".\"OAuthRevocationQueue\"",
+          "btree",
+          "[\"nextAttemptAt\",\"id\"]"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.OAuthRevocationSnapshot.OAuthRevocationSnapshot_oauthId_idx_b3651b5a",
+    "label": "Create index \"OAuthRevocationSnapshot_oauthId_idx_b3651b5a\" on \"OAuthRevocationSnapshot\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "aibot",
+        "objectType": "index",
+        "name": "OAuthRevocationSnapshot_oauthId_idx_b3651b5a",
+        "table": "OAuthRevocationSnapshot"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"OAuthRevocationSnapshot_oauthId_idx_b3651b5a\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"aibot\".\"OAuthRevocationSnapshot_oauthId_idx_b3651b5a\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "index \"OAuthRevocationSnapshot_oauthId_idx_b3651b5a\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"OAuthRevocationSnapshot_oauthId_idx_b3651b5a\"",
+        "sql": "CREATE INDEX \"OAuthRevocationSnapshot_oauthId_idx_b3651b5a\" ON \"aibot\".\"OAuthRevocationSnapshot\" (\"oauthId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"OAuthRevocationSnapshot_oauthId_idx_b3651b5a\" exists on \"OAuthRevocationSnapshot\" with the planned definition",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_class\" AS \"c\" INNER JOIN \"pg_index\" AS \"i\" ON \"i\".\"indexrelid\" = \"c\".\"oid\" INNER JOIN \"pg_am\" AS \"m\" ON \"m\".\"oid\" = \"c\".\"relam\" WHERE (\"c\".\"oid\" = to_regclass($1) AND (\"c\".\"relkind\" = $2 OR \"c\".\"relkind\" = $3) AND \"i\".\"indrelid\" = to_regclass($4) AND NOT (\"i\".\"indisunique\") AND \"m\".\"amname\" = $5 AND (\"i\".\"indexprs\" IS NULL AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"i\".\"indkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"i\".\"indrelid\" AND key_attribute.attnum = key_column.attnum) = ($6)::jsonb) AND \"i\".\"indpred\" IS NULL)) AS \"result\"",
+        "params": [
+          "\"aibot\".\"OAuthRevocationSnapshot_oauthId_idx_b3651b5a\"",
+          "i",
+          "I",
+          "\"aibot\".\"OAuthRevocationSnapshot\"",
+          "btree",
+          "[\"oauthId\"]"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "oauth.revocation.triggers",
+    "label": "Install OAuth revocation triggers and backfill snapshots",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres"
+    },
+    "precheck": [],
+    "postcheck": [],
+    "execute": [
+      {
+        "description": "Install revocation trigger step 1",
+        "sql": "CREATE OR REPLACE FUNCTION aibot.oauth_revocation_snapshot_auth() RETURNS trigger\nLANGUAGE plpgsql AS $$\nBEGIN\n  INSERT INTO aibot.\"OAuthRevocationSnapshot\"\n    (\"authenticationId\", \"oauthId\", \"clientId\", \"clientSecret\", \"revocationEndpoint\")\n  SELECT NEW.id, c.id, c.\"clientId\", c.\"clientSecret\", c.\"revocationEndpoint\"\n    FROM aibot.\"OAuthClient\" c WHERE c.id = NEW.\"oauthId\" FOR SHARE\n  ON CONFLICT (\"authenticationId\") DO UPDATE SET\n    \"oauthId\" = EXCLUDED.\"oauthId\", \"clientId\" = EXCLUDED.\"clientId\",\n    \"clientSecret\" = EXCLUDED.\"clientSecret\", \"revocationEndpoint\" = EXCLUDED.\"revocationEndpoint\";\n  IF NOT FOUND THEN RAISE EXCEPTION 'OAuth client missing for authentication %', NEW.id; END IF;\n  RETURN NEW;\nEND $$"
+      },
+      {
+        "description": "Install revocation trigger step 2",
+        "sql": "CREATE OR REPLACE FUNCTION aibot.oauth_revocation_snapshot_client() RETURNS trigger\nLANGUAGE plpgsql AS $$\nBEGIN\n  UPDATE aibot.\"OAuthRevocationSnapshot\" SET\n    \"clientId\" = NEW.\"clientId\", \"clientSecret\" = NEW.\"clientSecret\",\n    \"revocationEndpoint\" = NEW.\"revocationEndpoint\"\n  WHERE \"oauthId\" = NEW.id;\n  RETURN NEW;\nEND $$"
+      },
+      {
+        "description": "Install revocation trigger step 3",
+        "sql": "CREATE OR REPLACE FUNCTION aibot.oauth_revocation_enqueue() RETURNS trigger\nLANGUAGE plpgsql AS $$\nBEGIN\n  INSERT INTO aibot.\"OAuthRevocationQueue\"\n    (\"authenticationId\", \"clientId\", \"clientSecret\", \"revocationEndpoint\", \"accessToken\", \"refreshToken\")\n  SELECT OLD.id, s.\"clientId\", s.\"clientSecret\", s.\"revocationEndpoint\", OLD.\"accessToken\", OLD.\"refreshToken\"\n    FROM aibot.\"OAuthRevocationSnapshot\" s WHERE s.\"authenticationId\" = OLD.id;\n  IF NOT FOUND THEN RAISE EXCEPTION 'OAuth revocation snapshot missing for authentication %', OLD.id; END IF;\n  DELETE FROM aibot.\"OAuthRevocationSnapshot\" WHERE \"authenticationId\" = OLD.id;\n  RETURN OLD;\nEND $$"
+      },
+      {
+        "description": "Install revocation trigger step 4",
+        "sql": "DROP TRIGGER IF EXISTS oauth_revocation_snapshot_auth ON aibot.\"OAuthAuthentication\""
+      },
+      {
+        "description": "Install revocation trigger step 5",
+        "sql": "CREATE TRIGGER oauth_revocation_snapshot_auth AFTER INSERT OR UPDATE OF \"oauthId\" ON aibot.\"OAuthAuthentication\"\n  FOR EACH ROW EXECUTE FUNCTION aibot.oauth_revocation_snapshot_auth()"
+      },
+      {
+        "description": "Install revocation trigger step 6",
+        "sql": "DROP TRIGGER IF EXISTS oauth_revocation_snapshot_client ON aibot.\"OAuthClient\""
+      },
+      {
+        "description": "Install revocation trigger step 7",
+        "sql": "CREATE TRIGGER oauth_revocation_snapshot_client AFTER UPDATE OF \"clientId\", \"clientSecret\", \"revocationEndpoint\" ON aibot.\"OAuthClient\"\n  FOR EACH ROW EXECUTE FUNCTION aibot.oauth_revocation_snapshot_client()"
+      },
+      {
+        "description": "Install revocation trigger step 8",
+        "sql": "DROP TRIGGER IF EXISTS oauth_revocation_enqueue ON aibot.\"OAuthAuthentication\""
+      },
+      {
+        "description": "Install revocation trigger step 9",
+        "sql": "CREATE TRIGGER oauth_revocation_enqueue BEFORE DELETE ON aibot.\"OAuthAuthentication\"\n  FOR EACH ROW EXECUTE FUNCTION aibot.oauth_revocation_enqueue()"
+      },
+      {
+        "description": "Install revocation trigger step 10",
+        "sql": "INSERT INTO aibot.\"OAuthRevocationSnapshot\"\n  (\"authenticationId\", \"oauthId\", \"clientId\", \"clientSecret\", \"revocationEndpoint\")\nSELECT a.id, c.id, c.\"clientId\", c.\"clientSecret\", c.\"revocationEndpoint\"\nFROM aibot.\"OAuthAuthentication\" a JOIN aibot.\"OAuthClient\" c ON c.id = a.\"oauthId\"\nON CONFLICT (\"authenticationId\") DO UPDATE SET\n  \"oauthId\" = EXCLUDED.\"oauthId\", \"clientId\" = EXCLUDED.\"clientId\",\n  \"clientSecret\" = EXCLUDED.\"clientSecret\", \"revocationEndpoint\" = EXCLUDED.\"revocationEndpoint\";"
+      }
+    ]
+  }
+]

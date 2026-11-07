@@ -80,6 +80,14 @@
       "model": "OAuthClient",
       "namespace": "aibot"
     },
+    "OAuthRevocationQueue": {
+      "model": "OAuthRevocationQueue",
+      "namespace": "aibot"
+    },
+    "OAuthRevocationSnapshot": {
+      "model": "OAuthRevocationSnapshot",
+      "namespace": "aibot"
+    },
     "Organization": {
       "model": "Organization",
       "namespace": "aibot"
@@ -3226,6 +3234,178 @@
               },
               "namespaceId": "aibot",
               "table": "OAuthClient"
+            }
+          },
+          "OAuthRevocationQueue": {
+            "fields": {
+              "accessToken": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "attempts": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "authenticationId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              },
+              "clientId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "clientSecret": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "createdAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int8@1",
+                  "kind": "scalar"
+                }
+              },
+              "nextAttemptAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              },
+              "refreshToken": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "revocationEndpoint": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {},
+            "storage": {
+              "fields": {
+                "accessToken": {
+                  "column": "accessToken"
+                },
+                "attempts": {
+                  "column": "attempts"
+                },
+                "authenticationId": {
+                  "column": "authenticationId"
+                },
+                "clientId": {
+                  "column": "clientId"
+                },
+                "clientSecret": {
+                  "column": "clientSecret"
+                },
+                "createdAt": {
+                  "column": "createdAt"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "nextAttemptAt": {
+                  "column": "nextAttemptAt"
+                },
+                "refreshToken": {
+                  "column": "refreshToken"
+                },
+                "revocationEndpoint": {
+                  "column": "revocationEndpoint"
+                }
+              },
+              "namespaceId": "aibot",
+              "table": "OAuthRevocationQueue"
+            }
+          },
+          "OAuthRevocationSnapshot": {
+            "fields": {
+              "authenticationId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              },
+              "clientId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "clientSecret": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "oauthId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              },
+              "revocationEndpoint": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {},
+            "storage": {
+              "fields": {
+                "authenticationId": {
+                  "column": "authenticationId"
+                },
+                "clientId": {
+                  "column": "clientId"
+                },
+                "clientSecret": {
+                  "column": "clientSecret"
+                },
+                "oauthId": {
+                  "column": "oauthId"
+                },
+                "revocationEndpoint": {
+                  "column": "revocationEndpoint"
+                }
+              },
+              "namespaceId": "aibot",
+              "table": "OAuthRevocationSnapshot"
             }
           },
           "Organization": {
@@ -7800,6 +7980,140 @@
                 }
               ]
             },
+            "OAuthRevocationQueue": {
+              "columns": {
+                "accessToken": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "nullable": false
+                },
+                "attempts": {
+                  "codecId": "pg/int4@1",
+                  "dataType": "pg/int4",
+                  "default": {
+                    "kind": "literal",
+                    "value": 0
+                  },
+                  "nullable": false
+                },
+                "authenticationId": {
+                  "codecId": "pg/uuid@1",
+                  "dataType": "pg/uuid",
+                  "nullable": false
+                },
+                "clientId": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "nullable": false
+                },
+                "clientSecret": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "nullable": true
+                },
+                "createdAt": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "dataType": "pg/timestamptz",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nullable": false
+                },
+                "id": {
+                  "codecId": "pg/int8@1",
+                  "dataType": "pg/int8",
+                  "default": {
+                    "expression": "autoincrement()",
+                    "kind": "function"
+                  },
+                  "nullable": false
+                },
+                "nextAttemptAt": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "dataType": "pg/timestamptz",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nullable": false
+                },
+                "refreshToken": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "nullable": true
+                },
+                "revocationEndpoint": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "nullable": true
+                }
+              },
+              "foreignKeys": [],
+              "indexes": [
+                {
+                  "columns": [
+                    "nextAttemptAt",
+                    "id"
+                  ],
+                  "name": "OAuthRevocationQueue_nextAttemptAt_id_idx_c433e4eb",
+                  "prefix": "OAuthRevocationQueue_nextAttemptAt_id_idx",
+                  "unique": false
+                }
+              ],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "uniques": []
+            },
+            "OAuthRevocationSnapshot": {
+              "columns": {
+                "authenticationId": {
+                  "codecId": "pg/uuid@1",
+                  "dataType": "pg/uuid",
+                  "nullable": false
+                },
+                "clientId": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "nullable": false
+                },
+                "clientSecret": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "nullable": true
+                },
+                "oauthId": {
+                  "codecId": "pg/uuid@1",
+                  "dataType": "pg/uuid",
+                  "nullable": false
+                },
+                "revocationEndpoint": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "nullable": true
+                }
+              },
+              "foreignKeys": [],
+              "indexes": [
+                {
+                  "columns": [
+                    "oauthId"
+                  ],
+                  "name": "OAuthRevocationSnapshot_oauthId_idx_b3651b5a",
+                  "prefix": "OAuthRevocationSnapshot_oauthId_idx",
+                  "unique": false
+                }
+              ],
+              "primaryKey": {
+                "columns": [
+                  "authenticationId"
+                ]
+              },
+              "uniques": []
+            },
             "Organization": {
               "columns": {
                 "createdAt": {
@@ -8982,7 +9296,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "21e9adf99abf7824f64feb914216c34adb832b84f6f1f320add932808b596595"
+    "storageHash": "a8c887057b26ed29e31335243867b909e4990512963bec74dbb855acc56287a5"
   },
   "execution": {
     "executionHash": "00d003bba395e5a0ffcad6d56df6185110965febfc0a58ce77ce105a9f59097f",

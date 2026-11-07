@@ -89,11 +89,10 @@ The provided Compose configuration uses PostgreSQL 16. SearXNG and OpenSandbox a
    Wait for the database to become healthy, then initialize the database tables on first setup:
 
    ```bash
-   npx prisma db init
-   npm run db:oauth-revocation
+   npx prisma db migrate
    ```
 
-   Also run `npm run db:oauth-revocation` once when upgrading an existing database, before starting the new application version. This installs the deletion triggers and backfills OAuth client snapshots. The database user needs permission to create tables, functions and triggers in the `aibot` schema.
+   Run `npx prisma db migrate` before starting a new application version when upgrading an existing database too. The migrations create the OAuth revocation tables and install deletion triggers and backfill existing snapshots. Run migrations from a checkout with development dependencies installed; the production image does not include the Prisma CLI. The database user needs permission to create tables, functions and triggers in the `aibot` schema. Use `db migrate` rather than `db init` or `db update`: those commands do not execute the trigger and backfill migration.
 
    Deleted OAuth credentials are queued for asynchronous revocation, including when deleted by a cascade. The application retries failures with backoff and logs them. Set a revocation endpoint on every OAuth client; jobs without one remain pending. Pending jobs retain encrypted tokens and client secrets until revocation succeeds, so monitor the logs and the `aibot."OAuthRevocationQueue"` table for persistent failures. Keep `CREDENTIALS_ENCRYPTION_KEY` available to process pending jobs.
 
