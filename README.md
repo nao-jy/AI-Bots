@@ -65,7 +65,7 @@ The provided Compose configuration uses PostgreSQL 16. SearXNG and OpenSandbox a
    npm ci
    ```
 
-2. Create a root-level `.env` file with the database URL and an encryption key:
+2. Copy [`.env.example`](./.env.example) to `.env.dev` and configure the database URL and an encryption key:
 
    ```dotenv
    DATABASE_URL="postgresql://user:password@localhost:5432/mydb"
@@ -83,7 +83,7 @@ The provided Compose configuration uses PostgreSQL 16. SearXNG and OpenSandbox a
 3. Start PostgreSQL. To use the included Compose service:
 
    ```bash
-   docker compose --env-file .env -f infra/compose.yaml up -d postgres
+   docker compose --env-file .env.dev -f infra/compose.yaml up -d postgres
    ```
 
    Wait for the database to become healthy, then initialize the database tables on first setup:
@@ -142,17 +142,17 @@ The built-in email provider sends through an SMTP relay. Once configured, it can
 | `SMTP_RELAY_USER`            | For email | SMTP authentication username.                                                                                                                                                                           |
 | `SMTP_RELAY_PASS`            | For email | SMTP authentication password.                                                                                                                                                                           |
 | `SMTP_RELAY_DOMAIN_FROM`     | For email | Domain used for the `noreply@<domain>` sender address.                                                                                                                                                  |
-| `CLOUDFLARE_TOKEN`           | Optional  | Cloudflare Tunnel token used by `npm run dev`.                                                                                                                                                          |
+| `CLOUDFLARE_TOKEN`           | Required for production Docker | Cloudflare Tunnel token; also optionally used by `npm run dev`.                                                                                                                  |
 | `LOG_DIR`                    | Optional  | Log directory; defaults to `logs`.                                                                                                                                                                      |
 | `MEMORY_DIR`                 | Optional  | Persistent directory for bot memories; defaults to `data/memory`. A bot's memory setting controls whether memory is disabled, separated by thread, or shared across the bot.                            |
 | `TEMP_FILE_DIR`              | Optional  | Temporary file directory for OpenDAL's `fs` service; defaults to `data/temporary-files`. Links expire after 24 hours and files are limited to 10 MiB.                                                   |
 | `TEMP_FILE_STORAGE_SERVICE`  | Optional  | OpenDAL service for temporary files; defaults to `fs`. Set to `s3` to use S3.                                                                                                                           |
 | `TEMP_FILE_STORAGE_CONFIG`   | Optional  | OpenDAL temporary storage options as a JSON object with string values. For `s3`, supply options such as `bucket` and `region`.                                                                          |
 
-`infra/compose.yaml` defines PostgreSQL, SearXNG, and OpenSandbox. From the repository root, start the optional services using the same root `.env`:
+`infra/compose.yaml` defines PostgreSQL, SearXNG, and OpenSandbox. From the repository root, start the optional services using the same `.env.dev` file:
 
 ```bash
-docker compose --env-file .env -f infra/compose.yaml up -d
+docker compose --env-file .env.dev -f infra/compose.yaml up -d
 ```
 
 Optional Compose settings are documented in [`.env.example`](./.env.example). If you change the PostgreSQL credentials, update `DATABASE_URL` to match; existing database volumes retain their original credentials.
@@ -167,15 +167,19 @@ npm run build
 npm run start
 ```
 
-The production server needs the same environment variables and a reachable, initialized PostgreSQL database.
+`npm run start` loads `.env.prd`. The production server needs a reachable, initialized PostgreSQL database. To migrate production, run `DOTENV_CONFIG_PATH=.env.prd npx prisma db migrate` with a database address reachable from the machine running the command; the Docker-only `postgres` hostname may not resolve on the host.
 
 ### Docker
 
-Build and run the production image:
+Copy [`.env.example`](./.env.example) to `.env.prd` and configure it for production. You can use separate credentials and a separate database from development. Create a remotely managed Cloudflare Tunnel and configure its public hostname's service URL as `http://127.0.0.1:3001`. Set `CLOUDFLARE_TOKEN` in the Docker environment file to the tunnel token, and set `PUBLIC_APP_URL` and, when using OAuth, `OAUTH_BASE_URL` to the public HTTPS origin. Restrict access with Cloudflare Access or an equivalent policy until the initial administrator is created. Docker's `--env-file` retains quotes in values, so do not surround values with quotes.
+
+Start PostgreSQL using the included Compose file and set the database host in `.env.prd` to `postgres`, then build and run the production image. The app and `cloudflared` run in the same container, and the app listens on the container's loopback interface:
 
 ```bash
 docker build -t ai-bots .
-docker run --env-file .env -p 3000:3000 ai-bots
+docker run -d --name ai-bots --restart unless-stopped --network infra_default --env-file .env.prd -v bot-data:/app/data ai-bots
 ```
 
-Provide a production `DATABASE_URL`, `CREDENTIALS_ENCRYPTION_KEY`, and any integration-specific settings to the container. Mount a persistent volume at `MEMORY_DIR` (for example, `-v bot-memories:/app/data/memory`) so memories survive container replacement. Use HTTPS at the public ingress and set `OAUTH_BASE_URL` to that public origin when using OAuth.
+Provide a production `DATABASE_URL`, `CREDENTIALS_ENCRYPTION_KEY`, and any integration-specific settings to the container. A `localhost` database host refers to the container itself, so use a database host reachable from the container. `infra_default` is the included Compose file's default network name; adjust it if the Compose project name differs or you use an external database. Use `.env.dev` for local development and `.env.prd` for production. Migrate existing `.env` and `.env.docker` settings into these files as needed.
+
+The `bot-data` volume above is mounted at `/app/data` and keeps the default logs (`/app/data/logs`), memories (`/app/data/memory`), and temporary files across container replacements. The image also declares a volume at `/app/data`, but explicitly naming the volume ensures it can be reused when the container is recreated. If you customize `LOG_DIR` or `MEMORY_DIR`, keep the new locations within the volume or mount separate volumes there. If you change the port or `HOST`, update the tunnel's service URL accordingly. Rebuild the image to update `cloudflared`.

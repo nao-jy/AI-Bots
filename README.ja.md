@@ -67,7 +67,7 @@ AI Botsは、SlackやMicrosoft Teamsなどで動くAIボットを作り、運用
    npm ci
    ```
 
-2. リポジトリのルートに `.env` を作成し、データベースURLと暗号化キーを設定します。
+2. [`.env.example`](./.env.example) を `.env.dev` にコピーし、データベースURLと暗号化キーを設定します。
 
    ```dotenv
    DATABASE_URL="postgresql://user:password@localhost:5432/mydb"
@@ -85,7 +85,7 @@ AI Botsは、SlackやMicrosoft Teamsなどで動くAIボットを作り、運用
 3. PostgreSQLを起動します。同梱のComposeサービスを使う場合:
 
    ```bash
-   docker compose --env-file .env -f infra/compose.yaml up -d postgres
+   docker compose --env-file .env.dev -f infra/compose.yaml up -d postgres
    ```
 
    データベースが正常起動したことを確認し、初回のみテーブルを初期化します。
@@ -144,17 +144,17 @@ OAuthクライアントを管理し、連携サービスのアカウントを認
 | `SMTP_RELAY_USER`            | メール利用時 | SMTP認証のユーザー名。                                                                                                                                                                                 |
 | `SMTP_RELAY_PASS`            | メール利用時 | SMTP認証のパスワード。                                                                                                                                                                                 |
 | `SMTP_RELAY_DOMAIN_FROM`     | メール利用時 | 送信元アドレス `noreply@<ドメイン>` に使用するドメイン。                                                                                                                                               |
-| `CLOUDFLARE_TOKEN`           | 任意         | `npm run dev` で使用するCloudflare Tunnelのトークン。                                                                                                                                                  |
+| `CLOUDFLARE_TOKEN`           | Docker本番では必須 | Cloudflare Tunnelのトークン。`npm run dev` でも任意で使用します。                                                                                                                               |
 | `LOG_DIR`                    | 任意         | ログ出力先。既定値は `logs`。                                                                                                                                                                          |
 | `MEMORY_DIR`                 | 任意         | ボットのメモリ保存先。既定値は `data/memory`。ボットのメモリ設定により、無効・スレッド別・ボット全体で共有を選べます。                                                                                 |
 | `TEMP_FILE_DIR`              | 任意         | OpenDAL の `fs` サービスで使う一時ファイル保存先。既定値は `data/temporary-files`。リンクは24時間有効で、ファイル上限は10 MiBです。                                                                    |
 | `TEMP_FILE_STORAGE_SERVICE`  | 任意         | 一時ファイルの OpenDAL サービス名。既定値は `fs`。S3 に保存する場合は `s3` を指定します。                                                                                                              |
 | `TEMP_FILE_STORAGE_CONFIG`   | 任意         | 一時ファイル保存先の OpenDAL 設定を文字列値の JSON オブジェクトで指定します。`s3` では `bucket` などの設定を渡します。                                                                                 |
 
-`infra/compose.yaml` にはPostgreSQL、SearXNG、OpenSandboxが定義されています。オプションのサービスも起動する場合は、リポジトリのルートから同じ `.env` を指定して実行します。
+`infra/compose.yaml` にはPostgreSQL、SearXNG、OpenSandboxが定義されています。オプションのサービスも起動する場合は、リポジトリのルートから同じ `.env.dev` を指定して実行します。
 
 ```bash
-docker compose --env-file .env -f infra/compose.yaml up -d
+docker compose --env-file .env.dev -f infra/compose.yaml up -d
 ```
 
 Composeの任意設定は [`.env.example`](./.env.example) を参照してください。PostgreSQLの認証情報を変更した場合は `DATABASE_URL` も合わせて変更してください。既存のデータベースボリュームには元の認証情報が保持されます。
@@ -169,15 +169,19 @@ npm run build
 npm run start
 ```
 
-本番サーバーにも同じ環境変数が必要です。また、初期化済みで到達可能なPostgreSQLデータベースが必要です。
+`npm run start` は `.env.prd` を読み込みます。本番サーバーには初期化済みで到達可能なPostgreSQLデータベースが必要です。本番DBをマイグレーションする場合は、実行元からDBへ到達できる接続先を設定したうえで `DOTENV_CONFIG_PATH=.env.prd npx prisma db migrate` を実行してください。Docker内専用ホスト名の `postgres` はホスト側から解決できない場合があります。
 
 ### Docker
 
-本番用イメージをビルドして起動します。
+本番用に [`.env.example`](./.env.example) を `.env.prd` にコピーして設定してください。開発用とは別の認証情報とデータベースを使用することもできます。Cloudflareでリモート管理のTunnelを作成し、公開ホスト名のサービスURLを `http://127.0.0.1:3001` に設定してください。Docker用の環境変数ファイルに `CLOUDFLARE_TOKEN` を設定し、`PUBLIC_APP_URL` と、OAuthを使う場合は `OAUTH_BASE_URL` を公開HTTPSオリジンに設定します。初回管理者の作成まではCloudflare Accessなどでアクセスを制限してください。Dockerの `--env-file` は値の引用符を取り除かないため、値を引用符で囲まないでください。
+
+同梱のComposeでPostgreSQLを起動し、`.env.prd` の `DATABASE_URL` のホストを `postgres` に設定したうえで、本番用イメージをビルドして起動します。アプリと `cloudflared` は同じコンテナで起動し、アプリはコンテナ内のループバックで待ち受けます。
 
 ```bash
 docker build -t ai-bots .
-docker run --env-file .env -p 3000:3000 ai-bots
+docker run -d --name ai-bots --restart unless-stopped --network infra_default --env-file .env.prd -v bot-data:/app/data ai-bots
 ```
 
-コンテナに本番用の `DATABASE_URL`、`CREDENTIALS_ENCRYPTION_KEY` と、利用する連携サービス固有の設定を渡してください。コンテナを更新してもメモリが残るよう、`MEMORY_DIR` に永続ボリュームをマウントしてください（例: `-v bot-memories:/app/data/memory`）。公開環境ではHTTPSを使用し、OAuthを利用する場合は `OAUTH_BASE_URL` に公開オリジンを設定してください。
+コンテナに本番用の `DATABASE_URL`、`CREDENTIALS_ENCRYPTION_KEY` と、利用する連携サービス固有の設定を渡してください。`DATABASE_URL` のホストに `localhost` を使うとコンテナ自身を指すため、コンテナから到達可能なDBのホストを指定します。上の `infra_default` は同梱Composeの既定ネットワーク名です。Composeのプロジェクト名が異なる場合や外部DBを使用する場合は環境に合わせて変更してください。`.env.dev` はローカル開発、`.env.prd` は本番用です。既存の `.env` や `.env.docker` は必要に応じてそれぞれのファイルへ移行してください。
+
+上の `bot-data` ボリュームは `/app/data` にマウントされ、既定のログ（`/app/data/logs`）、メモリ（`/app/data/memory`）、一時ファイルをコンテナの再作成後も保持します。イメージにも `/app/data` のボリュームを定義していますが、名前付きボリュームを明示すると再作成時に同じデータを使えます。`LOG_DIR` や `MEMORY_DIR` を変更する場合は、変更先もボリューム内にするか、別のボリュームをマウントしてください。ポートや `HOST` を変更した場合はTunnelのサービスURLも合わせて変更してください。`cloudflared` の更新にはイメージの再ビルドが必要です。

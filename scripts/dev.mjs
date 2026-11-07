@@ -1,7 +1,7 @@
 import { spawn } from "node:child_process";
 import dotenv from "dotenv";
 
-dotenv.config();
+dotenv.config({ path: ".env.dev" });
 
 const npmCli = process.env.npm_execpath;
 if (!npmCli) {
@@ -12,20 +12,38 @@ if (!npmCli) {
 const children = [];
 let shuttingDown = false;
 
+function stop(child, signal) {
+  if (child.exitCode !== null || child.signalCode !== null) return;
+  try {
+    if (process.platform !== "win32" && child.pid) {
+      process.kill(-child.pid, signal);
+    } else {
+      child.kill(signal);
+    }
+  } catch (error) {
+    if (error.code !== "ESRCH") console.error(`プロセスの停止に失敗しました: ${error.message}`);
+  }
+}
+
 function shutdown(exitCode = 0) {
   if (shuttingDown) return;
   shuttingDown = true;
   process.exitCode = exitCode;
 
   for (const child of children) {
-    if (child.exitCode === null && child.signalCode === null) {
-      child.kill("SIGTERM");
-    }
+    stop(child, "SIGTERM");
   }
+  const timer = setTimeout(() => {
+    for (const child of children) stop(child, "SIGKILL");
+  }, 5000);
+  timer.unref();
 }
 
 function start(command, args, label) {
-  const child = spawn(command, args, { stdio: "inherit" });
+  const child = spawn(command, args, {
+    stdio: "inherit",
+    detached: process.platform !== "win32",
+  });
   children.push(child);
 
   child.on("error", (error) => {

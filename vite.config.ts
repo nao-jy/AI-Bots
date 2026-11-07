@@ -5,6 +5,8 @@ import { defineConfig } from "vite";
 
 export default defineConfig({
   plugins: [tailwindcss(), reactRouter()],
+  // Environment files are loaded explicitly by the development/start commands.
+  envDir: false,
   resolve: {
     tsconfigPaths: true,
   },

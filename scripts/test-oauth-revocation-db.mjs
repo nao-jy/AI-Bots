@@ -1,5 +1,6 @@
 // Runs against an isolated schema in a transaction that is always rolled back.
-import "dotenv/config";
+import dotenv from "dotenv";
+dotenv.config({ path: process.env.DOTENV_CONFIG_PATH ?? ".env.dev" });
 import { readFile } from "node:fs/promises";
 import assert from "node:assert/strict";
 import pg from "pg";
