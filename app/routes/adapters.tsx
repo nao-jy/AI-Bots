@@ -13,6 +13,7 @@ import {
 } from "../.server/repository/entities";
 import { requireUser } from "../.server/auth";
 import { APP_NAME } from "~/const";
+import { entityListPage } from "../.server/repository/list-pages";
 import { testAdapter } from "~/.server/test";
 import { listAdapterNames } from "~/.server/features/chat-adapter";
 
@@ -64,12 +65,14 @@ export function meta() {
 
 export async function loader({ request }: Route.LoaderArgs) {
   const user = await requireUser(request);
+  const pagination = await entityListPage(user, "adapters", request);
   const [adapters, adapterNames] = await Promise.all([
-    listAdapters(user),
+    listAdapters(user, pagination.ids),
     Promise.resolve(listAdapterNames()),
   ]);
   return {
     ...adapters,
+    pagination,
     adapterOptions: adapterNames.map(({ id, displayName }) => ({
       value: id,
       label: displayName,
@@ -110,6 +113,7 @@ export default function Adapters({ loaderData }: Route.ComponentProps) {
       page={{
         ...page,
         records: loaderData.records,
+        pagination: loaderData.pagination,
         fields: page.fields.map((field) => ({
           ...field,
           options:

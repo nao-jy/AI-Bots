@@ -14,6 +14,7 @@ import {
 } from "../.server/repository/entities";
 import { requireUser } from "../.server/auth";
 import { APP_NAME } from "~/const";
+import { entityListPage } from "../.server/repository/list-pages";
 
 const page: Omit<EntityPageDefinition, "records"> = {
   title: "pages.bots.title",
@@ -134,7 +135,8 @@ export async function loader({ request }: Route.LoaderArgs) {
   const user = await requireUser(request);
   const publicOrigin = new URL(process.env["PUBLIC_APP_URL"] || request.url)
     .origin;
-  return listBots(user, publicOrigin);
+  const pagination = await entityListPage(user, "bots", request);
+  return { ...(await listBots(user, publicOrigin, pagination.ids)), pagination };
 }
 
 export async function action({ request }: Route.ActionArgs) {
@@ -174,6 +176,7 @@ export default function Bots({ loaderData }: Route.ComponentProps) {
       page={{
         ...page,
         records: loaderData.records,
+        pagination: loaderData.pagination,
         toolSetSchemas: loaderData.toolSetSchemas,
         mcpAuthenticationOptions: loaderData.mcpAuthenticationOptions,
         fields: page.fields.map((field) => ({

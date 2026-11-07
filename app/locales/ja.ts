@@ -783,6 +783,12 @@ export const ja = {
         spacing: " ",
         rangeStart: "1–",
         rangeSuffix: " 件を表示",
+        searchButton: "検索",
+        showingPage: "{{start}}–{{end}} 件を表示",
+        paginationLabel: "一覧のページ",
+        previousPage: "前へ",
+        nextPage: "次へ",
+        pageNumber: "{{page}} ページ目",
       },
       toolsetContextEditor: {
         title: "ツールセット",

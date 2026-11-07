@@ -12,6 +12,7 @@ import {
 } from "../.server/repository/entities";
 import { requireUser } from "../.server/auth";
 import { APP_NAME } from "~/const";
+import { entityListPage } from "../.server/repository/list-pages";
 import { testAgent } from "~/.server/test";
 
 const page: Omit<EntityPageDefinition, "records"> = {
@@ -58,7 +59,8 @@ export function meta() {
 
 export async function loader({ request }: Route.LoaderArgs) {
   const user = await requireUser(request);
-  return listAgents(user);
+  const pagination = await entityListPage(user, "agents", request);
+  return { ...(await listAgents(user, pagination.ids)), pagination };
 }
 
 export async function action({ request }: Route.ActionArgs) {
@@ -85,6 +87,7 @@ export default function Agents({ loaderData }: Route.ComponentProps) {
       page={{
         ...page,
         records: loaderData.records,
+        pagination: loaderData.pagination,
         fields: page.fields.map((field) => ({
           ...field,
           options:

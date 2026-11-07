@@ -15,6 +15,7 @@ import {
   type EntityPageDefinition,
 } from "../components/entity-page-view";
 import { APP_NAME } from "~/const";
+import { entityListPage } from "../.server/repository/list-pages";
 
 const page: Omit<EntityPageDefinition, "records"> = {
   title: "pages.oauthAuthentications.title",
@@ -61,10 +62,13 @@ export function meta() {
 }
 
 export async function loader({ request }: Route.LoaderArgs) {
-  const result = await listOAuthAuthentications(await requireUser(request));
+  const user = await requireUser(request);
+  const pagination = await entityListPage(user, "oauth-authentications", request);
+  const result = await listOAuthAuthentications(user, pagination.ids);
   const oauthStatus = new URL(request.url).searchParams.get("oauth");
   return {
     ...result,
+    pagination,
     oauthMessage:
       oauthStatus === "success"
         ? t("pages.oauthAuthentications.authorizationSucceeded")
@@ -147,6 +151,7 @@ export default function OAuthAuthentications({
         page={{
           ...page,
           records: loaderData.records,
+          pagination: loaderData.pagination,
           fields: page.fields.map((field) =>
             field.key === "oauthId"
               ? { ...field, options: loaderData.clientOptions }

@@ -25,10 +25,10 @@ function isSandboxScope(value: string): value is SandboxScope {
   return Object.hasOwn(SANDBOX_SCOPES, value);
 }
 
-export async function listSandboxes(user: AuthUser) {
+export async function listSandboxes(user: AuthUser, ids: string[]) {
   const sandboxes = await filterResourcesByRole(user, await db.orm.aibot.Sandbox.where({
     organizationId: user.organizationId,
-  }).all());
+  }).where((sandbox) => sandbox.id.in(ids)).all());
   const sandboxNames = await listSandboxNames();
   return {
     sandboxTypeOptions: sandboxNames.map((name) => ({

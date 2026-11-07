@@ -46,12 +46,13 @@ function stableJson(value: unknown): string {
   return JSON.stringify(value) ?? "null";
 }
 
-export async function listBots(user: AuthUser, publicOrigin: string) {
+export async function listBots(user: AuthUser, publicOrigin: string, ids: string[]) {
   const bots = await filterResourcesByRole(
     user,
     await db.orm.aibot.ChatBot.where({
       organizationId: user.organizationId,
     })
+      .where((bot) => bot.id.in(ids))
       .include("agent")
       .include("adapters", (links) =>
         links.include("adapter", (adapter) => adapter.include("publicIds")),
@@ -84,8 +85,10 @@ export async function listBots(user: AuthUser, publicOrigin: string) {
   );
   const [sandboxRows, sandboxLinks, contextRows, authRows] = await Promise.all([
     db.orm.aibot.Sandbox.where({ organizationId: user.organizationId }).all(),
-    db.orm.aibot.ChatBotToolSandbox.all(),
-    db.orm.aibot.ChatBotToolSetContext.all(),
+    db.orm.aibot.ChatBotToolSandbox.where({ organizationId: user.organizationId })
+      .where((link) => link.chatbotId.in(ids)).all(),
+    db.orm.aibot.ChatBotToolSetContext.where({ organizationId: user.organizationId })
+      .where((context) => context.chatbotId.in(ids)).all(),
     db.orm.aibot.OAuthAuthentication.where({
       organizationId: user.organizationId,
     }).all(),

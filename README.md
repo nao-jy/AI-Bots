@@ -31,6 +31,7 @@ For example, to run a bot that posts a recurring checklist to a team thread on w
 - **Usage and rate limits:** View request and token usage over the last 30 days in the dashboard. Set limits for a bot, agent, or provider, aggregate usage per thread or across the target, and choose a Cron expression and timezone for the reset boundary. Configure the message shown when a limit is reached.
 - **Execution history:** Review the status, time, and failure reason of bot runs from chat and schedules. The dashboard shows failures from the last 24 hours, and the execution history page filters by bot, status, and period. Bot access permissions govern which runs a user can view.
 - **Groups and permissions:** Administrators can manage group membership and grant users or groups access to resources such as bots.
+- **List search:** Management lists support name-based search and server-side pagination in pages of 25 records.
 - **OAuth and users:** Manage OAuth accounts for integrations, workspace users, TOTP-based MFA, email verification, and password resets. See [Users and authentication](#users-and-authentication) for details.
 
 ## Customization

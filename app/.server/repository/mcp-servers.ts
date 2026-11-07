@@ -18,10 +18,11 @@ function isMcpTransport(value: string): value is McpTransport {
   return Object.hasOwn(TRANSPORTS, value);
 }
 
-export async function listMcpServers(user: AuthUser) {
+export async function listMcpServers(user: AuthUser, ids: string[]) {
   const servers = await filterResourcesByRole(
     user,
     await db.orm.aibot.McpServer.where({ organizationId: user.organizationId })
+      .where((server) => server.id.in(ids))
       .orderBy((server) => server.updatedAt.desc())
       .all(),
   );

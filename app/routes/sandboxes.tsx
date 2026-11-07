@@ -16,6 +16,7 @@ import {
   type EntityPageDefinition,
 } from "../components/entity-page-view";
 import { APP_NAME, SANDBOX_SCOPES } from "~/const";
+import { entityListPage } from "../.server/repository/list-pages";
 
 const page: Omit<EntityPageDefinition, "records"> = {
   title: "pages.sandboxes.title",
@@ -71,7 +72,9 @@ export function meta() {
 }
 
 export async function loader({ request }: Route.LoaderArgs) {
-  return listSandboxes(await requireUser(request));
+  const user = await requireUser(request);
+  const pagination = await entityListPage(user, "sandboxes", request);
+  return { ...(await listSandboxes(user, pagination.ids)), pagination };
 }
 
 export async function action({ request }: Route.ActionArgs) {
@@ -133,6 +136,7 @@ export default function Sandboxes({ loaderData }: Route.ComponentProps) {
       page={{
         ...page,
         records: loaderData.records,
+        pagination: loaderData.pagination,
         fields: page.fields.map((field) =>
           field.key === "sandboxType"
             ? { ...field, options: loaderData.sandboxTypeOptions }

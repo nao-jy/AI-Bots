@@ -12,6 +12,7 @@ import {
 } from "../.server/repository/entities";
 import { requireUser } from "../.server/auth";
 import { APP_NAME } from "~/const";
+import { entityListPage } from "../.server/repository/list-pages";
 
 const page: Omit<EntityPageDefinition, "records"> = {
   title: "pages.rateLimits.title",
@@ -123,8 +124,10 @@ export function meta() {
 }
 
 export async function loader({ request }: Route.LoaderArgs) {
+  const user = await requireUser(request);
+  const pagination = await entityListPage(user, "rate-limits", request);
   const [rateLimits, timezones] = await Promise.all([
-    listRateLimits(await requireUser(request)),
+    listRateLimits(user, pagination.ids),
     Promise.resolve([
       "UTC",
       ...Intl.supportedValuesOf("timeZone").filter(
@@ -132,7 +135,7 @@ export async function loader({ request }: Route.LoaderArgs) {
       ),
     ]),
   ]);
-  return { ...rateLimits, timezones };
+  return { ...rateLimits, timezones, pagination };
 }
 
 export async function action({ request }: Route.ActionArgs) {
@@ -158,6 +161,7 @@ export default function RateLimits({ loaderData }: Route.ComponentProps) {
       page={{
         ...page,
         records: loaderData.records,
+        pagination: loaderData.pagination,
         fields: page.fields.map((field) => ({
           ...field,
           options:

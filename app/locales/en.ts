@@ -279,6 +279,12 @@ export const en = {
         spacing: " ",
         rangeStart: "1–",
         rangeSuffix: " items",
+        searchButton: "Search",
+        showingPage: "Showing {{start}}–{{end}}",
+        paginationLabel: "List pages",
+        previousPage: "Previous",
+        nextPage: "Next",
+        pageNumber: "Page {{page}}",
       },
       toolsetContextEditor: {
         title: "Tool sets",

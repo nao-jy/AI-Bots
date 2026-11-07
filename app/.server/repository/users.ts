@@ -90,6 +90,7 @@ export async function listUsers(
   emailVerificationEnabled: boolean,
   maxLoginAttempts: number,
   organizationId: string,
+  ids: string[],
 ) {
   if (!emailVerificationEnabled) {
     const pendingUsers = await db.orm.aibot.User.where({
@@ -104,7 +105,7 @@ export async function listUsers(
         logAuditEvent("user.email_verified", "user", user.id);
     }
   }
-  const users = await db.orm.aibot.User.where({ organizationId }).include("sessions")
+  const users = await db.orm.aibot.User.where({ organizationId }).where((user) => user.id.in(ids)).include("sessions")
     .orderBy((user) => user.createdAt.asc())
     .all();
   const now = Date.now();

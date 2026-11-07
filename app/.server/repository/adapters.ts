@@ -14,9 +14,10 @@ import { toDisplayNameAdapter } from "../features/chat-adapter";
 import { logAuditEvent } from "../logger/audit-logger";
 import { filterResourcesByRole, hasResourceAccess, includeResourcePermissions } from "../authorization";
 
-export async function listAdapters(user: AuthUser) {
+export async function listAdapters(user: AuthUser, ids: string[]) {
   const [adapters, authentications] = await Promise.all([
     filterResourcesByRole(user, await db.orm.aibot.ChatAdapter.where({ organizationId: user.organizationId })
+      .where((adapter) => adapter.id.in(ids))
       .include("publicIds")
       .all()),
     filterResourcesByRole(user, await db.orm.aibot.OAuthAuthentication.where({ organizationId: user.organizationId }).all()),

@@ -12,6 +12,7 @@ import {
   type EntityPageDefinition,
 } from "../components/entity-page-view";
 import { APP_NAME } from "~/const";
+import { entityListPage } from "../.server/repository/list-pages";
 
 const page: Omit<EntityPageDefinition, "records"> = {
   title: "pages.oauthClients.title",
@@ -74,7 +75,9 @@ export function meta() {
 }
 
 export async function loader({ request }: Route.LoaderArgs) {
-  return listOAuthClients(await requireUser(request));
+  const user = await requireUser(request);
+  const pagination = await entityListPage(user, "oauth-clients", request);
+  return { ...(await listOAuthClients(user, pagination.ids)), pagination };
 }
 
 export async function action({ request }: Route.ActionArgs) {
@@ -108,5 +111,5 @@ export async function action({ request }: Route.ActionArgs) {
 }
 
 export default function OAuthClients({ loaderData }: Route.ComponentProps) {
-  return <EntityPageView page={{ ...page, records: loaderData.records }} />;
+  return <EntityPageView page={{ ...page, records: loaderData.records, pagination: loaderData.pagination }} />;
 }

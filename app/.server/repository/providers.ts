@@ -4,8 +4,9 @@ import { decryptMcpHeaders, encryptStringMap, generateResourceId, jsonb, record 
 import { logAuditEvent } from "../logger/audit-logger";
 import { filterResourcesByRole, hasResourceAccess, includeResourcePermissions } from "../authorization";
 
-export async function listProviders(user: AuthUser) {
+export async function listProviders(user: AuthUser, ids: string[]) {
   const providers = await filterResourcesByRole(user, await db.orm.aibot.Provider.where({ organizationId: user.organizationId })
+    .where((provider) => provider.id.in(ids))
     .orderBy((provider) => provider.updatedAt.desc())
     .all());
   return {

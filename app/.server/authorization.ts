@@ -219,3 +219,18 @@ export async function filterResourcesByRole<T extends { id: string; organization
   return allowed.filter(({ allowed }) => allowed).map(({ resource }) => resource);
 }
 
+/** Returns readable resource IDs for a non-admin, or null for an administrator. */
+export async function getReadableResourceIds(user: ResourceActor): Promise<string[] | null> {
+  if (user.isAdmin) return null;
+  const memberships = await db.orm.aibot.Membership.where({
+    userId: user.id,
+    organizationId: user.organizationId,
+  }).select("groupId").all();
+  const principalIds = [user.id, ...memberships.map((membership) => membership.groupId)];
+  const grants = await db.orm.aibot.Grant.where({ organizationId: user.organizationId })
+    .where((grant) => grant.principalId.in(principalIds))
+    .select("resourceId", "role")
+    .all();
+  return [...new Set(grants.filter((grant) => grant.role in ROLE_LEVEL).map((grant) => grant.resourceId))];
+}
+

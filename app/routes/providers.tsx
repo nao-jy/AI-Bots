@@ -11,6 +11,7 @@ import {
 } from "../.server/repository/entities";
 import { requireUser } from "../.server/auth";
 import { APP_NAME } from "~/const";
+import { entityListPage } from "../.server/repository/list-pages";
 import { listProviderNames } from "~/.server/features/provider";
 
 const page: Omit<EntityPageDefinition, "records"> = {
@@ -63,12 +64,15 @@ export function meta() {
 }
 
 export async function loader({ request }: Route.LoaderArgs) {
+  const user = await requireUser(request);
+  const pagination = await entityListPage(user, "providers", request);
   const [providers, providerNames] = await Promise.all([
-    listProviders(await requireUser(request)),
+    listProviders(user, pagination.ids),
     Promise.resolve(listProviderNames()),
   ]);
   return {
     ...providers,
+    pagination,
     providerOptions: providerNames.map(({ id, displayName }) => ({
       value: id,
       label: displayName,
@@ -105,6 +109,7 @@ export default function Models({ loaderData }: Route.ComponentProps) {
       page={{
         ...page,
         records: loaderData.records,
+        pagination: loaderData.pagination,
         fields: page.fields.map((field) => ({
           ...field,
           options:

@@ -11,12 +11,13 @@ import type {
   TypedToolResult,
 } from "ai";
 
-export async function listAgents(user: AuthUser) {
+export async function listAgents(user: AuthUser, ids: string[]) {
   const agents = await filterResourcesByRole(
     user,
     await db.orm.aibot.AgentDefinition.where({
       organizationId: user.organizationId,
     })
+      .where((agent) => agent.id.in(ids))
       .include("chatbots")
       .include("provider")
       .all(),

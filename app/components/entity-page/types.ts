@@ -87,6 +87,7 @@ export type EntityPageDefinition = {
   tableFeatures?: EntityTableFeatures;
   fields: EntityField[];
   records: EntityRecord[];
+  pagination?: { ids: string[]; query: string; page: number; hasNext: boolean };
   memberOptions?: EntityOption[];
   deleteWarning?: string;
   mcpAuthenticationOptions?: EntityOption[];

@@ -15,6 +15,7 @@ import {
 } from "../.server/repository/groups";
 import { record, isUuid } from "../.server/utils";
 import { APP_NAME } from "~/const";
+import { entityListPage } from "../.server/repository/list-pages";
 
 const page: Omit<EntityPageDefinition, "records" | "memberOptions"> = {
   title: "pages.groups.title",
@@ -45,11 +46,13 @@ export function meta() {
 
 export async function loader({ request }: Route.LoaderArgs) {
   const user = await requireAdmin(request);
+  const pagination = await entityListPage(user, "groups", request);
   const [groups, users] = await Promise.all([
-    listGroups(user),
+    listGroups(user, pagination.ids),
     listGroupCandidates(user),
   ]);
   return {
+    pagination,
     records: groups.map((group) => record(group.id, group.updatedAt, {
       name: group.name,
       memberCount: group.members.length,
@@ -114,6 +117,7 @@ export default function Groups({ loaderData }: Route.ComponentProps) {
       page={{
         ...page,
         records: loaderData.records,
+        pagination: loaderData.pagination,
         memberOptions: loaderData.memberOptions,
       }}
     />

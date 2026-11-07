@@ -247,8 +247,9 @@ function validHttpUrl(value: string) {
   }
 }
 
-export async function listOAuthClients(user: AuthUser) {
+export async function listOAuthClients(user: AuthUser, ids: string[]) {
   const clients = await filterResourcesByRole(user, await db.orm.aibot.OAuthClient.where({ organizationId: user.organizationId })
+    .where((client) => client.id.in(ids))
     .orderBy((client) => client.updatedAt.desc())
     .all());
   return {
@@ -409,9 +410,10 @@ export async function listOauth(organizationId: string, principalId?: string) {
     }));
   return ret;
 }
-export async function listOAuthAuthentications(user: AuthUser) {
+export async function listOAuthAuthentications(user: AuthUser, ids: string[]) {
   const [authentications, clientRows] = await Promise.all([
     filterResourcesByRole(user, await db.orm.aibot.OAuthAuthentication.where({ organizationId: user.organizationId })
+      .where((authentication) => authentication.id.in(ids))
       .orderBy((authentication) => authentication.updatedAt.desc())
       .all()),
     db.orm.aibot.OAuthClient.where({ organizationId: user.organizationId }).all(),

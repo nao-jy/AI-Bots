@@ -7,13 +7,14 @@ function requireOrganizationAdmin(user: AuthUser) {
   if (!user.isAdmin) throw new Response("Forbidden", { status: 403 });
 }
 
-export async function listGroups(user: AuthUser) {
+export async function listGroups(user: AuthUser, ids: string[]) {
   requireOrganizationAdmin(user);
   const [groups, memberships, users] = await Promise.all([
     db.orm.aibot.Group.where({ organizationId: user.organizationId })
+      .where((group) => group.id.in(ids))
       .orderBy((group) => group.name.asc())
       .all(),
-    db.orm.aibot.Membership.where({ organizationId: user.organizationId }).all(),
+    db.orm.aibot.Membership.where({ organizationId: user.organizationId }).where((membership) => membership.groupId.in(ids)).all(),
     db.orm.aibot.User.where({ organizationId: user.organizationId }).all(),
   ]);
   const usersById = new Map(users.map((member) => [member.id, member]));

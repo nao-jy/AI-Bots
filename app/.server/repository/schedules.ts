@@ -46,9 +46,10 @@ function parseTargets(value: FormDataEntryValue | null) {
   return targets;
 }
 
-export async function listSchedules(user: AuthUser) {
+export async function listSchedules(user: AuthUser, ids: string[]) {
   const [scheduleRows, chatbotAdapters] = await Promise.all([
     db.orm.aibot.ChatBotSchedule.where({ organizationId: user.organizationId })
+      .where((schedule) => schedule.id.in(ids))
       .include("chatTargets", (targets) =>
         targets.include("chatbotAdapter", (link) =>
           link.include("chatbot").include("adapter"),

@@ -23,6 +23,7 @@ import {
 import { requireAdmin } from "../.server/auth";
 import { appLogger } from "../.server/logger/app-logger";
 import { APP_NAME } from "~/const";
+import { entityListPage } from "../.server/repository/list-pages";
 
 const page: Omit<EntityPageDefinition, "records"> = {
   title: "pages.users.title",
@@ -82,13 +83,16 @@ export function meta() {
 
 export async function loader({ request }: Route.LoaderArgs) {
   const currentUser = await requireAdmin(request);
+  const pagination = await entityListPage(currentUser, "users", request);
   const settings = await getAppSettings(currentUser.organizationId);
   return {
     users: await listUsers(
       isEmailVerificationEnabled(),
       settings.maxLoginAttempts,
       currentUser.organizationId,
+      pagination.ids,
     ),
+    pagination,
     currentUserId: currentUser.id,
     minimumPasswordStrength: settings.minimumPasswordStrength,
   };
@@ -224,6 +228,7 @@ export default function Users({ loaderData }: Route.ComponentProps) {
       page={{
         ...page,
         records: loaderData.users,
+        pagination: loaderData.pagination,
         protectedRecordId: loaderData.currentUserId,
       }}
       minimumPasswordStrength={loaderData.minimumPasswordStrength}

@@ -175,9 +175,9 @@ export async function getExceededRateLimit(
   return null;
 }
 
-export async function listRateLimits(user: AuthUser) {
+export async function listRateLimits(user: AuthUser, ids: string[]) {
   const [limits, bots, agents, providers] = await Promise.all([
-    filterResourcesByRole(user, await db.orm.aibot.RateLimit.where({ organizationId: user.organizationId }).all()),
+    filterResourcesByRole(user, await db.orm.aibot.RateLimit.where({ organizationId: user.organizationId }).where((limit) => limit.id.in(ids)).all()),
     filterResourcesByRole(user, await db.orm.aibot.ChatBot.where({ organizationId: user.organizationId }).all()),
     filterResourcesByRole(user, await db.orm.aibot.AgentDefinition.where({ organizationId: user.organizationId }).all()),
     filterResourcesByRole(user, await db.orm.aibot.Provider.where({ organizationId: user.organizationId }).all()),

@@ -13,6 +13,7 @@ import {
 } from "../.server/repository/entities";
 import { requireUser } from "../.server/auth";
 import { APP_NAME } from "~/const";
+import { entityListPage } from "../.server/repository/list-pages";
 import { testMcpServer } from "~/.server/test";
 
 function getPage(transport: Record<string, string>) {
@@ -63,8 +64,10 @@ export function meta() {
 
 export async function loader({ request }: Route.LoaderArgs) {
   const user = await requireUser(request);
+  const pagination = await entityListPage(user, "mcp-servers", request);
   return {
-    servers: await listMcpServers(user),
+    servers: await listMcpServers(user, pagination.ids),
+    pagination,
     transport: TRANSPORTS,
   };
 }
@@ -94,6 +97,7 @@ export default function McpServers({ loaderData }: Route.ComponentProps) {
       page={{
         ...page,
         records: loaderData.servers.records,
+        pagination: loaderData.pagination,
       }}
     />
   );
