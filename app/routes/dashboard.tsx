@@ -21,10 +21,15 @@ export function meta() {
 
 export async function loader({ request }: Route.LoaderArgs) {
   const user = await requireUser(request);
-  const [botRows, agentRows, usageRows] = await Promise.all([
+  const now = new Date();
+  const today = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  const start = today - (PERIOD_DAYS - 1) * DAY_MS;
+  const end = today + DAY_MS;
+  const startIso = new Date(start).toISOString();
+  const endIso = new Date(end).toISOString();
+  const [botRows, agentRows] = await Promise.all([
     db.orm.aibot.ChatBot.where({ organizationId: user.organizationId }).all(),
     db.orm.aibot.AgentDefinition.where({ organizationId: user.organizationId }).include("provider").all(),
-    db.orm.aibot.AgentUsage.all(),
   ]);
   const [bots, agents] = await Promise.all([
     filterResourcesByRole(user, botRows),
@@ -34,23 +39,18 @@ export async function loader({ request }: Route.LoaderArgs) {
   const botNames = new Map(bots.map((bot) => [bot.id, bot.name]));
   const agentNames = new Map(agents.map((agent) => [agent.id, agent.name]));
   const agentProviderNames = new Map(agents.map((agent) => [agent.id, agent.provider.name]));
-  const botIds = new Set(botNames.keys());
-  const agentIds = new Set(agentNames.keys());
-  const now = new Date();
-  const today = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
-  const start = today - (PERIOD_DAYS - 1) * DAY_MS;
-  const usage = usageRows
-    .filter((row) => (row.chatbotId !== null && botIds.has(row.chatbotId)) || (row.agentId !== null && agentIds.has(row.agentId)))
-    .filter((row) => new Date(row.createdAt).getTime() >= start && new Date(row.createdAt).getTime() < today + DAY_MS)
-    .map((row) => ({
-      id: row.id,
-      createdAt: row.createdAt,
-      inputTokens: row.inputTokens,
-      outputTokens: row.outputTokens,
-      platform: row.platform,
-      chatbotId: row.chatbotId,
-      agentId: row.agentId,
-    }));
+  const botIds = [...botNames.keys()];
+  const agentIds = [...agentNames.keys()];
+  const usage = botIds.length && agentIds.length
+    ? await db.orm.aibot.AgentUsage
+        .where({ organizationId: user.organizationId })
+        .where((row) => row.createdAt.gte(startIso))
+        .where((row) => row.createdAt.lt(endIso))
+        .where((row) => row.chatbotId.in(botIds))
+        .where((row) => row.agentId.in(agentIds))
+        .select("id", "createdAt", "inputTokens", "outputTokens", "platform", "chatbotId", "agentId")
+        .all()
+    : [];
 
   const days = Array.from({ length: PERIOD_DAYS }, (_, index) => {
     const date = new Date(start + index * DAY_MS);
@@ -66,7 +66,7 @@ export async function loader({ request }: Route.LoaderArgs) {
     bucket.input += row.inputTokens;
     bucket.output += row.outputTokens;
     bucket.calls += 1;
-    if (row.agentId !== null && agentIds.has(row.agentId)) {
+    if (row.agentId !== null) {
       const current = byAgent.get(row.agentId) ?? {
         name: agentNames.get(row.agentId) ?? "",
         provider: agentProviderNames.get(row.agentId) ?? "",
@@ -84,7 +84,7 @@ export async function loader({ request }: Route.LoaderArgs) {
   }
 
   return {
-    period: { start: new Date(start).toISOString(), end: new Date(today + DAY_MS - 1).toISOString() },
+    period: { start: startIso, end: new Date(end - 1).toISOString() },
     totals: {
       inputTokens: usage.reduce((sum, row) => sum + row.inputTokens, 0),
       outputTokens: usage.reduce((sum, row) => sum + row.outputTokens, 0),
