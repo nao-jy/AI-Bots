@@ -37,10 +37,7 @@ export function getChatTools(
         try {
           const fileInfo = fileHandles.get(fileHandle);
           if (fileInfo === undefined) {
-            return {
-              succes: false,
-              message: t("server.fileNotRegistered"),
-            };
+            return { error: t("server.fileNotRegistered") };
           }
           const data = await toBuffer(fileInfo.stream());
 
@@ -51,11 +48,11 @@ export function getChatTools(
 
           return { success: true, filename, threadId: thread.id };
         } catch (error) {
-          throw new Error(
-            t("server.chatFileOperationFailed", {
+          return {
+            error: t("server.chatFileOperationFailed", {
               0: error instanceof Error ? error.message : String(error),
             }),
-          );
+          };
         }
       },
     }),
@@ -119,11 +116,11 @@ export function getChatTools(
 
           return { success: true, fileHandle: handle, threadId: thread.id };
         } catch (error) {
-          throw new Error(
-            t("server.chatFileOperationFailed", {
+          return {
+            error: t("server.chatFileOperationFailed", {
               0: error instanceof Error ? error.message : String(error),
             }),
-          );
+          };
         }
       },
     }),

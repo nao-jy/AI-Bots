@@ -135,11 +135,11 @@ export function getFileParseTools(fileHandles: FileHandleReaderMap) {
           tables: doc.tables ?? [],
         };
       } catch (error) {
-        throw new Error(
-          t("server.documentExtractionFailed", {
+        return {
+          error: t("server.documentExtractionFailed", {
             0: error instanceof Error ? error.message : String(error),
           }),
-        );
+        };
       }
     },
   });
