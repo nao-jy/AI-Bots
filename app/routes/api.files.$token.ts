@@ -5,8 +5,9 @@ export async function loader({ params }: Route.LoaderArgs) {
   const file = await getTemporaryFileStore().get(params.token || "");
   if (!file) return new Response("Not Found", { status: 404 });
 
-  const encodedFilename = encodeURIComponent(file.filename).replace(/[!'()*]/g, (character) =>
-    `%${character.charCodeAt(0).toString(16).toUpperCase()}`,
+  const encodedFilename = encodeURIComponent(file.filename).replace(
+    /[!'()*]/g,
+    (character) => `%${character.charCodeAt(0).toString(16).toUpperCase()}`,
   );
   return new Response(new Uint8Array(file.data), {
     headers: {

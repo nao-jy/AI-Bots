@@ -23,14 +23,20 @@ export function meta() {
 export async function loader({ request }: Route.LoaderArgs) {
   const user = await requireUser(request);
   const now = new Date();
-  const today = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  const today = Date.UTC(
+    now.getUTCFullYear(),
+    now.getUTCMonth(),
+    now.getUTCDate(),
+  );
   const start = today - (PERIOD_DAYS - 1) * DAY_MS;
   const end = today + DAY_MS;
   const startIso = new Date(start).toISOString();
   const endIso = new Date(end).toISOString();
   const [botRows, agentRows] = await Promise.all([
     db.orm.aibot.ChatBot.where({ organizationId: user.organizationId }).all(),
-    db.orm.aibot.AgentDefinition.where({ organizationId: user.organizationId }).include("provider").all(),
+    db.orm.aibot.AgentDefinition.where({ organizationId: user.organizationId })
+      .include("provider")
+      .all(),
   ]);
   const [bots, agents] = await Promise.all([
     filterResourcesByRole(user, botRows),
@@ -40,30 +46,52 @@ export async function loader({ request }: Route.LoaderArgs) {
 
   const botNames = new Map(bots.map((bot) => [bot.id, bot.name]));
   const agentNames = new Map(agents.map((agent) => [agent.id, agent.name]));
-  const agentProviderNames = new Map(agents.map((agent) => [agent.id, agent.provider.name]));
+  const agentProviderNames = new Map(
+    agents.map((agent) => [agent.id, agent.provider.name]),
+  );
   const botIds = [...botNames.keys()];
   const agentIds = [...agentNames.keys()];
-  const usage = botIds.length && agentIds.length
-    ? await db.orm.aibot.AgentUsage
-        .where({ organizationId: user.organizationId })
-        .where((row) => row.createdAt.gte(startIso))
-        .where((row) => row.createdAt.lt(endIso))
-        .where((row) => row.chatbotId.in(botIds))
-        .where((row) => row.agentId.in(agentIds))
-        .select("id", "createdAt", "inputTokens", "outputTokens", "platform", "chatbotId", "agentId")
-        .all()
-    : [];
+  const usage =
+    botIds.length && agentIds.length
+      ? await db.orm.aibot.AgentUsage.where({
+          organizationId: user.organizationId,
+        })
+          .where((row) => row.createdAt.gte(startIso))
+          .where((row) => row.createdAt.lt(endIso))
+          .where((row) => row.chatbotId.in(botIds))
+          .where((row) => row.agentId.in(agentIds))
+          .select(
+            "id",
+            "createdAt",
+            "inputTokens",
+            "outputTokens",
+            "platform",
+            "chatbotId",
+            "agentId",
+          )
+          .all()
+      : [];
 
   const days = Array.from({ length: PERIOD_DAYS }, (_, index) => {
     const date = new Date(start + index * DAY_MS);
-    return { date: date.toISOString().slice(0, 10), input: 0, output: 0, calls: 0 };
+    return {
+      date: date.toISOString().slice(0, 10),
+      input: 0,
+      output: 0,
+      calls: 0,
+    };
   });
   const dayMap = new Map(days.map((day) => [day.date, day]));
-  const byAgent = new Map<string, { name: string; provider: string; tokens: number; calls: number }>();
+  const byAgent = new Map<
+    string,
+    { name: string; provider: string; tokens: number; calls: number }
+  >();
   const byPlatform = new Map<string, { tokens: number; calls: number }>();
 
   for (const row of usage) {
-    const bucket = dayMap.get(new Date(row.createdAt).toISOString().slice(0, 10));
+    const bucket = dayMap.get(
+      new Date(row.createdAt).toISOString().slice(0, 10),
+    );
     if (!bucket) continue;
     bucket.input += row.inputTokens;
     bucket.output += row.outputTokens;
@@ -96,15 +124,32 @@ export async function loader({ request }: Route.LoaderArgs) {
       agents: agents.length,
     },
     days,
-    agents: [...byAgent.entries()].map(([id, item]) => ({ id, ...item })).sort((a, b) => b.tokens - a.tokens).slice(0, 6),
-    platforms: [...byPlatform.entries()].map(([name, item]) => ({ name, ...item })).sort((a, b) => b.tokens - a.tokens),
-    recent: usage.slice().sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 6).map((row) => ({
-      id: row.id,
-      createdAt: row.createdAt,
-      tokens: row.inputTokens + row.outputTokens,
-      platform: row.platform,
-      name: row.chatbotId !== null ? botNames.get(row.chatbotId) ?? "" : row.agentId !== null ? agentNames.get(row.agentId) ?? "" : "",
-    })),
+    agents: [...byAgent.entries()]
+      .map(([id, item]) => ({ id, ...item }))
+      .sort((a, b) => b.tokens - a.tokens)
+      .slice(0, 6),
+    platforms: [...byPlatform.entries()]
+      .map(([name, item]) => ({ name, ...item }))
+      .sort((a, b) => b.tokens - a.tokens),
+    recent: usage
+      .slice()
+      .sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      )
+      .slice(0, 6)
+      .map((row) => ({
+        id: row.id,
+        createdAt: row.createdAt,
+        tokens: row.inputTokens + row.outputTokens,
+        platform: row.platform,
+        name:
+          row.chatbotId !== null
+            ? (botNames.get(row.chatbotId) ?? "")
+            : row.agentId !== null
+              ? (agentNames.get(row.agentId) ?? "")
+              : "",
+      })),
   };
 }
 

@@ -117,7 +117,10 @@ export default function Dashboard({
         <div className="dashboard-panel-heading">
           <div>
             <h2>{t("pages.dashboard.recentFailures")}</h2>
-            <p>{t("pages.dashboard.failures24h")}: {nf.format(loaderData.failures.count)}</p>
+            <p>
+              {t("pages.dashboard.failures24h")}:{" "}
+              {nf.format(loaderData.failures.count)}
+            </p>
           </div>
           <Link className="dashboard-link" to="/executions?status=failed">
             {t("pages.dashboard.viewExecutions")}
@@ -128,15 +131,32 @@ export default function Dashboard({
           <div className="failure-list">
             {loaderData.failures.records.map((row) => (
               <div className="failure-row" key={row.id}>
-                <strong>{row.botName ?? t("pages.executions.deletedBot")}</strong>
-                <span>{row.errorCode
-                  ? t(`pages.executions.error.${row.errorCode}`, { defaultValue: t("pages.executions.error.unknown") })
-                  : t("pages.executions.error.unknown")}</span>
-                <time>{dateLabel(row.startedAt, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}</time>
+                <strong>
+                  {row.botName ?? t("pages.executions.deletedBot")}
+                </strong>
+                <span>
+                  {row.errorCode
+                    ? t(`pages.executions.error.${row.errorCode}`, {
+                        defaultValue: t("pages.executions.error.unknown"),
+                      })
+                    : t("pages.executions.error.unknown")}
+                </span>
+                <time>
+                  {dateLabel(row.startedAt, {
+                    month: "short",
+                    day: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </time>
               </div>
             ))}
           </div>
-        ) : <div className="dashboard-empty">{t("pages.dashboard.noFailures")}</div>}
+        ) : (
+          <div className="dashboard-empty">
+            {t("pages.dashboard.noFailures")}
+          </div>
+        )}
       </section>
 
       <section className="dashboard-panel trend-panel">

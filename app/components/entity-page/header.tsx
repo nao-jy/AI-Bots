@@ -22,7 +22,9 @@ export function EntityPageHeader({
         onClick={onCreate}
         leftSection={<PlusIcon size={16} weight="bold" aria-hidden="true" />}
       >
-        {title}{t("components.entityPage.header.addSuffix")}</Button>
+        {title}
+        {t("components.entityPage.header.addSuffix")}
+      </Button>
     </div>
   );
 }

@@ -53,11 +53,13 @@ export async function loader({ request }: Route.LoaderArgs) {
   ]);
   return {
     pagination,
-    records: groups.map((group) => record(group.id, group.updatedAt, {
-      name: group.name,
-      memberCount: group.members.length,
-      members: JSON.stringify(group.members),
-    })),
+    records: groups.map((group) =>
+      record(group.id, group.updatedAt, {
+        name: group.name,
+        memberCount: group.members.length,
+        members: JSON.stringify(group.members),
+      }),
+    ),
     memberOptions: users.map((member) => ({
       value: member.id,
       label: `${member.name} (${member.email})`,
@@ -73,19 +75,21 @@ export async function action({ request }: Route.ActionArgs) {
   const name = String(form.get("name") ?? "");
 
   if (intent === "create" || intent === "update") {
-    const result = intent === "create"
-      ? await createGroup(user, name)
-      : isUuid(groupId)
-        ? await renameGroup(user, groupId, name)
-        : { error: "server.groupNotFound" };
+    const result =
+      intent === "create"
+        ? await createGroup(user, name)
+        : isUuid(groupId)
+          ? await renameGroup(user, groupId, name)
+          : { error: "server.groupNotFound" };
     if ("error" in result) {
       return {
         ok: false,
-        error: result.error === "server.duplicateGroupName"
-          ? "pages.groups.nameTaken"
-          : result.error === "server.groupNotFound"
-            ? "pages.groups.notFound"
-            : "pages.groups.nameRequired",
+        error:
+          result.error === "server.duplicateGroupName"
+            ? "pages.groups.nameTaken"
+            : result.error === "server.groupNotFound"
+              ? "pages.groups.notFound"
+              : "pages.groups.nameRequired",
       };
     }
     return { ok: true };
@@ -100,9 +104,18 @@ export async function action({ request }: Route.ActionArgs) {
   if (intent === "membership") {
     const memberId = String(form.get("memberId") ?? "");
     const membershipValue = String(form.get("isMember") ?? "");
-    if (!isUuid(groupId) || !isUuid(memberId) || !["true", "false"].includes(membershipValue))
+    if (
+      !isUuid(groupId) ||
+      !isUuid(memberId) ||
+      !["true", "false"].includes(membershipValue)
+    )
       return { ok: false, error: "pages.groups.invalidMembership" };
-    const result = await setGroupMembership(user, groupId, memberId, membershipValue === "true");
+    const result = await setGroupMembership(
+      user,
+      groupId,
+      memberId,
+      membershipValue === "true",
+    );
     if ("error" in result)
       return { ok: false, error: "pages.groups.invalidMembership" };
     return { ok: true };

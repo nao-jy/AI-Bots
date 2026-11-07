@@ -22,8 +22,9 @@ function lookup(locale: Locale, key: TranslationKey): string {
 
 export function t(key: TranslationKey, values?: Values): string {
   const locale = getRequestLocale() ?? "ja";
-  return lookup(locale, key).replace(/{{\s*([^{}]+?)\s*}}/g, (match, name: string) =>
-    String(values?.[name] ?? match),
+  return lookup(locale, key).replace(
+    /{{\s*([^{}]+?)\s*}}/g,
+    (match, name: string) => String(values?.[name] ?? match),
   );
 }
 

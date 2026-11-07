@@ -1,6 +1,12 @@
 import { db } from "./db";
 import type { AuthUser } from "../auth";
-import { decryptMcpHeaders, encryptStringMap, generateResourceId, jsonb, record } from "../utils";
+import {
+  decryptMcpHeaders,
+  encryptStringMap,
+  generateResourceId,
+  jsonb,
+  record,
+} from "../utils";
 import { logAuditEvent } from "../logger/audit-logger";
 import {
   filterResourcesByRole,
@@ -27,17 +33,22 @@ export async function listMcpServers(user: AuthUser, ids: string[]) {
       .all(),
   );
   return {
-    records: await includeResourcePermissions(user, servers.map((server) => {
-      return record(server.id, server.updatedAt, {
-        name: server.name,
-        description: server.description ?? "",
-        transport: TRANSPORTS[server.transport] ?? server.transport,
-        transportId: server.transport,
-        endpoint: server.endpoint ?? "",
-        headers: JSON.stringify(decryptMcpHeaders(server.headers), null, 2),
-        status: server.endpoint ? "server.endpointConfigured" : "server.endpointMissing",
-      });
-    })),
+    records: await includeResourcePermissions(
+      user,
+      servers.map((server) => {
+        return record(server.id, server.updatedAt, {
+          name: server.name,
+          description: server.description ?? "",
+          transport: TRANSPORTS[server.transport] ?? server.transport,
+          transportId: server.transport,
+          endpoint: server.endpoint ?? "",
+          headers: JSON.stringify(decryptMcpHeaders(server.headers), null, 2),
+          status: server.endpoint
+            ? "server.endpointConfigured"
+            : "server.endpointMissing",
+        });
+      }),
+    ),
   };
 }
 
@@ -68,7 +79,10 @@ export async function saveMcpServer(
   }
   if (
     id !== null &&
-    (!(await db.orm.aibot.McpServer.first({ id, organizationId: user.organizationId })) ||
+    (!(await db.orm.aibot.McpServer.first({
+      id,
+      organizationId: user.organizationId,
+    })) ||
       !(await hasResourceAccess(user, id, "update")))
   )
     return { error: "server.mcpServerNotFound" };
@@ -93,7 +107,10 @@ export async function saveMcpServer(
   if (id === null) {
     const server = await db.transaction(async (tx) => {
       const id = generateResourceId();
-      await tx.orm.aibot.ResourceBase.create({ id, organizationId: user.organizationId });
+      await tx.orm.aibot.ResourceBase.create({
+        id,
+        organizationId: user.organizationId,
+      });
       const created = await tx.orm.aibot.McpServer.create({
         id,
         ...saved,
@@ -110,15 +127,23 @@ export async function saveMcpServer(
     });
     logAuditEvent("mcp_server.created", "mcp_server", server.id, user.id);
   } else {
-    await db.orm.aibot.McpServer.where({ id, organizationId: user.organizationId }).update(saved);
+    await db.orm.aibot.McpServer.where({
+      id,
+      organizationId: user.organizationId,
+    }).update(saved);
     logAuditEvent("mcp_server.updated", "mcp_server", id, user.id);
   }
   return { ok: true };
 }
 
 export async function deleteMcpServer(user: AuthUser, id: string) {
-  if (!(await db.orm.aibot.McpServer.first({ id, organizationId: user.organizationId })) ||
-      !(await hasResourceAccess(user, id, "delete")))
+  if (
+    !(await db.orm.aibot.McpServer.first({
+      id,
+      organizationId: user.organizationId,
+    })) ||
+    !(await hasResourceAccess(user, id, "delete"))
+  )
     return false;
   await db.orm.aibot.ResourceBase.where({ id }).delete();
   logAuditEvent("mcp_server.deleted", "mcp_server", id, user.id);

@@ -30,7 +30,13 @@ export async function createPendingSession(
 ) {
   const user = await db.orm.aibot.User.first({ id: userId });
   if (!user) throw new Error("User not found");
-  return createSession(tokenHash, userId, expiresAt, user.organizationId, false);
+  return createSession(
+    tokenHash,
+    userId,
+    expiresAt,
+    user.organizationId,
+    false,
+  );
 }
 
 export async function getPendingSession(tokenHash: string) {
@@ -78,9 +84,7 @@ export async function recordPendingMfaFailure(tokenHash: string) {
     const mfaAttempts = session.mfaAttempts + 1;
     await tx.orm.aibot.Session.where({ id: session.id }).update({
       mfaAttempts,
-      ...(mfaAttempts >= 5
-        ? { expiresAt: new Date().toISOString() }
-        : {}),
+      ...(mfaAttempts >= 5 ? { expiresAt: new Date().toISOString() } : {}),
     });
     return { locked: mfaAttempts >= 5, userId: session.userId };
   });

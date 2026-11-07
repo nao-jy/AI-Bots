@@ -1,25 +1,43 @@
 import { db } from "./db";
 import type { AuthUser } from "../auth";
-import { decryptMcpHeaders, encryptStringMap, generateResourceId, jsonb, record } from "../utils";
+import {
+  decryptMcpHeaders,
+  encryptStringMap,
+  generateResourceId,
+  jsonb,
+  record,
+} from "../utils";
 import { logAuditEvent } from "../logger/audit-logger";
-import { filterResourcesByRole, hasResourceAccess, includeResourcePermissions } from "../authorization";
+import {
+  filterResourcesByRole,
+  hasResourceAccess,
+  includeResourcePermissions,
+} from "../authorization";
 
 export async function listProviders(user: AuthUser, ids: string[]) {
-  const providers = await filterResourcesByRole(user, await db.orm.aibot.Provider.where({ organizationId: user.organizationId })
-    .where((provider) => provider.id.in(ids))
-    .orderBy((provider) => provider.updatedAt.desc())
-    .all());
+  const providers = await filterResourcesByRole(
+    user,
+    await db.orm.aibot.Provider.where({ organizationId: user.organizationId })
+      .where((provider) => provider.id.in(ids))
+      .orderBy((provider) => provider.updatedAt.desc())
+      .all(),
+  );
   return {
-    records: await includeResourcePermissions(user, providers.map((provider) => {
-      const headers = decryptMcpHeaders(provider.headers);
-      return record(provider.id, provider.updatedAt, {
-        name: provider.name,
-        providerName: provider.providerName,
-        args: JSON.stringify(provider.args ?? {}, null, 2),
-        headers: JSON.stringify(headers, null, 2),
-        headersConfigured: Object.keys(headers).length ? "server.configured" : "server.notConfigured",
-      });
-    })),
+    records: await includeResourcePermissions(
+      user,
+      providers.map((provider) => {
+        const headers = decryptMcpHeaders(provider.headers);
+        return record(provider.id, provider.updatedAt, {
+          name: provider.name,
+          providerName: provider.providerName,
+          args: JSON.stringify(provider.args ?? {}, null, 2),
+          headers: JSON.stringify(headers, null, 2),
+          headersConfigured: Object.keys(headers).length
+            ? "server.configured"
+            : "server.notConfigured",
+        });
+      }),
+    ),
   };
 }
 
@@ -55,7 +73,10 @@ export async function saveProvider(
   }
   if (
     id !== null &&
-    (!(await db.orm.aibot.Provider.first({ id, organizationId: user.organizationId })) ||
+    (!(await db.orm.aibot.Provider.first({
+      id,
+      organizationId: user.organizationId,
+    })) ||
       !(await hasResourceAccess(user, id, "update")))
   )
     return { error: "server.providerNotFound" };
@@ -85,7 +106,10 @@ export async function saveProvider(
   if (id === null) {
     const provider = await db.transaction(async (tx) => {
       const id = generateResourceId();
-      await tx.orm.aibot.ResourceBase.create({ id, organizationId: user.organizationId });
+      await tx.orm.aibot.ResourceBase.create({
+        id,
+        organizationId: user.organizationId,
+      });
       const created = await tx.orm.aibot.Provider.create({
         id,
         ...saved,
@@ -102,20 +126,35 @@ export async function saveProvider(
     });
     logAuditEvent("provider.created", "provider", provider.id, user.id);
   } else {
-    await db.orm.aibot.Provider.where({ id, organizationId: user.organizationId }).update(saved);
+    await db.orm.aibot.Provider.where({
+      id,
+      organizationId: user.organizationId,
+    }).update(saved);
     logAuditEvent("provider.updated", "provider", id, user.id);
   }
   return { ok: true };
 }
 
 export async function deleteProvider(user: AuthUser, id: string) {
-  if (!(await db.orm.aibot.Provider.first({ id, organizationId: user.organizationId })) ||
-      !(await hasResourceAccess(user, id, "delete")))
+  if (
+    !(await db.orm.aibot.Provider.first({
+      id,
+      organizationId: user.organizationId,
+    })) ||
+    !(await hasResourceAccess(user, id, "delete"))
+  )
     return false;
   const deleted = await db.transaction(async (tx) => {
-    const provider = await tx.orm.aibot.Provider.where({ id, organizationId: user.organizationId })
-      .forUpdate().first();
-    if (!provider || await tx.orm.aibot.AgentDefinition.first({ providerId: id }))
+    const provider = await tx.orm.aibot.Provider.where({
+      id,
+      organizationId: user.organizationId,
+    })
+      .forUpdate()
+      .first();
+    if (
+      !provider ||
+      (await tx.orm.aibot.AgentDefinition.first({ providerId: id }))
+    )
       return false;
     await tx.orm.aibot.ResourceBase.where({ id }).delete();
     return true;
@@ -130,6 +169,7 @@ export async function getProvider(providerId: string, user: AuthUser) {
     id: providerId,
     organizationId: user.organizationId,
   });
-  if (!provider || !(await hasResourceAccess(user, providerId, "read"))) return null;
+  if (!provider || !(await hasResourceAccess(user, providerId, "read")))
+    return null;
   return provider;
 }

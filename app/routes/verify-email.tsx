@@ -66,17 +66,15 @@ export default function VerifyEmail({ loaderData }: Route.ComponentProps) {
           </Alert>
           {status === "ready" ? (
             <Form method="post">
-              <input
-                type="hidden"
-                name="token"
-                value={loaderData.token}
-              />
+              <input type="hidden" name="token" value={loaderData.token} />
               <Button type="submit" fullWidth>
-                {t("pages.verifyEmail.submit")}</Button>
+                {t("pages.verifyEmail.submit")}
+              </Button>
             </Form>
           ) : (
             <Button component={Link} to="/login" fullWidth>
-              {t("pages.verifyEmail.backToLogin")}</Button>
+              {t("pages.verifyEmail.backToLogin")}
+            </Button>
           )}
         </section>
       </div>

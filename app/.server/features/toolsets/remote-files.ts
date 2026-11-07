@@ -28,7 +28,10 @@ async function getSchema(organizationId: string, principalId?: string) {
         title: t("server.openDalServiceConfig"),
       })
       .describe(t("server.openDalServiceConfigDescription")),
-    ...(await ReservedParams.getAuthIdOptionalSchema(organizationId, principalId)),
+    ...(await ReservedParams.getAuthIdOptionalSchema(
+      organizationId,
+      principalId,
+    )),
   });
   return schema;
 }
@@ -47,7 +50,10 @@ function serializeMetadata(metadata: Metadata) {
   };
 }
 
-export async function getToolSetFactory(organizationId: string, principalId?: string) {
+export async function getToolSetFactory(
+  organizationId: string,
+  principalId?: string,
+) {
   const schema = await getSchema(organizationId, principalId);
   const ret: ToolSetFactory = {
     name: "remote-files-opendal",
@@ -137,9 +143,7 @@ export async function getToolSetFactory(organizationId: string, principalId?: st
                 | undefined;
               if (sourceMimeType && isGoogleWorkspaceFile(sourceMimeType)) {
                 if (!accessToken) {
-                  throw new Error(
-                    "server.googleDriveOAuthRequired",
-                  );
+                  throw new Error("server.googleDriveOAuthRequired");
                 }
                 exportedFile = await exportGoogleWorkspaceFile({
                   accessToken: accessToken.accessToken,
@@ -158,9 +162,7 @@ export async function getToolSetFactory(organizationId: string, principalId?: st
                     : (await operator.reader(path)).createReadStream();
                   for await (const chunk of source) {
                     if (!(chunk instanceof Uint8Array)) {
-                      throw new Error(
-                        "server.openDalExpectedBinaryContent",
-                      );
+                      throw new Error("server.openDalExpectedBinaryContent");
                     }
                     yield new Uint8Array(
                       chunk.buffer,
@@ -188,10 +190,7 @@ export async function getToolSetFactory(organizationId: string, principalId?: st
         [`getRemoteFileMetadata_${args.service}${authName}`]: tool({
           description: t("server.openDalMetadataDescription"),
           inputSchema: z.object({
-            path: z
-              .string()
-              .min(1)
-              .describe(t("server.openDalMetadataPath")),
+            path: z.string().min(1).describe(t("server.openDalMetadataPath")),
           }),
           execute: async ({ path }) => {
             try {

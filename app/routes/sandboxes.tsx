@@ -20,8 +20,7 @@ import { entityListPage } from "../.server/repository/list-pages";
 
 const page: Omit<EntityPageDefinition, "records"> = {
   title: "pages.sandboxes.title",
-  description:
-    "pages.sandboxes.description",
+  description: "pages.sandboxes.description",
   icon: "sandboxes",
   tableFeatures: { sandboxShell: true, resourceGrants: true },
   columns: [
@@ -33,7 +32,12 @@ const page: Omit<EntityPageDefinition, "records"> = {
   ],
   fields: [
     { key: "name", label: "pages.sandboxes.nameLabel", type: "text" },
-    { key: "sandboxType", label: "pages.sandboxes.typeLabel", type: "select", options: [] },
+    {
+      key: "sandboxType",
+      label: "pages.sandboxes.typeLabel",
+      type: "select",
+      options: [],
+    },
     {
       key: "sandboxScope",
       label: "pages.sandboxes.scopeLabel",

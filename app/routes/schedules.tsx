@@ -97,8 +97,7 @@ export async function action({ request }: Route.ActionArgs) {
   if (intent === "create") {
     result = await saveSchedule(user, null, form);
   } else if (intent === "update") {
-    if (!isUuid(id))
-      return { ok: false, error: t("pages.schedules.notFound") };
+    if (!isUuid(id)) return { ok: false, error: t("pages.schedules.notFound") };
     result = await saveSchedule(user, id, form);
   } else if (intent === "delete") {
     if (!isUuid(id) || !(await deleteSchedule(user, id)))
@@ -120,8 +119,7 @@ export async function action({ request }: Route.ActionArgs) {
     return {
       ok: true,
       intent,
-      message:
-        t("pages.schedules.cronReloadFailedAfterSave"),
+      message: t("pages.schedules.cronReloadFailedAfterSave"),
     };
   }
 }

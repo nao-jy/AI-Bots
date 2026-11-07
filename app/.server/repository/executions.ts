@@ -52,19 +52,27 @@ export async function beginExecution(input: {
     });
     return execution.id;
   } catch (error) {
-    appLogger.error(`Failed to record ${input.source} execution start for chatbot ${input.chatbotId}`, error);
+    appLogger.error(
+      `Failed to record ${input.source} execution start for chatbot ${input.chatbotId}`,
+      error,
+    );
     return null;
   }
 }
 
-export async function finishExecution(id: string | null, outcome: ExecutionOutcome) {
+export async function finishExecution(
+  id: string | null,
+  outcome: ExecutionOutcome,
+) {
   if (!id) return;
   try {
     await db.orm.aibot.BotExecution.where({ id }).update({
       status: outcome.status,
       finishedAt: new Date().toISOString(),
       errorCode: outcome.errorCode ?? null,
-      errorSummary: outcome.errorCode ? errorSummaries[outcome.errorCode] : null,
+      errorSummary: outcome.errorCode
+        ? errorSummaries[outcome.errorCode]
+        : null,
       usageId: outcome.usageId ?? null,
     });
   } catch (error) {
@@ -83,7 +91,12 @@ async function visibleBots(user: AuthUser) {
 
 export async function listExecutionHistory(
   user: AuthUser,
-  filters: { botId?: string; status?: ExecutionStatus; days: number; page: number },
+  filters: {
+    botId?: string;
+    status?: ExecutionStatus;
+    days: number;
+    page: number;
+  },
 ) {
   const [bots, schedules] = await Promise.all([
     visibleBots(user),
@@ -93,18 +106,26 @@ export async function listExecutionHistory(
       .then((rows) => filterResourcesByRole(user, rows)),
   ]);
   const botIds = bots.map((bot) => bot.id);
-  const scheduleNames = new Map(schedules.map((schedule) => [schedule.id, schedule.name]));
+  const scheduleNames = new Map(
+    schedules.map((schedule) => [schedule.id, schedule.name]),
+  );
   if (filters.botId && !botIds.includes(filters.botId))
     throw new Response("Forbidden", { status: 403 });
 
-  const since = new Date(Date.now() - filters.days * 24 * 60 * 60 * 1_000).toISOString();
+  const since = new Date(
+    Date.now() - filters.days * 24 * 60 * 60 * 1_000,
+  ).toISOString();
   const pageSize = 25;
-  const empty = { records: [], bots: bots.map(({ id, name }) => ({ id, name })), hasNext: false };
+  const empty = {
+    records: [],
+    bots: bots.map(({ id, name }) => ({ id, name })),
+    hasNext: false,
+  };
   if (!user.isAdmin && botIds.length === 0) return empty;
 
-  let query = db.orm.aibot.BotExecution
-    .where({ organizationId: user.organizationId })
-    .where((row) => row.startedAt.gte(since));
+  let query = db.orm.aibot.BotExecution.where({
+    organizationId: user.organizationId,
+  }).where((row) => row.startedAt.gte(since));
   if (!user.isAdmin) query = query.where((row) => row.chatbotId.in(botIds));
   if (filters.botId) query = query.where({ chatbotId: filters.botId });
   if (filters.status) query = query.where({ status: filters.status });
@@ -119,20 +140,24 @@ export async function listExecutionHistory(
     records: rows.slice(0, pageSize).map((row) => ({
       id: row.id,
       chatbotId: row.chatbotId,
-      botName: row.chatbotId ? botNames.get(row.chatbotId) ?? null : null,
+      botName: row.chatbotId ? (botNames.get(row.chatbotId) ?? null) : null,
       source: row.source,
       status: row.status,
-      stale: row.status === "running" && new Date(row.startedAt).getTime() < staleBefore,
+      stale:
+        row.status === "running" &&
+        new Date(row.startedAt).getTime() < staleBefore,
       startedAt: row.startedAt,
       finishedAt: row.finishedAt,
       errorCode: row.errorCode,
       usageId: row.usageId,
-      scheduleName: row.scheduleId && (user.isAdmin || scheduleNames.has(row.scheduleId))
-        ? scheduleNames.get(row.scheduleId) ?? row.scheduleId
-        : null,
-      threadId: row.scheduleId && (user.isAdmin || scheduleNames.has(row.scheduleId))
-        ? row.threadId
-        : null,
+      scheduleName:
+        row.scheduleId && (user.isAdmin || scheduleNames.has(row.scheduleId))
+          ? (scheduleNames.get(row.scheduleId) ?? row.scheduleId)
+          : null,
+      threadId:
+        row.scheduleId && (user.isAdmin || scheduleNames.has(row.scheduleId))
+          ? row.threadId
+          : null,
     })),
     bots: empty.bots,
     hasNext: rows.length > pageSize,
@@ -147,20 +172,24 @@ export async function recentExecutionFailures(
   if (!user.isAdmin && botIds.length === 0) return { count: 0, records: [] };
 
   const since = new Date(Date.now() - 24 * 60 * 60 * 1_000).toISOString();
-  let query = db.orm.aibot.BotExecution
-    .where({ organizationId: user.organizationId, status: "failed" })
-    .where((row) => row.startedAt.gte(since));
+  let query = db.orm.aibot.BotExecution.where({
+    organizationId: user.organizationId,
+    status: "failed",
+  }).where((row) => row.startedAt.gte(since));
   if (!user.isAdmin) query = query.where((row) => row.chatbotId.in(botIds));
   const [totals, rows] = await Promise.all([
     query.aggregate((aggregate) => ({ count: aggregate.count() })),
-    query.orderBy((row) => row.startedAt.desc()).limit(5).all(),
+    query
+      .orderBy((row) => row.startedAt.desc())
+      .limit(5)
+      .all(),
   ]);
   const botNames = new Map(bots.map((bot) => [bot.id, bot.name]));
   return {
     count: totals.count,
     records: rows.map((row) => ({
       id: row.id,
-      botName: row.chatbotId ? botNames.get(row.chatbotId) ?? null : null,
+      botName: row.chatbotId ? (botNames.get(row.chatbotId) ?? null) : null,
       startedAt: row.startedAt,
       errorCode: row.errorCode,
     })),

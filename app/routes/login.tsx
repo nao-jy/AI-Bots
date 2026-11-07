@@ -133,9 +133,8 @@ export async function action({ request }: Route.ActionArgs) {
       }
     }
   } else {
-    const maxLoginAttempts = (
-      await getAppSettings(user.organizationId)
-    ).maxLoginAttempts;
+    const maxLoginAttempts = (await getAppSettings(user.organizationId))
+      .maxLoginAttempts;
     if (user.loginAttempts >= maxLoginAttempts) {
       logAuditEvent("auth.login.rejected", "user", user.id);
       return data(

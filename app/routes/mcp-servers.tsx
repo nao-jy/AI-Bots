@@ -21,7 +21,10 @@ function getPage(transport: Record<string, string>) {
     title: t("pages.mcpServers.title"),
     description: t("pages.mcpServers.description"),
     icon: "mcp",
-    tableFeatures: { subtitleKeys: ["description", "endpoint"], resourceGrants: true },
+    tableFeatures: {
+      subtitleKeys: ["description", "endpoint"],
+      resourceGrants: true,
+    },
     columns: [
       { key: "name", label: t("pages.mcpServers.nameLabel") },
       { key: "transport", label: t("pages.mcpServers.transportLabel") },
@@ -30,7 +33,11 @@ function getPage(transport: Record<string, string>) {
       { key: "updated", label: t("pages.mcpServers.updatedLabel") },
     ],
     fields: [
-      { key: "name", label: t("pages.mcpServers.nameLabel"), placeholder: t("pages.mcpServers.namePlaceholder") },
+      {
+        key: "name",
+        label: t("pages.mcpServers.nameLabel"),
+        placeholder: t("pages.mcpServers.namePlaceholder"),
+      },
       {
         key: "transportId",
         label: t("pages.mcpServers.transportLabel"),

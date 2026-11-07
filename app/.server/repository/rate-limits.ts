@@ -177,10 +177,32 @@ export async function getExceededRateLimit(
 
 export async function listRateLimits(user: AuthUser, ids: string[]) {
   const [limits, bots, agents, providers] = await Promise.all([
-    filterResourcesByRole(user, await db.orm.aibot.RateLimit.where({ organizationId: user.organizationId }).where((limit) => limit.id.in(ids)).all()),
-    filterResourcesByRole(user, await db.orm.aibot.ChatBot.where({ organizationId: user.organizationId }).all()),
-    filterResourcesByRole(user, await db.orm.aibot.AgentDefinition.where({ organizationId: user.organizationId }).all()),
-    filterResourcesByRole(user, await db.orm.aibot.Provider.where({ organizationId: user.organizationId }).all()),
+    filterResourcesByRole(
+      user,
+      await db.orm.aibot.RateLimit.where({
+        organizationId: user.organizationId,
+      })
+        .where((limit) => limit.id.in(ids))
+        .all(),
+    ),
+    filterResourcesByRole(
+      user,
+      await db.orm.aibot.ChatBot.where({
+        organizationId: user.organizationId,
+      }).all(),
+    ),
+    filterResourcesByRole(
+      user,
+      await db.orm.aibot.AgentDefinition.where({
+        organizationId: user.organizationId,
+      }).all(),
+    ),
+    filterResourcesByRole(
+      user,
+      await db.orm.aibot.Provider.where({
+        organizationId: user.organizationId,
+      }).all(),
+    ),
   ]);
   const criteriaOptions = [
     { value: "bot", label: "server.bot" },
@@ -213,28 +235,30 @@ export async function listRateLimits(user: AuthUser, ids: string[]) {
     ),
   };
   const records = limits.map((limit) => {
-      const coefficients =
-        limit.coefficient && typeof limit.coefficient === "object"
-          ? JSON.stringify(limit.coefficient)
-          : "{}";
-      const criteriaId = String(limit.criteriaId ?? "");
-      return record(limit.id, "", {
-        name: limit.name,
-        criteria: limit.criteria,
-        criteriaId,
-        criteriaLabel: criteriaLabels.get(limit.criteria) ?? limit.criteria,
-        targetLabel:
-          targetLabels[limit.criteria]?.get(criteriaId) ??
-          "server.targetNotFound",
-        perThread: String(limit.perThread),
-        perThreadLabel: limit.perThread ? "server.perThread" : "server.acrossAllThreads",
-        coefficients,
-        limit: Number(limit.limit),
-        resetOnCron: limit.resetOnCron,
-        timezone: limit.timezone,
-        limitExceededMessage: limit.limitExceededMessage,
-      });
+    const coefficients =
+      limit.coefficient && typeof limit.coefficient === "object"
+        ? JSON.stringify(limit.coefficient)
+        : "{}";
+    const criteriaId = String(limit.criteriaId ?? "");
+    return record(limit.id, "", {
+      name: limit.name,
+      criteria: limit.criteria,
+      criteriaId,
+      criteriaLabel: criteriaLabels.get(limit.criteria) ?? limit.criteria,
+      targetLabel:
+        targetLabels[limit.criteria]?.get(criteriaId) ??
+        "server.targetNotFound",
+      perThread: String(limit.perThread),
+      perThreadLabel: limit.perThread
+        ? "server.perThread"
+        : "server.acrossAllThreads",
+      coefficients,
+      limit: Number(limit.limit),
+      resetOnCron: limit.resetOnCron,
+      timezone: limit.timezone,
+      limitExceededMessage: limit.limitExceededMessage,
     });
+  });
   return {
     records: await includeResourcePermissions(user, records),
     criteriaOptions,
@@ -286,14 +310,16 @@ export async function saveRateLimit(
       id,
       organizationId: user.organizationId,
     });
-    if (!existing || !(await hasResourceAccess(user, id, "update"))) return { error: "server.rateLimitNotFound" };
+    if (!existing || !(await hasResourceAccess(user, id, "update")))
+      return { error: "server.rateLimitNotFound" };
   }
   if (criteria === "bot") {
     if (
       !(await db.orm.aibot.ChatBot.first({
         id: criteriaId,
         organizationId: user.organizationId,
-      })) || !(await hasResourceAccess(user, criteriaId, "read"))
+      })) ||
+      !(await hasResourceAccess(user, criteriaId, "read"))
     )
       return { error: "server.selectedBotNotFound" };
   } else if (criteria === "agent") {
@@ -301,7 +327,8 @@ export async function saveRateLimit(
       !(await db.orm.aibot.AgentDefinition.first({
         id: criteriaId,
         organizationId: user.organizationId,
-      })) || !(await hasResourceAccess(user, criteriaId, "read"))
+      })) ||
+      !(await hasResourceAccess(user, criteriaId, "read"))
     )
       return { error: "server.selectedAgentNotFound" };
   } else {
@@ -309,7 +336,8 @@ export async function saveRateLimit(
       !(await db.orm.aibot.Provider.first({
         id: criteriaId,
         organizationId: user.organizationId,
-      })) || !(await hasResourceAccess(user, criteriaId, "read"))
+      })) ||
+      !(await hasResourceAccess(user, criteriaId, "read"))
     )
       return { error: "server.selectedProviderNotFound" };
   }
@@ -317,7 +345,11 @@ export async function saveRateLimit(
   const existingLimits = await db.orm.aibot.RateLimit.where({
     organizationId: user.organizationId,
   }).all();
-  if (existingLimits.some((existing) => existing.id !== id && existing.name === name))
+  if (
+    existingLimits.some(
+      (existing) => existing.id !== id && existing.name === name,
+    )
+  )
     return { error: "server.duplicateRateLimitName" };
   if (
     existingLimits.some(
@@ -344,7 +376,10 @@ export async function saveRateLimit(
   if (id === null) {
     const created = await db.transaction(async (tx) => {
       const id = generateResourceId();
-      await tx.orm.aibot.ResourceBase.create({ id, organizationId: user.organizationId });
+      await tx.orm.aibot.ResourceBase.create({
+        id,
+        organizationId: user.organizationId,
+      });
       const resource = await tx.orm.aibot.RateLimit.create({
         id,
         ...saved,
@@ -360,7 +395,10 @@ export async function saveRateLimit(
     });
     logAuditEvent("rate_limit.created", "rate_limit", created.id, user.id);
   } else {
-    await db.orm.aibot.RateLimit.where({ id, organizationId: user.organizationId }).update(saved);
+    await db.orm.aibot.RateLimit.where({
+      id,
+      organizationId: user.organizationId,
+    }).update(saved);
     logAuditEvent("rate_limit.updated", "rate_limit", id, user.id);
   }
   return { ok: true };

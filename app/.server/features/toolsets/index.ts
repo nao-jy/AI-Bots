@@ -24,9 +24,17 @@ export class ToolSetFactoryRegistry {
     this.principalId = principalId;
   }
   private async getToolSetFactories() {
-    const remoteFilesFactory = await getRemoteFilesToolSetFactory(this.organizationId, this.principalId);
-    const gdriveFactory = await getGdriveToolSetFactory(this.organizationId, this.principalId);
-    const kingOfTimeFactory = await getKingOfTimeToolSetFactory(this.organizationId);
+    const remoteFilesFactory = await getRemoteFilesToolSetFactory(
+      this.organizationId,
+      this.principalId,
+    );
+    const gdriveFactory = await getGdriveToolSetFactory(
+      this.organizationId,
+      this.principalId,
+    );
+    const kingOfTimeFactory = await getKingOfTimeToolSetFactory(
+      this.organizationId,
+    );
     return [remoteFilesFactory, gdriveFactory, kingOfTimeFactory];
   }
 

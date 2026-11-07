@@ -30,7 +30,11 @@ const page: Omit<EntityPageDefinition, "records"> = {
     { key: "updated", label: "pages.adapters.updatedLabel" },
   ],
   fields: [
-    { key: "name", label: "pages.adapters.connectionNameLabel", placeholder: "pages.adapters.connectionNamePlaceholder" },
+    {
+      key: "name",
+      label: "pages.adapters.connectionNameLabel",
+      placeholder: "pages.adapters.connectionNamePlaceholder",
+    },
     {
       key: "platformId",
       label: "pages.adapters.platformLabel",
@@ -88,9 +92,11 @@ export async function action({ request }: Route.ActionArgs) {
   if (intent === "regenerate-public-ids") {
     const slot = String(form.get("slot") ?? "");
     if (slot !== "first" && slot !== "second")
-      return { ok: false, error: t("pages.adapters.publicIdRegenerationRequired") };
-    return isUuid(id) &&
-      (await regenerateAdapterPublicIds(user, id, slot))
+      return {
+        ok: false,
+        error: t("pages.adapters.publicIdRegenerationRequired"),
+      };
+    return isUuid(id) && (await regenerateAdapterPublicIds(user, id, slot))
       ? { ok: true }
       : { ok: false, error: t("pages.adapters.notFound") };
   }

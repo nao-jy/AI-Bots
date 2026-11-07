@@ -91,7 +91,9 @@ export function ToolSetContextEditor({
 
   return (
     <Stack gap="sm">
-      <strong className="entity-details-title">{t("components.entityPage.toolsetContextEditor.title")}</strong>
+      <strong className="entity-details-title">
+        {t("components.entityPage.toolsetContextEditor.title")}
+      </strong>
       <input
         type="hidden"
         name={name}
@@ -109,8 +111,13 @@ export function ToolSetContextEditor({
           <div key={instance.id}>
             <Group align="flex-end" wrap="nowrap">
               <Select
-                label={t("components.entityPage.toolsetContextEditor.toolsetLabel", { 0: index + 1 })}
-                placeholder={t("components.entityPage.toolsetContextEditor.selectToolset")}
+                label={t(
+                  "components.entityPage.toolsetContextEditor.toolsetLabel",
+                  { 0: index + 1 },
+                )}
+                placeholder={t(
+                  "components.entityPage.toolsetContextEditor.selectToolset",
+                )}
                 data={schemas.map(({ name: value, displayName: label }) => ({
                   value,
                   label,
@@ -134,7 +141,9 @@ export function ToolSetContextEditor({
                 }
                 searchable
                 clearable
-                nothingFoundMessage={t("components.entityPage.toolsetContextEditor.noOptions")}
+                nothingFoundMessage={t(
+                  "components.entityPage.toolsetContextEditor.noOptions",
+                )}
                 style={{ flex: 1 }}
               />
               <Button
@@ -152,7 +161,11 @@ export function ToolSetContextEditor({
                   })
                 }
               >
-                {expanded ? t("components.entityPage.toolsetContextEditor.closeContext") : t("components.entityPage.toolsetContextEditor.configureContext")}
+                {expanded
+                  ? t("components.entityPage.toolsetContextEditor.closeContext")
+                  : t(
+                      "components.entityPage.toolsetContextEditor.configureContext",
+                    )}
               </Button>
               <Button
                 type="button"
@@ -169,7 +182,8 @@ export function ToolSetContextEditor({
                   });
                 }}
               >
-                {t("components.entityPage.toolsetContextEditor.delete")}</Button>
+                {t("components.entityPage.toolsetContextEditor.delete")}
+              </Button>
             </Group>
             {toolSet && (
               <Collapse id={panelId} expanded={expanded}>
@@ -217,10 +231,12 @@ export function ToolSetContextEditor({
           ])
         }
       >
-        {t("components.entityPage.toolsetContextEditor.addToolset")}</Button>
+        {t("components.entityPage.toolsetContextEditor.addToolset")}
+      </Button>
       {schemas.length === 0 && (
         <Text size="sm" c="dimmed">
-          {t("components.entityPage.toolsetContextEditor.noToolsetsAvailable")}</Text>
+          {t("components.entityPage.toolsetContextEditor.noToolsetsAvailable")}
+        </Text>
       )}
     </Stack>
   );

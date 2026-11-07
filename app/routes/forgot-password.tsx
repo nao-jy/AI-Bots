@@ -43,7 +43,8 @@ export default function ForgotPassword({ loaderData }: Route.ComponentProps) {
           <div className="eyebrow">{APP_NAME}</div>
           <Title order={1}>{t("pages.forgotPassword.title")}</Title>
           <p className="login-subtitle">
-            {t("pages.forgotPassword.instructions")}</p>
+            {t("pages.forgotPassword.instructions")}
+          </p>
           {actionData?.message ? (
             <Alert color="blue" role="status">
               {actionData.message}
@@ -58,11 +59,13 @@ export default function ForgotPassword({ loaderData }: Route.ComponentProps) {
                 required
               />
               <Button type="submit" fullWidth>
-                {t("pages.forgotPassword.submit")}</Button>
+                {t("pages.forgotPassword.submit")}
+              </Button>
             </Form>
           ) : (
             <Alert color="yellow" role="status">
-              {t("pages.forgotPassword.emailUnavailable")}</Alert>
+              {t("pages.forgotPassword.emailUnavailable")}
+            </Alert>
           )}
           <Button
             component={Link}
@@ -71,7 +74,8 @@ export default function ForgotPassword({ loaderData }: Route.ComponentProps) {
             fullWidth
             mt="sm"
           >
-            {t("pages.forgotPassword.backToLogin")}</Button>
+            {t("pages.forgotPassword.backToLogin")}
+          </Button>
         </section>
       </div>
     </main>

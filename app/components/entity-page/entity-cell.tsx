@@ -90,10 +90,9 @@ export function EntityCell({
         onChange={(nextValue) => {
           if (nextValue !== null) onStatusChange(nextValue === "admin");
         }}
-        aria-label={t(
-          "components.entityPage.entityCell.selectAdminAriaLabel",
-          { 0: recordName },
-        )}
+        aria-label={t("components.entityPage.entityCell.selectAdminAriaLabel", {
+          0: recordName,
+        })}
       />
     );
   if (column.key === "status") return <Status value={String(value ?? "")} />;

@@ -110,7 +110,11 @@ describe("tool error results", () => {
       { fileHandle: "file", filename: "test.txt" },
     );
 
-    expect(result).toMatchObject({ success: true, delivery: "attachment", messagePosted: true });
+    expect(result).toMatchObject({
+      success: true,
+      delivery: "attachment",
+      messagePosted: true,
+    });
     expect(post).toHaveBeenCalledOnce();
   });
 

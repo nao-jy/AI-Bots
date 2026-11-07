@@ -29,7 +29,9 @@ export async function loader({ request, params }: Route.LoaderArgs) {
   const user = await requireUser(request);
   const terminalId = params.terminalId;
   if (!terminalId || !hasOwnedSandboxTerminal(user.id, terminalId))
-    return new Response(t("pages.sandboxTerminal.sessionNotFound"), { status: 404 });
+    return new Response(t("pages.sandboxTerminal.sessionNotFound"), {
+      status: 404,
+    });
 
   const headerOffset = Number(request.headers.get("Last-Event-ID") ?? "0");
   const lastEventId =
@@ -142,7 +144,9 @@ export async function action({ request, params }: Route.ActionArgs) {
       {
         ok: false,
         error:
-          error instanceof Error ? error.message : t("pages.sandboxTerminal.shellActionFailed"),
+          error instanceof Error
+            ? error.message
+            : t("pages.sandboxTerminal.shellActionFailed"),
       },
       { status: 400 },
     );

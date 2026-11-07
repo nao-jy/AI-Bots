@@ -1,6 +1,12 @@
 import { db } from "./db";
 import type { AuthUser } from "../auth";
-import { generateResourceId, jsonb, jsonbToStringRecord, parseStringList, record } from "../utils";
+import {
+  generateResourceId,
+  jsonb,
+  jsonbToStringRecord,
+  parseStringList,
+  record,
+} from "../utils";
 import {
   executeSandboxCommand,
   getSandbox,
@@ -26,44 +32,52 @@ function isSandboxScope(value: string): value is SandboxScope {
 }
 
 export async function listSandboxes(user: AuthUser, ids: string[]) {
-  const sandboxes = await filterResourcesByRole(user, await db.orm.aibot.Sandbox.where({
-    organizationId: user.organizationId,
-  }).where((sandbox) => sandbox.id.in(ids)).all());
+  const sandboxes = await filterResourcesByRole(
+    user,
+    await db.orm.aibot.Sandbox.where({
+      organizationId: user.organizationId,
+    })
+      .where((sandbox) => sandbox.id.in(ids))
+      .all(),
+  );
   const sandboxNames = await listSandboxNames();
   return {
     sandboxTypeOptions: sandboxNames.map((name) => ({
       label: name,
       value: name,
     })),
-    records: await includeResourcePermissions(user, await Promise.all(
-      sandboxes.map(async (sandbox) => {
-        const instances = await db.orm.aibot.PersistentSandboxInstance.where({
-          sandboxId: sandbox.id,
-        }).all();
-        return record(sandbox.id, "—", {
-          sandboxType: sandbox.sandboxType,
-          type: sandbox.sandboxType,
-          sandboxScope: sandbox.sandboxScope,
-          scope: SANDBOX_SCOPES[sandbox.sandboxScope],
-          name: sandbox.name,
-          envs: JSON.stringify(sandbox.envs ?? {}),
-          allowedDomainList: JSON.stringify(sandbox.allowedDomainList),
-          initCommands: sandbox.initCommands.join("\n"),
-          instances: JSON.stringify(
-            instances.map((instance) => ({
-              instanceId: instance.instanceId,
-              scopeLabel: instance.threadId
-                ? "server.thread"
-                : instance.adapterId !== null
-                  ? t("server.adapterNumber", { 0: instance.adapterId })
-                  : instance.chatbotId !== null
-                    ? t("server.botNumber", { 0: instance.chatbotId })
-                    : "server.shared",
-            })),
-          ),
-        });
-      }),
-    )),
+    records: await includeResourcePermissions(
+      user,
+      await Promise.all(
+        sandboxes.map(async (sandbox) => {
+          const instances = await db.orm.aibot.PersistentSandboxInstance.where({
+            sandboxId: sandbox.id,
+          }).all();
+          return record(sandbox.id, "—", {
+            sandboxType: sandbox.sandboxType,
+            type: sandbox.sandboxType,
+            sandboxScope: sandbox.sandboxScope,
+            scope: SANDBOX_SCOPES[sandbox.sandboxScope],
+            name: sandbox.name,
+            envs: JSON.stringify(sandbox.envs ?? {}),
+            allowedDomainList: JSON.stringify(sandbox.allowedDomainList),
+            initCommands: sandbox.initCommands.join("\n"),
+            instances: JSON.stringify(
+              instances.map((instance) => ({
+                instanceId: instance.instanceId,
+                scopeLabel: instance.threadId
+                  ? "server.thread"
+                  : instance.adapterId !== null
+                    ? t("server.adapterNumber", { 0: instance.adapterId })
+                    : instance.chatbotId !== null
+                      ? t("server.botNumber", { 0: instance.chatbotId })
+                      : "server.shared",
+              })),
+            ),
+          });
+        }),
+      ),
+    ),
   };
 }
 
@@ -85,8 +99,7 @@ export async function runPersistentSandboxCommand(
     return { ok: false, error: "server.sandboxNotFound" };
   if (!instanceId.trim())
     return { ok: false, error: "server.sandboxInstanceRequired" };
-  if (!command.trim())
-    return { ok: false, error: "server.commandRequired" };
+  if (!command.trim()) return { ok: false, error: "server.commandRequired" };
   if (command.length > 4_000)
     return { ok: false, error: "server.commandTooLong" };
 
@@ -95,7 +108,8 @@ export async function runPersistentSandboxCommand(
     organizationId: user.organizationId,
   });
   if (!sandbox) return { ok: false, error: "server.sandboxNotFound" };
-  if (!(await hasResourceAccess(user, sandboxId, "update"))) return { ok: false, error: "server.sandboxNotFound" };
+  if (!(await hasResourceAccess(user, sandboxId, "update")))
+    return { ok: false, error: "server.sandboxNotFound" };
 
   const instance = await db.orm.aibot.PersistentSandboxInstance.whereUnique({
     instanceId,
@@ -134,9 +148,7 @@ export async function runPersistentSandboxCommand(
       ok: false,
       command,
       error:
-        error instanceof Error
-          ? error.message
-          : "server.sandboxCommandFailed",
+        error instanceof Error ? error.message : "server.sandboxCommandFailed",
     };
   }
 }
@@ -168,7 +180,8 @@ export async function startPersistentSandboxTerminal(
     organizationId: user.organizationId,
   });
   if (!sandbox) return { ok: false, error: "server.sandboxNotFound" };
-  if (!(await hasResourceAccess(user, sandboxId, "update"))) return { ok: false, error: "server.sandboxNotFound" };
+  if (!(await hasResourceAccess(user, sandboxId, "update")))
+    return { ok: false, error: "server.sandboxNotFound" };
 
   const instance = await db.orm.aibot.PersistentSandboxInstance.whereUnique({
     instanceId,
@@ -244,13 +257,15 @@ export async function saveSandbox(
       .filter(Boolean);
   } catch (error) {
     return {
-      error:
-        error instanceof Error ? error.message : "server.invalidInput",
+      error: error instanceof Error ? error.message : "server.invalidInput",
     };
   }
   if (
     id !== null &&
-    (!(await db.orm.aibot.Sandbox.first({ id, organizationId: user.organizationId })) ||
+    (!(await db.orm.aibot.Sandbox.first({
+      id,
+      organizationId: user.organizationId,
+    })) ||
       !(await hasResourceAccess(user, id, "update")))
   )
     return { error: "server.sandboxNotFound" };
@@ -265,7 +280,10 @@ export async function saveSandbox(
   if (id === null) {
     const sandbox = await db.transaction(async (tx) => {
       const id = generateResourceId();
-      await tx.orm.aibot.ResourceBase.create({ id, organizationId: user.organizationId });
+      await tx.orm.aibot.ResourceBase.create({
+        id,
+        organizationId: user.organizationId,
+      });
       const created = await tx.orm.aibot.Sandbox.create({
         id,
         ...saved,
@@ -282,7 +300,10 @@ export async function saveSandbox(
     });
     logAuditEvent("sandbox.created", "sandbox", sandbox.id, user.id);
   } else {
-    await db.orm.aibot.Sandbox.where({ id, organizationId: user.organizationId }).update(saved);
+    await db.orm.aibot.Sandbox.where({
+      id,
+      organizationId: user.organizationId,
+    }).update(saved);
     logAuditEvent("sandbox.updated", "sandbox", id, user.id);
   }
   return { ok: true };
@@ -315,12 +336,16 @@ export async function getSandboxInstance(instanceId: string) {
   return instance;
 }
 
-export async function getChatBotSandbox(chatbotId: string, organizationId: string) {
+export async function getChatBotSandbox(
+  chatbotId: string,
+  organizationId: string,
+) {
   const links = await db.orm.aibot.ChatBotToolSandbox.where({ chatbotId })
     .include("sandBox")
     .all();
   return (
-    links.find((link) => link.sandBox.organizationId === organizationId)?.sandBox ?? null
+    links.find((link) => link.sandBox.organizationId === organizationId)
+      ?.sandBox ?? null
   );
 }
 
@@ -397,8 +422,7 @@ export async function deleteSandboxInstance(
   sandboxId: string,
   instanceId: string,
 ) {
-  if (!/^[0-9a-f-]{36}$/i.test(sandboxId) || !instanceId.trim())
-    return false;
+  if (!/^[0-9a-f-]{36}$/i.test(sandboxId) || !instanceId.trim()) return false;
   const instance = await db.orm.aibot.PersistentSandboxInstance.whereUnique({
     instanceId,
   })

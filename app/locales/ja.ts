@@ -108,7 +108,8 @@ export const ja = {
       threadId: "送信先スレッドID",
       usageId: "利用記録ID",
       empty: "該当する実行記録はありません。",
-      staleNote: "15分以上、終了が記録されていません。サーバーログで実行IDを確認してください。",
+      staleNote:
+        "15分以上、終了が記録されていません。サーバーログで実行IDを確認してください。",
       pagination: "実行履歴のページ",
       previous: "前へ",
       next: "次へ",
@@ -126,7 +127,8 @@ export const ja = {
         schedule: "定期実行",
       },
       error: {
-        configuration_error: "ボットまたはAIエージェントの設定を利用できません。",
+        configuration_error:
+          "ボットまたはAIエージェントの設定を利用できません。",
         processing_error: "モデルまたはツールの処理に失敗しました。",
         delivery_error: "応答を投稿できませんでした。",
         adapter_error: "チャットアダプタを初期化できませんでした。",
@@ -773,7 +775,8 @@ export const ja = {
           "対象のスレッドでAIに「このスレッドIDを教えて」と聞いてください。",
         removeTargetAriaLabel: "送信先 {{0}} を削除",
         addTarget: "送信先を追加",
-        noTargetsAvailable: "ボットとチャットアダプタの組み合わせがありません。",
+        noTargetsAvailable:
+          "ボットとチャットアダプタの組み合わせがありません。",
       },
       table: {
         unnamedRecord: "名称未設定",
@@ -990,7 +993,8 @@ export const ja = {
     scheduleTargetAndThreadRequired:
       "送信先とスレッドIDを1件以上指定してください。",
     duplicateScheduleTarget: "同じ送信先とスレッドIDを重複して指定できません。",
-    invalidBotAdapterPair: "選択したボットとチャットアダプタの組み合わせが無効です。",
+    invalidBotAdapterPair:
+      "選択したボットとチャットアダプタの組み合わせが無効です。",
     scheduleNotFound: "定期実行が見つかりません。",
     scheduleTargetOptionActive: "{{0}} / {{1}}",
     scheduleTargetOptionInactive: "{{0}} / {{1}} (停止中)",

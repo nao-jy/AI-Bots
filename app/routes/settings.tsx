@@ -1,5 +1,13 @@
 import { t } from "~/i18n";
-import { Alert, Button, NumberInput, Select, Switch, Text, TextInput } from "@mantine/core";
+import {
+  Alert,
+  Button,
+  NumberInput,
+  Select,
+  Switch,
+  Text,
+  TextInput,
+} from "@mantine/core";
 import { Form, useActionData } from "react-router";
 import type { Route } from "./+types/settings";
 import { requireAdmin } from "../.server/auth";
@@ -80,7 +88,8 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
           )}
           {actionData?.ok && (
             <Alert color="green" role="status" mb="md">
-              {t("pages.settings.saved")}</Alert>
+              {t("pages.settings.saved")}
+            </Alert>
           )}
           <TextInput
             name="organizationName"
@@ -119,7 +128,10 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
               { value: "1", label: t("components.passwordStrength.weak") },
               { value: "2", label: t("components.passwordStrength.fair") },
               { value: "3", label: t("components.passwordStrength.strong") },
-              { value: "4", label: t("components.passwordStrength.veryStrong") },
+              {
+                value: "4",
+                label: t("components.passwordStrength.veryStrong"),
+              },
             ]}
             defaultValue={String(loaderData.minimumPasswordStrength)}
             allowDeselect={false}
@@ -138,7 +150,8 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
             mb="lg"
           />
           <Text size="xs" c="dimmed" mb="md">
-            {t("pages.settings.mfaSettingsPreservedHelp")}</Text>
+            {t("pages.settings.mfaSettingsPreservedHelp")}
+          </Text>
           <Button type="submit">{t("pages.settings.save")}</Button>
         </Form>
       </section>

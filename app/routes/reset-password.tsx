@@ -9,12 +9,7 @@ import {
 import { APP_NAME } from "~/const";
 import { PasswordStrengthInput } from "~/components/password-strength-input";
 
-type ResetStatus =
-  | "ready"
-  | "reset"
-  | "expired"
-  | "invalid"
-  | "weak-password";
+type ResetStatus = "ready" | "reset" | "expired" | "invalid" | "weak-password";
 
 function noStoreHeaders() {
   return {
@@ -30,10 +25,7 @@ export function meta() {
 export async function loader({ request }: Route.LoaderArgs) {
   const token = new URL(request.url).searchParams.get("token") ?? "";
   const reset = await inspectPasswordReset(token);
-  return data(
-    { ...reset, token },
-    { headers: noStoreHeaders() },
-  );
+  return data({ ...reset, token }, { headers: noStoreHeaders() });
 }
 
 export async function action({ request }: Route.ActionArgs) {
@@ -79,17 +71,16 @@ export default function ResetPassword({ loaderData }: Route.ComponentProps) {
           {status === "ready" || status === "weak-password" ? (
             <>
               <Title order={1}>{t("pages.resetPassword.formTitle")}</Title>
-              <p className="login-subtitle">{t("pages.resetPassword.passwordHint")}</p>
+              <p className="login-subtitle">
+                {t("pages.resetPassword.passwordHint")}
+              </p>
               {status === "weak-password" && (
                 <Alert color="red" role="alert">
-                  {t("pages.resetPassword.passwordValidationError")}</Alert>
+                  {t("pages.resetPassword.passwordValidationError")}
+                </Alert>
               )}
               <Form method="post" className="login-form">
-                <input
-                  type="hidden"
-                  name="token"
-                  value={loaderData.token}
-                />
+                <input type="hidden" name="token" value={loaderData.token} />
                 <PasswordStrengthInput
                   name="password"
                   label={t("pages.resetPassword.newPasswordLabel")}
@@ -98,7 +89,8 @@ export default function ResetPassword({ loaderData }: Route.ComponentProps) {
                   required
                 />
                 <Button type="submit" fullWidth>
-                  {t("pages.resetPassword.submit")}</Button>
+                  {t("pages.resetPassword.submit")}
+                </Button>
               </Form>
             </>
           ) : (
@@ -109,8 +101,15 @@ export default function ResetPassword({ loaderData }: Route.ComponentProps) {
               </Alert>
             </>
           )}
-          <Button component={Link} to="/login" variant="subtle" fullWidth mt="sm">
-            {t("pages.resetPassword.backToLogin")}</Button>
+          <Button
+            component={Link}
+            to="/login"
+            variant="subtle"
+            fullWidth
+            mt="sm"
+          >
+            {t("pages.resetPassword.backToLogin")}
+          </Button>
         </section>
       </div>
     </main>

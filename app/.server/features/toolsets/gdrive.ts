@@ -20,7 +20,10 @@ import { t } from "~/.server/i18n";
 
 async function getSchema(organizationId: string, principalId?: string) {
   return z.object({
-    ...(await ReservedParams.getAuthIdOptionalSchema(organizationId, principalId)),
+    ...(await ReservedParams.getAuthIdOptionalSchema(
+      organizationId,
+      principalId,
+    )),
   });
 }
 
@@ -55,7 +58,10 @@ function requireAccessToken(
   return accessToken;
 }
 
-export async function getToolSetFactory(organizationId: string, principalId?: string) {
+export async function getToolSetFactory(
+  organizationId: string,
+  principalId?: string,
+) {
   const schema = await getSchema(organizationId, principalId);
   const ret: ToolSetFactory = {
     name: "gdrive",

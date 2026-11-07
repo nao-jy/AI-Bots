@@ -63,7 +63,11 @@ export function meta() {
 
 export async function loader({ request }: Route.LoaderArgs) {
   const user = await requireUser(request);
-  const pagination = await entityListPage(user, "oauth-authentications", request);
+  const pagination = await entityListPage(
+    user,
+    "oauth-authentications",
+    request,
+  );
   const result = await listOAuthAuthentications(user, pagination.ids);
   const oauthStatus = new URL(request.url).searchParams.get("oauth");
   return {

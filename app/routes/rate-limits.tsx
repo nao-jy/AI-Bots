@@ -16,8 +16,7 @@ import { entityListPage } from "../.server/repository/list-pages";
 
 const page: Omit<EntityPageDefinition, "records"> = {
   title: "pages.rateLimits.title",
-  description:
-    "pages.rateLimits.description",
+  description: "pages.rateLimits.description",
   icon: "rate_limits",
   tableFeatures: { resourceGrants: true },
   columns: [
@@ -28,7 +27,10 @@ const page: Omit<EntityPageDefinition, "records"> = {
     { key: "limit", label: "pages.rateLimits.limitLabel" },
     { key: "resetOnCron", label: "pages.rateLimits.resetCronLabel" },
     { key: "timezone", label: "pages.rateLimits.timezoneLabel" },
-    { key: "limitExceededMessage", label: "pages.rateLimits.exceededMessageLabel" },
+    {
+      key: "limitExceededMessage",
+      label: "pages.rateLimits.exceededMessageLabel",
+    },
   ],
   fields: [
     {
@@ -84,8 +86,14 @@ const page: Omit<EntityPageDefinition, "records"> = {
           value: "inputDetails.cacheWriteTokens",
           label: "pages.rateLimits.inputCacheWriteTokensOption",
         },
-        { value: "outputDetails.textTokens", label: "pages.rateLimits.outputTextTokensOption" },
-        { value: "outputDetails.reasoningTokens", label: "pages.rateLimits.outputReasoningTokensOption" },
+        {
+          value: "outputDetails.textTokens",
+          label: "pages.rateLimits.outputTextTokensOption",
+        },
+        {
+          value: "outputDetails.reasoningTokens",
+          label: "pages.rateLimits.outputReasoningTokensOption",
+        },
       ],
       wide: true,
       help: {

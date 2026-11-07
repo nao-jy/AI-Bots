@@ -58,9 +58,7 @@ export function getFileParseTools(fileHandles: FileHandleReaderMap) {
     description: t("server.webContentFetchToolDescription"),
     inputSchema: z.object({
       uri: z.string().min(1).describe(t("server.webContentUri")),
-      ocrLanguages: z
-        .array(z.string())
-        .describe(t("server.ocrLanguages")),
+      ocrLanguages: z.array(z.string()).describe(t("server.ocrLanguages")),
     }),
     execute: async ({ uri, ocrLanguages }) => {
       try {
@@ -91,12 +89,10 @@ export function getFileParseTools(fileHandles: FileHandleReaderMap) {
   });
 
   const parseFileFromHandle = tool({
-      description: t("server.parseFileFromHandleDescription"),
+    description: t("server.parseFileFromHandleDescription"),
     inputSchema: z.object({
       fileHandle: z.string().describe(t("server.fileHandle")),
-      ocrLanguages: z
-        .array(z.string())
-        .describe(t("server.ocrLanguages")),
+      ocrLanguages: z.array(z.string()).describe(t("server.ocrLanguages")),
     }),
 
     execute: async ({ fileHandle, ocrLanguages }) => {

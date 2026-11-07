@@ -49,7 +49,9 @@ export function serializeCookie(
   if (settings.secure) parts.push("Secure");
   if (settings.sameSite === true) parts.push("SameSite=Strict");
   else if (settings.sameSite)
-    parts.push(`SameSite=${settings.sameSite[0].toUpperCase()}${settings.sameSite.slice(1)}`);
+    parts.push(
+      `SameSite=${settings.sameSite[0].toUpperCase()}${settings.sameSite.slice(1)}`,
+    );
   return parts.join("; ");
 }
 

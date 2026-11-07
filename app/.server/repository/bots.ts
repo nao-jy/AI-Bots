@@ -46,7 +46,11 @@ function stableJson(value: unknown): string {
   return JSON.stringify(value) ?? "null";
 }
 
-export async function listBots(user: AuthUser, publicOrigin: string, ids: string[]) {
+export async function listBots(
+  user: AuthUser,
+  publicOrigin: string,
+  ids: string[],
+) {
   const bots = await filterResourcesByRole(
     user,
     await db.orm.aibot.ChatBot.where({
@@ -85,10 +89,16 @@ export async function listBots(user: AuthUser, publicOrigin: string, ids: string
   );
   const [sandboxRows, sandboxLinks, contextRows, authRows] = await Promise.all([
     db.orm.aibot.Sandbox.where({ organizationId: user.organizationId }).all(),
-    db.orm.aibot.ChatBotToolSandbox.where({ organizationId: user.organizationId })
-      .where((link) => link.chatbotId.in(ids)).all(),
-    db.orm.aibot.ChatBotToolSetContext.where({ organizationId: user.organizationId })
-      .where((context) => context.chatbotId.in(ids)).all(),
+    db.orm.aibot.ChatBotToolSandbox.where({
+      organizationId: user.organizationId,
+    })
+      .where((link) => link.chatbotId.in(ids))
+      .all(),
+    db.orm.aibot.ChatBotToolSetContext.where({
+      organizationId: user.organizationId,
+    })
+      .where((context) => context.chatbotId.in(ids))
+      .all(),
     db.orm.aibot.OAuthAuthentication.where({
       organizationId: user.organizationId,
     }).all(),
@@ -489,7 +499,10 @@ export async function saveBot(
     let botId = id;
     if (botId === null) {
       botId = generateResourceId();
-      await tx.orm.aibot.ResourceBase.create({ id: botId, organizationId: user.organizationId });
+      await tx.orm.aibot.ResourceBase.create({
+        id: botId,
+        organizationId: user.organizationId,
+      });
       const created = await tx.orm.aibot.ChatBot.create({
         id: botId,
         name,
@@ -582,7 +595,10 @@ export async function saveBot(
     }
     for (const { toolSetName, context } of contextsToCreate) {
       const contextId = generateResourceId();
-      await tx.orm.aibot.ResourceBase.create({ id: contextId, organizationId: user.organizationId });
+      await tx.orm.aibot.ResourceBase.create({
+        id: contextId,
+        organizationId: user.organizationId,
+      });
       await tx.orm.aibot.ChatBotToolSetContext.create({
         id: contextId,
         name: `${toolSetName} ${contextId}`,
@@ -617,10 +633,16 @@ export async function deleteBot(user: AuthUser, id: string) {
   });
   if (!bot || !(await hasResourceAccess(user, id, "delete"))) return false;
   const deleted = await db.transaction(async (tx) => {
-    const bot = await tx.orm.aibot.ChatBot.where({ id, organizationId: user.organizationId })
-      .forUpdate().first();
+    const bot = await tx.orm.aibot.ChatBot.where({
+      id,
+      organizationId: user.organizationId,
+    })
+      .forUpdate()
+      .first();
     if (!bot) return false;
-    const contexts = await tx.orm.aibot.ChatBotToolSetContext.where({ chatbotId: id }).all();
+    const contexts = await tx.orm.aibot.ChatBotToolSetContext.where({
+      chatbotId: id,
+    }).all();
     for (const context of contexts)
       await tx.orm.aibot.ResourceBase.where({ id: context.id }).delete();
     await tx.orm.aibot.ResourceBase.where({ id }).delete();

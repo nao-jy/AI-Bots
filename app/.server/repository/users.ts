@@ -75,7 +75,8 @@ export async function createUser(values: {
     let organizationId = providedOrganizationId;
     if (!organizationId) {
       const name = organizationName?.trim();
-      if (!name) throw new Error("Organization name is required for the first account");
+      if (!name)
+        throw new Error("Organization name is required for the first account");
       organizationId = (await tx.orm.aibot.Organization.create({ name })).id;
     }
     const id = generateResourceId();
@@ -98,21 +99,25 @@ export async function listUsers(
       organizationId,
     }).all();
     if (pendingUsers.length) {
-      await db.orm.aibot.User.where({ emailVerified: false, organizationId }).update({
+      await db.orm.aibot.User.where({
+        emailVerified: false,
+        organizationId,
+      }).update({
         emailVerified: true,
       });
       for (const user of pendingUsers)
         logAuditEvent("user.email_verified", "user", user.id);
     }
   }
-  const users = await db.orm.aibot.User.where({ organizationId }).where((user) => user.id.in(ids)).include("sessions")
+  const users = await db.orm.aibot.User.where({ organizationId })
+    .where((user) => user.id.in(ids))
+    .include("sessions")
     .orderBy((user) => user.createdAt.asc())
     .all();
   const now = Date.now();
   return users.map((user) => {
     const sessions = user.sessions.sort(
-      (left, right) =>
-        Date.parse(right.createdAt) - Date.parse(left.createdAt),
+      (left, right) => Date.parse(right.createdAt) - Date.parse(left.createdAt),
     );
     const active = sessions.some(
       (session) => Date.parse(session.expiresAt) > now,
@@ -122,7 +127,9 @@ export async function listUsers(
       email: user.email,
       isAdmin: user.isAdmin ? "server.administrator" : "server.regularUser",
       emailVerified: user.emailVerified,
-      emailVerification: user.emailVerified ? "server.verified" : "server.unverified",
+      emailVerification: user.emailVerified
+        ? "server.verified"
+        : "server.unverified",
       mfaConfigured: Boolean(user.mfaSecret),
       mfaStatus: user.mfaSecret ? "server.configured" : "server.notConfigured",
       loginLocked: user.loginAttempts >= maxLoginAttempts,
@@ -147,12 +154,14 @@ export async function recordFailedLoginAttempt(
     const loginAttempts = user.loginAttempts + 1;
     await tx.orm.aibot.User.where({ id }).update({ loginAttempts });
     return {
-      result: loginAttempts >= maxLoginAttempts ? ("locked" as const) : ("failed" as const),
+      result:
+        loginAttempts >= maxLoginAttempts
+          ? ("locked" as const)
+          : ("failed" as const),
       attempts: loginAttempts,
     };
   });
-  if (outcome.attempts !== null)
-    logAuditEvent("auth.login.failed", "user", id);
+  if (outcome.attempts !== null) logAuditEvent("auth.login.failed", "user", id);
   return outcome.result;
 }
 
@@ -172,7 +181,9 @@ export async function resetLoginAttemptsForLogin(
 export async function unlockUserLogin(id: string, organizationId: string) {
   const user = await db.orm.aibot.User.first({ id, organizationId });
   if (!user) return { error: "server.userNotFound" };
-  await db.orm.aibot.User.where({ id, organizationId }).update({ loginAttempts: 0 });
+  await db.orm.aibot.User.where({ id, organizationId }).update({
+    loginAttempts: 0,
+  });
   logAuditEvent("user.login_unlocked", "user", id);
   return { ok: true };
 }
@@ -206,8 +217,7 @@ export async function saveUser(
     return { ok: true, verificationRequired: !emailVerified };
   } else {
     const user = await db.orm.aibot.User.first({ id, organizationId });
-    if (!user)
-      return { error: "server.userNotFound" };
+    if (!user) return { error: "server.userNotFound" };
     if (password) {
       const settings = await getAppSettings(organizationId);
       if (!meetsPasswordPolicy(password, settings.minimumPasswordStrength))
@@ -225,8 +235,7 @@ export async function saveUser(
     });
     if (emailChanged) logAuditEvent("user.email_changed", "user", id);
     if (password) logAuditEvent("user.password_changed", "user", id);
-    if (!emailChanged && !password)
-      logAuditEvent("user.updated", "user", id);
+    if (!emailChanged && !password) logAuditEvent("user.updated", "user", id);
     return {
       ok: true,
       verificationRequired: emailChanged && !emailVerified,
@@ -245,7 +254,10 @@ export async function setUserAdmin(
 
   let changed = false;
   const result = await db.transaction(async (tx) => {
-    const administrators = await tx.orm.aibot.User.where({ isAdmin: true, organizationId })
+    const administrators = await tx.orm.aibot.User.where({
+      isAdmin: true,
+      organizationId,
+    })
       .orderBy((user) => user.id.asc())
       .forUpdate()
       .all();
@@ -269,12 +281,18 @@ export async function setUserAdmin(
   return result;
 }
 
-export async function deleteUser(id: string, currentUserId: string, organizationId: string) {
-  if (id === currentUserId)
-    return { error: "server.cannotDeleteOwnAccount" };
+export async function deleteUser(
+  id: string,
+  currentUserId: string,
+  organizationId: string,
+) {
+  if (id === currentUserId) return { error: "server.cannotDeleteOwnAccount" };
 
   const deleted = await db.transaction(async (tx) => {
-    const administrators = await tx.orm.aibot.User.where({ isAdmin: true, organizationId })
+    const administrators = await tx.orm.aibot.User.where({
+      isAdmin: true,
+      organizationId,
+    })
       .orderBy((user) => user.id.asc())
       .forUpdate()
       .all();
@@ -286,16 +304,20 @@ export async function deleteUser(id: string, currentUserId: string, organization
     await tx.orm.aibot.PrincipalBase.where({ id }).delete();
     return { ok: true };
   });
-  if ("ok" in deleted)
-    logAuditEvent("user.deleted", "user", id, currentUserId);
+  if ("ok" in deleted) logAuditEvent("user.deleted", "user", id, currentUserId);
   return deleted;
 }
 
-export async function forceLogoutUser(id: string, currentUserId: string, organizationId: string) {
-  if (id === currentUserId)
-    return { error: "server.cannotForceLogoutSelf" };
+export async function forceLogoutUser(
+  id: string,
+  currentUserId: string,
+  organizationId: string,
+) {
+  if (id === currentUserId) return { error: "server.cannotForceLogoutSelf" };
   const result = await db.transaction(async (tx) => {
-    const user = await tx.orm.aibot.User.where({ id, organizationId }).include("sessions").first();
+    const user = await tx.orm.aibot.User.where({ id, organizationId })
+      .include("sessions")
+      .first();
     if (!user) return { error: "server.userNotFound" };
     const isLoggedIn = user.sessions.some(
       (session) => Date.parse(session.expiresAt) > Date.now(),
@@ -318,7 +340,9 @@ export async function resetUserMfa(id: string, organizationId: string) {
   if (!user.mfaSecret) return { error: "server.userMfaNotConfigured" };
 
   await db.transaction(async (tx) => {
-    await tx.orm.aibot.User.where({ id, organizationId }).update({ mfaSecret: null });
+    await tx.orm.aibot.User.where({ id, organizationId }).update({
+      mfaSecret: null,
+    });
     await tx.orm.aibot.Session.where({ userId: id, organizationId }).update({
       expiresAt: new Date().toISOString(),
     });

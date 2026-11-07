@@ -137,7 +137,10 @@ function configuration(client: {
   );
 }
 
-export async function prepareOAuthAuthorization(user: AuthUser, form: FormData) {
+export async function prepareOAuthAuthorization(
+  user: AuthUser,
+  form: FormData,
+) {
   const name = String(form.get("name") ?? "").trim();
   const idValue = String(form.get("id") ?? "").trim();
   const authenticationId = idValue || null;
@@ -148,10 +151,16 @@ export async function prepareOAuthAuthorization(user: AuthUser, form: FormData) 
   const existing =
     authenticationId === null
       ? null
-      : await getOwnedOAuthAuthentication(authenticationId, user.organizationId);
+      : await getOwnedOAuthAuthentication(
+          authenticationId,
+          user.organizationId,
+        );
   if (authenticationId !== null && !existing)
     return { error: "server.oauthAuthenticationNotFound" };
-  if (authenticationId !== null && !(await hasResourceAccess(user, authenticationId, "update")))
+  if (
+    authenticationId !== null &&
+    !(await hasResourceAccess(user, authenticationId, "update"))
+  )
     return { error: "server.oauthAuthenticationNotFound" };
   const oauthId = existing?.oauthId ?? selectedClientId;
   if (!/^[0-9a-f-]{36}$/i.test(oauthId))
@@ -197,8 +206,19 @@ export async function launchOAuthAuthorization(payloadValue: string) {
   if (!flow) return redirect("/oauth-authentications?oauth=error");
 
   try {
-    const oauthClient = await getOwnedOAuthClient(flow.oauthId, flow.organizationId);
-    if (!oauthClient || !(await hasResourceAccess({ id: flow.userId, organizationId: flow.organizationId }, flow.oauthId, "read"))) throw new Error("server.oauthClientNotFound");
+    const oauthClient = await getOwnedOAuthClient(
+      flow.oauthId,
+      flow.organizationId,
+    );
+    if (
+      !oauthClient ||
+      !(await hasResourceAccess(
+        { id: flow.userId, organizationId: flow.organizationId },
+        flow.oauthId,
+        "read",
+      ))
+    )
+      throw new Error("server.oauthClientNotFound");
     const callbackUrl = getCallbackUrl();
     const config = configuration(oauthClient);
     const authorizationHost = new URL(oauthClient.authorizationEndpoint)
@@ -248,8 +268,19 @@ export async function completeOAuthAuthorization(request: Request) {
     });
 
   try {
-    const oauthClient = await getOwnedOAuthClient(flow.oauthId, flow.organizationId);
-    if (!oauthClient || !(await hasResourceAccess({ id: flow.userId, organizationId: flow.organizationId }, flow.oauthId, "read"))) throw new Error("server.oauthClientNotFound");
+    const oauthClient = await getOwnedOAuthClient(
+      flow.oauthId,
+      flow.organizationId,
+    );
+    if (
+      !oauthClient ||
+      !(await hasResourceAccess(
+        { id: flow.userId, organizationId: flow.organizationId },
+        flow.oauthId,
+        "read",
+      ))
+    )
+      throw new Error("server.oauthClientNotFound");
     const config = configuration(oauthClient);
     const tokens = await oidc.authorizationCodeGrant(
       config,
@@ -269,7 +300,14 @@ export async function completeOAuthAuthorization(request: Request) {
       : null;
     if (flow.authenticationId && !existing)
       throw new Error("server.oauthAuthenticationNotFound");
-    if (flow.authenticationId && !(await hasResourceAccess({ id: flow.userId, organizationId: flow.organizationId }, flow.authenticationId, "update")))
+    if (
+      flow.authenticationId &&
+      !(await hasResourceAccess(
+        { id: flow.userId, organizationId: flow.organizationId },
+        flow.authenticationId,
+        "update",
+      ))
+    )
       throw new Error("server.oauthAuthenticationNotFound");
     const expiresAt =
       typeof tokens.expires_in === "number"
@@ -284,7 +322,12 @@ export async function completeOAuthAuthorization(request: Request) {
         : (existing?.refreshToken ?? null),
       expiresAt,
     };
-    await saveOAuthAuthentication(flow.organizationId, flow.userId, existing?.id ?? null, saved);
+    await saveOAuthAuthentication(
+      flow.organizationId,
+      flow.userId,
+      existing?.id ?? null,
+      saved,
+    );
     return redirect("/oauth/complete?status=success", {
       headers: { "Set-Cookie": clearCookieHeader },
     });

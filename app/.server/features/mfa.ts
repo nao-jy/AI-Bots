@@ -46,11 +46,7 @@ function encodeSetupChallenge(challenge: SetupChallenge) {
   return encryptCredential(JSON.stringify(challenge)).replaceAll(".", "~");
 }
 
-function createSetupCookie(
-  userId: string,
-  secret: string,
-  expiresAt: Date,
-) {
+function createSetupCookie(userId: string, secret: string, expiresAt: Date) {
   return serializeCookie(
     MFA_SETUP_COOKIE,
     encodeSetupChallenge({
@@ -89,10 +85,7 @@ function decodeSetupChallenge(request: Request): SetupChallenge | null {
   }
 }
 
-export async function createMfaLoginChallenge(
-  userId: string,
-  secret?: string,
-) {
+export async function createMfaLoginChallenge(userId: string, secret?: string) {
   const token = randomBytes(32).toString("base64url");
   const expiresAt = new Date(Date.now() + MFA_CHALLENGE_TTL_MS);
   await createPendingSessionInner(hashSessionToken(token), userId, expiresAt);
@@ -100,7 +93,10 @@ export async function createMfaLoginChallenge(
     token,
     expiresAt,
     setupCookies: secret
-      ? [createSetupCookie(userId, secret, expiresAt), clearLegacyMfaSetupCookie()]
+      ? [
+          createSetupCookie(userId, secret, expiresAt),
+          clearLegacyMfaSetupCookie(),
+        ]
       : clearMfaSetupCookies(),
   };
 }

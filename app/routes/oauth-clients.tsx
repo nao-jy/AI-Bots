@@ -22,13 +22,20 @@ const page: Omit<EntityPageDefinition, "records"> = {
   columns: [
     { key: "name", label: "pages.oauthClients.nameLabel" },
     { key: "clientId", label: "pages.oauthClients.clientIdLabel" },
-    { key: "authorizationEndpoint", label: "pages.oauthClients.authorizationEndpointLabel" },
+    {
+      key: "authorizationEndpoint",
+      label: "pages.oauthClients.authorizationEndpointLabel",
+    },
     { key: "secretConfigured", label: "pages.oauthClients.secretLabel" },
     { key: "updated", label: "pages.oauthClients.updatedLabel" },
   ],
   fields: [
     { key: "name", label: "pages.oauthClients.nameLabel", required: true },
-    { key: "clientId", label: "pages.oauthClients.clientIdLabel", required: true },
+    {
+      key: "clientId",
+      label: "pages.oauthClients.clientIdLabel",
+      required: true,
+    },
     {
       key: "clientSecret",
       label: "pages.oauthClients.clientSecretLabel",
@@ -111,5 +118,13 @@ export async function action({ request }: Route.ActionArgs) {
 }
 
 export default function OAuthClients({ loaderData }: Route.ComponentProps) {
-  return <EntityPageView page={{ ...page, records: loaderData.records, pagination: loaderData.pagination }} />;
+  return (
+    <EntityPageView
+      page={{
+        ...page,
+        records: loaderData.records,
+        pagination: loaderData.pagination,
+      }}
+    />
+  );
 }

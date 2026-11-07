@@ -79,7 +79,9 @@ export default function App() {
   const [showPending, setShowPending] = useState(false);
 
   useEffect(() => {
-    document.documentElement.lang = i18n.language.startsWith("en") ? "en" : "ja";
+    document.documentElement.lang = i18n.language.startsWith("en")
+      ? "en"
+      : "ja";
   }, [i18n.language]);
 
   useEffect(() => {
@@ -184,9 +186,7 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
 
   if (isRouteErrorResponse(error)) {
     message =
-      error.status === 404
-        ? t("errors.notFoundCode")
-        : t("errors.title");
+      error.status === 404 ? t("errors.notFoundCode") : t("errors.title");
     details =
       error.status === 404
         ? t("errors.pageNotFound")

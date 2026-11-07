@@ -153,7 +153,10 @@ function makeEmployeeMonthTool<
 
 export async function getToolSetFactory(userId: string) {
   const contextSchema = z.object({
-    apiKey: z.string().min(1).meta({ title: t("server.kingOfTimeApiKey") }),
+    apiKey: z
+      .string()
+      .min(1)
+      .meta({ title: t("server.kingOfTimeApiKey") }),
   });
   const yearMonthSchema = z
     .string()
@@ -166,7 +169,8 @@ export async function getToolSetFactory(userId: string) {
   const ret: ToolSetFactory = {
     name: "king-of-time",
     displayName: t("server.kingOfTimeAttendance"),
-    getToolSetContextSchema: () => contextSchema.toJSONSchema({ target: "draft-7" }),
+    getToolSetContextSchema: () =>
+      contextSchema.toJSONSchema({ target: "draft-7" }),
     validateContext: (value: unknown) => contextSchema.validate(value),
     getTools: async (_fileHandles: FileHandleReaderMap, context: unknown) => {
       const args = contextSchema.parse(context);
@@ -193,9 +197,7 @@ export async function getToolSetFactory(userId: string) {
                   ? data.employees
                   : null;
               if (!employees) {
-                throw new Error(
-                  t("server.kingOfTimeUnexpectedEmployeeList"),
-                );
+                throw new Error(t("server.kingOfTimeUnexpectedEmployeeList"));
               }
 
               const searchName = normalizeEmployeeName(employeeName);
@@ -214,9 +216,7 @@ export async function getToolSetFactory(userId: string) {
                   return [];
                 }
                 if (typeof employee.employeeKey !== "string") {
-                  throw new Error(
-                    t("server.kingOfTimeEmployeeKeyMissing"),
-                  );
+                  throw new Error(t("server.kingOfTimeEmployeeKeyMissing"));
                 }
                 return [
                   {
@@ -294,9 +294,7 @@ export async function getToolSetFactory(userId: string) {
             try {
               const data = await getApiData(args.apiKey, "/holiday-types");
               if (!Array.isArray(data)) {
-                throw new Error(
-                  t("server.kingOfTimeUnexpectedHolidayTypes"),
-                );
+                throw new Error(t("server.kingOfTimeUnexpectedHolidayTypes"));
               }
               return makeReadableValues(data);
             } catch (e) {

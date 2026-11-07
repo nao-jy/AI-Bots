@@ -85,6 +85,7 @@
     "postcss": "^8.5.31",
     "postcss-preset-mantine": "^1.18.0",
     "postcss-simple-vars": "^7.0.1",
+    "prettier": "^3.9.10",
     "prisma": "^8.0.0-rc.23",
     "tailwindcss": "^4.2.2",
     "typescript": "^5.9.3",

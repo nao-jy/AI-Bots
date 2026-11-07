@@ -49,10 +49,14 @@ export async function createSession(userId: string, organizationId: string) {
   const token = randomBytes(32).toString("base64url");
   const settings = await getAppSettings(organizationId);
   const expiresAt = new Date(
-    Date.now() +
-      (settings.sessionDurationSeconds * 1000 || SESSION_TTL_MS),
+    Date.now() + (settings.sessionDurationSeconds * 1000 || SESSION_TTL_MS),
   );
-  await createSessionInner(hashSessionToken(token), userId, expiresAt, organizationId);
+  await createSessionInner(
+    hashSessionToken(token),
+    userId,
+    expiresAt,
+    organizationId,
+  );
   return { token, expiresAt };
 }
 

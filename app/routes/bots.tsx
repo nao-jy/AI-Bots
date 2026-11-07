@@ -136,7 +136,10 @@ export async function loader({ request }: Route.LoaderArgs) {
   const publicOrigin = new URL(process.env["PUBLIC_APP_URL"] || request.url)
     .origin;
   const pagination = await entityListPage(user, "bots", request);
-  return { ...(await listBots(user, publicOrigin, pagination.ids)), pagination };
+  return {
+    ...(await listBots(user, publicOrigin, pagination.ids)),
+    pagination,
+  };
 }
 
 export async function action({ request }: Route.ActionArgs) {

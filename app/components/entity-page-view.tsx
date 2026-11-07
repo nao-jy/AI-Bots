@@ -11,7 +11,11 @@ import type {
 } from "./entity-page/types";
 import { tMessage } from "../i18n";
 
-export type { EntityField, EntityPageDefinition, EntitySection } from "./entity-page/types";
+export type {
+  EntityField,
+  EntityPageDefinition,
+  EntitySection,
+} from "./entity-page/types";
 export { SectionIcon };
 
 function localizeOptions(options?: string[] | EntityOption[]) {
@@ -58,7 +62,9 @@ export function EntityPageView({
       ? tMessage(page.createSubmitLabel)
       : undefined,
     launchLabel: page.launchLabel ? tMessage(page.launchLabel) : undefined,
-    deleteWarning: page.deleteWarning ? tMessage(page.deleteWarning) : undefined,
+    deleteWarning: page.deleteWarning
+      ? tMessage(page.deleteWarning)
+      : undefined,
     columns: page.columns.map((column) => ({
       ...column,
       label: tMessage(column.label),
@@ -66,9 +72,7 @@ export function EntityPageView({
     fields: page.fields.map((field) => ({
       ...field,
       label: tMessage(field.label),
-      placeholder: field.placeholder
-        ? tMessage(field.placeholder)
-        : undefined,
+      placeholder: field.placeholder ? tMessage(field.placeholder) : undefined,
       dependentLabel: field.dependentLabel
         ? tMessage(field.dependentLabel)
         : undefined,

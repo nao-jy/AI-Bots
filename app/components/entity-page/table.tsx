@@ -45,7 +45,8 @@ export function EntityTable({
     },
     [selectedInstanceId],
   );
-  const shellInstances: SandboxShellInstance[] = page.tableFeatures?.sandboxShell
+  const shellInstances: SandboxShellInstance[] = page.tableFeatures
+    ?.sandboxShell
     ? page.records.flatMap((record) =>
         parsePersistentInstances(String(record.instances ?? "[]")).map(
           (instance) => ({
@@ -58,10 +59,16 @@ export function EntityTable({
         ),
       )
     : [];
-  const pagination = page.pagination ?? { ids: page.records.map((record) => String(record.id)), query: "", page: 1, hasNext: false };
+  const pagination = page.pagination ?? {
+    ids: page.records.map((record) => String(record.id)),
+    query: "",
+    page: 1,
+    hasNext: false,
+  };
   const order = new Map(pagination.ids.map((id, index) => [id, index]));
   const visibleRecords = [...page.records].sort(
-    (left, right) => (order.get(String(left.id)) ?? 0) - (order.get(String(right.id)) ?? 0),
+    (left, right) =>
+      (order.get(String(left.id)) ?? 0) - (order.get(String(right.id)) ?? 0),
   );
   const pageUrl = (number: number) => {
     const params = new URLSearchParams();
@@ -78,14 +85,22 @@ export function EntityTable({
               key={pagination.query}
               name="q"
               className="search-field"
-              placeholder={t("components.entityPage.table.searchPlaceholder", { 0: page.title })}
+              placeholder={t("components.entityPage.table.searchPlaceholder", {
+                0: page.title,
+              })}
               defaultValue={pagination.query}
               leftSection={<MagnifyingGlassIcon size={16} aria-hidden="true" />}
-              aria-label={t("components.entityPage.table.searchAriaLabel", { 0: page.title })}
+              aria-label={t("components.entityPage.table.searchAriaLabel", {
+                0: page.title,
+              })}
             />
-            <button type="submit">{t("components.entityPage.table.searchButton")}</button>
+            <button type="submit">
+              {t("components.entityPage.table.searchButton")}
+            </button>
           </Form>
-          <span className="record-count">{page.records.length} {t("components.entityPage.table.countUnit")}</span>
+          <span className="record-count">
+            {page.records.length} {t("components.entityPage.table.countUnit")}
+          </span>
         </div>
 
         <div className="table-wrap">
@@ -99,7 +114,9 @@ export function EntityTable({
                 {page.columns.map((column) => (
                   <Table.Th key={column.key}>{column.label}</Table.Th>
                 ))}
-                <Table.Th className="actions-header">{t("components.entityPage.table.actionsLabel")}</Table.Th>
+                <Table.Th className="actions-header">
+                  {t("components.entityPage.table.actionsLabel")}
+                </Table.Th>
               </Table.Tr>
             </Table.Thead>
             <Table.Tbody>
@@ -111,9 +128,7 @@ export function EntityTable({
                   onEdit={() => onEdit(record)}
                   onDelete={() => onDelete(record)}
                   onForceLogout={() => onForceLogout(record)}
-                  onStatusChange={(enabled) =>
-                    onStatusChange(record, enabled)
-                  }
+                  onStatusChange={(enabled) => onStatusChange(record, enabled)}
                   onManageGrants={() => onManageGrants(record)}
                   onOpenShell={handleOpenShell}
                   onDeleteInstance={handleDeleteInstance}
@@ -124,9 +139,12 @@ export function EntityTable({
                   <Table.Td colSpan={page.columns.length + 1}>
                     <div className="empty-state">
                       <MagnifyingGlassIcon size={22} aria-hidden="true" />
-                      <strong>{t("components.entityPage.table.emptyStateTitle")}</strong>
+                      <strong>
+                        {t("components.entityPage.table.emptyStateTitle")}
+                      </strong>
                       <small>
-                        {t("components.entityPage.table.emptyStateDescription")}</small>
+                        {t("components.entityPage.table.emptyStateDescription")}
+                      </small>
                     </div>
                   </Table.Td>
                 </Table.Tr>
@@ -137,14 +155,34 @@ export function EntityTable({
         <div className="table-footer">
           <span>
             {t("components.entityPage.table.showingPage", {
-              start: visibleRecords.length ? (pagination.page - 1) * ENTITY_PAGE_SIZE + 1 : 0,
-              end: visibleRecords.length ? (pagination.page - 1) * ENTITY_PAGE_SIZE + visibleRecords.length : 0,
+              start: visibleRecords.length
+                ? (pagination.page - 1) * ENTITY_PAGE_SIZE + 1
+                : 0,
+              end: visibleRecords.length
+                ? (pagination.page - 1) * ENTITY_PAGE_SIZE +
+                  visibleRecords.length
+                : 0,
             })}
           </span>
-          <nav className="entity-pagination" aria-label={t("components.entityPage.table.paginationLabel")}>
-            {pagination.page > 1 && <Link to={pageUrl(pagination.page - 1)}>{t("components.entityPage.table.previousPage")}</Link>}
-            <span>{t("components.entityPage.table.pageNumber", { page: pagination.page })}</span>
-            {pagination.hasNext && <Link to={pageUrl(pagination.page + 1)}>{t("components.entityPage.table.nextPage")}</Link>}
+          <nav
+            className="entity-pagination"
+            aria-label={t("components.entityPage.table.paginationLabel")}
+          >
+            {pagination.page > 1 && (
+              <Link to={pageUrl(pagination.page - 1)}>
+                {t("components.entityPage.table.previousPage")}
+              </Link>
+            )}
+            <span>
+              {t("components.entityPage.table.pageNumber", {
+                page: pagination.page,
+              })}
+            </span>
+            {pagination.hasNext && (
+              <Link to={pageUrl(pagination.page + 1)}>
+                {t("components.entityPage.table.nextPage")}
+              </Link>
+            )}
           </nav>
         </div>
       </section>

@@ -3,7 +3,11 @@ import type { AuthUser } from "../auth";
 import { generateResourceId, idList, isUuid, jsonb, record } from "../utils";
 import { logAuditEvent } from "../logger/audit-logger";
 import { t } from "~/.server/i18n";
-import { filterResourcesByRole, hasResourceAccess, includeResourcePermissions } from "../authorization";
+import {
+  filterResourcesByRole,
+  hasResourceAccess,
+  includeResourcePermissions,
+} from "../authorization";
 import type {
   LanguageModelUsage,
   ToolSet,
@@ -23,22 +27,30 @@ export async function listAgents(user: AuthUser, ids: string[]) {
       .all(),
   );
   return {
-    records: await includeResourcePermissions(user, agents.map((agent) => {
-      return record(agent.id, agent.updatedAt, {
-        name: agent.name,
-        model: agent.modelId,
-        modelId: agent.modelId,
-        provider: agent.provider.name,
-        providerId: agent.provider.id,
-        options: JSON.stringify(agent.options ?? {}, null, 2),
-        status: agent.chatbots.length
-          ? t("server.usedByBot", { 0: agent.chatbots.length })
-          : "server.unused",
-      });
-    })),
-    providerOptions: (await filterResourcesByRole(user,
-      await db.orm.aibot.Provider.where({ organizationId: user.organizationId }).all(),
-    )).map((provider) => ({
+    records: await includeResourcePermissions(
+      user,
+      agents.map((agent) => {
+        return record(agent.id, agent.updatedAt, {
+          name: agent.name,
+          model: agent.modelId,
+          modelId: agent.modelId,
+          provider: agent.provider.name,
+          providerId: agent.provider.id,
+          options: JSON.stringify(agent.options ?? {}, null, 2),
+          status: agent.chatbots.length
+            ? t("server.usedByBot", { 0: agent.chatbots.length })
+            : "server.unused",
+        });
+      }),
+    ),
+    providerOptions: (
+      await filterResourcesByRole(
+        user,
+        await db.orm.aibot.Provider.where({
+          organizationId: user.organizationId,
+        }).all(),
+      )
+    ).map((provider) => ({
       label: `${provider.name} (${provider.providerName})`,
       value: String(provider.id),
     })),
@@ -66,15 +78,13 @@ export async function saveAgent(
       Object.entries(parsed).map(([serverId, authId]) => {
         const key = serverId;
         const value = String(authId);
-        if (!isUuid(key) || !isUuid(value))
-          throw new Error();
+        if (!isUuid(key) || !isUuid(value)) throw new Error();
         return [String(key), value];
       }),
     );
   } catch {
     return {
-      error:
-        "server.invalidMcpOauthConfiguration",
+      error: "server.invalidMcpOauthConfiguration",
     };
   }
   if (!name) return { error: "server.agentNameRequired" };
@@ -84,7 +94,8 @@ export async function saveAgent(
     !(await db.orm.aibot.Provider.first({
       id: providerId,
       organizationId: user.organizationId,
-    })) || !(await hasResourceAccess(user, providerId, "read"))
+    })) ||
+    !(await hasResourceAccess(user, providerId, "read"))
   )
     return { error: "server.selectedProviderNotFound" };
   let options: unknown;
@@ -102,8 +113,16 @@ export async function saveAgent(
     organizationId: user.organizationId,
   }).all();
   const allowedIds = new Set(servers.map((server) => server.id));
-  if (serverIds.some((serverId) => !allowedIds.has(serverId)) ||
-    (await Promise.all(serverIds.map((resourceId) => hasResourceAccess(user, resourceId, "read")))).some((allowed) => !allowed))
+  if (
+    serverIds.some((serverId) => !allowedIds.has(serverId)) ||
+    (
+      await Promise.all(
+        serverIds.map((resourceId) =>
+          hasResourceAccess(user, resourceId, "read"),
+        ),
+      )
+    ).some((allowed) => !allowed)
+  )
     return { error: "server.selectedMcpServerUnavailable" };
   const authentications = await db.orm.aibot.OAuthAuthentication.where({
     organizationId: user.organizationId,
@@ -111,21 +130,27 @@ export async function saveAgent(
   const allowedAuthIds = new Set(authentications.map((auth) => auth.id));
   if (
     Object.values(mcpAuthIds).some((authId) => !allowedAuthIds.has(authId)) ||
-    (await Promise.all(Object.values(mcpAuthIds).map((authId) => hasResourceAccess(user, authId, "read")))).some((allowed) => !allowed) ||
-    Object.keys(mcpAuthIds).some(
-      (serverId) => !serverIds.includes(serverId),
-    )
+    (
+      await Promise.all(
+        Object.values(mcpAuthIds).map((authId) =>
+          hasResourceAccess(user, authId, "read"),
+        ),
+      )
+    ).some((allowed) => !allowed) ||
+    Object.keys(mcpAuthIds).some((serverId) => !serverIds.includes(serverId))
   )
     return {
-      error:
-        "server.mcpOauthRequiresSelectedServerAndOwnCredentials",
+      error: "server.mcpOauthRequiresSelectedServerAndOwnCredentials",
     };
   if (id !== null) {
     const existing = await db.orm.aibot.AgentDefinition.where({ id })
       .include("provider")
       .first();
-    if (!existing || existing.provider.organizationId !== user.organizationId ||
-      !(await hasResourceAccess(user, id, "update")))
+    if (
+      !existing ||
+      existing.provider.organizationId !== user.organizationId ||
+      !(await hasResourceAccess(user, id, "update"))
+    )
       return { error: "server.agentNotFound" };
   }
   if (id !== null) {
@@ -145,8 +170,14 @@ export async function saveAgent(
     let agentId = id;
     if (agentId === null) {
       agentId = generateResourceId();
-      await tx.orm.aibot.ResourceBase.create({ id: agentId, organizationId: user.organizationId });
-      await tx.orm.aibot.AgentDefinition.create({ ...valuesToSave, id: agentId });
+      await tx.orm.aibot.ResourceBase.create({
+        id: agentId,
+        organizationId: user.organizationId,
+      });
+      await tx.orm.aibot.AgentDefinition.create({
+        ...valuesToSave,
+        id: agentId,
+      });
       await tx.orm.aibot.Grant.create({
         organizationId: user.organizationId,
         principalId: user.id,
@@ -172,8 +203,12 @@ export async function deleteAgent(user: AuthUser, id: string) {
   const agent = await db.orm.aibot.AgentDefinition.where({ id })
     .include("provider")
     .first();
-  if (!agent || agent.provider.organizationId !== user.organizationId ||
-    !(await hasResourceAccess(user, id, "delete"))) return false;
+  if (
+    !agent ||
+    agent.provider.organizationId !== user.organizationId ||
+    !(await hasResourceAccess(user, id, "delete"))
+  )
+    return false;
   const bot = await db.orm.aibot.ChatBot.first({ agentId: id });
   if (bot) return false;
   await db.orm.aibot.ResourceBase.where({ id }).delete();

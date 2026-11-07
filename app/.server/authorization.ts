@@ -61,7 +61,9 @@ export async function hasResourceAccess(
     resourceId,
     user.isAdmin,
   );
-  return role !== null && ROLE_LEVEL[role] >= ROLE_LEVEL[REQUIRED_ROLE[operation]];
+  return (
+    role !== null && ROLE_LEVEL[role] >= ROLE_LEVEL[REQUIRED_ROLE[operation]]
+  );
 }
 
 export async function includeResourcePermissions<T extends { id: string }>(
@@ -126,23 +128,64 @@ export async function setResourceGrant(
   await requireResourceAccess(actor, resourceId, "manageGrant");
   const [resourceExists, user, group] = await Promise.all([
     Promise.all([
-      db.orm.aibot.ChatBot.first({ id: resourceId, organizationId: actor.organizationId }),
-      db.orm.aibot.ChatAdapter.first({ id: resourceId, organizationId: actor.organizationId }),
-      db.orm.aibot.Provider.first({ id: resourceId, organizationId: actor.organizationId }),
-      db.orm.aibot.AgentDefinition.first({ id: resourceId, organizationId: actor.organizationId }),
-      db.orm.aibot.RateLimit.first({ id: resourceId, organizationId: actor.organizationId }),
-      db.orm.aibot.McpServer.first({ id: resourceId, organizationId: actor.organizationId }),
-      db.orm.aibot.OAuthClient.first({ id: resourceId, organizationId: actor.organizationId }),
-      db.orm.aibot.OAuthAuthentication.first({ id: resourceId, organizationId: actor.organizationId }),
-      db.orm.aibot.Sandbox.first({ id: resourceId, organizationId: actor.organizationId }),
-      db.orm.aibot.ChatBotToolSetContext.first({ id: resourceId, organizationId: actor.organizationId }),
-      db.orm.aibot.ChatBotSchedule.first({ id: resourceId, organizationId: actor.organizationId }),
+      db.orm.aibot.ChatBot.first({
+        id: resourceId,
+        organizationId: actor.organizationId,
+      }),
+      db.orm.aibot.ChatAdapter.first({
+        id: resourceId,
+        organizationId: actor.organizationId,
+      }),
+      db.orm.aibot.Provider.first({
+        id: resourceId,
+        organizationId: actor.organizationId,
+      }),
+      db.orm.aibot.AgentDefinition.first({
+        id: resourceId,
+        organizationId: actor.organizationId,
+      }),
+      db.orm.aibot.RateLimit.first({
+        id: resourceId,
+        organizationId: actor.organizationId,
+      }),
+      db.orm.aibot.McpServer.first({
+        id: resourceId,
+        organizationId: actor.organizationId,
+      }),
+      db.orm.aibot.OAuthClient.first({
+        id: resourceId,
+        organizationId: actor.organizationId,
+      }),
+      db.orm.aibot.OAuthAuthentication.first({
+        id: resourceId,
+        organizationId: actor.organizationId,
+      }),
+      db.orm.aibot.Sandbox.first({
+        id: resourceId,
+        organizationId: actor.organizationId,
+      }),
+      db.orm.aibot.ChatBotToolSetContext.first({
+        id: resourceId,
+        organizationId: actor.organizationId,
+      }),
+      db.orm.aibot.ChatBotSchedule.first({
+        id: resourceId,
+        organizationId: actor.organizationId,
+      }),
     ]),
-    db.orm.aibot.User.first({ id: principalId, organizationId: actor.organizationId }),
-    db.orm.aibot.Group.first({ id: principalId, organizationId: actor.organizationId }),
+    db.orm.aibot.User.first({
+      id: principalId,
+      organizationId: actor.organizationId,
+    }),
+    db.orm.aibot.Group.first({
+      id: principalId,
+      organizationId: actor.organizationId,
+    }),
   ]);
-  if (!resourceExists.some(Boolean)) throw new Response("Resource not found", { status: 404 });
-  if (!user && !group) throw new Response("Principal not found", { status: 404 });
+  if (!resourceExists.some(Boolean))
+    throw new Response("Resource not found", { status: 404 });
+  if (!user && !group)
+    throw new Response("Principal not found", { status: 404 });
 
   const existing = await db.orm.aibot.Grant.where({
     organizationId: actor.organizationId,
@@ -187,24 +230,46 @@ export async function listResourceGrants(
     db.orm.aibot.Group.where({ organizationId: actor.organizationId }).all(),
   ]);
   const principals = [
-    ...users.map(({ id, name, email }) => ({ id, type: "user" as const, name, email })),
-    ...groups.map(({ id, name }) => ({ id, type: "group" as const, name, email: "" })),
+    ...users.map(({ id, name, email }) => ({
+      id,
+      type: "user" as const,
+      name,
+      email,
+    })),
+    ...groups.map(({ id, name }) => ({
+      id,
+      type: "group" as const,
+      name,
+      email: "",
+    })),
   ];
-  const principalsById = new Map(principals.map((principal) => [principal.id, principal]));
+  const principalsById = new Map(
+    principals.map((principal) => [principal.id, principal]),
+  );
   return {
     resourceId,
     principals,
     grants: grants.flatMap((grant) => {
       const principal = principalsById.get(grant.principalId);
       return principal
-        ? [{ principalId: grant.principalId, type: principal.type, name: principal.name, email: principal.email, role: grant.role as Role }]
+        ? [
+            {
+              principalId: grant.principalId,
+              type: principal.type,
+              name: principal.name,
+              email: principal.email,
+              role: grant.role as Role,
+            },
+          ]
         : [];
     }),
   };
 }
 
 /** Filters a list through the shared effective-role calculation. */
-export async function filterResourcesByRole<T extends { id: string; organizationId: string }>(
+export async function filterResourcesByRole<
+  T extends { id: string; organizationId: string },
+>(
   user: ResourceActor,
   resources: T[],
   operation: ResourceOperation = "read",
@@ -212,25 +277,42 @@ export async function filterResourcesByRole<T extends { id: string; organization
   const allowed = await Promise.all(
     resources.map(async (resource) => ({
       resource,
-      allowed: resource.organizationId === user.organizationId &&
-        await hasResourceAccess(user, resource.id, operation),
+      allowed:
+        resource.organizationId === user.organizationId &&
+        (await hasResourceAccess(user, resource.id, operation)),
     })),
   );
-  return allowed.filter(({ allowed }) => allowed).map(({ resource }) => resource);
+  return allowed
+    .filter(({ allowed }) => allowed)
+    .map(({ resource }) => resource);
 }
 
 /** Returns readable resource IDs for a non-admin, or null for an administrator. */
-export async function getReadableResourceIds(user: ResourceActor): Promise<string[] | null> {
+export async function getReadableResourceIds(
+  user: ResourceActor,
+): Promise<string[] | null> {
   if (user.isAdmin) return null;
   const memberships = await db.orm.aibot.Membership.where({
     userId: user.id,
     organizationId: user.organizationId,
-  }).select("groupId").all();
-  const principalIds = [user.id, ...memberships.map((membership) => membership.groupId)];
-  const grants = await db.orm.aibot.Grant.where({ organizationId: user.organizationId })
+  })
+    .select("groupId")
+    .all();
+  const principalIds = [
+    user.id,
+    ...memberships.map((membership) => membership.groupId),
+  ];
+  const grants = await db.orm.aibot.Grant.where({
+    organizationId: user.organizationId,
+  })
     .where((grant) => grant.principalId.in(principalIds))
     .select("resourceId", "role")
     .all();
-  return [...new Set(grants.filter((grant) => grant.role in ROLE_LEVEL).map((grant) => grant.resourceId))];
+  return [
+    ...new Set(
+      grants
+        .filter((grant) => grant.role in ROLE_LEVEL)
+        .map((grant) => grant.resourceId),
+    ),
+  ];
 }
-

@@ -113,7 +113,10 @@ async function executeSchedule(id: string) {
         threadId: target.threadId,
       });
       if (!link.chatbot.isEnabled) {
-        await finishExecution(executionId, { status: "skipped", errorCode: "bot_disabled" });
+        await finishExecution(executionId, {
+          status: "skipped",
+          errorCode: "bot_disabled",
+        });
         continue;
       }
 
@@ -139,7 +142,9 @@ async function executeSchedule(id: string) {
           executionId,
         );
         if (outcome.status === "failed") {
-          appLogger.warn(`Schedule ${id} failed for thread ${target.threadId} (execution ${executionId ?? "unrecorded"}, reason ${outcome.errorCode ?? "unknown"})`);
+          appLogger.warn(
+            `Schedule ${id} failed for thread ${target.threadId} (execution ${executionId ?? "unrecorded"}, reason ${outcome.errorCode ?? "unknown"})`,
+          );
         }
       } catch (error) {
         appLogger.error(
