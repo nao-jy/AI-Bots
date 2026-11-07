@@ -639,7 +639,6 @@ export const en = {
   pages: {
     dashboard: {
       documentTitle: "Dashboard | {{0}}",
-      eyebrow: "WORKSPACE OVERVIEW",
       title: "Dashboard",
       description: "A clear view of your agents and their recent activity.",
       last30Days: "Last 30 days",

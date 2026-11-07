@@ -51,7 +51,6 @@ export const ja = {
   pages: {
     dashboard: {
       documentTitle: "ダッシュボード | {{0}}",
-      eyebrow: "WORKSPACE OVERVIEW",
       title: "ダッシュボード",
       description:
         "エージェントの利用状況と最近のアクティビティを確認できます。",
