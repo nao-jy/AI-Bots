@@ -109,7 +109,7 @@ export async function saveAdapter(
   if (id === null) {
     const adapterId = await db.transaction(async (tx) => {
       const id = generateResourceId();
-      await tx.orm.aibot.ResourceBase.create({ id });
+      await tx.orm.aibot.ResourceBase.create({ id, organizationId: user.organizationId });
       const adapter = await tx.orm.aibot.ChatAdapter.create({
         id,
         name,

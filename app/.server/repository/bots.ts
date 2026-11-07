@@ -489,7 +489,7 @@ export async function saveBot(
     let botId = id;
     if (botId === null) {
       botId = generateResourceId();
-      await tx.orm.aibot.ResourceBase.create({ id: botId });
+      await tx.orm.aibot.ResourceBase.create({ id: botId, organizationId: user.organizationId });
       const created = await tx.orm.aibot.ChatBot.create({
         id: botId,
         name,
@@ -582,7 +582,7 @@ export async function saveBot(
     }
     for (const { toolSetName, context } of contextsToCreate) {
       const contextId = generateResourceId();
-      await tx.orm.aibot.ResourceBase.create({ id: contextId });
+      await tx.orm.aibot.ResourceBase.create({ id: contextId, organizationId: user.organizationId });
       await tx.orm.aibot.ChatBotToolSetContext.create({
         id: contextId,
         name: `${toolSetName} ${contextId}`,

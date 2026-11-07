@@ -145,7 +145,7 @@ export async function saveAgent(
     let agentId = id;
     if (agentId === null) {
       agentId = generateResourceId();
-      await tx.orm.aibot.ResourceBase.create({ id: agentId });
+      await tx.orm.aibot.ResourceBase.create({ id: agentId, organizationId: user.organizationId });
       await tx.orm.aibot.AgentDefinition.create({ ...valuesToSave, id: agentId });
       await tx.orm.aibot.Grant.create({
         organizationId: user.organizationId,

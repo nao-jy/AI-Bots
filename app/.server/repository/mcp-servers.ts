@@ -93,7 +93,7 @@ export async function saveMcpServer(
   if (id === null) {
     const server = await db.transaction(async (tx) => {
       const id = generateResourceId();
-      await tx.orm.aibot.ResourceBase.create({ id });
+      await tx.orm.aibot.ResourceBase.create({ id, organizationId: user.organizationId });
       const created = await tx.orm.aibot.McpServer.create({
         id,
         ...saved,

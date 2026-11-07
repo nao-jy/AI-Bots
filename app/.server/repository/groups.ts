@@ -44,7 +44,7 @@ export async function createGroup(user: AuthUser, nameValue: string) {
     return { error: "server.duplicateGroupName" };
   const group = await db.transaction(async (tx) => {
     const id = generateResourceId();
-    await tx.orm.aibot.PrincipalBase.create({ id });
+    await tx.orm.aibot.PrincipalBase.create({ id, organizationId: user.organizationId });
     return tx.orm.aibot.Group.create({
       id,
       organizationId: user.organizationId,

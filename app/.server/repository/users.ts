@@ -79,7 +79,7 @@ export async function createUser(values: {
       organizationId = (await tx.orm.aibot.Organization.create({ name })).id;
     }
     const id = generateResourceId();
-    await tx.orm.aibot.PrincipalBase.create({ id });
+    await tx.orm.aibot.PrincipalBase.create({ id, organizationId });
     return tx.orm.aibot.User.create({ id, ...userValues, organizationId });
   });
   logAuditEvent("user.created", "user", user.id);

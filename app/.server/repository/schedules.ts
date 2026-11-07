@@ -198,7 +198,7 @@ export async function saveSchedule(
     let scheduleId = id;
     if (scheduleId === null) {
       scheduleId = generateResourceId();
-      await tx.orm.aibot.ResourceBase.create({ id: scheduleId });
+      await tx.orm.aibot.ResourceBase.create({ id: scheduleId, organizationId: user.organizationId });
       const schedule = await tx.orm.aibot.ChatBotSchedule.create({
         id: scheduleId,
         name,

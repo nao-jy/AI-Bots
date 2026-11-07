@@ -206,7 +206,7 @@ export async function saveOAuthAuthentication(
   if (id === null) {
     const authentication = await db.transaction(async (tx) => {
       const authenticationId = generateResourceId();
-      await tx.orm.aibot.ResourceBase.create({ id: authenticationId });
+      await tx.orm.aibot.ResourceBase.create({ id: authenticationId, organizationId });
       const created = await tx.orm.aibot.OAuthAuthentication.create({
         id: authenticationId,
         ...values,
@@ -335,7 +335,7 @@ export async function saveOAuthClient(
   if (id === null) {
     const client = await db.transaction(async (tx) => {
       const id = generateResourceId();
-      await tx.orm.aibot.ResourceBase.create({ id });
+      await tx.orm.aibot.ResourceBase.create({ id, organizationId: user.organizationId });
       const created = await tx.orm.aibot.OAuthClient.create({
         id,
         ...saved,

@@ -85,7 +85,7 @@ export async function saveProvider(
   if (id === null) {
     const provider = await db.transaction(async (tx) => {
       const id = generateResourceId();
-      await tx.orm.aibot.ResourceBase.create({ id });
+      await tx.orm.aibot.ResourceBase.create({ id, organizationId: user.organizationId });
       const created = await tx.orm.aibot.Provider.create({
         id,
         ...saved,
