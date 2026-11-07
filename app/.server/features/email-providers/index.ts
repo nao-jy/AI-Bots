@@ -20,12 +20,23 @@ export interface EmailProvider {
 
 export function getEmailProvider(): EmailProvider | null {
   try {
-    const host = process.env.SMTP_RELAY_HOST!;
-    const port = Number(process.env.SMTP_RELAY_PORT!);
+    const host = process.env.SMTP_RELAY_HOST;
+    const port = Number(process.env.SMTP_RELAY_PORT);
     const secure = process.env.SMTP_RELAY_SECURE?.toLowerCase() === "true";
-    const user = process.env.SMTP_RELAY_USER!;
-    const pass = process.env.SMTP_RELAY_PASS!;
-    const domainFrom = process.env.SMTP_RELAY_DOMAIN_FROM!;
+    const user = process.env.SMTP_RELAY_USER;
+    const pass = process.env.SMTP_RELAY_PASS;
+    const domainFrom = process.env.SMTP_RELAY_DOMAIN_FROM;
+    if (
+      !host ||
+      !user ||
+      !pass ||
+      !domainFrom ||
+      !Number.isInteger(port) ||
+      port < 1 ||
+      port > 65535
+    ) {
+      return null;
+    }
     return new SMTPRelayEmailProvider(
       host,
       port,
