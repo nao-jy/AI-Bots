@@ -24,6 +24,9 @@ import { getSearXNGWebSearch } from "./toolsets/tools/web/search-searxng";
 import { getChatTools } from "./toolsets/chat-tools";
 import type { FileHandleReaderMap } from "./toolsets/helpers/file-handle";
 import { ToolSetFactoryRegistry } from "./toolsets";
+import { getThreadOAuthTools } from "./toolsets/thread-oauth";
+import { getThreadOAuthAuthentication } from "../repository/thread-oauth";
+import { getAccessToken, getOwnedOAuthClient } from "../repository/oauth";
 import { OpenDalFileSystem } from "./filesystem/opendal";
 import { buildMemoryPrompt, getMemoryTools } from "./toolsets/memory";
 import { getMemoryDirectory } from "./memory-config";
@@ -236,6 +239,42 @@ async function processBotMessage(
       );
     }
 
+    const oauthClientIds = new Set<string>();
+    for (const link of chatbot.mcpServers)
+      if (link.oauthClientId) oauthClientIds.add(link.oauthClientId);
+    for (const entry of chatbot.toolSets) {
+      const authId = asRecord(entry.toolSetContext).authId;
+      if (typeof authId === "string" && authId.startsWith("thread:"))
+        oauthClientIds.add(authId.slice(7));
+    }
+    const oauthClients = new Map<string, string>();
+    for (const id of oauthClientIds) {
+      const client = await getOwnedOAuthClient(id, chatbot.organizationId);
+      if (client) oauthClients.set(id, client.name);
+    }
+    const oauthScope = {
+      organizationId: chatbot.organizationId,
+      chatbotId: chatbot.id,
+      adapterId,
+      threadId: thread.id,
+    };
+    const missingOAuth = new Set<string>();
+    const resolveThreadAuth = async (clientId: string) => {
+      const authentication = await getThreadOAuthAuthentication({
+        ...oauthScope,
+        oauthClientId: clientId,
+      });
+      if (authentication) {
+        try {
+          await getAccessToken(authentication.id);
+          return authentication.id;
+        } catch {
+          // The configured account needs reconnecting; allow other tools to run.
+        }
+      }
+      missingOAuth.add(clientId);
+      return null;
+    };
     const fileHandles: FileHandleReaderMap = new Map();
     const memoryDirectory = getMemoryDirectory(
       process.env.MEMORY_DIR || "data/memory",
@@ -261,6 +300,9 @@ async function processBotMessage(
           })
         : {}),
       searchWeb: getSearXNGWebSearch(),
+      ...(oauthClients.size
+        ? getThreadOAuthTools(thread, oauthScope, oauthClients)
+        : {}),
     } as ToolSet;
 
     turnSandbox = await getBotSandbox(
@@ -288,32 +330,45 @@ async function processBotMessage(
         );
       }
 
+      const authId = link.oauthClientId
+        ? await resolveThreadAuth(link.oauthClientId)
+        : link.authId;
+      if (link.oauthClientId && !authId) continue;
       const client = await getMcpClient(
         server.transport,
         server.endpoint,
         decryptMcpHeaders(server.headers),
-        link.authId,
+        authId,
       );
       mcpClients.push(client);
 
       const mcpTools = await client.tools();
-      const authName = link.authentication
-        ? `_${link.authentication.name}`
-        : "";
+      const authName = link.oauthClientId
+        ? `_thread_${link.oauthClientId}`
+        : link.authentication
+          ? `_${link.authentication.name}`
+          : "";
       for (const [name, tool] of Object.entries(mcpTools)) {
         tools[`mcp${authName}_${server.id}_${safeToolName(name)}`] = tool;
       }
     }
 
     const toolSetContexts = new Map<string, unknown[]>();
-    chatbot.toolSets.forEach((toolSet) => {
+    for (const toolSet of chatbot.toolSets) {
+      const context = asRecord(toolSet.toolSetContext);
+      if (
+        typeof context.authId === "string" &&
+        context.authId.startsWith("thread:")
+      ) {
+        const authId = await resolveThreadAuth(context.authId.slice(7));
+        if (!authId) continue;
+        context.authId = authId;
+      }
       if (!toolSetContexts.has(toolSet.toolSetName)) {
         toolSetContexts.set(toolSet.toolSetName, []);
       }
-      toolSetContexts
-        .get(toolSet.toolSetName)
-        ?.push(asRecord(toolSet.toolSetContext));
-    });
+      toolSetContexts.get(toolSet.toolSetName)?.push(context);
+    }
     const registry = new ToolSetFactoryRegistry(chatbot.organizationId);
     for (const [toolSetName, contexts] of toolSetContexts.entries()) {
       for (const context of contexts) {
@@ -355,9 +410,15 @@ async function processBotMessage(
     const result = await generateText({
       model: modelInfo.model,
       providerOptions: modelInfo.options,
-      system: memoryFs
-        ? `${chatbot.instruction}\n\n${await buildMemoryPrompt(memoryFs)}`
-        : chatbot.instruction,
+      system: [
+        chatbot.instruction,
+        memoryFs ? await buildMemoryPrompt(memoryFs) : "",
+        missingOAuth.size
+          ? `Some configured tools require OAuth before they can be used: ${[...missingOAuth].map((id) => `${oauthClients.get(id) ?? id} (${id})`).join(", ")}. If needed for the user's request, use startThreadOAuth to post an authorization link and ask the user to retry after authorizing.`
+          : "",
+      ]
+        .filter(Boolean)
+        .join("\n\n"),
       prompt: inputMessages,
       tools,
       stopWhen: stepCountIs(MAX_AGENT_STEPS),

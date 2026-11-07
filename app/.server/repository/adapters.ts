@@ -191,7 +191,28 @@ export async function deleteAdapter(user: AuthUser, id: string) {
     !(await hasResourceAccess(user, id, "delete"))
   )
     return false;
-  await db.orm.aibot.ResourceBase.where({ id }).delete();
+  await db.transaction(async (tx) => {
+    const adapter = await tx.orm.aibot.ChatAdapter.where({
+      id,
+      organizationId: user.organizationId,
+    })
+      .forUpdate()
+      .first();
+    if (!adapter) return;
+    const connections = await tx.orm.aibot.ThreadOAuthConnection.where({
+      adapterId: id,
+      organizationId: user.organizationId,
+    }).all();
+    for (const connection of connections)
+      await tx.orm.aibot.ResourceBase.where({
+        id: connection.authenticationId,
+        organizationId: user.organizationId,
+      }).delete();
+    await tx.orm.aibot.ResourceBase.where({
+      id,
+      organizationId: user.organizationId,
+    }).delete();
+  });
   logAuditEvent("adapter.deleted", "adapter", id, user.id);
   return true;
 }

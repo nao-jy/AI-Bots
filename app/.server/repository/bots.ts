@@ -13,6 +13,8 @@ import { ToolSetFactoryRegistry } from "../features/toolsets";
 import { logAuditEvent } from "../logger/audit-logger";
 import { localizedMessage } from "../../i18n";
 import { isMemoryConfig } from "../features/memory-config";
+import { listOauth } from "./oauth";
+import { t } from "../i18n";
 import {
   filterResourcesByRole,
   hasResourceAccess,
@@ -113,6 +115,7 @@ export async function listBots(
     user.id,
   );
   const toolSetSchemas = await toolSetRegistry.listToolSetSchemas();
+  const oauthClients = await listOauth(user.organizationId, user.id);
   return {
     records: await includeResourcePermissions(
       user,
@@ -125,6 +128,10 @@ export async function listBots(
         const visibleMcpLinks = bot.mcpServers.filter(
           (link) =>
             mcpServers.some((server) => server.id === link.mcpServerId) &&
+            (link.oauthClientId === null ||
+              oauthClients.some(
+                (client) => client.id === link.oauthClientId,
+              )) &&
             (link.authId === null ||
               authentications.some((auth) => auth.id === link.authId)),
         );
@@ -143,7 +150,9 @@ export async function listBots(
           mcpConnections: JSON.stringify(
             visibleMcpLinks.map((link) => ({
               serverId: link.mcpServerId,
-              authId: link.authId,
+              authId: link.oauthClientId
+                ? `thread:${link.oauthClientId}`
+                : link.authId,
             })),
           ),
           mcpServerIds: visibleMcpLinks
@@ -240,10 +249,16 @@ export async function listBots(
       label: mcpServer.name,
       value: String(mcpServer.id),
     })),
-    mcpAuthenticationOptions: authentications.map((authentication) => ({
-      label: authentication.name,
-      value: String(authentication.id),
-    })),
+    mcpAuthenticationOptions: [
+      ...authentications.map((authentication) => ({
+        label: authentication.name,
+        value: String(authentication.id),
+      })),
+      ...oauthClients.map((client) => ({
+        label: t("server.threadOAuthSelection", { 0: client.name }),
+        value: `thread:${client.id}`,
+      })),
+    ],
     sandboxOptions: sandboxes.map((sandbox) => ({
       label: `${sandbox.sandboxType} (${sandbox.sandboxScope})`,
       value: String(sandbox.id),
@@ -290,7 +305,10 @@ export async function saveBot(
           connection.authId === null ||
           connection.authId === undefined
             ? null
-            : positiveId(connection.authId);
+            : typeof connection.authId === "string" &&
+                connection.authId.startsWith("thread:")
+              ? `thread:${positiveId(connection.authId.slice(7))}`
+              : positiveId(connection.authId);
         return { serverId: parsedServerId, authId: parsedAuthId };
       });
     } else {
@@ -440,14 +458,23 @@ export async function saveBot(
   const allowedAuthenticationIds = new Set(
     authentications.map((authentication) => authentication.id),
   );
+  const allowedClients = new Set(
+    (await listOauth(user.organizationId, user.id)).map((client) => client.id),
+  );
   if (
     mcpConnections.some(
-      ({ authId }) => authId !== null && !allowedAuthenticationIds.has(authId),
+      ({ authId }) =>
+        authId !== null &&
+        (authId.startsWith("thread:")
+          ? !allowedClients.has(authId.slice(7))
+          : !allowedAuthenticationIds.has(authId)),
     ) ||
     (
       await Promise.all(
         mcpConnections.flatMap(({ authId }) =>
-          authId ? [hasResourceAccess(user, authId, "read")] : [],
+          authId && !authId.startsWith("thread:")
+            ? [hasResourceAccess(user, authId, "read")]
+            : [],
         ),
       )
     ).some((allowed) => !allowed)
@@ -558,7 +585,8 @@ export async function saveBot(
         organizationId: user.organizationId,
         chatbotId: botId!,
         mcpServerId: serverId,
-        authId,
+        authId: authId?.startsWith("thread:") ? null : authId,
+        oauthClientId: authId?.startsWith("thread:") ? authId.slice(7) : null,
       });
     }
     await tx.orm.aibot.ChatBotToolSandbox.where({ chatbotId: botId! }).delete();
@@ -640,6 +668,15 @@ export async function deleteBot(user: AuthUser, id: string) {
       .forUpdate()
       .first();
     if (!bot) return false;
+    const connections = await tx.orm.aibot.ThreadOAuthConnection.where({
+      chatbotId: id,
+      organizationId: user.organizationId,
+    }).all();
+    for (const connection of connections)
+      await tx.orm.aibot.ResourceBase.where({
+        id: connection.authenticationId,
+        organizationId: user.organizationId,
+      }).delete();
     const contexts = await tx.orm.aibot.ChatBotToolSetContext.where({
       chatbotId: id,
     }).all();

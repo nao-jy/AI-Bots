@@ -88,56 +88,64 @@ export async function getAdapterOAuthInfo(authId: string) {
 
 /** Return an authentication's access token, refreshing it shortly before expiry. */
 export async function getAccessToken(authId: string) {
-  const authentication = await db.orm.aibot.OAuthAuthentication.first({
-    id: authId,
+  return db.transaction(async (tx) => {
+    const authentication = await tx.orm.aibot.OAuthAuthentication.where({
+      id: authId,
+    })
+      .forUpdate()
+      .first();
+    if (!authentication) throw new Error("server.oauthAuthenticationNotFound");
+
+    const client = await tx.orm.aibot.OAuthClient.first({
+      id: authentication.oauthId,
+      organizationId: authentication.organizationId,
+    });
+    if (!client) throw new Error("server.oauthClientNotFound");
+
+    const expiresAt = authentication.expiresAt
+      ? new Date(authentication.expiresAt).getTime()
+      : Number.NaN;
+    if (
+      !Number.isFinite(expiresAt) ||
+      expiresAt - Date.now() >= TOKEN_REFRESH_WINDOW_MS
+    )
+      return {
+        name: authentication.name,
+        accessToken: decryptCredential(authentication.accessToken),
+      };
+
+    if (!authentication.refreshToken)
+      throw new Error("server.refreshTokenRequiredToReconnect");
+
+    const tokens = await oidc.refreshTokenGrant(
+      refreshConfiguration(client),
+      decryptCredential(authentication.refreshToken),
+    );
+    if (!tokens.access_token) throw new Error("server.oauthAccessTokenMissing");
+
+    const refreshedExpiresAt =
+      typeof tokens.expires_in === "number"
+        ? new Date(Date.now() + tokens.expires_in * 1000).toISOString()
+        : null;
+    const refreshToken = tokens.refresh_token
+      ? encryptCredential(tokens.refresh_token)
+      : authentication.refreshToken;
+    await tx.orm.aibot.OAuthAuthentication.where({
+      id: authId,
+      organizationId: authentication.organizationId,
+    }).update({
+      accessToken: encryptCredential(tokens.access_token),
+      refreshToken,
+      expiresAt: refreshedExpiresAt,
+    });
+    logAuditEvent(
+      "oauth.access_token.refreshed",
+      "oauth_authentication",
+      authId,
+    );
+
+    return { name: authentication.name, accessToken: tokens.access_token };
   });
-  if (!authentication) throw new Error("server.oauthAuthenticationNotFound");
-
-  const client = await db.orm.aibot.OAuthClient.first({
-    id: authentication.oauthId,
-    organizationId: authentication.organizationId,
-  });
-  if (!client) throw new Error("server.oauthClientNotFound");
-
-  const expiresAt = authentication.expiresAt
-    ? new Date(authentication.expiresAt).getTime()
-    : Number.NaN;
-  if (
-    !Number.isFinite(expiresAt) ||
-    expiresAt - Date.now() >= TOKEN_REFRESH_WINDOW_MS
-  )
-    return {
-      name: authentication.name,
-      accessToken: decryptCredential(authentication.accessToken),
-    };
-
-  if (!authentication.refreshToken)
-    throw new Error("server.refreshTokenRequiredToReconnect");
-
-  const tokens = await oidc.refreshTokenGrant(
-    refreshConfiguration(client),
-    decryptCredential(authentication.refreshToken),
-  );
-  if (!tokens.access_token) throw new Error("server.oauthAccessTokenMissing");
-
-  const refreshedExpiresAt =
-    typeof tokens.expires_in === "number"
-      ? new Date(Date.now() + tokens.expires_in * 1000).toISOString()
-      : null;
-  const refreshToken = tokens.refresh_token
-    ? encryptCredential(tokens.refresh_token)
-    : authentication.refreshToken;
-  await db.orm.aibot.OAuthAuthentication.where({
-    id: authId,
-    organizationId: authentication.organizationId,
-  }).update({
-    accessToken: encryptCredential(tokens.access_token),
-    refreshToken,
-    expiresAt: refreshedExpiresAt,
-  });
-  logAuditEvent("oauth.access_token.refreshed", "oauth_authentication", authId);
-
-  return { name: authentication.name, accessToken: tokens.access_token };
 }
 
 export async function saveOAuthAuthentication(
@@ -396,6 +404,7 @@ export async function listOauth(organizationId: string, principalId?: string) {
   const ret = data
     .sort((a, b) => a.name.localeCompare(b.name))
     .map((client) => ({
+      id: client.id,
       name: client.name,
       authentications: client.authentications
         .filter((auth) => !allowedAuthIds || allowedAuthIds.has(auth.id))

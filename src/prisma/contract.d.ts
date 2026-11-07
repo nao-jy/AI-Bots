@@ -23,9 +23,9 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'a8c887057b26ed29e31335243867b909e4990512963bec74dbb855acc56287a5'>;
+  StorageHashBase<'5b158a92977ca07a797aa8e1e8c512303cb6771313c570330e1c11e6fd529aff'>;
 export type ExecutionHash =
-  ExecutionHashBase<'00d003bba395e5a0ffcad6d56df6185110965febfc0a58ce77ce105a9f59097f'>;
+  ExecutionHashBase<'da363015a8b9e614945f7deb9cd46d9fb0d77a2b72a52277a08f6412d2832812'>;
 export type ProfileHash =
   ProfileHashBase<'3916f444a8a17ad749191acf9e08dad97d1a327b88c2f1d45d12f240296aa8b2'>;
 
@@ -480,8 +480,15 @@ export namespace Models {
     organization: aibot_Organization;
     publicIds: aibot_ChatAdapterPublicId[];
     resource: aibot_ResourceBase;
+    threadOAuthConnections: aibot_ThreadOAuthConnection[];
     readonly [RelationKeys]?:
-      'authentication' | 'chatbots' | 'executions' | 'organization' | 'publicIds' | 'resource';
+      | 'authentication'
+      | 'chatbots'
+      | 'executions'
+      | 'organization'
+      | 'publicIds'
+      | 'resource'
+      | 'threadOAuthConnections';
   };
   export type aibot_ChatAdapterPublicId = {
     adapterId: FieldOutputTypes['aibot']['ChatAdapterPublicId']['adapterId'];
@@ -515,6 +522,7 @@ export namespace Models {
     organization: aibot_Organization;
     publicIds: aibot_ChatBotPublicId[];
     resource: aibot_ResourceBase;
+    threadOAuthConnections: aibot_ThreadOAuthConnection[];
     toolSets: aibot_ChatBotToolSetContext[];
     usage: aibot_AgentUsage[];
     readonly [RelationKeys]?:
@@ -525,6 +533,7 @@ export namespace Models {
       | 'organization'
       | 'publicIds'
       | 'resource'
+      | 'threadOAuthConnections'
       | 'toolSets'
       | 'usage';
   };
@@ -547,12 +556,15 @@ export namespace Models {
     createdAt: FieldOutputTypes['aibot']['ChatBotMcpServer']['createdAt'];
     id: FieldOutputTypes['aibot']['ChatBotMcpServer']['id'];
     mcpServerId: FieldOutputTypes['aibot']['ChatBotMcpServer']['mcpServerId'];
+    oauthClientId: FieldOutputTypes['aibot']['ChatBotMcpServer']['oauthClientId'];
     organizationId: FieldOutputTypes['aibot']['ChatBotMcpServer']['organizationId'];
     authentication: aibot_OAuthAuthentication | null;
     chatbot: aibot_ChatBot;
     mcpServer: aibot_McpServer;
+    oauthClient: aibot_OAuthClient | null;
     organization: aibot_Organization;
-    readonly [RelationKeys]?: 'authentication' | 'chatbot' | 'mcpServer' | 'organization';
+    readonly [RelationKeys]?:
+      'authentication' | 'chatbot' | 'mcpServer' | 'oauthClient' | 'organization';
   };
   export type aibot_ChatBotPublicId = {
     chatbotId: FieldOutputTypes['aibot']['ChatBotPublicId']['chatbotId'];
@@ -685,7 +697,8 @@ export namespace Models {
     oauth: aibot_OAuthClient;
     organization: aibot_Organization;
     resource: aibot_ResourceBase;
-    readonly [RelationKeys]?: 'oauth' | 'organization' | 'resource';
+    threadConnections: aibot_ThreadOAuthConnection[];
+    readonly [RelationKeys]?: 'oauth' | 'organization' | 'resource' | 'threadConnections';
   };
   export type aibot_OAuthClient = {
     authorizationEndpoint: FieldOutputTypes['aibot']['OAuthClient']['authorizationEndpoint'];
@@ -701,9 +714,12 @@ export namespace Models {
     tokenEndpoint: FieldOutputTypes['aibot']['OAuthClient']['tokenEndpoint'];
     updatedAt: FieldOutputTypes['aibot']['OAuthClient']['updatedAt'];
     authentications: aibot_OAuthAuthentication[];
+    chatbotMcpServers: aibot_ChatBotMcpServer[];
     organization: aibot_Organization;
     resource: aibot_ResourceBase;
-    readonly [RelationKeys]?: 'authentications' | 'organization' | 'resource';
+    threadConnections: aibot_ThreadOAuthConnection[];
+    readonly [RelationKeys]?:
+      'authentications' | 'chatbotMcpServers' | 'organization' | 'resource' | 'threadConnections';
   };
   export type aibot_OAuthRevocationQueue = {
     accessToken: FieldOutputTypes['aibot']['OAuthRevocationQueue']['accessToken'];
@@ -746,6 +762,7 @@ export namespace Models {
     rateLimits: aibot_RateLimit[];
     sandboxes: aibot_Sandbox[];
     schedules: aibot_ChatBotSchedule[];
+    threadOAuthConnections: aibot_ThreadOAuthConnection[];
     usage: aibot_AgentUsage[];
     users: aibot_User[];
     readonly [RelationKeys]?:
@@ -760,6 +777,7 @@ export namespace Models {
       | 'rateLimits'
       | 'sandboxes'
       | 'schedules'
+      | 'threadOAuthConnections'
       | 'usage'
       | 'users';
   };
@@ -855,6 +873,24 @@ export namespace Models {
     user: aibot_User;
     readonly [RelationKeys]?: 'organization' | 'user';
   };
+  export type aibot_ThreadOAuthConnection = {
+    adapterId: FieldOutputTypes['aibot']['ThreadOAuthConnection']['adapterId'];
+    authenticationId: FieldOutputTypes['aibot']['ThreadOAuthConnection']['authenticationId'];
+    chatbotId: FieldOutputTypes['aibot']['ThreadOAuthConnection']['chatbotId'];
+    createdAt: FieldOutputTypes['aibot']['ThreadOAuthConnection']['createdAt'];
+    id: FieldOutputTypes['aibot']['ThreadOAuthConnection']['id'];
+    oauthClientId: FieldOutputTypes['aibot']['ThreadOAuthConnection']['oauthClientId'];
+    organizationId: FieldOutputTypes['aibot']['ThreadOAuthConnection']['organizationId'];
+    threadId: FieldOutputTypes['aibot']['ThreadOAuthConnection']['threadId'];
+    updatedAt: FieldOutputTypes['aibot']['ThreadOAuthConnection']['updatedAt'];
+    adapter: aibot_ChatAdapter;
+    authentication: aibot_OAuthAuthentication;
+    chatbot: aibot_ChatBot;
+    oauthClient: aibot_OAuthClient;
+    organization: aibot_Organization;
+    readonly [RelationKeys]?:
+      'adapter' | 'authentication' | 'chatbot' | 'oauthClient' | 'organization';
+  };
   export type aibot_User = {
     createdAt: FieldOutputTypes['aibot']['User']['createdAt'];
     email: FieldOutputTypes['aibot']['User']['email'];
@@ -905,6 +941,7 @@ export declare const models: {
     ResourceBase: Models.aibot_ResourceBase;
     Sandbox: Models.aibot_Sandbox;
     Session: Models.aibot_Session;
+    ThreadOAuthConnection: Models.aibot_ThreadOAuthConnection;
     User: Models.aibot_User;
   };
   public: {};
@@ -1924,6 +1961,12 @@ type ContractBase = Omit<
                   readonly nullable: false;
                   readonly many: false;
                 };
+                readonly oauthClientId: {
+                  readonly dataType: 'pg/uuid';
+                  readonly codecId: 'pg/uuid@1';
+                  readonly nullable: true;
+                  readonly many: false;
+                };
                 readonly organizationId: {
                   readonly dataType: 'pg/uuid';
                   readonly codecId: 'pg/uuid@1';
@@ -1934,6 +1977,7 @@ type ContractBase = Omit<
               primaryKey: { readonly columns: readonly ['id'] };
               uniques: readonly [
                 { readonly columns: readonly ['chatbotId', 'mcpServerId', 'authId'] },
+                { readonly columns: readonly ['chatbotId', 'mcpServerId', 'oauthClientId'] },
               ];
               indexes: readonly [
                 {
@@ -1952,6 +1996,12 @@ type ContractBase = Omit<
                   readonly name: 'ChatBotMcpServer_mcpServerId_idx_1c0baf24';
                   readonly prefix: 'ChatBotMcpServer_mcpServerId_idx';
                   readonly columns: readonly ['mcpServerId'];
+                  readonly unique: false;
+                },
+                {
+                  readonly name: 'ChatBotMcpServer_oauthClientId_idx_06565021';
+                  readonly prefix: 'ChatBotMcpServer_oauthClientId_idx';
+                  readonly columns: readonly ['oauthClientId'];
                   readonly unique: false;
                 },
                 {
@@ -2007,6 +2057,18 @@ type ContractBase = Omit<
                   readonly target: {
                     readonly namespaceId: 'aibot' & NamespaceId;
                     readonly tableName: 'OAuthAuthentication';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+                {
+                  readonly source: {
+                    readonly namespaceId: 'aibot' & NamespaceId;
+                    readonly tableName: 'ChatBotMcpServer';
+                    readonly columns: readonly ['oauthClientId'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'aibot' & NamespaceId;
+                    readonly tableName: 'OAuthClient';
                     readonly columns: readonly ['id'];
                   };
                 },
@@ -4037,6 +4099,170 @@ type ContractBase = Omit<
                 },
               ];
             };
+            readonly ThreadOAuthConnection: {
+              columns: {
+                readonly adapterId: {
+                  readonly dataType: 'pg/uuid';
+                  readonly codecId: 'pg/uuid@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly authenticationId: {
+                  readonly dataType: 'pg/uuid';
+                  readonly codecId: 'pg/uuid@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly chatbotId: {
+                  readonly dataType: 'pg/uuid';
+                  readonly codecId: 'pg/uuid@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly createdAt: {
+                  readonly dataType: 'pg/timestamptz';
+                  readonly codecId: 'pg/timestamptz-string@1';
+                  readonly nullable: false;
+                  readonly default: { readonly kind: 'function'; readonly expression: 'now()' };
+                  readonly many: false;
+                };
+                readonly id: {
+                  readonly dataType: 'pg/int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'function';
+                    readonly expression: 'autoincrement()';
+                  };
+                  readonly many: false;
+                };
+                readonly oauthClientId: {
+                  readonly dataType: 'pg/uuid';
+                  readonly codecId: 'pg/uuid@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly organizationId: {
+                  readonly dataType: 'pg/uuid';
+                  readonly codecId: 'pg/uuid@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly threadId: {
+                  readonly dataType: 'pg/text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly updatedAt: {
+                  readonly dataType: 'pg/timestamptz';
+                  readonly codecId: 'pg/timestamptz-date@1';
+                  readonly nullable: false;
+                  readonly typeParams: { readonly precision: 3 };
+                  readonly many: false;
+                };
+              };
+              primaryKey: { readonly columns: readonly ['id'] };
+              uniques: readonly [
+                { readonly columns: readonly ['authenticationId'] },
+                {
+                  readonly columns: readonly [
+                    'oauthClientId',
+                    'chatbotId',
+                    'adapterId',
+                    'threadId',
+                  ];
+                },
+              ];
+              indexes: readonly [
+                {
+                  readonly name: 'ThreadOAuthConnection_adapterId_idx_f5208af9';
+                  readonly prefix: 'ThreadOAuthConnection_adapterId_idx';
+                  readonly columns: readonly ['adapterId'];
+                  readonly unique: false;
+                },
+                {
+                  readonly name: 'ThreadOAuthConnection_chatbotId_idx_52db07ea';
+                  readonly prefix: 'ThreadOAuthConnection_chatbotId_idx';
+                  readonly columns: readonly ['chatbotId'];
+                  readonly unique: false;
+                },
+                {
+                  readonly name: 'ThreadOAuthConnection_oauthClientId_idx_06565021';
+                  readonly prefix: 'ThreadOAuthConnection_oauthClientId_idx';
+                  readonly columns: readonly ['oauthClientId'];
+                  readonly unique: false;
+                },
+                {
+                  readonly name: 'ThreadOAuthConnection_organizationId_idx_2e17ef41';
+                  readonly prefix: 'ThreadOAuthConnection_organizationId_idx';
+                  readonly columns: readonly ['organizationId'];
+                  readonly unique: false;
+                },
+              ];
+              foreignKeys: readonly [
+                {
+                  readonly source: {
+                    readonly namespaceId: 'aibot' & NamespaceId;
+                    readonly tableName: 'ThreadOAuthConnection';
+                    readonly columns: readonly ['organizationId'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'aibot' & NamespaceId;
+                    readonly tableName: 'Organization';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+                {
+                  readonly source: {
+                    readonly namespaceId: 'aibot' & NamespaceId;
+                    readonly tableName: 'ThreadOAuthConnection';
+                    readonly columns: readonly ['oauthClientId'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'aibot' & NamespaceId;
+                    readonly tableName: 'OAuthClient';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+                {
+                  readonly source: {
+                    readonly namespaceId: 'aibot' & NamespaceId;
+                    readonly tableName: 'ThreadOAuthConnection';
+                    readonly columns: readonly ['chatbotId'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'aibot' & NamespaceId;
+                    readonly tableName: 'ChatBot';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+                {
+                  readonly source: {
+                    readonly namespaceId: 'aibot' & NamespaceId;
+                    readonly tableName: 'ThreadOAuthConnection';
+                    readonly columns: readonly ['adapterId'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'aibot' & NamespaceId;
+                    readonly tableName: 'ChatAdapter';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+                {
+                  readonly source: {
+                    readonly namespaceId: 'aibot' & NamespaceId;
+                    readonly tableName: 'ThreadOAuthConnection';
+                    readonly columns: readonly ['authenticationId'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'aibot' & NamespaceId;
+                    readonly tableName: 'OAuthAuthentication';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+              ];
+            };
             readonly User: {
               columns: {
                 readonly createdAt: {
@@ -4305,6 +4531,10 @@ type ContractBase = Omit<
     };
     readonly Sandbox: { readonly namespace: 'aibot' & NamespaceId; readonly model: 'Sandbox' };
     readonly Session: { readonly namespace: 'aibot' & NamespaceId; readonly model: 'Session' };
+    readonly ThreadOAuthConnection: {
+      readonly namespace: 'aibot' & NamespaceId;
+      readonly model: 'ThreadOAuthConnection';
+    };
     readonly User: { readonly namespace: 'aibot' & NamespaceId; readonly model: 'User' };
   };
   readonly domain: {
@@ -4860,6 +5090,17 @@ type ContractBase = Omit<
                   readonly targetFields: readonly ['id'];
                 };
               };
+              readonly threadOAuthConnections: {
+                readonly to: {
+                  readonly namespace: 'aibot' & NamespaceId;
+                  readonly model: 'ThreadOAuthConnection';
+                };
+                readonly cardinality: '1:N';
+                readonly on: {
+                  readonly localFields: readonly ['id'];
+                  readonly targetFields: readonly ['adapterId'];
+                };
+              };
             };
             readonly storage: {
               readonly table: 'ChatAdapter';
@@ -5093,6 +5334,17 @@ type ContractBase = Omit<
                   readonly targetFields: readonly ['id'];
                 };
               };
+              readonly threadOAuthConnections: {
+                readonly to: {
+                  readonly namespace: 'aibot' & NamespaceId;
+                  readonly model: 'ThreadOAuthConnection';
+                };
+                readonly cardinality: '1:N';
+                readonly on: {
+                  readonly localFields: readonly ['id'];
+                  readonly targetFields: readonly ['chatbotId'];
+                };
+              };
               readonly toolSets: {
                 readonly to: {
                   readonly namespace: 'aibot' & NamespaceId;
@@ -5256,6 +5508,10 @@ type ContractBase = Omit<
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/uuid@1' };
               };
+              readonly oauthClientId: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/uuid@1' };
+              };
               readonly organizationId: {
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/uuid@1' };
@@ -5298,6 +5554,18 @@ type ContractBase = Omit<
                   readonly targetFields: readonly ['id'];
                 };
               };
+              readonly oauthClient: {
+                readonly to: {
+                  readonly namespace: 'aibot' & NamespaceId;
+                  readonly model: 'OAuthClient';
+                };
+                readonly cardinality: 'N:1';
+                readonly nullable: true;
+                readonly on: {
+                  readonly localFields: readonly ['oauthClientId'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
               readonly organization: {
                 readonly to: {
                   readonly namespace: 'aibot' & NamespaceId;
@@ -5320,6 +5588,7 @@ type ContractBase = Omit<
                 readonly createdAt: { readonly column: 'createdAt' };
                 readonly id: { readonly column: 'id' };
                 readonly mcpServerId: { readonly column: 'mcpServerId' };
+                readonly oauthClientId: { readonly column: 'oauthClientId' };
                 readonly organizationId: { readonly column: 'organizationId' };
               };
             };
@@ -6216,6 +6485,17 @@ type ContractBase = Omit<
                   readonly targetFields: readonly ['id'];
                 };
               };
+              readonly threadConnections: {
+                readonly to: {
+                  readonly namespace: 'aibot' & NamespaceId;
+                  readonly model: 'ThreadOAuthConnection';
+                };
+                readonly cardinality: '1:N';
+                readonly on: {
+                  readonly localFields: readonly ['id'];
+                  readonly targetFields: readonly ['authenticationId'];
+                };
+              };
             };
             readonly storage: {
               readonly table: 'OAuthAuthentication';
@@ -6304,6 +6584,17 @@ type ContractBase = Omit<
                   readonly targetFields: readonly ['oauthId'];
                 };
               };
+              readonly chatbotMcpServers: {
+                readonly to: {
+                  readonly namespace: 'aibot' & NamespaceId;
+                  readonly model: 'ChatBotMcpServer';
+                };
+                readonly cardinality: '1:N';
+                readonly on: {
+                  readonly localFields: readonly ['id'];
+                  readonly targetFields: readonly ['oauthClientId'];
+                };
+              };
               readonly organization: {
                 readonly to: {
                   readonly namespace: 'aibot' & NamespaceId;
@@ -6326,6 +6617,17 @@ type ContractBase = Omit<
                 readonly on: {
                   readonly localFields: readonly ['id'];
                   readonly targetFields: readonly ['id'];
+                };
+              };
+              readonly threadConnections: {
+                readonly to: {
+                  readonly namespace: 'aibot' & NamespaceId;
+                  readonly model: 'ThreadOAuthConnection';
+                };
+                readonly cardinality: '1:N';
+                readonly on: {
+                  readonly localFields: readonly ['id'];
+                  readonly targetFields: readonly ['oauthClientId'];
                 };
               };
             };
@@ -6605,6 +6907,17 @@ type ContractBase = Omit<
                 readonly to: {
                   readonly namespace: 'aibot' & NamespaceId;
                   readonly model: 'ChatBotSchedule';
+                };
+                readonly cardinality: '1:N';
+                readonly on: {
+                  readonly localFields: readonly ['id'];
+                  readonly targetFields: readonly ['organizationId'];
+                };
+              };
+              readonly threadOAuthConnections: {
+                readonly to: {
+                  readonly namespace: 'aibot' & NamespaceId;
+                  readonly model: 'ThreadOAuthConnection';
                 };
                 readonly cardinality: '1:N';
                 readonly on: {
@@ -7236,6 +7549,130 @@ type ContractBase = Omit<
                 readonly tokenHash: { readonly column: 'tokenHash' };
                 readonly updatedAt: { readonly column: 'updatedAt' };
                 readonly userId: { readonly column: 'userId' };
+              };
+            };
+          };
+          readonly ThreadOAuthConnection: {
+            readonly fields: {
+              readonly adapterId: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/uuid@1' };
+              };
+              readonly authenticationId: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/uuid@1' };
+              };
+              readonly chatbotId: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/uuid@1' };
+              };
+              readonly createdAt: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-string@1';
+                };
+              };
+              readonly id: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+              readonly oauthClientId: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/uuid@1' };
+              };
+              readonly organizationId: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/uuid@1' };
+              };
+              readonly threadId: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly updatedAt: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-date@1';
+                  readonly typeParams: { readonly precision: 3 };
+                };
+              };
+            };
+            readonly relations: {
+              readonly adapter: {
+                readonly to: {
+                  readonly namespace: 'aibot' & NamespaceId;
+                  readonly model: 'ChatAdapter';
+                };
+                readonly cardinality: 'N:1';
+                readonly nullable: false;
+                readonly on: {
+                  readonly localFields: readonly ['adapterId'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
+              readonly authentication: {
+                readonly to: {
+                  readonly namespace: 'aibot' & NamespaceId;
+                  readonly model: 'OAuthAuthentication';
+                };
+                readonly cardinality: 'N:1';
+                readonly nullable: false;
+                readonly on: {
+                  readonly localFields: readonly ['authenticationId'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
+              readonly chatbot: {
+                readonly to: {
+                  readonly namespace: 'aibot' & NamespaceId;
+                  readonly model: 'ChatBot';
+                };
+                readonly cardinality: 'N:1';
+                readonly nullable: false;
+                readonly on: {
+                  readonly localFields: readonly ['chatbotId'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
+              readonly oauthClient: {
+                readonly to: {
+                  readonly namespace: 'aibot' & NamespaceId;
+                  readonly model: 'OAuthClient';
+                };
+                readonly cardinality: 'N:1';
+                readonly nullable: false;
+                readonly on: {
+                  readonly localFields: readonly ['oauthClientId'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
+              readonly organization: {
+                readonly to: {
+                  readonly namespace: 'aibot' & NamespaceId;
+                  readonly model: 'Organization';
+                };
+                readonly cardinality: 'N:1';
+                readonly nullable: false;
+                readonly on: {
+                  readonly localFields: readonly ['organizationId'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
+            };
+            readonly storage: {
+              readonly table: 'ThreadOAuthConnection';
+              readonly namespaceId: 'aibot';
+              readonly fields: {
+                readonly adapterId: { readonly column: 'adapterId' };
+                readonly authenticationId: { readonly column: 'authenticationId' };
+                readonly chatbotId: { readonly column: 'chatbotId' };
+                readonly createdAt: { readonly column: 'createdAt' };
+                readonly id: { readonly column: 'id' };
+                readonly oauthClientId: { readonly column: 'oauthClientId' };
+                readonly organizationId: { readonly column: 'organizationId' };
+                readonly threadId: { readonly column: 'threadId' };
+                readonly updatedAt: { readonly column: 'updatedAt' };
               };
             };
           };
@@ -7910,6 +8347,23 @@ type ContractBase = Omit<
           };
           readonly ref: {
             readonly entry: 'Session';
+            readonly field: 'updatedAt';
+            readonly namespace: 'aibot';
+          };
+        },
+        {
+          readonly onCreate: {
+            readonly id: 'timestampNow';
+            readonly kind: 'generator';
+            readonly params: { readonly precision: 3 };
+          };
+          readonly onUpdate: {
+            readonly id: 'timestampNow';
+            readonly kind: 'generator';
+            readonly params: { readonly precision: 3 };
+          };
+          readonly ref: {
+            readonly entry: 'ThreadOAuthConnection';
             readonly field: 'updatedAt';
             readonly namespace: 'aibot';
           };

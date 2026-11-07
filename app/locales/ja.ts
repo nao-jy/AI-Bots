@@ -296,6 +296,8 @@ export const ja = {
       launchLabel: "OAuth認証をやり直す",
       startTitle: "OAuth認証を続ける",
       startDescription: "選択したOAuthプロバイダーに移動して認証します。",
+      threadSharingDescription:
+        "認証すると、このスレッドの参加者はBotを通じてこのアカウントの権限を利用できます。",
       startButton: "OAuthプロバイダーへ進む",
       completionDocumentTitle: "OAuth認証完了 | {{0}}",
       completionTitle: "OAuth認証の結果",
@@ -1133,6 +1135,9 @@ export const ja = {
     openDalExpectedBinaryContent:
       "リモートソースからファイルデータを取得できませんでした。",
     oauthAuthentication: "OAuth認証情報",
+    threadOAuthSelection: "{{0}}（スレッド共有 OAuth）",
+    threadOAuthLink:
+      "{{0}} を接続: {{1}}\nこの接続はスレッドの参加者と共有されます。",
     initCommandFailed:
       "生成時特権コマンドが失敗しました (exit code {{0}}): {{1}}",
     sandboxCleanupAfterInitFailed:

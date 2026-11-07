@@ -14,6 +14,12 @@ export namespace ReservedParams {
         label: `${client.name} (${authentication.name})`,
       })),
     );
+    authentications.push(
+      ...oauthClients.map((client) => ({
+        id: `thread:${client.id}`,
+        label: t("server.threadOAuthSelection", { 0: client.name }),
+      })),
+    );
 
     return {
       authId: z.literal(authentications.map(({ id }) => id)).meta({
@@ -32,6 +38,12 @@ export namespace ReservedParams {
       client.authentications.map((authentication) => ({
         id: authentication.id,
         label: `${client.name} (${authentication.name})`,
+      })),
+    );
+    authentications.push(
+      ...oauthClients.map((client) => ({
+        id: `thread:${client.id}`,
+        label: t("server.threadOAuthSelection", { 0: client.name }),
       })),
     );
     const authenticationIds = authentications.map(({ id }) => id);

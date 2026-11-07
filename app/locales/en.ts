@@ -616,6 +616,9 @@ export const en = {
     openDalExpectedBinaryContent:
       "Could not retrieve file data from the remote source.",
     oauthAuthentication: "OAuth credentials",
+    threadOAuthSelection: "{{0}} (shared thread OAuth)",
+    threadOAuthLink:
+      "Connect {{0}}: {{1}}\nThis connection is shared with everyone in this thread.",
     initCommandFailed:
       "Privileged command on creation failed (exit code {{0}}): {{1}}",
     sandboxCleanupAfterInitFailed:
@@ -888,6 +891,8 @@ export const en = {
       startTitle: "Continue to OAuth authorization",
       startDescription:
         "Continue to the selected OAuth provider to authorize this account.",
+      threadSharingDescription:
+        "After authorization, participants in this thread can use this account's permissions through the bot.",
       startButton: "Continue to OAuth provider",
       completionDocumentTitle: "OAuth authorization complete | {{0}}",
       completionTitle: "OAuth authorization result",

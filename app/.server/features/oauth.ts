@@ -92,7 +92,7 @@ function decodeFlow(request: Request): OAuthFlow | null {
   return value ? verifyFlowPayload(value) : null;
 }
 
-function getCallbackUrl() {
+export function getCallbackUrl() {
   const value = process.env.OAUTH_BASE_URL;
   if (!value) throw new Error("server.oauthBaseUrlRequired");
   const url = new URL(value);
@@ -108,7 +108,7 @@ function getCallbackUrl() {
   return new URL(CALLBACK_PATH, url.origin);
 }
 
-function configuration(client: {
+export function configuration(client: {
   authorizationEndpoint: string;
   tokenEndpoint: string;
   clientId: string;

@@ -106,7 +106,7 @@ namespace aibot {
   }
 
   model Organization {
-    id                      Uuid              @id @onCreate(uuid(7))
+    id                      Uuid                    @id @onCreate(uuid(7))
     name                    String
     groups                  Group[]
     users                   User[]
@@ -119,14 +119,15 @@ namespace aibot {
     botExecutions           BotExecution[]
     rateLimits              RateLimit[]
     oauthClients            OAuthClient[]
+    threadOAuthConnections  ThreadOAuthConnection[]
     sandboxes               Sandbox[]
     schedules               ChatBotSchedule[]
     +Timestamps
 
-    mfaEnabled              Boolean           @default(false)
-    sessionDurationSeconds  Int               @default(2592000)
-    maxLoginAttempts        Int               @default(5)
-    minimumPasswordStrength Int               @default(2)
+    mfaEnabled              Boolean                 @default(false)
+    sessionDurationSeconds  Int                     @default(2592000)
+    maxLoginAttempts        Int                     @default(5)
+    minimumPasswordStrength Int                     @default(2)
   }
 
   model Group {
@@ -196,21 +197,22 @@ namespace aibot {
 
   model ChatBot {
     +Resource
-    description      String?
-    instruction      String
-    onFailedMessage  String
-    lookbackMessages Int
-    memoryConfig     MemoryConfig            @default(nouse)
-    isEnabled        Boolean                 @default(true)
-    agent            AgentDefinition?        @relation(fields: [agentId], references: [id], onDelete: SetNull)
-    agentId          Uuid?                   @unique
-    adapters         ChatBotAdapter[]
-    mcpServers       ChatBotMcpServer[]
-    toolSets         ChatBotToolSetContext[]
+    description            String?
+    instruction            String
+    onFailedMessage        String
+    lookbackMessages       Int
+    memoryConfig           MemoryConfig            @default(nouse)
+    isEnabled              Boolean                 @default(true)
+    agent                  AgentDefinition?        @relation(fields: [agentId], references: [id], onDelete: SetNull)
+    agentId                Uuid?                   @unique
+    adapters               ChatBotAdapter[]
+    mcpServers             ChatBotMcpServer[]
+    toolSets               ChatBotToolSetContext[]
     +Timestamps
-    publicIds        ChatBotPublicId[]
-    usage            AgentUsage[]
-    executions       BotExecution[]
+    publicIds              ChatBotPublicId[]
+    usage                  AgentUsage[]
+    executions             BotExecution[]
+    threadOAuthConnections ThreadOAuthConnection[]
   }
 
   model ChatAdapterPublicId {
@@ -226,14 +228,15 @@ namespace aibot {
 
   model ChatAdapter {
     +Resource
-    platform       String
-    config         Jsonb?
-    authentication OAuthAuthentication?  @relation(fields: [authId], references: [id], onDelete: SetNull)
-    authId         Uuid?
+    platform               String
+    config                 Jsonb?
+    authentication         OAuthAuthentication?    @relation(fields: [authId], references: [id], onDelete: SetNull)
+    authId                 Uuid?
     +Timestamps
-    chatbots       ChatBotAdapter[]
-    publicIds      ChatAdapterPublicId[]
-    executions     BotExecution[]
+    chatbots               ChatBotAdapter[]
+    publicIds              ChatAdapterPublicId[]
+    executions             BotExecution[]
+    threadOAuthConnections ThreadOAuthConnection[]
 
     @@index([platform])
   }
@@ -357,9 +360,12 @@ namespace aibot {
     mcpServerId    Uuid
     authentication OAuthAuthentication? @relation(fields: [authId], references: [id], onDelete: SetNull)
     authId         Uuid?
+    oauthClient    OAuthClient?         @relation(fields: [oauthClientId], references: [id], onDelete: Cascade)
+    oauthClientId  Uuid?
     createdAt      TimestamptzString    @default(now())
 
     @@unique([chatbotId, mcpServerId, authId])
+    @@unique([chatbotId, mcpServerId, oauthClientId])
     @@index([mcpServerId])
   }
 
@@ -374,18 +380,39 @@ namespace aibot {
     scopes                String[]
     +Timestamps
     authentications       OAuthAuthentication[]
+    chatbotMcpServers     ChatBotMcpServer[]
+    threadConnections     ThreadOAuthConnection[]
   }
 
   model OAuthAuthentication {
     +Resource
-    oauth        OAuthClient        @relation(fields: [oauthId], references: [id], onDelete: Cascade)
-    oauthId      Uuid
-    accessToken  String
-    expiresAt    TimestamptzString?
-    refreshToken String?
+    oauth             OAuthClient             @relation(fields: [oauthId], references: [id], onDelete: Cascade)
+    oauthId           Uuid
+    accessToken       String
+    expiresAt         TimestamptzString?
+    refreshToken      String?
     +Timestamps
+    threadConnections ThreadOAuthConnection[]
 
     @@index([oauthId])
+  }
+
+  // One shared connection for an OAuth client in a bot's chat thread.
+  model ThreadOAuthConnection {
+    +Owned
+    oauthClientId    Uuid
+    oauthClient      OAuthClient         @relation(fields: [oauthClientId], references: [id], onDelete: Cascade)
+    chatbotId        Uuid
+    chatbot          ChatBot             @relation(fields: [chatbotId], references: [id], onDelete: Cascade)
+    adapterId        Uuid
+    adapter          ChatAdapter         @relation(fields: [adapterId], references: [id], onDelete: Cascade)
+    threadId         String
+    authenticationId Uuid                @unique
+    authentication   OAuthAuthentication @relation(fields: [authenticationId], references: [id], onDelete: Cascade)
+    +Timestamps
+
+    @@unique([oauthClientId, chatbotId, adapterId, threadId])
+    @@index([organizationId])
   }
 
   // Independent of OAuthClient/Organization so pending revocations survive cascades.
