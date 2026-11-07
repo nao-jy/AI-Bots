@@ -176,7 +176,7 @@ export async function deleteAgent(user: AuthUser, id: string) {
     !(await hasResourceAccess(user, id, "delete"))) return false;
   const bot = await db.orm.aibot.ChatBot.first({ agentId: id });
   if (bot) return false;
-  await db.orm.aibot.AgentDefinition.where({ id }).delete();
+  await db.orm.aibot.ResourceBase.where({ id }).delete();
   logAuditEvent("agent.deleted", "agent", id, user.id);
   return true;
 }

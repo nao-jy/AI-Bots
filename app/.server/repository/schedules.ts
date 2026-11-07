@@ -248,10 +248,7 @@ export async function deleteSchedule(user: AuthUser, id: string) {
     organizationId: user.organizationId,
   });
   if (!schedule || !(await hasResourceAccess(user, id, "delete"))) return false;
-  await db.orm.aibot.ChatBotSchedule.where({
-    id,
-    organizationId: user.organizationId,
-  }).delete();
+  await db.orm.aibot.ResourceBase.where({ id }).delete();
   logAuditEvent("schedule.deleted", "schedule", id, user.id);
   return true;
 }

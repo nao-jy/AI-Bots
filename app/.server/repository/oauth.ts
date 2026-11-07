@@ -373,7 +373,17 @@ export async function deleteOAuthClient(user: AuthUser, id: string) {
   for (const authentication of authentications)
     await revokeOAuthAuthenticationTokens(authentication, client);
 
-  await db.orm.aibot.OAuthClient.where({ id, organizationId: user.organizationId }).delete();
+  const deleted = await db.transaction(async (tx) => {
+    const client = await tx.orm.aibot.OAuthClient.where({ id, organizationId: user.organizationId })
+      .forUpdate().first();
+    if (!client) return false;
+    const children = await tx.orm.aibot.OAuthAuthentication.where({ oauthId: id }).all();
+    for (const child of children)
+      await tx.orm.aibot.ResourceBase.where({ id: child.id }).delete();
+    await tx.orm.aibot.ResourceBase.where({ id }).delete();
+    return true;
+  });
+  if (!deleted) return false;
   for (const authentication of authentications)
     logAuditEvent(
       "oauth.authentication.deleted",
@@ -479,10 +489,7 @@ export async function deleteOAuthAuthentication(user: AuthUser, id: string) {
   if (!client) throw new Error("server.oauthClientNotFound");
   await revokeOAuthAuthenticationTokens(authentication, client);
 
-  await db.orm.aibot.OAuthAuthentication.where({
-    id,
-    organizationId: user.organizationId,
-  }).delete();
+  await db.orm.aibot.ResourceBase.where({ id }).delete();
   logAuditEvent(
     "oauth.authentication.deleted",
     "oauth_authentication",

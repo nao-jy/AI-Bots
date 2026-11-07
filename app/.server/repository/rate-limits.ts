@@ -381,7 +381,7 @@ export async function deleteRateLimit(user: AuthUser, id: string) {
     organizationId: user.organizationId,
   });
   if (!existing || !(await hasResourceAccess(user, id, "delete"))) return false;
-  await db.orm.aibot.RateLimit.where({ id, organizationId: user.organizationId }).delete();
+  await db.orm.aibot.ResourceBase.where({ id }).delete();
   logAuditEvent("rate_limit.deleted", "rate_limit", id, user.id);
   return true;
 }

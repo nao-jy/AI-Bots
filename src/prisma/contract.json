@@ -3695,6 +3695,13 @@
                   "codecId": "pg/uuid@1",
                   "kind": "scalar"
                 }
+              },
+              "organizationId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
               }
             },
             "relations": {
@@ -3712,12 +3719,31 @@
                   "model": "Grant",
                   "namespace": "aibot"
                 }
+              },
+              "organization": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "organizationId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Organization",
+                  "namespace": "aibot"
+                }
               }
             },
             "storage": {
               "fields": {
                 "id": {
                   "column": "id"
+                },
+                "organizationId": {
+                  "column": "organizationId"
                 }
               },
               "namespaceId": "aibot",
@@ -4057,6 +4083,13 @@
                   "codecId": "pg/uuid@1",
                   "kind": "scalar"
                 }
+              },
+              "organizationId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
               }
             },
             "relations": {
@@ -4074,12 +4107,31 @@
                   "model": "Grant",
                   "namespace": "aibot"
                 }
+              },
+              "organization": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "organizationId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Organization",
+                  "namespace": "aibot"
+                }
               }
             },
             "storage": {
               "fields": {
                 "id": {
                   "column": "id"
+                },
+                "organizationId": {
+                  "column": "organizationId"
                 }
               },
               "namespaceId": "aibot",
@@ -4814,7 +4866,7 @@
                   "index": {
                     "name": "AgentDefinition_providerId_idx_d1904c54"
                   },
-                  "onDelete": "restrict",
+                  "onDelete": "cascade",
                   "source": {
                     "columns": [
                       "providerId"
@@ -8017,10 +8069,45 @@
                   "codecId": "pg/uuid@1",
                   "dataType": "pg/uuid",
                   "nullable": false
+                },
+                "organizationId": {
+                  "codecId": "pg/uuid@1",
+                  "dataType": "pg/uuid",
+                  "nullable": false
                 }
               },
-              "foreignKeys": [],
-              "indexes": [],
+              "foreignKeys": [
+                {
+                  "index": {
+                    "name": "PrincipalBase_organizationId_idx_2e17ef41"
+                  },
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "organizationId"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "PrincipalBase"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "Organization"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "organizationId"
+                  ],
+                  "name": "PrincipalBase_organizationId_idx_2e17ef41",
+                  "prefix": "PrincipalBase_organizationId_idx",
+                  "unique": false
+                }
+              ],
               "primaryKey": {
                 "columns": [
                   "id"
@@ -8310,10 +8397,45 @@
                   "codecId": "pg/uuid@1",
                   "dataType": "pg/uuid",
                   "nullable": false
+                },
+                "organizationId": {
+                  "codecId": "pg/uuid@1",
+                  "dataType": "pg/uuid",
+                  "nullable": false
                 }
               },
-              "foreignKeys": [],
-              "indexes": [],
+              "foreignKeys": [
+                {
+                  "index": {
+                    "name": "ResourceBase_organizationId_idx_2e17ef41"
+                  },
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "organizationId"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "ResourceBase"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "Organization"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "organizationId"
+                  ],
+                  "name": "ResourceBase_organizationId_idx_2e17ef41",
+                  "prefix": "ResourceBase_organizationId_idx",
+                  "unique": false
+                }
+              ],
               "primaryKey": {
                 "columns": [
                   "id"
@@ -8860,7 +8982,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "844b6a7de16feff4924336e246e616bd0e0786d69e352edc9c3ecde23a3de118"
+    "storageHash": "21e9adf99abf7824f64feb914216c34adb832b84f6f1f320add932808b596595"
   },
   "execution": {
     "executionHash": "00d003bba395e5a0ffcad6d56df6185110965febfc0a58ce77ce105a9f59097f",

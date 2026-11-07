@@ -112,9 +112,15 @@ export async function deleteProvider(user: AuthUser, id: string) {
   if (!(await db.orm.aibot.Provider.first({ id, organizationId: user.organizationId })) ||
       !(await hasResourceAccess(user, id, "delete")))
     return false;
-  if (await db.orm.aibot.AgentDefinition.first({ providerId: id }))
-    return false;
-  await db.orm.aibot.Provider.where({ id, organizationId: user.organizationId }).delete();
+  const deleted = await db.transaction(async (tx) => {
+    const provider = await tx.orm.aibot.Provider.where({ id, organizationId: user.organizationId })
+      .forUpdate().first();
+    if (!provider || await tx.orm.aibot.AgentDefinition.first({ providerId: id }))
+      return false;
+    await tx.orm.aibot.ResourceBase.where({ id }).delete();
+    return true;
+  });
+  if (!deleted) return false;
   logAuditEvent("provider.deleted", "provider", id, user.id);
   return true;
 }

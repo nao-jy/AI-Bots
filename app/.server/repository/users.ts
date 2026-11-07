@@ -283,7 +283,7 @@ export async function deleteUser(id: string, currentUserId: string, organization
     if (user.isAdmin && administrators.length <= 1)
       return { error: "server.atLeastOneAdminRequired" };
 
-    await tx.orm.aibot.User.where({ id, organizationId }).delete();
+    await tx.orm.aibot.PrincipalBase.where({ id }).delete();
     return { ok: true };
   });
   if ("ok" in deleted)

@@ -616,10 +616,17 @@ export async function deleteBot(user: AuthUser, id: string) {
     organizationId: user.organizationId,
   });
   if (!bot || !(await hasResourceAccess(user, id, "delete"))) return false;
-  await db.orm.aibot.ChatBot.where({
-    id,
-    organizationId: user.organizationId,
-  }).delete();
+  const deleted = await db.transaction(async (tx) => {
+    const bot = await tx.orm.aibot.ChatBot.where({ id, organizationId: user.organizationId })
+      .forUpdate().first();
+    if (!bot) return false;
+    const contexts = await tx.orm.aibot.ChatBotToolSetContext.where({ chatbotId: id }).all();
+    for (const context of contexts)
+      await tx.orm.aibot.ResourceBase.where({ id: context.id }).delete();
+    await tx.orm.aibot.ResourceBase.where({ id }).delete();
+    return true;
+  });
+  if (!deleted) return false;
   logAuditEvent("bot.deleted", "bot", id, user.id);
   return true;
 }

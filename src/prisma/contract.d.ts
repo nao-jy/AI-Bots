@@ -23,7 +23,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'844b6a7de16feff4924336e246e616bd0e0786d69e352edc9c3ecde23a3de118'>;
+  StorageHashBase<'21e9adf99abf7824f64feb914216c34adb832b84f6f1f320add932808b596595'>;
 export type ExecutionHash =
   ExecutionHashBase<'00d003bba395e5a0ffcad6d56df6185110965febfc0a58ce77ce105a9f59097f'>;
 export type ProfileHash =
@@ -760,8 +760,10 @@ export namespace Models {
   };
   export type aibot_PrincipalBase = {
     id: FieldOutputTypes['aibot']['PrincipalBase']['id'];
+    organizationId: FieldOutputTypes['aibot']['PrincipalBase']['organizationId'];
     grants: aibot_Grant[];
-    readonly [RelationKeys]?: 'grants';
+    organization: aibot_Organization;
+    readonly [RelationKeys]?: 'grants' | 'organization';
   };
   export type aibot_Provider = {
     args: FieldOutputTypes['aibot']['Provider']['args'];
@@ -797,8 +799,10 @@ export namespace Models {
   };
   export type aibot_ResourceBase = {
     id: FieldOutputTypes['aibot']['ResourceBase']['id'];
+    organizationId: FieldOutputTypes['aibot']['ResourceBase']['organizationId'];
     grants: aibot_Grant[];
-    readonly [RelationKeys]?: 'grants';
+    organization: aibot_Organization;
+    readonly [RelationKeys]?: 'grants' | 'organization';
   };
   export type aibot_Sandbox = {
     allowedDomainList: FieldOutputTypes['aibot']['Sandbox']['allowedDomainList'];
@@ -3369,11 +3373,37 @@ type ContractBase = Omit<
                   readonly nullable: false;
                   readonly many: false;
                 };
+                readonly organizationId: {
+                  readonly dataType: 'pg/uuid';
+                  readonly codecId: 'pg/uuid@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
               };
               primaryKey: { readonly columns: readonly ['id'] };
               uniques: readonly [];
-              indexes: readonly [];
-              foreignKeys: readonly [];
+              indexes: readonly [
+                {
+                  readonly name: 'PrincipalBase_organizationId_idx_2e17ef41';
+                  readonly prefix: 'PrincipalBase_organizationId_idx';
+                  readonly columns: readonly ['organizationId'];
+                  readonly unique: false;
+                },
+              ];
+              foreignKeys: readonly [
+                {
+                  readonly source: {
+                    readonly namespaceId: 'aibot' & NamespaceId;
+                    readonly tableName: 'PrincipalBase';
+                    readonly columns: readonly ['organizationId'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'aibot' & NamespaceId;
+                    readonly tableName: 'Organization';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+              ];
             };
             readonly Provider: {
               columns: {
@@ -3596,11 +3626,37 @@ type ContractBase = Omit<
                   readonly nullable: false;
                   readonly many: false;
                 };
+                readonly organizationId: {
+                  readonly dataType: 'pg/uuid';
+                  readonly codecId: 'pg/uuid@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
               };
               primaryKey: { readonly columns: readonly ['id'] };
               uniques: readonly [];
-              indexes: readonly [];
-              foreignKeys: readonly [];
+              indexes: readonly [
+                {
+                  readonly name: 'ResourceBase_organizationId_idx_2e17ef41';
+                  readonly prefix: 'ResourceBase_organizationId_idx';
+                  readonly columns: readonly ['organizationId'];
+                  readonly unique: false;
+                },
+              ];
+              foreignKeys: readonly [
+                {
+                  readonly source: {
+                    readonly namespaceId: 'aibot' & NamespaceId;
+                    readonly tableName: 'ResourceBase';
+                    readonly columns: readonly ['organizationId'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'aibot' & NamespaceId;
+                    readonly tableName: 'Organization';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+              ];
             };
             readonly Sandbox: {
               columns: {
@@ -6445,6 +6501,10 @@ type ContractBase = Omit<
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/uuid@1' };
               };
+              readonly organizationId: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/uuid@1' };
+              };
             };
             readonly relations: {
               readonly grants: {
@@ -6455,11 +6515,26 @@ type ContractBase = Omit<
                   readonly targetFields: readonly ['principalId'];
                 };
               };
+              readonly organization: {
+                readonly to: {
+                  readonly namespace: 'aibot' & NamespaceId;
+                  readonly model: 'Organization';
+                };
+                readonly cardinality: 'N:1';
+                readonly nullable: false;
+                readonly on: {
+                  readonly localFields: readonly ['organizationId'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
             };
             readonly storage: {
               readonly table: 'PrincipalBase';
               readonly namespaceId: 'aibot';
-              readonly fields: { readonly id: { readonly column: 'id' } };
+              readonly fields: {
+                readonly id: { readonly column: 'id' };
+                readonly organizationId: { readonly column: 'organizationId' };
+              };
             };
           };
           readonly Provider: {
@@ -6670,6 +6745,10 @@ type ContractBase = Omit<
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/uuid@1' };
               };
+              readonly organizationId: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/uuid@1' };
+              };
             };
             readonly relations: {
               readonly grants: {
@@ -6680,11 +6759,26 @@ type ContractBase = Omit<
                   readonly targetFields: readonly ['resourceId'];
                 };
               };
+              readonly organization: {
+                readonly to: {
+                  readonly namespace: 'aibot' & NamespaceId;
+                  readonly model: 'Organization';
+                };
+                readonly cardinality: 'N:1';
+                readonly nullable: false;
+                readonly on: {
+                  readonly localFields: readonly ['organizationId'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
             };
             readonly storage: {
               readonly table: 'ResourceBase';
               readonly namespaceId: 'aibot';
-              readonly fields: { readonly id: { readonly column: 'id' } };
+              readonly fields: {
+                readonly id: { readonly column: 'id' };
+                readonly organizationId: { readonly column: 'organizationId' };
+              };
             };
           };
           readonly Sandbox: {

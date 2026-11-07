@@ -152,7 +152,7 @@ export async function deleteAdapter(user: AuthUser, id: string) {
   if (!(await db.orm.aibot.ChatAdapter.first({ id, organizationId: user.organizationId })) ||
     !(await hasResourceAccess(user, id, "delete")))
     return false;
-  await db.orm.aibot.ChatAdapter.where({ id, organizationId: user.organizationId }).delete();
+  await db.orm.aibot.ResourceBase.where({ id }).delete();
   logAuditEvent("adapter.deleted", "adapter", id, user.id);
   return true;
 }

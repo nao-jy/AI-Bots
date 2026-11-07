@@ -301,7 +301,7 @@ export async function deleteSandbox(user: AuthUser, id: string) {
   for (const instance of instances)
     await destroySandboxInstance(sandbox.sandboxType, instance.instanceId);
 
-  await db.orm.aibot.Sandbox.where({ id, organizationId: user.organizationId }).delete();
+  await db.orm.aibot.ResourceBase.where({ id }).delete();
   logAuditEvent("sandbox.deleted", "sandbox", id, user.id);
   return true;
 }

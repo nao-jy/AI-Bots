@@ -103,7 +103,7 @@ export async function deleteGroup(user: AuthUser, groupId: string) {
   requireOrganizationAdmin(user);
   const group = await db.orm.aibot.Group.first({ id: groupId, organizationId: user.organizationId });
   if (!group) return false;
-  await db.orm.aibot.Group.where({ id: groupId, organizationId: user.organizationId }).delete();
+  await db.orm.aibot.PrincipalBase.where({ id: groupId }).delete();
   logAuditEvent("group.deleted", "group", groupId, user.id);
   return true;
 }

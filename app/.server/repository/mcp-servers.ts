@@ -120,7 +120,7 @@ export async function deleteMcpServer(user: AuthUser, id: string) {
   if (!(await db.orm.aibot.McpServer.first({ id, organizationId: user.organizationId })) ||
       !(await hasResourceAccess(user, id, "delete")))
     return false;
-  await db.orm.aibot.McpServer.where({ id, organizationId: user.organizationId }).delete();
+  await db.orm.aibot.ResourceBase.where({ id }).delete();
   logAuditEvent("mcp_server.deleted", "mcp_server", id, user.id);
   return true;
 }
