@@ -8,7 +8,8 @@
     "dev:app": "react-router dev",
     "start": "react-router-serve ./build/server/index.js",
     "typecheck": "react-router typegen && tsc",
-    "contract:emit": "prisma contract emit"
+    "contract:emit": "prisma contract emit",
+    "test": "vitest run"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^4.0.82",
