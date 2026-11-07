@@ -34,6 +34,19 @@ enum Role {
   manager = "manager" // read, update, delete, manage grant
 }
 
+enum BotExecutionSource {
+  direct_message = "direct_message"
+  mention = "mention"
+  schedule = "schedule"
+}
+
+enum BotExecutionStatus {
+  running = "running"
+  succeeded = "succeeded"
+  failed = "failed"
+  skipped = "skipped"
+}
+
 namespace aibot {
   model mixin Timestamps {
     createdAt TimestamptzString  @default(now())
@@ -99,6 +112,7 @@ namespace aibot {
     mcpServers              McpServer[]
     agents                  AgentDefinition[]
     usage                   AgentUsage[]
+    botExecutions           BotExecution[]
     rateLimits              RateLimit[]
     oauthClients            OAuthClient[]
     sandboxes               Sandbox[]
@@ -192,6 +206,7 @@ namespace aibot {
     +Timestamps
     publicIds        ChatBotPublicId[]
     usage            AgentUsage[]
+    executions       BotExecution[]
   }
 
   model ChatAdapterPublicId {
@@ -214,6 +229,7 @@ namespace aibot {
     +Timestamps
     chatbots       ChatBotAdapter[]
     publicIds      ChatAdapterPublicId[]
+    executions     BotExecution[]
 
     @@index([platform])
   }
@@ -247,6 +263,7 @@ namespace aibot {
     options    Jsonb?
     chatbots   ChatBot[]
     usage      AgentUsage[]
+    executions BotExecution[]
 
     +Timestamps
 
@@ -268,10 +285,39 @@ namespace aibot {
     toolHistory   Jsonb
     platform      String
     threadId      String
+    execution     BotExecution?
     +Timestamps
 
     @@index([agentId])
     @@index([chatbotId])
+  }
+
+  model BotExecution {
+    id             Uuid               @id @onCreate(uuid(7))
+    organizationId Uuid
+    organization   Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+    chatbotId      Uuid?
+    chatbot        ChatBot?           @relation(fields: [chatbotId], references: [id], onDelete: SetNull)
+    agentId        Uuid?
+    agent          AgentDefinition?   @relation(fields: [agentId], references: [id], onDelete: SetNull)
+    adapterId      Uuid?
+    adapter        ChatAdapter?       @relation(fields: [adapterId], references: [id], onDelete: SetNull)
+    scheduleId     Uuid?
+    schedule       ChatBotSchedule?   @relation(fields: [scheduleId], references: [id], onDelete: SetNull)
+    usageId        Int?               @unique
+    usage          AgentUsage?        @relation(fields: [usageId], references: [id], onDelete: SetNull)
+    source         BotExecutionSource
+    status         BotExecutionStatus @default(running)
+    threadId       String?
+    startedAt      TimestamptzString  @default(now())
+    finishedAt     TimestamptzString?
+    errorCode      String?
+    errorSummary   String?
+
+    @@index([organizationId, startedAt])
+    @@index([organizationId, status, startedAt])
+    @@index([chatbotId, startedAt])
+    @@index([scheduleId, startedAt])
   }
 
   model RateLimit {
@@ -398,6 +444,7 @@ namespace aibot {
     timezone    String
     +Timestamps
     chatTargets ChatTarget[]
+    executions  BotExecution[]
   }
 
   model ChatTarget {

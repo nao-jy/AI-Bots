@@ -28,6 +28,12 @@ import { LocalFileSystem } from "./filesystem/local";
 import { buildMemoryPrompt, getMemoryTools } from "./toolsets/memory";
 import { getMemoryDirectory } from "./memory-config";
 import { t } from "~/.server/i18n";
+import {
+  beginExecution,
+  finishExecution,
+  type ExecutionOutcome,
+  type ExecutionSource,
+} from "../repository/executions";
 
 const MAX_AGENT_STEPS = 8;
 
@@ -162,22 +168,40 @@ async function processBotMessage(
   adapterPlatform: string,
   thread: Thread<Record<string, unknown>, unknown>,
   message: Message<unknown>,
+  source: ExecutionSource,
+  scheduledExecutionId: string | null = null,
 ) {
   const mcpClients: Array<Awaited<ReturnType<typeof createMCPClient>>> = [];
   let turnSandbox: Awaited<ReturnType<typeof getBotSandbox>> = null;
   let replied = false;
   let onFailedMessage = "Sorry, we could not generate an answer.";
+  let executionId = scheduledExecutionId;
+  let usageId: number | null = null;
+  let phase: "configuration" | "processing" | "delivery" = "configuration";
+  let outcome: ExecutionOutcome = { status: "failed", errorCode: "processing_error" };
   try {
     const chatbot = await getAvailableBot(botId);
     const agent = chatbot?.agent;
+
+    if (chatbot && !executionId && source !== "schedule") {
+      executionId = await beginExecution({
+        organizationId: chatbot.organizationId,
+        chatbotId: chatbot.id,
+        agentId: agent?.id,
+        adapterId,
+        source,
+        threadId: thread.id,
+      });
+    }
 
     if (
       !chatbot ||
       !agent ||
       agent.provider.organizationId !== chatbot.organizationId
     ) {
+      outcome = { status: "failed", errorCode: "configuration_error" };
       await thread.post("Service Unavailable");
-      return;
+      return outcome;
     }
     onFailedMessage = chatbot.onFailedMessage;
     const exceededMessage = await getExceededRateLimit(
@@ -188,9 +212,11 @@ async function processBotMessage(
       thread.id,
     );
     if (exceededMessage) {
+      phase = "delivery";
       await thread.post(exceededMessage);
       replied = true;
-      return;
+      outcome = { status: "skipped", errorCode: "rate_limited" };
+      return outcome;
     }
 
     const modelInfo = getModelInfo(
@@ -321,6 +347,7 @@ async function processBotMessage(
         }),
       },
     ];
+    phase = "processing";
     const result = await generateText({
       model: modelInfo.model,
       providerOptions: modelInfo.options,
@@ -341,9 +368,8 @@ async function processBotMessage(
       },
     });
 
-    let usageId = null;
     try {
-      await insertUsage(
+      usageId = await insertUsage(
         chatbot.id,
         agent.id,
         agent.providerId,
@@ -364,11 +390,14 @@ async function processBotMessage(
       thread.id,
     );
     if (postUsageExceededMessage && !replied) {
+      phase = "delivery";
       await thread.post(postUsageExceededMessage);
       replied = true;
+      outcome = { status: "skipped", errorCode: "rate_limited", usageId };
     }
 
     conversationLogger.info("conversation completed", {
+      executionId,
       input: inputMessages,
       output: result.text,
       toolResults: result.toolResults.map(({ toolName, input, output }) => ({
@@ -396,11 +425,26 @@ async function processBotMessage(
     });
 
     if (!replied && result.text.trim()) {
+      phase = "delivery";
       await thread.post(result.text);
       replied = true;
     }
+    if (outcome.status !== "skipped") {
+      outcome = replied
+        ? { status: "succeeded", usageId }
+        : { status: "failed", errorCode: "empty_response", usageId };
+      if (!replied) {
+        phase = "delivery";
+        await thread.post(onFailedMessage);
+      }
+    }
   } catch (error) {
-    appLogger.error(`Failed to handle mention for chatbot ${botId}`, error);
+    outcome = {
+      status: "failed",
+      errorCode: phase === "delivery" ? "delivery_error" : phase === "configuration" ? "configuration_error" : "processing_error",
+      usageId,
+    };
+    appLogger.error(`Failed to handle execution ${executionId ?? "unrecorded"} for chatbot ${botId}`, error);
     if (!replied) {
       try {
         await thread.post(onFailedMessage);
@@ -436,7 +480,9 @@ async function processBotMessage(
         }
       }),
     );
+    await finishExecution(executionId, outcome);
   }
+  return outcome;
 }
 
 export async function runScheduledPrompt(
@@ -446,6 +492,7 @@ export async function runScheduledPrompt(
   adapterPlatform: string,
   threadId: string,
   prompt: string,
+  executionId: string | null,
 ) {
   const message = new Message({
     id: `scheduled-${randomUUID()}`,
@@ -463,13 +510,15 @@ export async function runScheduledPrompt(
     metadata: { dateSent: new Date(), edited: false },
     attachments: [],
   });
-  await processBotMessage(
+  return processBotMessage(
     chat,
     botId,
     adapterId,
     adapterPlatform,
     chat.thread(threadId),
     message,
+    "schedule",
+    executionId,
   );
 }
 
@@ -482,15 +531,16 @@ export function registerBotHandlers(
   const process = (
     thread: Thread<Record<string, unknown>, unknown>,
     message: Message<unknown>,
+    source: ExecutionSource,
   ) =>
-    processBotMessage(chat, botId, adapterId, adapterPlatform, thread, message);
+    processBotMessage(chat, botId, adapterId, adapterPlatform, thread, message, source);
 
   chat.onDirectMessage(async (thread, message) => {
     appLogger.info("[ON_DIRECT_MESSAGE]");
-    return await process(thread, message);
+    await process(thread, message, "direct_message");
   });
   chat.onNewMention(async (thread, message) => {
     appLogger.info("[ON_NEW_MENTION]");
-    return await process(thread, message);
+    await process(thread, message, "mention");
   });
 }

@@ -31,6 +31,7 @@ const items: {
   },
   { path: "/sandboxes", id: "sandboxes", labelKey: "navigation.sandboxes" },
   { path: "/schedules", id: "schedules", labelKey: "navigation.schedules" },
+  { path: "/executions", id: "executions", labelKey: "navigation.executions" },
   { path: "/mcp-servers", id: "mcp", labelKey: "navigation.mcpServers" },
   {
     path: "/oauth-clients",

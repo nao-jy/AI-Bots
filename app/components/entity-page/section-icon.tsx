@@ -54,6 +54,8 @@ export function SectionIcon({
       return <HardDrivesIcon {...props} />;
     case "schedules":
       return <ClockIcon {...props} />;
+    case "executions":
+      return <ChartLineIcon {...props} />;
     case "settings":
       return <GearIcon {...props} />;
   }

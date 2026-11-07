@@ -12,6 +12,10 @@
       "model": "AgentUsage",
       "namespace": "aibot"
     },
+    "BotExecution": {
+      "model": "BotExecution",
+      "namespace": "aibot"
+    },
     "ChatAdapter": {
       "model": "ChatAdapter",
       "namespace": "aibot"
@@ -192,6 +196,21 @@
                 },
                 "to": {
                   "model": "ChatBot",
+                  "namespace": "aibot"
+                }
+              },
+              "executions": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "agentId"
+                  ]
+                },
+                "to": {
+                  "model": "BotExecution",
                   "namespace": "aibot"
                 }
               },
@@ -427,6 +446,22 @@
                   "namespace": "aibot"
                 }
               },
+              "execution": {
+                "cardinality": "1:1",
+                "nullable": true,
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "usageId"
+                  ]
+                },
+                "to": {
+                  "model": "BotExecution",
+                  "namespace": "aibot"
+                }
+              },
               "organization": {
                 "cardinality": "N:1",
                 "nullable": false,
@@ -507,6 +542,266 @@
               },
               "namespaceId": "aibot",
               "table": "AgentUsage"
+            }
+          },
+          "BotExecution": {
+            "fields": {
+              "adapterId": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              },
+              "agentId": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              },
+              "chatbotId": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              },
+              "errorCode": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "errorSummary": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "finishedAt": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              },
+              "organizationId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              },
+              "scheduleId": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              },
+              "source": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                },
+                "valueSet": {
+                  "entityKind": "enum",
+                  "entityName": "BotExecutionSource",
+                  "namespaceId": "public",
+                  "plane": "domain"
+                }
+              },
+              "startedAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              },
+              "status": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                },
+                "valueSet": {
+                  "entityKind": "enum",
+                  "entityName": "BotExecutionStatus",
+                  "namespaceId": "public",
+                  "plane": "domain"
+                }
+              },
+              "threadId": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "usageId": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "adapter": {
+                "cardinality": "N:1",
+                "nullable": true,
+                "on": {
+                  "localFields": [
+                    "adapterId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "ChatAdapter",
+                  "namespace": "aibot"
+                }
+              },
+              "agent": {
+                "cardinality": "N:1",
+                "nullable": true,
+                "on": {
+                  "localFields": [
+                    "agentId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "AgentDefinition",
+                  "namespace": "aibot"
+                }
+              },
+              "chatbot": {
+                "cardinality": "N:1",
+                "nullable": true,
+                "on": {
+                  "localFields": [
+                    "chatbotId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "ChatBot",
+                  "namespace": "aibot"
+                }
+              },
+              "organization": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "organizationId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Organization",
+                  "namespace": "aibot"
+                }
+              },
+              "schedule": {
+                "cardinality": "N:1",
+                "nullable": true,
+                "on": {
+                  "localFields": [
+                    "scheduleId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "ChatBotSchedule",
+                  "namespace": "aibot"
+                }
+              },
+              "usage": {
+                "cardinality": "N:1",
+                "nullable": true,
+                "on": {
+                  "localFields": [
+                    "usageId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "AgentUsage",
+                  "namespace": "aibot"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "adapterId": {
+                  "column": "adapterId"
+                },
+                "agentId": {
+                  "column": "agentId"
+                },
+                "chatbotId": {
+                  "column": "chatbotId"
+                },
+                "errorCode": {
+                  "column": "errorCode"
+                },
+                "errorSummary": {
+                  "column": "errorSummary"
+                },
+                "finishedAt": {
+                  "column": "finishedAt"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "organizationId": {
+                  "column": "organizationId"
+                },
+                "scheduleId": {
+                  "column": "scheduleId"
+                },
+                "source": {
+                  "column": "source"
+                },
+                "startedAt": {
+                  "column": "startedAt"
+                },
+                "status": {
+                  "column": "status"
+                },
+                "threadId": {
+                  "column": "threadId"
+                },
+                "usageId": {
+                  "column": "usageId"
+                }
+              },
+              "namespaceId": "aibot",
+              "table": "BotExecution"
             }
           },
           "ChatAdapter": {
@@ -600,6 +895,21 @@
                 },
                 "to": {
                   "model": "ChatBotAdapter",
+                  "namespace": "aibot"
+                }
+              },
+              "executions": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "adapterId"
+                  ]
+                },
+                "to": {
+                  "model": "BotExecution",
                   "namespace": "aibot"
                 }
               },
@@ -930,6 +1240,21 @@
                 },
                 "to": {
                   "model": "AgentDefinition",
+                  "namespace": "aibot"
+                }
+              },
+              "executions": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "chatbotId"
+                  ]
+                },
+                "to": {
+                  "model": "BotExecution",
                   "namespace": "aibot"
                 }
               },
@@ -1541,6 +1866,21 @@
                 },
                 "to": {
                   "model": "ChatTarget",
+                  "namespace": "aibot"
+                }
+              },
+              "executions": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "scheduleId"
+                  ]
+                },
+                "to": {
+                  "model": "BotExecution",
                   "namespace": "aibot"
                 }
               },
@@ -2981,6 +3321,21 @@
                   "namespace": "aibot"
                 }
               },
+              "botExecutions": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "organizationId"
+                  ]
+                },
+                "to": {
+                  "model": "BotExecution",
+                  "namespace": "aibot"
+                }
+              },
               "chatbots": {
                 "cardinality": "1:N",
                 "on": {
@@ -4218,6 +4573,44 @@
       },
       "public": {
         "enum": {
+          "BotExecutionSource": {
+            "codecId": "pg/text@1",
+            "members": [
+              {
+                "name": "direct_message",
+                "value": "direct_message"
+              },
+              {
+                "name": "mention",
+                "value": "mention"
+              },
+              {
+                "name": "schedule",
+                "value": "schedule"
+              }
+            ]
+          },
+          "BotExecutionStatus": {
+            "codecId": "pg/text@1",
+            "members": [
+              {
+                "name": "running",
+                "value": "running"
+              },
+              {
+                "name": "succeeded",
+                "value": "succeeded"
+              },
+              {
+                "name": "failed",
+                "value": "failed"
+              },
+              {
+                "name": "skipped",
+                "value": "skipped"
+              }
+            ]
+          },
           "MCPTransport": {
             "codecId": "pg/text@1",
             "members": [
@@ -4676,6 +5069,327 @@
                 ]
               },
               "uniques": []
+            },
+            "BotExecution": {
+              "checks": [
+                {
+                  "expression": "\"source\" IN ('direct_message', 'mention', 'schedule')",
+                  "name": "BotExecution_source_check_aa0623b9",
+                  "prefix": "BotExecution_source_check"
+                },
+                {
+                  "expression": "\"status\" IN ('running', 'succeeded', 'failed', 'skipped')",
+                  "name": "BotExecution_status_check_c167c90b",
+                  "prefix": "BotExecution_status_check"
+                }
+              ],
+              "columns": {
+                "adapterId": {
+                  "codecId": "pg/uuid@1",
+                  "dataType": "pg/uuid",
+                  "nullable": true
+                },
+                "agentId": {
+                  "codecId": "pg/uuid@1",
+                  "dataType": "pg/uuid",
+                  "nullable": true
+                },
+                "chatbotId": {
+                  "codecId": "pg/uuid@1",
+                  "dataType": "pg/uuid",
+                  "nullable": true
+                },
+                "errorCode": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "nullable": true
+                },
+                "errorSummary": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "nullable": true
+                },
+                "finishedAt": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "dataType": "pg/timestamptz",
+                  "nullable": true
+                },
+                "id": {
+                  "codecId": "pg/uuid@1",
+                  "dataType": "pg/uuid",
+                  "nullable": false
+                },
+                "organizationId": {
+                  "codecId": "pg/uuid@1",
+                  "dataType": "pg/uuid",
+                  "nullable": false
+                },
+                "scheduleId": {
+                  "codecId": "pg/uuid@1",
+                  "dataType": "pg/uuid",
+                  "nullable": true
+                },
+                "source": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "nullable": false,
+                  "valueSet": {
+                    "entityKind": "valueSet",
+                    "entityName": "BotExecutionSource",
+                    "namespaceId": "public",
+                    "plane": "storage"
+                  }
+                },
+                "startedAt": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "dataType": "pg/timestamptz",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nullable": false
+                },
+                "status": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "default": {
+                    "kind": "literal",
+                    "value": "running"
+                  },
+                  "nullable": false,
+                  "valueSet": {
+                    "entityKind": "valueSet",
+                    "entityName": "BotExecutionStatus",
+                    "namespaceId": "public",
+                    "plane": "storage"
+                  }
+                },
+                "threadId": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "nullable": true
+                },
+                "usageId": {
+                  "codecId": "pg/int4@1",
+                  "dataType": "pg/int4",
+                  "nullable": true
+                }
+              },
+              "foreignKeys": [
+                {
+                  "index": {
+                    "name": "BotExecution_organizationId_idx_2e17ef41"
+                  },
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "organizationId"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "BotExecution"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "Organization"
+                  }
+                },
+                {
+                  "index": {
+                    "name": "BotExecution_chatbotId_idx_52db07ea"
+                  },
+                  "onDelete": "setNull",
+                  "source": {
+                    "columns": [
+                      "chatbotId"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "BotExecution"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "ChatBot"
+                  }
+                },
+                {
+                  "index": {
+                    "name": "BotExecution_agentId_idx_8d0ba4f0"
+                  },
+                  "onDelete": "setNull",
+                  "source": {
+                    "columns": [
+                      "agentId"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "BotExecution"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "AgentDefinition"
+                  }
+                },
+                {
+                  "index": {
+                    "name": "BotExecution_adapterId_idx_f5208af9"
+                  },
+                  "onDelete": "setNull",
+                  "source": {
+                    "columns": [
+                      "adapterId"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "BotExecution"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "ChatAdapter"
+                  }
+                },
+                {
+                  "index": {
+                    "name": "BotExecution_scheduleId_idx_5a3bfbcb"
+                  },
+                  "onDelete": "setNull",
+                  "source": {
+                    "columns": [
+                      "scheduleId"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "BotExecution"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "ChatBotSchedule"
+                  }
+                },
+                {
+                  "index": {
+                    "unique": [
+                      "usageId"
+                    ]
+                  },
+                  "onDelete": "setNull",
+                  "source": {
+                    "columns": [
+                      "usageId"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "BotExecution"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "AgentUsage"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "adapterId"
+                  ],
+                  "name": "BotExecution_adapterId_idx_f5208af9",
+                  "prefix": "BotExecution_adapterId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "agentId"
+                  ],
+                  "name": "BotExecution_agentId_idx_8d0ba4f0",
+                  "prefix": "BotExecution_agentId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "chatbotId"
+                  ],
+                  "name": "BotExecution_chatbotId_idx_52db07ea",
+                  "prefix": "BotExecution_chatbotId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "chatbotId",
+                    "startedAt"
+                  ],
+                  "name": "BotExecution_chatbotId_startedAt_idx_bc9dd7b3",
+                  "prefix": "BotExecution_chatbotId_startedAt_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "organizationId"
+                  ],
+                  "name": "BotExecution_organizationId_idx_2e17ef41",
+                  "prefix": "BotExecution_organizationId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "organizationId",
+                    "startedAt"
+                  ],
+                  "name": "BotExecution_organizationId_startedAt_idx_07fce746",
+                  "prefix": "BotExecution_organizationId_startedAt_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "organizationId",
+                    "status",
+                    "startedAt"
+                  ],
+                  "name": "BotExecution_organizationId_status_startedAt_idx_89d92f5a",
+                  "prefix": "BotExecution_organizationId_status_startedAt_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "scheduleId"
+                  ],
+                  "name": "BotExecution_scheduleId_idx_5a3bfbcb",
+                  "prefix": "BotExecution_scheduleId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "scheduleId",
+                    "startedAt"
+                  ],
+                  "name": "BotExecution_scheduleId_startedAt_idx_4557286f",
+                  "prefix": "BotExecution_scheduleId_startedAt_idx",
+                  "unique": false
+                }
+              ],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "uniques": [
+                {
+                  "columns": [
+                    "usageId"
+                  ]
+                }
+              ]
             },
             "ChatAdapter": {
               "columns": {
@@ -8076,6 +8790,23 @@
         "entries": {
           "table": {},
           "valueSet": {
+            "BotExecutionSource": {
+              "kind": "valueSet",
+              "values": [
+                "direct_message",
+                "mention",
+                "schedule"
+              ]
+            },
+            "BotExecutionStatus": {
+              "kind": "valueSet",
+              "values": [
+                "running",
+                "succeeded",
+                "failed",
+                "skipped"
+              ]
+            },
             "MCPTransport": {
               "kind": "valueSet",
               "values": [
@@ -8129,10 +8860,10 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "6d497b7048bdcb8ccfd230e67cf46d2ea9a0e7e4eb2be48693d14a7156a8e2db"
+    "storageHash": "844b6a7de16feff4924336e246e616bd0e0786d69e352edc9c3ecde23a3de118"
   },
   "execution": {
-    "executionHash": "d1cef966cba620d770cced85ebaf6075292f48c77f2dc79d6537bcbbcceb5241",
+    "executionHash": "00d003bba395e5a0ffcad6d56df6185110965febfc0a58ce77ce105a9f59097f",
     "mutations": {
       "defaults": [
         {
@@ -8174,6 +8905,17 @@
           "ref": {
             "entry": "AgentUsage",
             "field": "updatedAt",
+            "namespace": "aibot"
+          }
+        },
+        {
+          "onCreate": {
+            "id": "uuidv7",
+            "kind": "generator"
+          },
+          "ref": {
+            "entry": "BotExecution",
+            "field": "id",
             "namespace": "aibot"
           }
         },

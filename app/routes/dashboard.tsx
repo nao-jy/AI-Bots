@@ -5,6 +5,7 @@ import { t } from "~/i18n";
 import { APP_NAME } from "~/const";
 import type { Route } from "./+types/dashboard";
 import { filterResourcesByRole } from "../.server/authorization";
+import { recentExecutionFailures } from "../.server/repository/executions";
 
 const DAY_MS = 24 * 60 * 60 * 1_000;
 const PERIOD_DAYS = 30;
@@ -35,6 +36,7 @@ export async function loader({ request }: Route.LoaderArgs) {
     filterResourcesByRole(user, botRows),
     filterResourcesByRole(user, agentRows),
   ]);
+  const failuresPromise = recentExecutionFailures(user, bots);
 
   const botNames = new Map(bots.map((bot) => [bot.id, bot.name]));
   const agentNames = new Map(agents.map((agent) => [agent.id, agent.name]));
@@ -84,6 +86,7 @@ export async function loader({ request }: Route.LoaderArgs) {
   }
 
   return {
+    failures: await failuresPromise,
     period: { start: startIso, end: new Date(end - 1).toISOString() },
     totals: {
       inputTokens: usage.reduce((sum, row) => sum + row.inputTokens, 0),

@@ -14,6 +14,7 @@ export default [
     route("mcp-servers", "routes/mcp-servers.tsx"),
     route("sandboxes", "routes/sandboxes.tsx"),
     route("schedules", "routes/schedules.tsx"),
+    route("executions", "routes/executions.tsx"),
     route("users", "routes/users.tsx"),
     route("groups", "routes/groups.tsx"),
     route("settings", "routes/settings.tsx"),

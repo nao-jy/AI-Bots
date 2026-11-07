@@ -7,6 +7,7 @@ import { runScheduledPrompt } from "./bot";
 import { getBotInfo } from "./chat-adapter";
 import { decryptAdapterEnvs } from "../utils";
 import { appLogger } from "../logger/app-logger";
+import { beginExecution, finishExecution } from "../repository/executions";
 
 const jobs = new Map<
   string,
@@ -98,11 +99,25 @@ async function executeSchedule(id: string) {
       if (
         !link ||
         link.chatbot.organizationId !== schedule.organizationId ||
-        link.adapter.organizationId !== schedule.organizationId ||
-        !link.chatbot.isEnabled
+        link.adapter.organizationId !== schedule.organizationId
       )
         continue;
 
+      const executionId = await beginExecution({
+        organizationId: schedule.organizationId,
+        chatbotId: link.chatbot.id,
+        agentId: link.chatbot.agentId,
+        adapterId: link.adapter.id,
+        scheduleId: id,
+        source: "schedule",
+        threadId: target.threadId,
+      });
+      if (!link.chatbot.isEnabled) {
+        await finishExecution(executionId, { status: "skipped", errorCode: "bot_disabled" });
+        continue;
+      }
+
+      let initialized = false;
       try {
         const botInfo = await getBotInfo(
           link.adapter.platform,
@@ -113,19 +128,28 @@ async function executeSchedule(id: string) {
         if (!botInfo)
           throw new Error(`Unsupported adapter: ${link.adapter.platform}`);
         await botInfo.bot.initialize();
-        await runScheduledPrompt(
+        initialized = true;
+        const outcome = await runScheduledPrompt(
           botInfo.bot,
           link.chatbot.id,
           link.adapter.id,
           link.adapter.platform,
           target.threadId,
           schedule.prompt,
+          executionId,
         );
+        if (outcome.status === "failed") {
+          appLogger.warn(`Schedule ${id} failed for thread ${target.threadId} (execution ${executionId ?? "unrecorded"}, reason ${outcome.errorCode ?? "unknown"})`);
+        }
       } catch (error) {
         appLogger.error(
-          `Failed to execute schedule ${id} for thread ${target.threadId}`,
+          `Failed to execute schedule ${id} for thread ${target.threadId} (execution ${executionId ?? "unrecorded"})`,
           error,
         );
+        await finishExecution(executionId, {
+          status: "failed",
+          errorCode: initialized ? "processing_error" : "adapter_error",
+        });
       }
     }
   } catch (error) {

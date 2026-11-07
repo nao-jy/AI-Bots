@@ -47,6 +47,7 @@ export type EntitySection =
   | "oauth_authentications"
   | "sandboxes"
   | "schedules"
+  | "executions"
   | "settings";
 
 export type EntityColumn = {

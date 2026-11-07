@@ -29,6 +29,7 @@ For example, to run a bot that posts a recurring checklist to a team thread on w
 - **Sandboxes:** Configure E2B or OpenSandbox execution environments, including environment variables, allowed network domains, initialization commands, and sharing scope. Inspect persistent instances and use the built-in terminal.
 - **Scheduled prompts:** Run a prompt on selected bot/adapter threads using a five-field or six-field Cron expression and an IANA timezone. Schedule changes are synchronized with the running scheduler.
 - **Usage and rate limits:** View request and token usage over the last 30 days in the dashboard. Set limits for a bot, agent, or provider, aggregate usage per thread or across the target, and choose a Cron expression and timezone for the reset boundary. Configure the message shown when a limit is reached.
+- **Execution history:** Review the status, time, and failure reason of bot runs from chat and schedules. The dashboard shows failures from the last 24 hours, and the execution history page filters by bot, status, and period. Bot access permissions govern which runs a user can view.
 - **Groups and permissions:** Administrators can manage group membership and grant users or groups access to resources such as bots.
 - **OAuth and users:** Manage OAuth accounts for integrations, workspace users, TOTP-based MFA, email verification, and password resets. See [Users and authentication](#users-and-authentication) for details.
 
