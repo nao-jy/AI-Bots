@@ -7,7 +7,7 @@ import {
   resizeSandboxTerminal,
   sendSandboxTerminalInput,
   subscribeSandboxTerminal,
-} from "../.server/features/toolsets/sandboxes/terminal-sessions";
+} from "../.server/features/sandboxes/terminal-sessions";
 import { appLogger } from "~/.server/logger/app-logger";
 
 const encoder = new TextEncoder();

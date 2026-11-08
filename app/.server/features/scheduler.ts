@@ -4,7 +4,7 @@ import {
   listSchedulePatterns,
 } from "../repository/schedules";
 import { runScheduledPrompt } from "./bot";
-import { getBotInfo } from "./chat-adapter";
+import { getBotInfo } from "./adapter";
 import { decryptAdapterEnvs } from "../utils";
 import { appLogger } from "../logger/app-logger";
 import { beginExecution, finishExecution } from "../repository/executions";

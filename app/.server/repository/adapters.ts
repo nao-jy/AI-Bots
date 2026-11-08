@@ -10,7 +10,7 @@ import {
   jsonb,
   record,
 } from "../utils";
-import { toDisplayNameAdapter } from "../features/chat-adapter";
+import { toDisplayNameAdapter } from "../features/adapter";
 import { logAuditEvent } from "../logger/audit-logger";
 import {
   filterResourcesByRole,

@@ -1,6 +1,6 @@
 import type { Route } from "./+types/webhook";
 import { registerBotHandlers } from "../.server/features/bot";
-import { getBotInfo } from "../.server/features/chat-adapter";
+import { getBotInfo } from "../.server/features/adapter";
 import { decryptAdapterEnvs } from "../.server/utils";
 import { getAvailableBotByPublicId } from "~/.server/repository/bots";
 import { appLogger } from "~/.server/logger/app-logger";

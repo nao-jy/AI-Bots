@@ -1,5 +1,5 @@
 import type { AuthUser } from "./auth";
-import { getBotInfo } from "./features/chat-adapter";
+import { getBotInfo } from "./features/adapter";
 import { getMcpClient } from "./features/mcp";
 import { getModelInfo, listProviderNames } from "./features/provider";
 import { getProvider } from "./repository/providers";

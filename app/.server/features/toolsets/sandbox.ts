@@ -2,7 +2,7 @@ import { createBashTool } from "bash-tool";
 import { tool } from "ai";
 import { z } from "zod";
 import { basename } from "node:path";
-import { type BashSandboxExtended } from "./sandboxes";
+import { type BashSandboxExtended } from "../sandboxes";
 import {
   generateFileHandle,
   toBuffer,

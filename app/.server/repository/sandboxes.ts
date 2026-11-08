@@ -11,11 +11,11 @@ import {
   executeSandboxCommand,
   getSandbox,
   listSandboxNames,
-} from "../features/toolsets/sandboxes";
+} from "../features/sandboxes";
 import {
   closeSandboxTerminalsForInstance,
   openSandboxTerminal,
-} from "../features/toolsets/sandboxes/terminal-sessions";
+} from "../features/sandboxes/terminal-sessions";
 import { appLogger } from "~/.server/logger/app-logger";
 import { logAuditEvent } from "../logger/audit-logger";
 import { SANDBOX_SCOPES } from "~/const";

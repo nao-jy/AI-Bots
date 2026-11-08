@@ -15,7 +15,7 @@ import { requireUser } from "../.server/auth";
 import { APP_NAME } from "~/const";
 import { entityListPage } from "../.server/repository/list-pages";
 import { testAdapter } from "~/.server/test";
-import { listAdapterNames } from "~/.server/features/chat-adapter";
+import { listAdapterNames } from "~/.server/features/adapter";
 
 const page: Omit<EntityPageDefinition, "records"> = {
   title: "pages.adapters.title",

@@ -14,7 +14,7 @@ import { getModelInfo } from "./provider";
 import { getAvailableBot } from "../repository/bots";
 import { getMcpClient } from "./mcp";
 import { getSandboxTools } from "./toolsets/sandbox";
-import { getSandbox } from "./toolsets/sandboxes";
+import { getSandbox } from "./sandboxes";
 import { getFileParseTools } from "./toolsets/file-parse";
 import { appLogger } from "../logger/app-logger";
 import { conversationLogger } from "../logger/conversation-logger";
