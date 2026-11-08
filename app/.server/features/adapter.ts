@@ -10,11 +10,17 @@ import pg from "pg";
 import { STATE_SCHEMA_NAME } from "~/const";
 import { getAdapterOAuthInfo } from "../repository/oauth";
 import { parseAdapterArgs } from "./adapter-args";
+import type z from "zod";
+import {
+  createChatworkAdapter,
+  getChatworkConfigSchema,
+} from "./adapters/chatwork";
 
 interface ChatAdapterFactory {
   adapterName: string;
   displayName: string;
   url: string;
+  getConfigSchema?: () => Promise<z.core.ZodStandardJSONSchemaPayload<unknown>>;
   getBot: (
     botName: string,
     adapterConfig: Record<string, string>,
@@ -57,7 +63,7 @@ function getState() {
   return statePromise;
 }
 
-async function getAdapterArgs<T extends object>(
+async function getCommonAdapterArgs<T extends object>(
   config: Record<string, string>,
   authId: string | null,
 ): Promise<T> {
@@ -75,7 +81,7 @@ const FACTORIES: ChatAdapterFactory[] = [
         userName: botName,
         adapters: {
           slack: createSlackAdapter(
-            await getAdapterArgs(adapterConfig, authId),
+            await getCommonAdapterArgs(adapterConfig, authId),
           ),
         },
         state: await getState(),
@@ -91,7 +97,7 @@ const FACTORIES: ChatAdapterFactory[] = [
         userName: botName,
         adapters: {
           teams: createTeamsAdapter(
-            await getAdapterArgs(adapterConfig, authId),
+            await getCommonAdapterArgs(adapterConfig, authId),
           ),
         },
         state: await getState(),
@@ -107,7 +113,7 @@ const FACTORIES: ChatAdapterFactory[] = [
         userName: botName,
         adapters: {
           gchat: createGoogleChatAdapter(
-            await getAdapterArgs(adapterConfig, authId),
+            await getCommonAdapterArgs(adapterConfig, authId),
           ),
         },
         state: await getState(),
@@ -123,7 +129,7 @@ const FACTORIES: ChatAdapterFactory[] = [
         userName: botName,
         adapters: {
           discord: createDiscordAdapter(
-            await getAdapterArgs(adapterConfig, authId),
+            await getCommonAdapterArgs(adapterConfig, authId),
           ),
         },
         state: await getState(),
@@ -138,7 +144,7 @@ const FACTORIES: ChatAdapterFactory[] = [
       return new Chat({
         userName: botName,
         adapters: {
-          x: createXAdapter(await getAdapterArgs(adapterConfig, authId)),
+          x: createXAdapter(await getCommonAdapterArgs(adapterConfig, authId)),
         },
         state: await getState(),
       });
@@ -152,7 +158,35 @@ const FACTORIES: ChatAdapterFactory[] = [
       return new Chat({
         userName: botName,
         adapters: {
-          line: createLineAdapter(await getAdapterArgs(adapterConfig, authId)),
+          line: createLineAdapter(
+            await getCommonAdapterArgs(adapterConfig, authId),
+          ),
+        },
+        state: await getState(),
+      });
+    },
+  },
+  {
+    adapterName: "chatwork",
+    displayName: "Chatwork",
+    url: "https://developer.chatwork.com/docs/getting-started",
+    getConfigSchema: async () => {
+      return getChatworkConfigSchema().toJSONSchema({ target: "draft-7" });
+    },
+    getBot: async (botName, adapterConfig, authId) => {
+      const args = getChatworkConfigSchema().parse(adapterConfig);
+      const auth = authId === null ? null : await getAdapterOAuthInfo(authId);
+      if (
+        args.apiToken === undefined &&
+        args.accessToken === undefined &&
+        auth !== null
+      ) {
+        args.accessToken = auth.accessToken;
+      }
+      return new Chat({
+        userName: botName,
+        adapters: {
+          chatwork: createChatworkAdapter(args),
         },
         state: await getState(),
       });
@@ -190,4 +224,15 @@ export function listAdapterNames() {
     displayName: v.displayName,
     url: v.url,
   }));
+}
+
+/** Return the schemas in the current request's locale. */
+export async function listAdapterConfigSchemas() {
+  const entries = await Promise.all(
+    FACTORIES.filter((factory) => factory.getConfigSchema).map(async (factory) => ({
+      id: factory.adapterName,
+      schema: await factory.getConfigSchema!(),
+    })),
+  );
+  return entries;
 }

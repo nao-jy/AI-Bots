@@ -21,6 +21,8 @@ import { notifications } from "@mantine/notifications";
 import type { EntityRecord } from "../../types/entities";
 import type { EntityDialogMode, EntityPageDefinition } from "./types";
 import { InfoIcon } from "@phosphor-icons/react";
+import type { RJSFSchema } from "@rjsf/utils";
+import { AdapterConfigEditor } from "./adapter-config-editor";
 import { ToolSetContextEditor } from "./toolset-context-editor";
 import { McpServerEditor } from "./mcp-server-editor";
 import { CronScheduleEditor } from "./cron-schedule-editor";
@@ -463,6 +465,15 @@ export function EntityPageDialogs({
 }) {
   const canTest = ["adapters", "agents", "mcp"].includes(page.icon);
   const [selectedOAuthClientId, setSelectedOAuthClientId] = useState("");
+  const [adapterPlatform, setAdapterPlatform] = useState("");
+  useEffect(() => {
+    setAdapterPlatform(
+      mode === "edit" ? String(selected?.platformId ?? "") : "",
+    );
+  }, [mode, selected]);
+  const adapterSchema = page.adapterSchemas?.find(
+    (entry) => entry.id === adapterPlatform,
+  )?.schema;
   const changesAdmin =
     page.columns.some((column) => column.presentation === "admin-toggle") ||
     page.tableFeatures?.adminToggle === true;
@@ -636,12 +647,38 @@ export function EntityPageDialogs({
                       required={field.required}
                     />
                   ) : field.type === "key-value" ? (
-                    <KeyValueEditor
-                      name={field.key}
-                      label={field.label}
-                      initialValue={selected?.[field.key]}
-                      valueType={field.valueType}
-                    />
+                    page.icon === "adapters" &&
+                    field.key === "config" &&
+                    adapterSchema ? (
+                      <AdapterConfigEditor
+                        key={`${selected?.id ?? "new"}-${adapterPlatform}`}
+                        name={field.key}
+                        label={field.label}
+                        schema={adapterSchema as RJSFSchema}
+                        initialValue={
+                          adapterPlatform === selected?.platformId
+                            ? selected?.[field.key]
+                            : undefined
+                        }
+                      />
+                    ) : (
+                      <KeyValueEditor
+                        key={
+                          page.icon === "adapters"
+                            ? `${selected?.id ?? "new"}-${adapterPlatform}`
+                            : field.key
+                        }
+                        name={field.key}
+                        label={field.label}
+                        initialValue={
+                          page.icon !== "adapters" ||
+                          adapterPlatform === selected?.platformId
+                            ? selected?.[field.key]
+                            : undefined
+                        }
+                        valueType={field.valueType}
+                      />
+                    )
                   ) : field.type === "metric-coefficients" ? (
                     <MetricCoefficientsEditor
                       name={field.key}
@@ -673,17 +710,25 @@ export function EntityPageDialogs({
                         t("components.entityPage.dialogs.selectOption")
                       }
                       data={localizedOptions(field.options ?? [])}
-                      defaultValue={
-                        String(
-                          selected?.[field.key] ?? field.defaultValue ?? "",
-                        ) || null
-                      }
+                      {...(page.icon === "adapters" &&
+                      field.key === "platformId"
+                        ? { value: adapterPlatform || null }
+                        : {
+                            defaultValue:
+                              String(
+                                selected?.[field.key] ??
+                                  field.defaultValue ??
+                                  "",
+                              ) || null,
+                          })}
                       required={field.required}
                       onChange={
-                        page.icon === "oauth_authentications" &&
-                        field.key === "oauthId"
-                          ? (value) => setSelectedOAuthClientId(value ?? "")
-                          : undefined
+                        page.icon === "adapters" && field.key === "platformId"
+                          ? (value) => setAdapterPlatform(value ?? "")
+                          : page.icon === "oauth_authentications" &&
+                              field.key === "oauthId"
+                            ? (value) => setSelectedOAuthClientId(value ?? "")
+                            : undefined
                       }
                       clearable={
                         field.key === "agentId" || field.key === "authId"

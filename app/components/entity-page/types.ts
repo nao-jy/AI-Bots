@@ -96,5 +96,6 @@ export type EntityPageDefinition = {
   authorizationInNewTab?: boolean;
   launchIntent?: string;
   launchLabel?: string;
+  adapterSchemas?: { id: string; schema: unknown }[];
   toolSetSchemas?: { name: string; displayName: string; schema: unknown }[];
 };

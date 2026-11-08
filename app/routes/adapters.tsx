@@ -15,7 +15,10 @@ import { requireUser } from "../.server/auth";
 import { APP_NAME } from "~/const";
 import { entityListPage } from "../.server/repository/list-pages";
 import { testAdapter } from "~/.server/test";
-import { listAdapterNames } from "~/.server/features/adapter";
+import {
+  listAdapterConfigSchemas,
+  listAdapterNames,
+} from "~/.server/features/adapter";
 
 const page: Omit<EntityPageDefinition, "records"> = {
   title: "pages.adapters.title",
@@ -70,12 +73,14 @@ export function meta() {
 export async function loader({ request }: Route.LoaderArgs) {
   const user = await requireUser(request);
   const pagination = await entityListPage(user, "adapters", request);
-  const [adapters, adapterNames] = await Promise.all([
+  const [adapters, adapterNames, adapterSchemas] = await Promise.all([
     listAdapters(user, pagination.ids),
     Promise.resolve(listAdapterNames()),
+    listAdapterConfigSchemas(),
   ]);
   return {
     ...adapters,
+    adapterSchemas,
     pagination,
     adapterOptions: adapterNames.map(({ id, displayName }) => ({
       value: id,
@@ -120,6 +125,7 @@ export default function Adapters({ loaderData }: Route.ComponentProps) {
         ...page,
         records: loaderData.records,
         pagination: loaderData.pagination,
+        adapterSchemas: loaderData.adapterSchemas,
         fields: page.fields.map((field) => ({
           ...field,
           options:
