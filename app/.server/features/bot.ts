@@ -36,7 +36,8 @@ import type { FileHandleReaderMap } from "./toolsets/helpers/file-handle";
 import { getThreadOAuthTools } from "./toolsets/thread-oauth";
 import { getThreadOAuthAuthentication } from "../repository/thread-oauth";
 import { getOwnedOAuthClient } from "../repository/oauth";
-import { OpenDalFileSystem } from "./filesystem/opendal";
+import { ApiFileSystem } from "./filesystem/api";
+import { storageConfig } from "./filesystem/config";
 import { buildMemoryPrompt, getMemoryTools } from "./toolsets/memory";
 import { getMemoryDirectory } from "./memory-config";
 import { t } from "~/.server/i18n";
@@ -281,7 +282,7 @@ async function processBotMessage(
     };
     const fileHandles: FileHandleReaderMap = new Map();
     const memoryDirectory = getMemoryDirectory(
-      process.env.MEMORY_DIR || "data/memory",
+      "/",
       chatbot.organizationId,
       chatbot.id,
       chatbot.memoryConfig,
@@ -289,7 +290,10 @@ async function processBotMessage(
       thread.id,
     );
     const memoryFs = memoryDirectory
-      ? new OpenDalFileSystem("fs", { root: memoryDirectory })
+      ? new ApiFileSystem(
+          storageConfig("MEMORY", ""),
+          `memory/${memoryDirectory.slice(1)}`,
+        )
       : null;
     const tools = {
       ...getChatTools(chat, adapterPlatform, thread, fileHandles, publicOrigin),

@@ -47,7 +47,7 @@ AI Botsは、SlackやMicrosoft Teamsなどで動くAIボットを作り、運用
 | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
 | 非対応のチャット       | Chat SDKの `Adapter` を実装。[Slackアダプタの組み込み例](./app/.server/features/chat-adapter.ts)                                                                | 同じファイルの `ChatAdapterFactory` / `FACTORIES` に追加。                                 |
 | 非対応のAIプロバイダー | `ModelFactory`。[OpenAIの実装例](./app/.server/features/provider.ts)                                                                                            | 同じファイルの `FACTORIES` に追加。                                                        |
-| メモリの保存先         | [`FileSystem` インターフェース](./app/.server/features/filesystem/index.ts)と[OpenDAL の実装](./app/.server/features/filesystem/opendal.ts)                     | [ボットの処理](./app/.server/features/bot.ts)で `OpenDalFileSystem` の生成箇所を差し替え。 |
+| メモリの保存先         | [`FileSystem` インターフェース](./app/.server/features/filesystem/index.ts)と[Filesystem API クライアント](./app/.server/features/filesystem/api.ts)                     | [ボットの処理](./app/.server/features/bot.ts)で `ApiFileSystem` の生成箇所を差し替え。 |
 | メールの送信方法       | [`EmailProvider` インターフェース](./app/.server/features/email-providers/index.ts)と[SMTPリレーの実装例](./app/.server/features/email-providers/smtp-relay.ts) | `email-providers/index.ts` の `getEmailProvider()` で選択。                                |
 
 ファイルシステムはボットのメモリと一時ファイルの保存に使われています。チャットの添付ファイルは別のツールとして扱います。
@@ -145,11 +145,11 @@ OAuthクライアントを管理し、連携サービスのアカウントを認
 | `SMTP_RELAY_PASS`            | メール利用時 | SMTP認証のパスワード。                                                                                                                                                                                 |
 | `SMTP_RELAY_DOMAIN_FROM`     | メール利用時 | 送信元アドレス `noreply@<ドメイン>` に使用するドメイン。                                                                                                                                               |
 | `CLOUDFLARE_TOKEN`           | Docker本番では必須 | Cloudflare Tunnelのトークン。`npm run dev` でも任意で使用します。                                                                                                                               |
+| `FILESYSTEM_API_URL`         | 必須         | bot_tools の Filesystem API の URL。 |
+| `FILESYSTEM_API_TOKEN`       | 必須         | Filesystem API と共有する Bearer トークン。 |
+| `MEMORY_STORAGE_SERVICE`, `TEMP_FILE_STORAGE_SERVICE` | 任意 | メモリと一時ファイルの OpenDAL サービス名。既定値は `fs`。 |
+| `MEMORY_STORAGE_CONFIG`, `TEMP_FILE_STORAGE_CONFIG` | 任意 | OpenDAL の設定を文字列値の JSON オブジェクトで指定。`fs` の `root` は API サーバーの基準ディレクトリからの相対パス。 |
 | `LOG_DIR`                    | 任意         | ログ出力先。既定値は `logs`。                                                                                                                                                                          |
-| `MEMORY_DIR`                 | 任意         | ボットのメモリ保存先。既定値は `data/memory`。ボットのメモリ設定により、無効・スレッド別・ボット全体で共有を選べます。                                                                                 |
-| `TEMP_FILE_DIR`              | 任意         | OpenDAL の `fs` サービスで使う一時ファイル保存先。既定値は `data/temporary-files`。リンクは24時間有効で、ファイル上限は10 MiBです。                                                                    |
-| `TEMP_FILE_STORAGE_SERVICE`  | 任意         | 一時ファイルの OpenDAL サービス名。既定値は `fs`。S3 に保存する場合は `s3` を指定します。                                                                                                              |
-| `TEMP_FILE_STORAGE_CONFIG`   | 任意         | 一時ファイル保存先の OpenDAL 設定を文字列値の JSON オブジェクトで指定します。`s3` では `bucket` などの設定を渡します。                                                                                 |
 
 `infra/compose.yaml` にはPostgreSQL、OpenSandboxが定義されています。オプションのサービスも起動する場合は、リポジトリのルートから同じ `.env.dev` を指定して実行します。
 
@@ -194,6 +194,5 @@ docker compose --env-file .env.prd -f infra/compose.production.yaml \
   exec postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"'
 ```
 
-`LOG_DIR` や `MEMORY_DIR` を変更する場合は、変更先も `/app/data` のボリューム内にするか、別のボリュームをマウントしてください。`cloudflared` を更新するにはイメージの再ビルドが必要です。
 
 **既存環境から切り替える場合:** 新しいDBとアプリ用ボリュームは空です。現在のDBや `bot-data` は自動では移行されません。既存データを引き継ぐ場合はバックアップ・復元の手順を別途用意し、暗号化済みデータを復号できるよう元の `CREDENTIALS_ENCRYPTION_KEY` を維持してください。現在の `ai-bots` コンテナもComposeによって自動停止されないため、切り替え時に重複起動しないようにしてください。

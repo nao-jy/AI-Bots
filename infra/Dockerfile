@@ -25,7 +25,6 @@ COPY ./scripts/start-production.mjs /app/scripts/start-production.mjs
 COPY ./scripts/production-server.mjs /app/scripts/production-server.mjs
 WORKDIR /app
 ENV NODE_ENV=production HOST=127.0.0.1 PORT=3001 \
-    LOG_DIR=/app/data/logs MEMORY_DIR=/app/data/memory \
-    TEMP_FILE_DIR=/app/data/temporary-files
+    LOG_DIR=/app/data/logs
 VOLUME ["/app/data"]
 CMD ["node", "scripts/start-production.mjs"]

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { OpenDalFileSystem } from "../filesystem/opendal";
+import { LocalTestFileSystem } from "../filesystem/test-support/local";
 import {
   buildMemoryPrompt,
   getMemoryTools,
@@ -33,11 +33,11 @@ async function callTool(
 }
 
 async function withLocalFileSystem(
-  run: (fs: OpenDalFileSystem) => Promise<void>,
+  run: (fs: LocalTestFileSystem) => Promise<void>,
 ): Promise<void> {
   const dir = await mkdtemp(join(tmpdir(), "bot-memory-test-"));
   try {
-    await run(new OpenDalFileSystem("fs", { root: dir }));
+    await run(new LocalTestFileSystem("fs", { root: dir }));
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
@@ -134,10 +134,10 @@ describe("AI SDK memory tools", () => {
   it("persists files across filesystem instances without mixing scopes", async () => {
     const dir = await mkdtemp(join(tmpdir(), "bot-memory-"));
     try {
-      const first = new OpenDalFileSystem("fs", {
+      const first = new LocalTestFileSystem("fs", {
         root: join(dir, "thread-a"),
       });
-      const second = new OpenDalFileSystem("fs", {
+      const second = new LocalTestFileSystem("fs", {
         root: join(dir, "thread-b"),
       });
       expect(
@@ -149,7 +149,7 @@ describe("AI SDK memory tools", () => {
         ).isError,
       ).toBe(false);
       expect(
-        await new OpenDalFileSystem("fs", { root: join(dir, "thread-a") }).read(
+        await new LocalTestFileSystem("fs", { root: join(dir, "thread-a") }).read(
           "note.md",
         ),
       ).toBe("Saved preference\n");

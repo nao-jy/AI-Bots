@@ -2,17 +2,28 @@ import { describe, expect, it, vi } from "vitest";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { OpenDalFileSystem } from "./opendal";
+import { LocalTestFileSystem } from "./test-support/local";
 import { TEMP_FILE_TTL_MS, TemporaryFileStore } from "./temporary";
 import { createTemporaryFileLink } from "../toolsets/temporary-file-link";
 import { loader } from "../../../routes/api.files.$token";
+
+vi.mock("./api", async () => {
+  const { LocalTestFileSystem } = await import("./test-support/local");
+  return {
+    ApiFileSystem: class extends LocalTestFileSystem {
+      constructor() {
+        super("fs", { root: process.env.TEST_TEMP_FILE_DIR! });
+      }
+    },
+  };
+});
 
 describe("temporary file store", () => {
   it("persists binary data and expires a link without a database", async () => {
     const dir = await mkdtemp(join(tmpdir(), "bot-temp-file-"));
     let now = Date.UTC(2026, 0, 1);
     try {
-      const fs = new OpenDalFileSystem("fs", { root: dir });
+      const fs = new LocalTestFileSystem("fs", { root: dir });
       const store = new TemporaryFileStore(fs, () => now);
       const source = Buffer.from([0, 255, 17, 0]);
       const saved = await store.save(source, "sample.bin");
@@ -21,7 +32,7 @@ describe("temporary file store", () => {
       expect(
         (
           await new TemporaryFileStore(
-            new OpenDalFileSystem("fs", { root: dir }),
+            new LocalTestFileSystem("fs", { root: dir }),
             () => now,
           ).get(saved.token)
         )?.data,
@@ -40,7 +51,7 @@ describe("temporary file store", () => {
     const dir = await mkdtemp(join(tmpdir(), "bot-temp-file-"));
     let now = Date.UTC(2026, 0, 1);
     try {
-      const fs = new OpenDalFileSystem("fs", { root: dir });
+      const fs = new LocalTestFileSystem("fs", { root: dir });
       const store = new TemporaryFileStore(fs, () => now);
       expect(await store.get("../../etc/passwd")).toBeNull();
       const saved = await store.save(Buffer.from("hello"), "hello.txt");
@@ -56,7 +67,7 @@ describe("temporary file store", () => {
 
   it("creates a public link that serves the stored binary", async () => {
     const dir = await mkdtemp(join(tmpdir(), "bot-temp-file-"));
-    vi.stubEnv("TEMP_FILE_DIR", dir);
+    vi.stubEnv("TEST_TEMP_FILE_DIR", dir);
     vi.stubEnv("PUBLIC_APP_URL", "https://example.test");
     try {
       const content = Buffer.from([0, 1, 255]);

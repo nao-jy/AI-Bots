@@ -8,6 +8,17 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 vi.mock("chat/ai", () => ({ createChatTools: () => ({}) }));
+vi.mock("../filesystem/api", async () => {
+  const { LocalTestFileSystem } =
+    await import("../filesystem/test-support/local");
+  return {
+    ApiFileSystem: class extends LocalTestFileSystem {
+      constructor() {
+        super("fs", { root: process.env.TEST_TEMP_FILE_DIR! });
+      }
+    },
+  };
+});
 
 type ToolWithExecute = {
   execute: (
@@ -45,7 +56,7 @@ describe("tool error results", () => {
     "posts a temporary link on %s when direct upload fails",
     async (platform) => {
       const dir = await mkdtemp(join(tmpdir(), "bot-upload-fallback-"));
-      vi.stubEnv("TEMP_FILE_DIR", dir);
+      vi.stubEnv("TEST_TEMP_FILE_DIR", dir);
       vi.stubEnv("PUBLIC_APP_URL", "https://example.test");
       const post = vi
         .fn()
@@ -96,7 +107,7 @@ describe("tool error results", () => {
 
   it("returns an error if posting the temporary link fails", async () => {
     const dir = await mkdtemp(join(tmpdir(), "bot-upload-fallback-"));
-    vi.stubEnv("TEMP_FILE_DIR", dir);
+    vi.stubEnv("TEST_TEMP_FILE_DIR", dir);
     vi.stubEnv("PUBLIC_APP_URL", "https://example.test");
     const post = vi
       .fn()

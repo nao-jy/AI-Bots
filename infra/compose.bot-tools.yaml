@@ -2,6 +2,7 @@ services:
   app:
     environment:
       SANDBOX_API_URL: http://sandbox-api:8090
+      FILESYSTEM_API_URL: http://filesystem-api:8091
     networks:
       - default
       - bot-tools

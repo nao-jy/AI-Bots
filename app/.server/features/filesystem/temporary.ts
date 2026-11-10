@@ -1,37 +1,16 @@
 import { randomBytes } from "node:crypto";
-import { resolve } from "node:path";
 import type { BinaryFileSystem } from "./index";
-import { OpenDalFileSystem } from "./opendal";
+import { ApiFileSystem } from "./api";
+import { storageConfig } from "./config";
 
 export const TEMP_FILE_TTL_MS = 24 * 60 * 60 * 1000;
 export const MAX_TEMP_FILE_BYTES = 10 * 1024 * 1024;
 const TOKEN_PATTERN = /^[a-f0-9]{64}$/;
 
 export function getTemporaryFileStore() {
-  const service = process.env.TEMP_FILE_STORAGE_SERVICE || "fs";
-  const rawConfig = process.env.TEMP_FILE_STORAGE_CONFIG;
-  let config: Record<string, string> = {};
-  if (rawConfig) {
-    const parsed: unknown = JSON.parse(rawConfig);
-    if (
-      !parsed ||
-      typeof parsed !== "object" ||
-      Array.isArray(parsed) ||
-      Object.values(parsed).some((value) => typeof value !== "string")
-    ) {
-      throw new Error(
-        "TEMP_FILE_STORAGE_CONFIG must be a JSON object of strings",
-      );
-    }
-    config = parsed as Record<string, string>;
-  }
-  if (service === "fs") {
-    config = {
-      root: resolve(process.env.TEMP_FILE_DIR || "data/temporary-files"),
-      ...config,
-    };
-  }
-  return new TemporaryFileStore(new OpenDalFileSystem(service, config));
+  return new TemporaryFileStore(
+    new ApiFileSystem(storageConfig("TEMP_FILE", ""), "temporary-files"),
+  );
 }
 
 interface TemporaryFileMetadata {

@@ -45,7 +45,7 @@ When you need a service or execution environment that is not included, implement
 | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
 | Another chat platform | Implement the Chat SDK `Adapter`; see the [Slack adapter integration](./app/.server/features/chat-adapter.ts).                                                      | Add a `ChatAdapterFactory` entry to `FACTORIES` in the same file.                                |
 | Another AI provider   | `ModelFactory`; see the [OpenAI implementation](./app/.server/features/provider.ts).                                                                                | Add an entry to `FACTORIES` in the same file.                                                    |
-| Another memory store  | [`FileSystem` interface](./app/.server/features/filesystem/index.ts) and [OpenDAL implementation](./app/.server/features/filesystem/opendal.ts).                    | Replace the `OpenDalFileSystem` construction in [bot processing](./app/.server/features/bot.ts). |
+| Another memory store  | [`FileSystem` interface](./app/.server/features/filesystem/index.ts) and [filesystem API client](./app/.server/features/filesystem/api.ts).                    | Replace the `ApiFileSystem` construction in [bot processing](./app/.server/features/bot.ts). |
 | Another email service | [`EmailProvider` interface](./app/.server/features/email-providers/index.ts) and [SMTP relay implementation](./app/.server/features/email-providers/smtp-relay.ts). | Select it in `getEmailProvider()` in `email-providers/index.ts`.                                 |
 
 The file system interface backs bot memory and temporary file storage. Chat attachments use separate tools.
@@ -143,11 +143,11 @@ The built-in email provider sends through an SMTP relay. Once configured, it can
 | `SMTP_RELAY_PASS`            | For email | SMTP authentication password.                                                                                                                                                                           |
 | `SMTP_RELAY_DOMAIN_FROM`     | For email | Domain used for the `noreply@<domain>` sender address.                                                                                                                                                  |
 | `CLOUDFLARE_TOKEN`           | Required for production Docker | Cloudflare Tunnel token; also optionally used by `npm run dev`.                                                                                                                  |
+| `FILESYSTEM_API_URL`         | Required  | URL of the bot_tools filesystem API (for example `http://localhost:8091`). |
+| `FILESYSTEM_API_TOKEN`       | Required  | Bearer token shared with the filesystem API. |
+| `MEMORY_STORAGE_SERVICE`, `TEMP_FILE_STORAGE_SERVICE` | Optional | OpenDAL service names for bot memory and temporary files; default `fs`. |
+| `MEMORY_STORAGE_CONFIG`, `TEMP_FILE_STORAGE_CONFIG` | Optional | OpenDAL configuration as JSON objects with string values. For `fs`, `root` is relative to the API server's allowed root. |
 | `LOG_DIR`                    | Optional  | Log directory; defaults to `logs`.                                                                                                                                                                      |
-| `MEMORY_DIR`                 | Optional  | Persistent directory for bot memories; defaults to `data/memory`. A bot's memory setting controls whether memory is disabled, separated by thread, or shared across the bot.                            |
-| `TEMP_FILE_DIR`              | Optional  | Temporary file directory for OpenDAL's `fs` service; defaults to `data/temporary-files`. Links expire after 24 hours and files are limited to 10 MiB.                                                   |
-| `TEMP_FILE_STORAGE_SERVICE`  | Optional  | OpenDAL service for temporary files; defaults to `fs`. Set to `s3` to use S3.                                                                                                                           |
-| `TEMP_FILE_STORAGE_CONFIG`   | Optional  | OpenDAL temporary storage options as a JSON object with string values. For `s3`, supply options such as `bucket` and `region`.                                                                          |
 
 `infra/compose.yaml` defines PostgreSQL and OpenSandbox. From the repository root, start the optional services using the same `.env.dev` file:
 
@@ -192,6 +192,6 @@ docker compose --env-file .env.prd -f infra/compose.production.yaml \
   exec postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"'
 ```
 
-If you change `LOG_DIR` or `MEMORY_DIR`, keep the new locations inside the `/app/data` volume or mount separate volumes there. Rebuild the image to update `cloudflared`.
+If you change `LOG_DIR`, keep it inside the `/app/data` volume or mount a separate volume there. Rebuild the image to update `cloudflared`.
 
 **Migrating an existing installation:** The new database and application volume start empty. The existing database and `bot-data` volume are not migrated automatically. Prepare a backup and restore procedure to retain them, and keep the original `CREDENTIALS_ENCRYPTION_KEY` to decrypt existing data. Compose does not stop the existing `ai-bots` container, so avoid running both installations during the cutover.
