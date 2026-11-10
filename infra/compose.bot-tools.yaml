@@ -1,5 +1,11 @@
 services:
   app:
+    environment:
+      SANDBOX_API_URL: http://sandbox-api:8090
+    networks:
+      - default
+      - bot-tools
+  opensandbox-server:
     networks:
       - default
       - bot-tools

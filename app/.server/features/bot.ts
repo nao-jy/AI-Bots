@@ -537,6 +537,16 @@ async function processBotMessage(
       }
     }
   } finally {
+    if (turnSandbox) {
+      try {
+        await turnSandbox.bashSandbox.release();
+      } catch (error) {
+        appLogger.error(
+          `Failed to release sandbox session for chatbot ${botId}`,
+          error,
+        );
+      }
+    }
     if (turnSandbox?.isTurnScoped && turnSandbox.sandboxProvider) {
       try {
         await turnSandbox.sandboxProvider.destroySandbox(

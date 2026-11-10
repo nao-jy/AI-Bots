@@ -27,7 +27,7 @@ For example, to run a bot that posts a recurring checklist to a team thread on w
 - **Web search and memory:** Connect a web search MCP server to enable search. Choose whether a bot's memory is disabled, kept per thread, or shared across the bot.
 - **MCP servers:** Configure MCP endpoints and HTTP headers, test connections, and make the servers available to bots.
 
-- **Sandboxes:** Configure E2B or OpenSandbox execution environments, including environment variables, allowed network domains, initialization commands, and sharing scope. Inspect persistent instances and use the built-in terminal.
+- **Sandboxes:** Configure Sandbox API execution environments, including environment variables, allowed network domains, initialization commands, and sharing scope. Inspect persistent instances and use the built-in terminal.
 - **Scheduled prompts:** Run a prompt on selected bot/adapter threads using a five-field or six-field Cron expression and an IANA timezone. Schedule changes are synchronized with the running scheduler.
 - **Usage and rate limits:** View request and token usage over the last 30 days in the dashboard. Set limits for a bot, agent, or provider, aggregate usage per thread or across the target, and choose a Cron expression and timezone for the reset boundary. Configure the message shown when a limit is reached.
 - **Execution history:** Review the status, time, and failure reason of bot runs from chat and schedules. The dashboard shows failures from the last 24 hours, and the execution history page filters by bot, status, and period. Bot access permissions govern which runs a user can view.
@@ -45,7 +45,6 @@ When you need a service or execution environment that is not included, implement
 | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
 | Another chat platform | Implement the Chat SDK `Adapter`; see the [Slack adapter integration](./app/.server/features/chat-adapter.ts).                                                      | Add a `ChatAdapterFactory` entry to `FACTORIES` in the same file.                                |
 | Another AI provider   | `ModelFactory`; see the [OpenAI implementation](./app/.server/features/provider.ts).                                                                                | Add an entry to `FACTORIES` in the same file.                                                    |
-| Another sandbox       | [`Sandbox` interface](./app/.server/features/toolsets/sandboxes/index.ts) and [E2B implementation](./app/.server/features/toolsets/sandboxes/e2b.ts).               | Add it to `SANDBOXES` in `sandboxes/index.ts`.                                                   |
 | Another memory store  | [`FileSystem` interface](./app/.server/features/filesystem/index.ts) and [OpenDAL implementation](./app/.server/features/filesystem/opendal.ts).                    | Replace the `OpenDalFileSystem` construction in [bot processing](./app/.server/features/bot.ts). |
 | Another email service | [`EmailProvider` interface](./app/.server/features/email-providers/index.ts) and [SMTP relay implementation](./app/.server/features/email-providers/smtp-relay.ts). | Select it in `getEmailProvider()` in `email-providers/index.ts`.                                 |
 
@@ -134,8 +133,8 @@ The built-in email provider sends through an SMTP relay. Once configured, it can
 | `CREDENTIALS_ENCRYPTION_KEY` | Yes       | Base64-encoded 32-byte key for encrypting credentials and signing OAuth authorization state.                                                                                                            |
 | `OAUTH_BASE_URL`             | For OAuth | Public HTTPS origin (no path) used to form the OAuth callback URL, `/oauth/callback`. `http://localhost` is allowed for local development. Register the resulting callback URL with the OAuth provider. |
 | `PUBLIC_APP_URL`             | Optional  | Public application URL used for webhook URLs, email verification links, and temporary file download links. If unset, the request origin is used.                                                        |
-| `E2B_API_KEY`                | For E2B   | Enables the E2B sandbox provider.                                                                                                                                                                       |
-| `OPEN_SANDBOX_DOMAIN`        | Optional  | Enables OpenSandbox and sets its connection domain.                                                                                                                                                     |
+| `SANDBOX_API_URL`           | For sandbox | URL of the separate Sandbox API service. |
+| `SANDBOX_API_TOKEN`         | For sandbox | Bearer token shared with the Sandbox API service. |
 | `OPEN_SANDBOX_API_KEY`       | Optional  | API key passed to the OpenSandbox server in the included Compose setup.                                                                                                                                 |
 | `SMTP_RELAY_HOST`            | For email | SMTP relay host.                                                                                                                                                                                        |
 | `SMTP_RELAY_PORT`            | For email | SMTP relay port.                                                                                                                                                                                        |
@@ -158,7 +157,7 @@ docker compose --env-file .env.dev -f infra/compose.yaml up -d
 
 Optional Compose settings are documented in [`.env.example`](./.env.example). If you change the PostgreSQL credentials, update `DATABASE_URL` to match; existing database volumes retain their original credentials.
 
-Configure each integration's provider credentials and settings in the workspace. Sandbox providers appear in the UI when their corresponding environment variables are set.
+Configure each integration's provider credentials and settings in the workspace. Sandbox providers appear in the UI when the Sandbox API is reachable and advertises them. To connect the included OpenSandbox through bot_tools, follow the Sandbox API setup in the bot_tools README; direct E2B integration has been removed.
 
 ## Build and run
 
@@ -174,7 +173,7 @@ npm run start
 
 #### Production Compose
 
-Configure `.env.prd` using [`.env.prd.example`](./.env.prd.example). If `.env.prd` already exists, preserve it and check `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `DATABASE_URL` with matching credentials, and `OPEN_SANDBOX_API_KEY`. The `DATABASE_URL` host and port are `postgres:5432`. Percent-encode reserved characters in database credentials in the URL. Configure the sample `SMTP_RELAY_*` settings to use email verification and password reset.
+Configure `.env.prd` using [`.env.prd.example`](./.env.prd.example). If `.env.prd` already exists, preserve it and check `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `DATABASE_URL` with matching credentials, `SANDBOX_API_TOKEN`, and `OPEN_SANDBOX_API_KEY`. The `DATABASE_URL` host and port are `postgres:5432`. Percent-encode reserved characters in database credentials in the URL. Configure the sample `SMTP_RELAY_*` settings to use email verification and password reset.
 
 For a new production environment, use a dedicated `CREDENTIALS_ENCRYPTION_KEY` and Cloudflare Tunnel. Configure the Tunnel's public hostname to reach `http://127.0.0.1:3001` inside the container. Use separate development and production Tunnels: running both connectors on the same Tunnel can route requests to either environment. Restrict access with Cloudflare Access or an equivalent policy until the initial administrator is created.
 

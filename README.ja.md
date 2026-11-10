@@ -29,7 +29,7 @@ AI Botsは、SlackやMicrosoft Teamsなどで動くAIボットを作り、運用
 - **Web検索とメモリ:** Web検索用MCPサーバーを接続するとWeb検索を利用できます。ボットのメモリは無効・スレッド別・ボット全体で共有から選べます。
 - **MCPサーバー:** MCPエンドポイントとHTTPヘッダーを設定し、接続テストを行って、ボットから利用できるようにできます。
 
-- **サンドボックス:** E2BまたはOpenSandboxの実行環境を設定できます。環境変数、許可するネットワークドメイン、初期化コマンド、共有範囲を管理できます。永続インスタンスの確認や内蔵ターミナルの利用にも対応します。
+- **サンドボックス:** Sandbox APIを通じた実行環境を設定できます。環境変数、許可するネットワークドメイン、初期化コマンド、共有範囲を管理できます。永続インスタンスの確認や内蔵ターミナルの利用にも対応します。
 - **スケジュール実行:** 5フィールドまたは6フィールドのCron式とIANAタイムゾーンを指定し、選択したボット／アダプタのスレッドでプロンプトを実行できます。スケジュールの変更は実行中のスケジューラーに反映されます。
 - **利用状況と利用量の上限:** ダッシュボードで直近30日間のリクエスト数やトークン利用量を確認できます。ボット、エージェント、プロバイダーごとに利用量の上限を設定し、スレッドごと／対象全体の集計や、Cron式とタイムゾーンによる集計期間のリセットを指定できます。上限到達後のリクエストには設定したメッセージを返します。
 - **実行履歴:** チャットとスケジュールによるボット実行の状態・時刻・失敗理由を確認できます。ダッシュボードには直近24時間の失敗を表示し、実行履歴画面ではボット・状態・期間で絞り込めます。閲覧できる履歴はボットのアクセス権に従います。
@@ -47,7 +47,6 @@ AI Botsは、SlackやMicrosoft Teamsなどで動くAIボットを作り、運用
 | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
 | 非対応のチャット       | Chat SDKの `Adapter` を実装。[Slackアダプタの組み込み例](./app/.server/features/chat-adapter.ts)                                                                | 同じファイルの `ChatAdapterFactory` / `FACTORIES` に追加。                                 |
 | 非対応のAIプロバイダー | `ModelFactory`。[OpenAIの実装例](./app/.server/features/provider.ts)                                                                                            | 同じファイルの `FACTORIES` に追加。                                                        |
-| 新しいサンドボックス   | [`Sandbox` インターフェース](./app/.server/features/toolsets/sandboxes/index.ts)と[E2Bの実装例](./app/.server/features/toolsets/sandboxes/e2b.ts)               | `sandboxes/index.ts` の `SANDBOXES` に追加。                                               |
 | メモリの保存先         | [`FileSystem` インターフェース](./app/.server/features/filesystem/index.ts)と[OpenDAL の実装](./app/.server/features/filesystem/opendal.ts)                     | [ボットの処理](./app/.server/features/bot.ts)で `OpenDalFileSystem` の生成箇所を差し替え。 |
 | メールの送信方法       | [`EmailProvider` インターフェース](./app/.server/features/email-providers/index.ts)と[SMTPリレーの実装例](./app/.server/features/email-providers/smtp-relay.ts) | `email-providers/index.ts` の `getEmailProvider()` で選択。                                |
 
@@ -136,8 +135,8 @@ OAuthクライアントを管理し、連携サービスのアカウントを認
 | `CREDENTIALS_ENCRYPTION_KEY` | 必須         | 認証情報の暗号化とOAuth認可状態の署名に使用する、Base64形式の32バイトキー。                                                                                                                            |
 | `OAUTH_BASE_URL`             | OAuth利用時  | OAuthコールバックURL `/oauth/callback` の生成に使う公開HTTPSオリジン（パスなし）。ローカル開発では `http://localhost` も使用できます。生成されたコールバックURLをOAuthプロバイダーに登録してください。 |
 | `PUBLIC_APP_URL`             | 任意         | Webhook URL、メール検証リンク、一時ファイルのダウンロードリンクの生成に使う公開アプリURL。未設定時はリクエストのオリジンを使用します。                                                                 |
-| `E2B_API_KEY`                | E2B利用時    | E2Bサンドボックスプロバイダーを有効にします。                                                                                                                                                          |
-| `OPEN_SANDBOX_DOMAIN`        | 任意         | OpenSandboxを有効にし、接続先ドメインを指定します。                                                                                                                                                    |
+| `SANDBOX_API_URL`           | Sandbox利用時 | 別サービスのSandbox APIのURL。 |
+| `SANDBOX_API_TOKEN`         | Sandbox利用時 | Sandbox APIと共有するBearerトークン。 |
 | `OPEN_SANDBOX_API_KEY`       | 任意         | 同梱Compose設定でOpenSandboxサーバーに渡すAPIキー。                                                                                                                                                    |
 | `SMTP_RELAY_HOST`            | メール利用時 | SMTPリレーのホスト名。                                                                                                                                                                                 |
 | `SMTP_RELAY_PORT`            | メール利用時 | SMTPリレーのポート番号。                                                                                                                                                                               |
@@ -160,7 +159,7 @@ docker compose --env-file .env.dev -f infra/compose.yaml up -d
 
 Composeの任意設定は [`.env.example`](./.env.example) を参照してください。PostgreSQLの認証情報を変更した場合は `DATABASE_URL` も合わせて変更してください。既存のデータベースボリュームには元の認証情報が保持されます。
 
-各連携サービスの認証情報や設定はワークスペース上で設定してください。サンドボックスプロバイダーは、対応する環境変数を設定するとUIに表示されます。
+各連携サービスの認証情報や設定はワークスペース上で設定してください。Sandbox APIが接続可能になると、提供されるサンドボックスを画面から選択できます。同梱のOpenSandboxとの接続手順はbot_toolsのREADMEを参照してください。E2Bの直接連携は削除しました。
 
 ## ビルドと起動
 
@@ -176,7 +175,7 @@ npm run start
 
 #### 本番用 Compose
 
-[`.env.prd.example`](./.env.prd.example) を参考に `.env.prd` を設定します。既に `.env.prd` がある場合は上書きせず、`POSTGRES_USER`、`POSTGRES_PASSWORD`、`POSTGRES_DB` と、同じ認証情報を含む `DATABASE_URL`、`OPEN_SANDBOX_API_KEY` を確認してください。`DATABASE_URL` のホストは `postgres`、ポートは `5432` です。パスワードにURLの予約文字を使う場合は接続URL内でパーセントエンコードしてください。メール認証やパスワード再設定を使う場合は、サンプルの `SMTP_RELAY_*` も設定してください。
+[`.env.prd.example`](./.env.prd.example) を参考に `.env.prd` を設定します。既に `.env.prd` がある場合は上書きせず、`POSTGRES_USER`、`POSTGRES_PASSWORD`、`POSTGRES_DB` と、同じ認証情報を含む `DATABASE_URL`、`SANDBOX_API_TOKEN`、`OPEN_SANDBOX_API_KEY` を確認してください。`DATABASE_URL` のホストは `postgres`、ポートは `5432` です。パスワードにURLの予約文字を使う場合は接続URL内でパーセントエンコードしてください。メール認証やパスワード再設定を使う場合は、サンプルの `SMTP_RELAY_*` も設定してください。
 
 新しい本番環境では、本番専用の `CREDENTIALS_ENCRYPTION_KEY` とCloudflare Tunnelを設定します。Tunnelの公開ホスト名はコンテナ内の `http://127.0.0.1:3001` に接続します。開発用と同じTunnelを同時に起動すると異なる環境に振り分けられるため、別のTunnelを使ってください。初回管理者を作成するまではCloudflare Accessなどでアクセスを制限してください。
 
