@@ -1,7 +1,10 @@
+import { mcpCredentialMeta } from "./mcp-credentials";
+
 export function contextFetch(
   context: Record<string, unknown>,
   endpoint: string,
   fetchImpl: typeof fetch = fetch,
+  upstreamAccessToken?: string,
 ): typeof fetch {
   return (input, init) => {
     if (
@@ -23,7 +26,7 @@ export function contextFetch(
               ...(meta && typeof meta === "object" && !Array.isArray(meta)
                 ? meta
                 : {}),
-              "bot_manager/context": context,
+              ...mcpCredentialMeta(context, upstreamAccessToken),
             },
           };
           return fetchImpl(input, { ...init, body: JSON.stringify(request) });

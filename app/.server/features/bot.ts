@@ -17,6 +17,9 @@ import {
 import { getModelInfo } from "./provider";
 import { getAvailableBot } from "../repository/bots";
 import { getMcpClient } from "./mcp";
+import { getMcpCredential, usesUpstreamOAuth } from "./mcp-credentials";
+import { registerMcpFile } from "./mcp-file";
+import { getMcpContextSchema } from "./mcp-schema";
 import { getSandboxTools } from "./toolsets/sandbox";
 import { getSandbox } from "./sandboxes";
 import { getFileParseTools } from "./toolsets/file-parse";
@@ -28,7 +31,7 @@ import { getChatTools } from "./toolsets/chat-tools";
 import type { FileHandleReaderMap } from "./toolsets/helpers/file-handle";
 import { getThreadOAuthTools } from "./toolsets/thread-oauth";
 import { getThreadOAuthAuthentication } from "../repository/thread-oauth";
-import { getAccessToken, getOwnedOAuthClient } from "../repository/oauth";
+import { getOwnedOAuthClient } from "../repository/oauth";
 import { OpenDalFileSystem } from "./filesystem/opendal";
 import { buildMemoryPrompt, getMemoryTools } from "./toolsets/memory";
 import { getMemoryDirectory } from "./memory-config";
@@ -263,7 +266,7 @@ async function processBotMessage(
       });
       if (authentication) {
         try {
-          await getAccessToken(authentication.id);
+          await getMcpCredential(authentication.id);
           return authentication.id;
         } catch {
           // The configured account needs reconnecting; allow other tools to run.
@@ -330,12 +333,22 @@ async function processBotMessage(
         ? await resolveThreadAuth(link.oauthClientId)
         : link.authId;
       if (link.oauthClientId && !authId) continue;
+      const headers = decryptMcpHeaders(server.headers);
+      const schema =
+        authId && server.contextEndpoint
+          ? await getMcpContextSchema(
+              server.contextEndpoint,
+              headers,
+              server.endpoint,
+            )
+          : null;
       const client = await getMcpClient(
         server.transport,
         server.endpoint,
-        decryptMcpHeaders(server.headers),
+        headers,
         authId,
         decryptMcpContext(link.context),
+        usesUpstreamOAuth(schema),
       );
       mcpClients.push(client);
 
@@ -346,7 +359,14 @@ async function processBotMessage(
           ? `_${link.authentication.name}`
           : "";
       for (const [name, tool] of Object.entries(mcpTools)) {
-        tools[`mcp${authName}_${server.id}_${safeToolName(name)}`] = tool;
+        const execute = tool.execute;
+        tools[`mcp${authName}_${server.id}_${safeToolName(name)}`] = execute
+          ? {
+              ...tool,
+              execute: async (input, options) =>
+                registerMcpFile(await execute(input, options), fileHandles),
+            }
+          : tool;
       }
     }
 

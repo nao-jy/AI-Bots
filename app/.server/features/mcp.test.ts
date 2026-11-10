@@ -45,4 +45,28 @@ describe("MCP context transport", () => {
     });
     expect(JSON.parse(String(send.mock.calls[2]?.[1]?.body))).toEqual(original);
   });
+  it("sends upstream OAuth only in the tool-call metadata", async () => {
+    const send = vi.fn(
+      async (_input: RequestInfo | URL, _init?: RequestInit) =>
+        new Response("{}"),
+    );
+    const request = contextFetch(
+      {},
+      "https://example.test/mcp",
+      send as typeof fetch,
+      "oauth-secret",
+    );
+    await request("https://example.test/mcp", {
+      method: "POST",
+      body: JSON.stringify({
+        method: "tools/call",
+        params: { name: "test", arguments: {} },
+      }),
+    });
+    const body = JSON.parse(String(send.mock.calls[0]?.[1]?.body));
+    expect(body.params._meta["bot_manager/oauth"]).toEqual({
+      accessToken: "oauth-secret",
+    });
+    expect(body.params.arguments).toEqual({});
+  });
 });

@@ -504,34 +504,6 @@ export const en = {
     messageId: "Message ID",
     attachmentIndex: "Attachment index",
     webContentFetchToolDescription: "Fetch and parse web content",
-    googleDriveRemoteFileTools: "Google Drive remote file tools",
-    googleDriveListFilesDescription:
-      "List files and folders directly in or below a Google Drive folder. Results can be listed recursively.",
-    googleDriveFolderId: "ID of the folder to list",
-    googleDriveRecursive: "Whether to list contents recursively",
-    googleDriveMaxResults: "Maximum number of results (1–1000)",
-    googleDrivePageToken: "Position to continue listing after this path",
-    googleDriveSharedFilesDescription:
-      "List files and folders shared with you in Google Drive. Use the regular listing tool to retrieve the contents of shared folders.",
-    googleDriveNamePageToken: "Position to continue listing after this name",
-    googleDriveSearchDescription:
-      "Search files and folders using the Google Drive API search query (q). Use Drive API query syntax with conditions such as name contains, fullText contains, '<folderId>' in parents, modifiedTime, mimeType, and sharedWithMe. Combine conditions with and/or. See the Google Drive API reference for full syntax.",
-    googleDriveSearchQuery: "Google Drive API search query",
-    googleDriveNextPageToken:
-      "Next-page token from the previous search results",
-    googleDriveFileHandleDescription:
-      "Get a file handle to access the contents of a Google Drive file.",
-    googleDriveFileIdForHandle: "ID of the file to create a handle for",
-    googleDriveMetadataDescription:
-      "Get metadata for a Google Drive file or folder.",
-    googleDriveMetadataFileId: "ID of the file or folder to get metadata for",
-    googleDriveExistsDescription:
-      "Check whether a Google Drive file or folder exists.",
-    googleDriveExistsFileId: "ID of the file or folder to check",
-    googleDriveOAuthRequired: "Specify OAuth credentials to use Google Drive.",
-    googleDriveExpectedFile: "The specified Google Drive item is not a file.",
-    googleDriveExpectedBinaryContent:
-      "Could not retrieve file data from Google Drive.",
     chatworkApiToken: "Chatwork API token",
     chatworkApiTokenDescription:
       "Provide an API token when using API token authentication. Do not combine it with an access token.",
@@ -561,29 +533,6 @@ export const en = {
     documentExtractionEmpty: "Could not extract a document from the file.",
     documentExtractionFailed: "Document extraction failed: {{0}}",
     chatFileOperationFailed: "Chat file operation failed: {{0}}",
-    openDalServiceName: "OpenDAL service name",
-    openDalServiceNameDescription:
-      "Specify an OpenDAL service name. See https://opendal.apache.org/services/",
-    openDalServiceConfig: "OpenDAL service configuration",
-    openDalServiceConfigDescription:
-      "Provide the selected service's required settings as key-value pairs.",
-    openDalRemoteFileTools: "Generic remote file tools (OpenDAL)",
-    openDalListPathDescription:
-      "List files and directories directly under or below a path in a remote file source.",
-    openDalPathToList: "Path to list",
-    openDalRecursive: "Whether to list contents recursively",
-    openDalMaxResults: "Maximum number of results (1–1000)",
-    openDalPageToken: "Position to continue listing after this path",
-    openDalFileHandleDescription: "Get a handle to a remote file.",
-    openDalFilePathForHandle: "Path of the file to create a handle for",
-    openDalMetadataDescription: "Get metadata for a remote file or directory.",
-    openDalMetadataPath: "Path to get metadata for",
-    openDalPathExistsDescription:
-      "Check whether a path exists in the remote source.",
-    openDalPathToCheck: "Path to check",
-    openDalExpectedFile: "The specified remote item is not a file.",
-    openDalExpectedBinaryContent:
-      "Could not retrieve file data from the remote source.",
     oauthAuthentication: "OAuth credentials",
     threadOAuthSelection: "{{0}} (shared thread OAuth)",
     threadOAuthLink:

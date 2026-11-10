@@ -1,5 +1,5 @@
 import { createMCPClient } from "@ai-sdk/mcp";
-import { getAccessToken } from "../repository/oauth";
+import { resolveMcpCredentials } from "./mcp-credentials";
 
 import { contextFetch } from "./mcp-context";
 
@@ -9,18 +9,27 @@ export async function getMcpClient(
   headers: Record<string, string>,
   authId: string | null,
   context: Record<string, unknown> = {},
+  upstreamOAuth = false,
 ) {
-  const auth = authId !== null ? await getAccessToken(authId) : null;
-  if (auth !== null) {
-    headers["Authorization"] = `Bearer ${auth.accessToken}`;
-  }
+  const credentials = await resolveMcpCredentials(
+    authId,
+    headers,
+    upstreamOAuth,
+  );
   const client = await createMCPClient({
     transport: {
       type: transportType,
       url: url,
-      headers: headers,
-      ...(Object.keys(context).length
-        ? { fetch: contextFetch(context, new URL(url).href) }
+      headers: credentials.headers,
+      ...(Object.keys(context).length || credentials.upstreamAccessToken
+        ? {
+            fetch: contextFetch(
+              context,
+              new URL(url).href,
+              fetch,
+              credentials.upstreamAccessToken,
+            ),
+          }
         : {}),
     },
   });

@@ -26,6 +26,7 @@ For example, to run a bot that posts a recurring checklist to a team thread on w
 - **Tools and files:** Give bots access to chat and attachment tools and connected MCP servers. Tool availability depends on each bot's configuration and connected credentials.
 - **Web search and memory:** Connect a web search MCP server to enable search. Choose whether a bot's memory is disabled, kept per thread, or shared across the bot.
 - **MCP servers:** Configure MCP endpoints and HTTP headers, test connections, and make the servers available to bots.
+
 - **Sandboxes:** Configure E2B or OpenSandbox execution environments, including environment variables, allowed network domains, initialization commands, and sharing scope. Inspect persistent instances and use the built-in terminal.
 - **Scheduled prompts:** Run a prompt on selected bot/adapter threads using a five-field or six-field Cron expression and an IANA timezone. Schedule changes are synchronized with the running scheduler.
 - **Usage and rate limits:** View request and token usage over the last 30 days in the dashboard. Set limits for a bot, agent, or provider, aggregate usage per thread or across the target, and choose a Cron expression and timezone for the reset boundary. Configure the message shown when a limit is reached.
@@ -33,6 +34,8 @@ For example, to run a bot that posts a recurring checklist to a team thread on w
 - **Groups and permissions:** Administrators can manage group membership and grant users or groups access to resources such as bots.
 - **List search:** Management lists support name-based search and server-side pagination in pages of 25 records.
 - **OAuth and users:** Manage OAuth accounts for integrations, workspace users, TOTP-based MFA, email verification, and password resets. See [Users and authentication](#users-and-authentication) for details.
+
+The separate bot_tools MCP servers provide Google Drive and OpenDAL remote file tools. They return files of up to 10 MiB for use with the bot's file parsing and chat attachment tools. Configure their context schema URLs and OAuth connections as described in the bot_tools README.
 
 ## Customization
 

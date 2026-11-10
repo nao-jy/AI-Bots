@@ -1017,35 +1017,6 @@ export const ja = {
     messageId: "メッセージID",
     attachmentIndex: "アタッチメントのインデックス",
     webContentFetchToolDescription: "Webコンテンツをフェッチしてパースします",
-    googleDriveRemoteFileTools: "Googleドライブ用リモートファイルツール",
-    googleDriveListFilesDescription:
-      "Googleドライブ上のフォルダのファイル・フォルダを一覧します。再帰的に取得することも可能です。",
-    googleDriveFolderId: "一覧を取得するフォルダのID",
-    googleDriveRecursive: "配下を再帰的に一覧するか",
-    googleDriveMaxResults: "取得する最大件数（1〜1000）",
-    googleDrivePageToken: "このパスより後から一覧を続ける場合の開始位置",
-    googleDriveSharedFilesDescription:
-      "Googleドライブで自分と共有されているファイル・フォルダを一覧します。共有フォルダの中身は通常の一覧ツールで取得してください。",
-    googleDriveNamePageToken: "この名前より後から一覧を続ける場合の開始位置",
-    googleDriveSearchDescription:
-      "Google Drive APIの検索クエリ（q）でファイル・フォルダを検索します。Drive APIのq構文を使い、name contains、fullText contains、'<folderId>' in parents、modifiedTime、mimeType、sharedWithMeなどの条件を指定してください。複数条件はand/orで組み合わせられます。詳細な構文はGoogle Drive APIの仕様に従います。",
-    googleDriveSearchQuery: "Google Drive APIの検索クエリ",
-    googleDriveNextPageToken: "前回の検索結果に含まれる次ページトークン",
-    googleDriveFileHandleDescription:
-      "Googleドライブのファイル内容を参照するファイルハンドルを取得します。",
-    googleDriveFileIdForHandle: "ハンドルを作成するファイルのID",
-    googleDriveMetadataDescription:
-      "Googleドライブ上のファイルまたはフォルダのメタデータを取得します。",
-    googleDriveMetadataFileId: "メタデータを取得するファイルまたはフォルダのID",
-    googleDriveExistsDescription:
-      "Googleドライブ上のファイルまたはフォルダの存在を確認します。",
-    googleDriveExistsFileId: "存在を確認するファイルまたはフォルダのID",
-    googleDriveOAuthRequired:
-      "Googleドライブを使うにはOAuth認証情報を指定してください。",
-    googleDriveExpectedFile:
-      "指定されたGoogleドライブ項目はファイルではありません。",
-    googleDriveExpectedBinaryContent:
-      "Googleドライブからファイルデータを取得できませんでした。",
     chatworkApiToken: "Chatwork APIトークン",
     chatworkApiTokenDescription:
       "APIトークンを使用する場合に指定します。アクセストークンとは併用できません。",
@@ -1077,30 +1048,6 @@ export const ja = {
     documentExtractionEmpty: "ファイルから文書を抽出できませんでした。",
     documentExtractionFailed: "文書の抽出に失敗しました: {{0}}",
     chatFileOperationFailed: "チャットのファイル操作に失敗しました: {{0}}",
-    openDalServiceName: "OpenDALサービス名",
-    openDalServiceNameDescription:
-      "OpenDALサービス名を指定してください。https://opendal.apache.org/services/",
-    openDalServiceConfig: "OpenDALサービスの設定",
-    openDalServiceConfigDescription:
-      "選択したサービスに必要な設定をキーと値の組で指定してください。",
-    openDalRemoteFileTools: "汎用リモートファイルツール（OpenDAL）",
-    openDalListPathDescription:
-      "リモートファイルソースの指定したパス直下または配下のファイル・ディレクトリを一覧します。",
-    openDalPathToList: "一覧を取得するパス",
-    openDalRecursive: "配下を再帰的に一覧するか",
-    openDalMaxResults: "取得する最大件数（1〜1000）",
-    openDalPageToken: "このパスより後から一覧を続ける場合の開始位置",
-    openDalFileHandleDescription: "リモートファイルのハンドルを取得します。",
-    openDalFilePathForHandle: "ハンドルを作成するファイルのパス",
-    openDalMetadataDescription:
-      "リモートファイルまたはディレクトリのメタデータを取得します。",
-    openDalMetadataPath: "メタデータを取得するパス",
-    openDalPathExistsDescription:
-      "リモートソース上のパスが存在するかを確認します。",
-    openDalPathToCheck: "確認するパス",
-    openDalExpectedFile: "指定されたリモート項目はファイルではありません。",
-    openDalExpectedBinaryContent:
-      "リモートソースからファイルデータを取得できませんでした。",
     oauthAuthentication: "OAuth認証情報",
     threadOAuthSelection: "{{0}}（スレッド共有 OAuth）",
     threadOAuthLink:

@@ -17,13 +17,30 @@ type ContextSchema = {
   error: boolean;
 };
 
-function contextUiSchema(schema: RJSFSchema): UiSchema {
+function contextUiSchema(
+  schema: RJSFSchema,
+  root = schema,
+  seen = new Set<string>(),
+): UiSchema {
+  if (schema.$ref?.startsWith("#/$defs/")) {
+    const name = schema.$ref.slice("#/$defs/".length);
+    const resolved = root.$defs?.[name];
+    if (!resolved || typeof resolved === "boolean" || seen.has(name)) return {};
+    return contextUiSchema(resolved, root, new Set([...seen, name]));
+  }
   const ui: UiSchema = { "ui:submitButtonOptions": { norender: true } };
+  if (
+    schema.items &&
+    !Array.isArray(schema.items) &&
+    typeof schema.items === "object"
+  ) {
+    ui.items = contextUiSchema(schema.items, root, seen);
+  }
   for (const [name, field] of Object.entries(schema.properties ?? {})) {
     if (typeof field === "object" && field !== null) {
       ui[name] = field.writeOnly
         ? { "ui:widget": "password" }
-        : contextUiSchema(field);
+        : contextUiSchema(field, root, seen);
     }
   }
   return ui;
