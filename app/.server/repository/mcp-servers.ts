@@ -2,8 +2,6 @@ import { db } from "./db";
 import type { AuthUser } from "../auth";
 import {
   decryptMcpHeaders,
-  decryptMcpContext,
-  encryptCredential,
   encryptStringMap,
   generateResourceId,
   jsonb,
@@ -15,8 +13,6 @@ import {
   hasResourceAccess,
   includeResourcePermissions,
 } from "../authorization";
-import validator from "@rjsf/validator-ajv8";
-import type { RJSFSchema } from "@rjsf/utils";
 
 export const TRANSPORTS = {
   http: "Streamable HTTP",
@@ -47,7 +43,7 @@ export async function listMcpServers(user: AuthUser, ids: string[]) {
           transportId: server.transport,
           endpoint: server.endpoint ?? "",
           headers: JSON.stringify(decryptMcpHeaders(server.headers), null, 2),
-          context: JSON.stringify(decryptMcpContext(server.headers), null, 2),
+          contextEndpoint: server.contextEndpoint ?? "",
           status: server.endpoint
             ? "server.endpointConfigured"
             : "server.endpointMissing",
@@ -67,7 +63,7 @@ export async function saveMcpServer(
   const transport = String(values.get("transportId") ?? "").trim();
   const endpoint = String(values.get("endpoint") ?? "").trim();
   const headersValue = String(values.get("headers") ?? "{}").trim();
-  const contextValue = String(values.get("context") ?? "{}").trim();
+  const contextEndpoint = String(values.get("contextEndpoint") ?? "").trim();
   if (!name || !transport)
     return { error: "server.serverNameAndTransportRequired" };
   if (!isMcpTransport(transport))
@@ -83,15 +79,6 @@ export async function saveMcpServer(
   } catch {
     return { error: "server.invalidHttpHeadersJson" };
   }
-  let context: Record<string, unknown>;
-  try {
-    const parsed: unknown = JSON.parse(contextValue || "{}");
-    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed))
-      throw new Error();
-    context = parsed as Record<string, unknown>;
-  } catch {
-    return { error: "MCP context must be a JSON object." };
-  }
   if (
     id !== null &&
     (!(await db.orm.aibot.McpServer.first({
@@ -101,48 +88,14 @@ export async function saveMcpServer(
       !(await hasResourceAccess(user, id, "update")))
   )
     return { error: "server.mcpServerNotFound" };
-  if (Object.keys(context).length) {
-    try {
-      const schemaUrl = new URL(endpoint);
-      schemaUrl.pathname = schemaUrl.pathname.replace(
-        /\/?[^/]+\/?$/,
-        "/context-schema",
-      );
-      schemaUrl.search = "";
-      schemaUrl.hash = "";
-      const response = await fetch(schemaUrl, {
-        headers,
-        redirect: "error",
-        signal: AbortSignal.timeout(10_000),
-      });
-      if (!response.ok) throw new Error();
-      const schema: unknown = await response.json();
-      if (
-        !schema ||
-        typeof schema !== "object" ||
-        Array.isArray(schema) ||
-        (schema as { type?: unknown }).type !== "object"
-      )
-        throw new Error();
-      if (
-        !validator.isValid(schema as RJSFSchema, context, schema as RJSFSchema)
-      )
-        return {
-          error: "MCP context does not match the server context schema.",
-        };
-    } catch {
-      return { error: "Could not load the MCP server context schema." };
-    }
-  }
-  let encryptedHeaders: ReturnType<typeof encryptStringMap> & {
-    contextCiphertext?: string;
-  };
+  let encryptedHeaders: ReturnType<typeof encryptStringMap>;
   try {
     encryptedHeaders = encryptStringMap(headers);
-    if (Object.keys(context).length)
-      encryptedHeaders.contextCiphertext = encryptCredential(
-        JSON.stringify(context),
-      );
+    if (contextEndpoint) {
+      const url = new URL(contextEndpoint);
+      if (!["http:", "https:"].includes(url.protocol))
+        throw new Error("Invalid context schema URL");
+    }
   } catch (error) {
     return {
       error:
@@ -156,6 +109,7 @@ export async function saveMcpServer(
     description: description || null,
     transport,
     endpoint: endpoint || null,
+    contextEndpoint: contextEndpoint || null,
     headers: jsonb(encryptedHeaders),
   };
   if (id === null) {

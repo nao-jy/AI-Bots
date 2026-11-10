@@ -48,10 +48,6 @@
       "model": "ChatBotToolSandbox",
       "namespace": "aibot"
     },
-    "ChatBotToolSetContext": {
-      "model": "ChatBotToolSetContext",
-      "namespace": "aibot"
-    },
     "ChatTarget": {
       "model": "ChatTarget",
       "namespace": "aibot"
@@ -1362,21 +1358,6 @@
                   "namespace": "aibot"
                 }
               },
-              "toolSets": {
-                "cardinality": "1:N",
-                "on": {
-                  "localFields": [
-                    "id"
-                  ],
-                  "targetFields": [
-                    "chatbotId"
-                  ]
-                },
-                "to": {
-                  "model": "ChatBotToolSetContext",
-                  "namespace": "aibot"
-                }
-              },
               "usage": {
                 "cardinality": "1:N",
                 "on": {
@@ -1590,6 +1571,13 @@
                   "kind": "scalar"
                 }
               },
+              "context": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/jsonb@1",
+                  "kind": "scalar"
+                }
+              },
               "createdAt": {
                 "nullable": false,
                 "type": {
@@ -1623,6 +1611,16 @@
                 "type": {
                   "codecId": "pg/uuid@1",
                   "kind": "scalar"
+                }
+              },
+              "updatedAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-date@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 3
+                  }
                 }
               }
             },
@@ -1716,6 +1714,9 @@
                 "chatbotId": {
                   "column": "chatbotId"
                 },
+                "context": {
+                  "column": "context"
+                },
                 "createdAt": {
                   "column": "createdAt"
                 },
@@ -1730,6 +1731,9 @@
                 },
                 "organizationId": {
                   "column": "organizationId"
+                },
+                "updatedAt": {
+                  "column": "updatedAt"
                 }
               },
               "namespaceId": "aibot",
@@ -2139,149 +2143,6 @@
               "table": "ChatBotToolSandbox"
             }
           },
-          "ChatBotToolSetContext": {
-            "fields": {
-              "chatbotId": {
-                "nullable": false,
-                "type": {
-                  "codecId": "pg/uuid@1",
-                  "kind": "scalar"
-                }
-              },
-              "createdAt": {
-                "nullable": false,
-                "type": {
-                  "codecId": "pg/timestamptz-string@1",
-                  "kind": "scalar"
-                }
-              },
-              "id": {
-                "nullable": false,
-                "type": {
-                  "codecId": "pg/uuid@1",
-                  "kind": "scalar"
-                }
-              },
-              "name": {
-                "nullable": false,
-                "type": {
-                  "codecId": "pg/text@1",
-                  "kind": "scalar"
-                }
-              },
-              "organizationId": {
-                "nullable": false,
-                "type": {
-                  "codecId": "pg/uuid@1",
-                  "kind": "scalar"
-                }
-              },
-              "toolSetContext": {
-                "nullable": false,
-                "type": {
-                  "codecId": "pg/jsonb@1",
-                  "kind": "scalar"
-                }
-              },
-              "toolSetName": {
-                "nullable": false,
-                "type": {
-                  "codecId": "pg/text@1",
-                  "kind": "scalar"
-                }
-              },
-              "updatedAt": {
-                "nullable": false,
-                "type": {
-                  "codecId": "pg/timestamptz-date@1",
-                  "kind": "scalar",
-                  "typeParams": {
-                    "precision": 3
-                  }
-                }
-              }
-            },
-            "relations": {
-              "chatbot": {
-                "cardinality": "N:1",
-                "nullable": false,
-                "on": {
-                  "localFields": [
-                    "chatbotId"
-                  ],
-                  "targetFields": [
-                    "id"
-                  ]
-                },
-                "to": {
-                  "model": "ChatBot",
-                  "namespace": "aibot"
-                }
-              },
-              "organization": {
-                "cardinality": "N:1",
-                "nullable": false,
-                "on": {
-                  "localFields": [
-                    "organizationId"
-                  ],
-                  "targetFields": [
-                    "id"
-                  ]
-                },
-                "to": {
-                  "model": "Organization",
-                  "namespace": "aibot"
-                }
-              },
-              "resource": {
-                "cardinality": "N:1",
-                "nullable": false,
-                "on": {
-                  "localFields": [
-                    "id"
-                  ],
-                  "targetFields": [
-                    "id"
-                  ]
-                },
-                "to": {
-                  "model": "ResourceBase",
-                  "namespace": "aibot"
-                }
-              }
-            },
-            "storage": {
-              "fields": {
-                "chatbotId": {
-                  "column": "chatbotId"
-                },
-                "createdAt": {
-                  "column": "createdAt"
-                },
-                "id": {
-                  "column": "id"
-                },
-                "name": {
-                  "column": "name"
-                },
-                "organizationId": {
-                  "column": "organizationId"
-                },
-                "toolSetContext": {
-                  "column": "toolSetContext"
-                },
-                "toolSetName": {
-                  "column": "toolSetName"
-                },
-                "updatedAt": {
-                  "column": "updatedAt"
-                }
-              },
-              "namespaceId": "aibot",
-              "table": "ChatBotToolSetContext"
-            }
-          },
           "ChatTarget": {
             "fields": {
               "chatbotAdapterId": {
@@ -2679,6 +2540,13 @@
           },
           "McpServer": {
             "fields": {
+              "contextEndpoint": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
               "createdAt": {
                 "nullable": false,
                 "type": {
@@ -2803,6 +2671,9 @@
             },
             "storage": {
               "fields": {
+                "contextEndpoint": {
+                  "column": "contextEndpoint"
+                },
                 "createdAt": {
                   "column": "createdAt"
                 },
@@ -6556,6 +6427,11 @@
                   "dataType": "pg/uuid",
                   "nullable": false
                 },
+                "context": {
+                  "codecId": "pg/jsonb@1",
+                  "dataType": "pg/jsonb",
+                  "nullable": true
+                },
                 "createdAt": {
                   "codecId": "pg/timestamptz-string@1",
                   "dataType": "pg/timestamptz",
@@ -6588,6 +6464,14 @@
                   "codecId": "pg/uuid@1",
                   "dataType": "pg/uuid",
                   "nullable": false
+                },
+                "updatedAt": {
+                  "codecId": "pg/timestamptz-date@1",
+                  "dataType": "pg/timestamptz",
+                  "nullable": false,
+                  "typeParams": {
+                    "precision": 3
+                  }
                 }
               },
               "foreignKeys": [
@@ -7159,161 +7043,6 @@
                 }
               ]
             },
-            "ChatBotToolSetContext": {
-              "columns": {
-                "chatbotId": {
-                  "codecId": "pg/uuid@1",
-                  "dataType": "pg/uuid",
-                  "nullable": false
-                },
-                "createdAt": {
-                  "codecId": "pg/timestamptz-string@1",
-                  "dataType": "pg/timestamptz",
-                  "default": {
-                    "expression": "now()",
-                    "kind": "function"
-                  },
-                  "nullable": false
-                },
-                "id": {
-                  "codecId": "pg/uuid@1",
-                  "dataType": "pg/uuid",
-                  "nullable": false
-                },
-                "name": {
-                  "codecId": "pg/text@1",
-                  "dataType": "pg/text",
-                  "nullable": false
-                },
-                "organizationId": {
-                  "codecId": "pg/uuid@1",
-                  "dataType": "pg/uuid",
-                  "nullable": false
-                },
-                "toolSetContext": {
-                  "codecId": "pg/jsonb@1",
-                  "dataType": "pg/jsonb",
-                  "default": {
-                    "kind": "literal",
-                    "value": {}
-                  },
-                  "nullable": false
-                },
-                "toolSetName": {
-                  "codecId": "pg/text@1",
-                  "dataType": "pg/text",
-                  "nullable": false
-                },
-                "updatedAt": {
-                  "codecId": "pg/timestamptz-date@1",
-                  "dataType": "pg/timestamptz",
-                  "nullable": false,
-                  "typeParams": {
-                    "precision": 3
-                  }
-                }
-              },
-              "foreignKeys": [
-                {
-                  "index": {
-                    "primaryKey": true
-                  },
-                  "onDelete": "cascade",
-                  "source": {
-                    "columns": [
-                      "id"
-                    ],
-                    "namespaceId": "aibot",
-                    "tableName": "ChatBotToolSetContext"
-                  },
-                  "target": {
-                    "columns": [
-                      "id"
-                    ],
-                    "namespaceId": "aibot",
-                    "tableName": "ResourceBase"
-                  }
-                },
-                {
-                  "index": {
-                    "name": "ChatBotToolSetContext_organizationId_idx_2e17ef41"
-                  },
-                  "onDelete": "cascade",
-                  "source": {
-                    "columns": [
-                      "organizationId"
-                    ],
-                    "namespaceId": "aibot",
-                    "tableName": "ChatBotToolSetContext"
-                  },
-                  "target": {
-                    "columns": [
-                      "id"
-                    ],
-                    "namespaceId": "aibot",
-                    "tableName": "Organization"
-                  }
-                },
-                {
-                  "index": {
-                    "name": "ChatBotToolSetContext_chatbotId_idx_52db07ea"
-                  },
-                  "onDelete": "cascade",
-                  "source": {
-                    "columns": [
-                      "chatbotId"
-                    ],
-                    "namespaceId": "aibot",
-                    "tableName": "ChatBotToolSetContext"
-                  },
-                  "target": {
-                    "columns": [
-                      "id"
-                    ],
-                    "namespaceId": "aibot",
-                    "tableName": "ChatBot"
-                  }
-                }
-              ],
-              "indexes": [
-                {
-                  "columns": [
-                    "chatbotId"
-                  ],
-                  "name": "ChatBotToolSetContext_chatbotId_idx_52db07ea",
-                  "prefix": "ChatBotToolSetContext_chatbotId_idx",
-                  "unique": false
-                },
-                {
-                  "columns": [
-                    "organizationId"
-                  ],
-                  "name": "ChatBotToolSetContext_organizationId_idx_2e17ef41",
-                  "prefix": "ChatBotToolSetContext_organizationId_idx",
-                  "unique": false
-                }
-              ],
-              "primaryKey": {
-                "columns": [
-                  "id"
-                ]
-              },
-              "uniques": [
-                {
-                  "columns": [
-                    "organizationId",
-                    "name"
-                  ]
-                },
-                {
-                  "columns": [
-                    "toolSetName",
-                    "chatbotId",
-                    "toolSetContext"
-                  ]
-                }
-              ]
-            },
             "ChatTarget": {
               "columns": {
                 "chatbotAdapterId": {
@@ -7766,6 +7495,11 @@
                 }
               ],
               "columns": {
+                "contextEndpoint": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "nullable": true
+                },
                 "createdAt": {
                   "codecId": "pg/timestamptz-string@1",
                   "dataType": "pg/timestamptz",
@@ -9859,10 +9593,10 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "5b158a92977ca07a797aa8e1e8c512303cb6771313c570330e1c11e6fd529aff"
+    "storageHash": "fe81e888a4734a3a8b3fb92c7a0e892efdd46fefe287ae980ba3ce94d73f3528"
   },
   "execution": {
-    "executionHash": "da363015a8b9e614945f7deb9cd46d9fb0d77a2b72a52277a08f6412d2832812",
+    "executionHash": "3bc119f64d51b7235bd5ddbfa41b9a4d1218fba8bccdda447624d1c6fb1fdc3f",
     "mutations": {
       "defaults": [
         {
@@ -10018,6 +9752,27 @@
             }
           },
           "ref": {
+            "entry": "ChatBotMcpServer",
+            "field": "updatedAt",
+            "namespace": "aibot"
+          }
+        },
+        {
+          "onCreate": {
+            "id": "timestampNow",
+            "kind": "generator",
+            "params": {
+              "precision": 3
+            }
+          },
+          "onUpdate": {
+            "id": "timestampNow",
+            "kind": "generator",
+            "params": {
+              "precision": 3
+            }
+          },
+          "ref": {
             "entry": "ChatBotPublicId",
             "field": "updatedAt",
             "namespace": "aibot"
@@ -10061,27 +9816,6 @@
           },
           "ref": {
             "entry": "ChatBotToolSandbox",
-            "field": "updatedAt",
-            "namespace": "aibot"
-          }
-        },
-        {
-          "onCreate": {
-            "id": "timestampNow",
-            "kind": "generator",
-            "params": {
-              "precision": 3
-            }
-          },
-          "onUpdate": {
-            "id": "timestampNow",
-            "kind": "generator",
-            "params": {
-              "precision": 3
-            }
-          },
-          "ref": {
-            "entry": "ChatBotToolSetContext",
             "field": "updatedAt",
             "namespace": "aibot"
           }
@@ -10455,6 +10189,7 @@
       "forShare": true,
       "forUpdate": true,
       "insertOnConflictSkip": true,
+      "insertOnConflictTarget": true,
       "insertOnConflictWithoutTarget": true,
       "lateral": true,
       "lockNowait": true,

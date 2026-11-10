@@ -164,10 +164,6 @@ export async function setResourceGrant(
         id: resourceId,
         organizationId: actor.organizationId,
       }),
-      db.orm.aibot.ChatBotToolSetContext.first({
-        id: resourceId,
-        organizationId: actor.organizationId,
-      }),
       db.orm.aibot.ChatBotSchedule.first({
         id: resourceId,
         organizationId: actor.organizationId,

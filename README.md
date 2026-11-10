@@ -11,19 +11,19 @@ AI Bots is a self-hosted web workspace for building and running bots in Slack, M
 | Goal                           | Example setup in AI Bots                                                                                       |
 | ------------------------------ | -------------------------------------------------------------------------------------------------------------- |
 | Answer team questions in chat  | Assign a Slack or Teams adapter and an AI agent to a bot; configure its instructions and conversation history. |
-| Find and use documents         | Configure Google Drive credentials or an OpenDAL-backed file store, then assign the file tools to a bot.       |
+| Find and use documents         | Connect an MCP server that provides document tools to a bot.       |
 | Post to a thread every morning | Schedule a prompt for a selected bot and thread with a Cron expression and timezone.                           |
 | Work with files from chat      | Combine attachment reading, file posting, and optional code execution in a sandbox.                            |
 | Control usage and access       | Set rate limits for bots, agents, or providers and resource permissions for users or groups.                   |
 
-For example, to run a bot that posts a recurring checklist to a team thread on weekday mornings, configure a **chat adapter → AI agent → bot → schedule**. You can also connect Google Drive or an MCP server when that bot needs an external source of information.
+For example, to run a bot that posts a recurring checklist to a team thread on weekday mornings, configure a **chat adapter → AI agent → bot → schedule**. You can also connect an MCP server when that bot needs an external source of information.
 
 ## Features
 
 - **Chatbots:** Configure instructions, failure messages, conversation history, enabled state, and the services available to each bot. View and regenerate public IDs and copy adapter webhook URLs.
 - **Chat adapters:** Connect Slack, Microsoft Teams, Google Chat, Discord, X, and LINE. Configure platform-specific settings, optionally link OAuth credentials, and test adapter connections.
 - **AI providers and agents:** Configure OpenAI, Azure OpenAI, Anthropic, or an OpenAI-compatible provider, then define agents with a model ID and model options. Test agents before assigning them to bots.
-- **Tools and files:** Give bots access to chat and attachment tools, Google Drive and OpenDAL-backed remote file stores. Tool availability depends on each bot's configuration and connected credentials.
+- **Tools and files:** Give bots access to chat and attachment tools and connected MCP servers. Tool availability depends on each bot's configuration and connected credentials.
 - **Web search and memory:** Connect a web search MCP server to enable search. Choose whether a bot's memory is disabled, kept per thread, or shared across the bot.
 - **MCP servers:** Configure MCP endpoints and HTTP headers, test connections, and make the servers available to bots.
 - **Sandboxes:** Configure E2B or OpenSandbox execution environments, including environment variables, allowed network domains, initialization commands, and sharing scope. Inspect persistent instances and use the built-in terminal.
@@ -45,9 +45,8 @@ When you need a service or execution environment that is not included, implement
 | Another sandbox       | [`Sandbox` interface](./app/.server/features/toolsets/sandboxes/index.ts) and [E2B implementation](./app/.server/features/toolsets/sandboxes/e2b.ts).               | Add it to `SANDBOXES` in `sandboxes/index.ts`.                                                   |
 | Another memory store  | [`FileSystem` interface](./app/.server/features/filesystem/index.ts) and [OpenDAL implementation](./app/.server/features/filesystem/opendal.ts).                    | Replace the `OpenDalFileSystem` construction in [bot processing](./app/.server/features/bot.ts). |
 | Another email service | [`EmailProvider` interface](./app/.server/features/email-providers/index.ts) and [SMTP relay implementation](./app/.server/features/email-providers/smtp-relay.ts). | Select it in `getEmailProvider()` in `email-providers/index.ts`.                                 |
-| Another toolset       | [`ToolSetFactory` interface](./app/.server/features/toolsets/index.ts) and [Google Drive implementation](./app/.server/features/toolsets/gdrive.ts).                | Add it to `getToolSetFactories()` in `toolsets/index.ts`.                                        |
 
-The file system interface backs bot memory and temporary file storage. Chat attachments and external files such as Google Drive use separate tools.
+The file system interface backs bot memory and temporary file storage. Chat attachments use separate tools.
 
 ## Requirements
 

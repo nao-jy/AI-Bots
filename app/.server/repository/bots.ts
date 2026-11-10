@@ -7,11 +7,16 @@ import {
   idList,
   isUuid,
   jsonb,
+  decryptMcpContext,
+  encryptMcpContext,
+  decryptMcpHeaders,
   record,
 } from "../utils";
-import { ToolSetFactoryRegistry } from "../features/toolsets";
+import {
+  getMcpContextSchema,
+  validateMcpContext,
+} from "../features/mcp-schema";
 import { logAuditEvent } from "../logger/audit-logger";
-import { localizedMessage } from "../../i18n";
 import { isMemoryConfig } from "../features/memory-config";
 import { listOauth } from "./oauth";
 import { t } from "../i18n";
@@ -20,11 +25,6 @@ import {
   hasResourceAccess,
   includeResourcePermissions,
 } from "../authorization";
-
-type ToolSetContextEntry = {
-  toolSetName: string;
-  context: Record<string, unknown>;
-};
 
 function positiveId(value: unknown): string {
   if (
@@ -35,17 +35,6 @@ function positiveId(value: unknown): string {
   )
     throw new Error();
   return value;
-}
-
-function stableJson(value: unknown): string {
-  if (Array.isArray(value))
-    return `[${value.map((item) => stableJson(item)).join(",")}]`;
-  if (value && typeof value === "object")
-    return `{${Object.entries(value)
-      .sort(([left], [right]) => left.localeCompare(right))
-      .map(([key, item]) => `${JSON.stringify(key)}:${stableJson(item)}`)
-      .join(",")}}`;
-  return JSON.stringify(value) ?? "null";
 }
 
 export async function listBots(
@@ -89,32 +78,40 @@ export async function listBots(
       organizationId: user.organizationId,
     }).all(),
   );
-  const [sandboxRows, sandboxLinks, contextRows, authRows] = await Promise.all([
+  const [sandboxRows, sandboxLinks, authRows] = await Promise.all([
     db.orm.aibot.Sandbox.where({ organizationId: user.organizationId }).all(),
     db.orm.aibot.ChatBotToolSandbox.where({
       organizationId: user.organizationId,
     })
       .where((link) => link.chatbotId.in(ids))
       .all(),
-    db.orm.aibot.ChatBotToolSetContext.where({
-      organizationId: user.organizationId,
-    })
-      .where((context) => context.chatbotId.in(ids))
-      .all(),
     db.orm.aibot.OAuthAuthentication.where({
       organizationId: user.organizationId,
     }).all(),
   ]);
-  const [sandboxes, toolSetContexts, authentications] = await Promise.all([
+  const [sandboxes, authentications] = await Promise.all([
     filterResourcesByRole(user, sandboxRows),
-    filterResourcesByRole(user, contextRows),
     filterResourcesByRole(user, authRows),
   ]);
-  const toolSetRegistry = new ToolSetFactoryRegistry(
-    user.organizationId,
-    user.id,
+  const mcpContextSchemas = await Promise.all(
+    mcpServers.map(async (server) => {
+      if (!server.contextEndpoint || !server.endpoint)
+        return { serverId: server.id, schema: null, error: false };
+      try {
+        return {
+          serverId: server.id,
+          schema: await getMcpContextSchema(
+            server.contextEndpoint,
+            decryptMcpHeaders(server.headers),
+            server.endpoint,
+          ),
+          error: false,
+        };
+      } catch {
+        return { serverId: server.id, schema: null, error: true };
+      }
+    }),
   );
-  const toolSetSchemas = await toolSetRegistry.listToolSetSchemas();
   const oauthClients = await listOauth(user.organizationId, user.id);
   return {
     records: await includeResourcePermissions(
@@ -153,6 +150,7 @@ export async function listBots(
               authId: link.oauthClientId
                 ? `thread:${link.oauthClientId}`
                 : link.authId,
+              context: decryptMcpContext(link.context),
             })),
           ),
           mcpServerIds: visibleMcpLinks
@@ -189,24 +187,12 @@ export async function listBots(
               )
               .filter(Boolean)
               .join("、") || "—",
-          toolSetContexts: JSON.stringify(
-            toolSetContexts
-              .filter((context) => context.chatbotId === bot.id)
-              .map((context) => ({
-                toolSetName: context.toolSetName,
-                context: context.toolSetContext ?? {},
-              })),
-            null,
-            2,
-          ),
           publicIds: JSON.stringify(
             bot.publicIds.map(({ slot, publicId }) => ({ slot, id: publicId })),
           ),
           toolsets:
-            toolSetContexts
-              .filter((context) => context.chatbotId === bot.id)
-              .map((context) => context.toolSetName)
-              .join("、") || "—",
+            visibleMcpLinks.map((link) => link.mcpServer.name).join("、") ||
+            "—",
           adapters:
             visibleAdapterLinks
               .map((link) => link.adapter?.name)
@@ -263,7 +249,7 @@ export async function listBots(
       label: `${sandbox.sandboxType} (${sandbox.sandboxScope})`,
       value: String(sandbox.id),
     })),
-    toolSetSchemas: toolSetSchemas,
+    mcpContextSchemas,
   };
 }
 
@@ -285,7 +271,11 @@ export async function saveBot(
   const agentValue = String(values.get("agentId") ?? "").trim();
   const agentId = agentValue || null;
   const adapterIds = idList(values.get("adapterIds")?.toString() ?? null);
-  let mcpConnections: { serverId: string; authId: string | null }[];
+  let mcpConnections: {
+    serverId: string;
+    authId: string | null;
+    context: Record<string, unknown>;
+  }[];
   try {
     const rawConnections = values.get("mcpConnections");
     if (rawConnections !== null) {
@@ -309,7 +299,14 @@ export async function saveBot(
                 connection.authId.startsWith("thread:")
               ? `thread:${positiveId(connection.authId.slice(7))}`
               : positiveId(connection.authId);
-        return { serverId: parsedServerId, authId: parsedAuthId };
+        const context = "context" in connection ? connection.context : {};
+        if (!context || typeof context !== "object" || Array.isArray(context))
+          throw new Error();
+        return {
+          serverId: parsedServerId,
+          authId: parsedAuthId,
+          context: context as Record<string, unknown>,
+        };
       });
     } else {
       const serverIds = idList(values.get("mcpServerIds")?.toString() ?? null);
@@ -331,6 +328,7 @@ export async function saveBot(
       mcpConnections = serverIds.map((serverId) => ({
         serverId,
         authId: authIds[String(serverId)] ?? null,
+        context: {},
       }));
     }
   } catch {
@@ -339,59 +337,6 @@ export async function saveBot(
   const mcpServerIds = mcpConnections.map(({ serverId }) => serverId);
   const sandboxIdRaw = values.get("sandboxId")?.toString() ?? null;
   const sandboxId = sandboxIdRaw || null;
-  let toolSetContexts: ToolSetContextEntry[];
-  try {
-    const parsed: unknown = JSON.parse(
-      String(values.get("toolSetContexts") ?? "[]").trim() || "[]",
-    );
-    if (Array.isArray(parsed)) {
-      toolSetContexts = parsed.map((entry) => {
-        if (
-          !entry ||
-          typeof entry !== "object" ||
-          !("toolSetName" in entry) ||
-          typeof entry.toolSetName !== "string" ||
-          !("context" in entry) ||
-          !entry.context ||
-          typeof entry.context !== "object" ||
-          Array.isArray(entry.context)
-        )
-          throw new Error();
-        return {
-          toolSetName: entry.toolSetName,
-          context: entry.context as Record<string, unknown>,
-        };
-      });
-    } else if (parsed && typeof parsed === "object") {
-      toolSetContexts = Object.entries(parsed).map(([toolSetName, context]) => {
-        if (!context || typeof context !== "object" || Array.isArray(context))
-          throw new Error();
-        return {
-          toolSetName,
-          context: context as Record<string, unknown>,
-        };
-      });
-    } else {
-      throw new Error();
-    }
-  } catch {
-    return { error: "server.toolsetContextMustBeArray" };
-  }
-  const toolSetRegistry = new ToolSetFactoryRegistry(
-    user.organizationId,
-    user.id,
-  );
-  const supportedToolSetNames = await toolSetRegistry.listToolSetNames();
-  if (
-    toolSetContexts.some(
-      ({ toolSetName }) => !supportedToolSetNames.includes(toolSetName),
-    )
-  )
-    return {
-      error: localizedMessage("server.unavailableToolsetNames", {
-        0: supportedToolSetNames.join("、") || "なし",
-      }),
-    };
   if (!name) return { error: "server.botNameRequired" };
   if (agentId !== null && !isUuid(agentId))
     return { error: "server.agentRequired" };
@@ -495,33 +440,25 @@ export async function saveBot(
       !(await hasResourceAccess(user, sandboxId, "read")))
   )
     return { error: "server.selectedSandboxUnavailable" };
-  const toolSetContextKeys = toolSetContexts.map(({ toolSetName, context }) =>
-    JSON.stringify([toolSetName, stableJson(context)]),
-  );
-  if (new Set(toolSetContextKeys).size !== toolSetContextKeys.length)
-    return { error: "server.duplicateToolsetContext" };
-  for (const { toolSetName, context } of toolSetContexts) {
-    // Keep existing legacy settings until the bot owner removes them after migration.
-    // New or modified King of Time settings must use an MCP server instead.
-    if (toolSetName === "king-of-time" && id !== null) {
-      const existing = await db.orm.aibot.ChatBotToolSetContext.where({
-        organizationId: user.organizationId,
-        chatbotId: id,
-        toolSetName,
-      }).all();
-      if (existing.some((item) => stableJson(item.toolSetContext) === stableJson(context)))
-        continue;
+  for (const { serverId, context } of mcpConnections) {
+    const server = mcpServers.find((item) => item.id === serverId)!;
+    if (!server.contextEndpoint) {
+      if (Object.keys(context).length)
+        return { error: "server.mcpContextSchemaRequired" };
+      continue;
     }
-    const isValidContext = await toolSetRegistry.validateToolSetContext(
-      toolSetName,
-      context,
-    );
-    if (!isValidContext)
-      return {
-        error: localizedMessage("server.invalidToolsetContextForItem", {
-          0: toolSetName,
-        }),
-      };
+    try {
+      if (!server.endpoint) throw new Error();
+      const schema = await getMcpContextSchema(
+        server.contextEndpoint,
+        decryptMcpHeaders(server.headers),
+        server.endpoint,
+      );
+      if (!validateMcpContext(schema, context))
+        return { error: "server.mcpContextInvalid" };
+    } catch {
+      return { error: "server.mcpContextSchemaUnavailable" };
+    }
   }
   if (
     id !== null &&
@@ -591,13 +528,14 @@ export async function saveBot(
       });
     }
     await tx.orm.aibot.ChatBotMcpServer.where({ chatbotId: botId! }).delete();
-    for (const { serverId, authId } of mcpConnections) {
+    for (const { serverId, authId, context } of mcpConnections) {
       await tx.orm.aibot.ChatBotMcpServer.create({
         organizationId: user.organizationId,
         chatbotId: botId!,
         mcpServerId: serverId,
         authId: authId?.startsWith("thread:") ? null : authId,
         oauthClientId: authId?.startsWith("thread:") ? authId.slice(7) : null,
+        context: jsonb(encryptMcpContext(context)),
       });
     }
     await tx.orm.aibot.ChatBotToolSandbox.where({ chatbotId: botId! }).delete();
@@ -606,52 +544,6 @@ export async function saveBot(
         organizationId: user.organizationId,
         chatbotId: botId!,
         sandboxId,
-      });
-    }
-    const existingContexts = await tx.orm.aibot.ChatBotToolSetContext.where({
-      chatbotId: botId!,
-    }).all();
-    const contextsToDelete = new Map(
-      existingContexts.map((existing) => [
-        JSON.stringify([
-          existing.toolSetName,
-          stableJson(existing.toolSetContext),
-        ]),
-        existing.id,
-      ]),
-    );
-    const contextsToCreate: ToolSetContextEntry[] = [];
-    for (const { toolSetName, context } of toolSetContexts) {
-      const key = JSON.stringify([toolSetName, stableJson(context)]);
-      if (contextsToDelete.has(key)) {
-        contextsToDelete.delete(key);
-      } else {
-        contextsToCreate.push({ toolSetName, context });
-      }
-    }
-    for (const contextId of contextsToDelete.values()) {
-      await tx.orm.aibot.ResourceBase.where({ id: contextId }).delete();
-    }
-    for (const { toolSetName, context } of contextsToCreate) {
-      const contextId = generateResourceId();
-      await tx.orm.aibot.ResourceBase.create({
-        id: contextId,
-        organizationId: user.organizationId,
-      });
-      await tx.orm.aibot.ChatBotToolSetContext.create({
-        id: contextId,
-        name: `${toolSetName} ${contextId}`,
-        organizationId: user.organizationId,
-        chatbotId: botId!,
-        toolSetName,
-        toolSetContext: jsonb(context),
-      });
-      await tx.orm.aibot.Grant.create({
-        organizationId: user.organizationId,
-        principalId: user.id,
-        resourceId: contextId,
-        role: "manager",
-        grantedById: user.id,
       });
     }
     return botId;
@@ -688,11 +580,6 @@ export async function deleteBot(user: AuthUser, id: string) {
         id: connection.authenticationId,
         organizationId: user.organizationId,
       }).delete();
-    const contexts = await tx.orm.aibot.ChatBotToolSetContext.where({
-      chatbotId: id,
-    }).all();
-    for (const context of contexts)
-      await tx.orm.aibot.ResourceBase.where({ id: context.id }).delete();
     await tx.orm.aibot.ResourceBase.where({ id }).delete();
     return true;
   });
@@ -769,7 +656,6 @@ export async function getAvailableBot(botId: string) {
     .include("mcpServers", (server) =>
       server.include("mcpServer").include("authentication"),
     )
-    .include("toolSets")
     .first();
   return chatbot;
 }

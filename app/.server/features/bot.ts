@@ -26,7 +26,6 @@ import { insertUsage } from "../repository/agents";
 import { getExceededRateLimit } from "../repository/rate-limits";
 import { getChatTools } from "./toolsets/chat-tools";
 import type { FileHandleReaderMap } from "./toolsets/helpers/file-handle";
-import { ToolSetFactoryRegistry } from "./toolsets";
 import { getThreadOAuthTools } from "./toolsets/thread-oauth";
 import { getThreadOAuthAuthentication } from "../repository/thread-oauth";
 import { getAccessToken, getOwnedOAuthClient } from "../repository/oauth";
@@ -245,11 +244,6 @@ async function processBotMessage(
     const oauthClientIds = new Set<string>();
     for (const link of chatbot.mcpServers)
       if (link.oauthClientId) oauthClientIds.add(link.oauthClientId);
-    for (const entry of chatbot.toolSets) {
-      const authId = asRecord(entry.toolSetContext).authId;
-      if (typeof authId === "string" && authId.startsWith("thread:"))
-        oauthClientIds.add(authId.slice(7));
-    }
     const oauthClients = new Map<string, string>();
     for (const id of oauthClientIds) {
       const client = await getOwnedOAuthClient(id, chatbot.organizationId);
@@ -341,7 +335,7 @@ async function processBotMessage(
         server.endpoint,
         decryptMcpHeaders(server.headers),
         authId,
-        decryptMcpContext(server.headers),
+        decryptMcpContext(link.context),
       );
       mcpClients.push(client);
 
@@ -353,32 +347,6 @@ async function processBotMessage(
           : "";
       for (const [name, tool] of Object.entries(mcpTools)) {
         tools[`mcp${authName}_${server.id}_${safeToolName(name)}`] = tool;
-      }
-    }
-
-    const toolSetContexts = new Map<string, unknown[]>();
-    for (const toolSet of chatbot.toolSets) {
-      const context = asRecord(toolSet.toolSetContext);
-      if (
-        typeof context.authId === "string" &&
-        context.authId.startsWith("thread:")
-      ) {
-        const authId = await resolveThreadAuth(context.authId.slice(7));
-        if (!authId) continue;
-        context.authId = authId;
-      }
-      if (!toolSetContexts.has(toolSet.toolSetName)) {
-        toolSetContexts.set(toolSet.toolSetName, []);
-      }
-      toolSetContexts.get(toolSet.toolSetName)?.push(context);
-    }
-    const registry = new ToolSetFactoryRegistry(chatbot.organizationId);
-    for (const [toolSetName, contexts] of toolSetContexts.entries()) {
-      for (const context of contexts) {
-        const t = await registry.getTools(toolSetName, context, fileHandles);
-        if (t) {
-          Object.assign(tools, t);
-        }
       }
     }
 

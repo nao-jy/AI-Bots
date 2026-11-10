@@ -1,0 +1,250 @@
+[
+  {
+    "id": "dropTable.ChatBotToolSetContext",
+    "label": "Drop table \"ChatBotToolSetContext\"",
+    "operationClass": "destructive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "aibot",
+        "objectType": "table",
+        "name": "ChatBotToolSetContext"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"ChatBotToolSetContext\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"aibot\".\"ChatBotToolSetContext\""
+        ],
+        "expectation": {
+          "expects": "present",
+          "object": "table \"ChatBotToolSetContext\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "drop table \"ChatBotToolSetContext\"",
+        "sql": "DROP TABLE \"aibot\".\"ChatBotToolSetContext\""
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"ChatBotToolSetContext\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"aibot\".\"ChatBotToolSetContext\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "table \"ChatBotToolSetContext\""
+        }
+      }
+    ]
+  },
+  {
+    "id": "column.aibot.ChatBotMcpServer.context",
+    "label": "Add column \"context\" to \"ChatBotMcpServer\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "aibot",
+        "objectType": "column",
+        "name": "context",
+        "table": "ChatBotMcpServer"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"context\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "aibot",
+          "ChatBotMcpServer",
+          "context"
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "column \"context\" on \"ChatBotMcpServer\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"context\"",
+        "sql": "ALTER TABLE \"aibot\".\"ChatBotMcpServer\" ADD COLUMN \"context\" jsonb"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"context\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "aibot",
+          "ChatBotMcpServer",
+          "context"
+        ],
+        "expectation": {
+          "expects": "present",
+          "object": "column \"context\" on \"ChatBotMcpServer\""
+        }
+      },
+      {
+        "description": "verify column \"context\" has type \"jsonb\"",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_attribute\" AS \"a\" INNER JOIN \"pg_class\" AS \"c\" ON \"c\".\"oid\" = \"a\".\"attrelid\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"relnamespace\" WHERE (\"n\".\"nspname\" = $1 AND \"c\".\"relname\" = $2 AND \"a\".\"attname\" = $3 AND (format_type(\"a\".\"atttypid\", \"a\".\"atttypmod\")) = $4 AND NOT (\"a\".\"attisdropped\"))) AS \"result\"",
+        "params": [
+          "aibot",
+          "ChatBotMcpServer",
+          "context",
+          "jsonb"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.aibot.McpServer.contextEndpoint",
+    "label": "Add column \"contextEndpoint\" to \"McpServer\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "aibot",
+        "objectType": "column",
+        "name": "contextEndpoint",
+        "table": "McpServer"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"contextEndpoint\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "aibot",
+          "McpServer",
+          "contextEndpoint"
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "column \"contextEndpoint\" on \"McpServer\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"contextEndpoint\"",
+        "sql": "ALTER TABLE \"aibot\".\"McpServer\" ADD COLUMN \"contextEndpoint\" text"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"contextEndpoint\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "aibot",
+          "McpServer",
+          "contextEndpoint"
+        ],
+        "expectation": {
+          "expects": "present",
+          "object": "column \"contextEndpoint\" on \"McpServer\""
+        }
+      },
+      {
+        "description": "verify column \"contextEndpoint\" has type \"text\"",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_attribute\" AS \"a\" INNER JOIN \"pg_class\" AS \"c\" ON \"c\".\"oid\" = \"a\".\"attrelid\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"relnamespace\" WHERE (\"n\".\"nspname\" = $1 AND \"c\".\"relname\" = $2 AND \"a\".\"attname\" = $3 AND (format_type(\"a\".\"atttypid\", \"a\".\"atttypmod\")) = $4 AND NOT (\"a\".\"attisdropped\"))) AS \"result\"",
+        "params": [
+          "aibot",
+          "McpServer",
+          "contextEndpoint",
+          "text"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.ChatBotMcpServer.updatedAt",
+    "label": "Add column updatedAt to ChatBotMcpServer",
+    "summary": "Adds column updatedAt to table ChatBotMcpServer",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "aibot",
+        "objectType": "table",
+        "name": "ChatBotMcpServer"
+      }
+    },
+    "operationClass": "additive",
+    "precheck": [
+      {
+        "description": "ensure column \"updatedAt\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "aibot",
+          "ChatBotMcpServer",
+          "updatedAt"
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "column \"updatedAt\" on \"ChatBotMcpServer\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"updatedAt\"",
+        "sql": "ALTER TABLE \"aibot\".\"ChatBotMcpServer\" ADD COLUMN \"updatedAt\" timestamptz(3) DEFAULT ('epoch') NOT NULL"
+      },
+      {
+        "description": "drop temporary default from column \"updatedAt\"",
+        "sql": "ALTER TABLE \"aibot\".\"ChatBotMcpServer\" ALTER COLUMN \"updatedAt\" DROP DEFAULT"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"updatedAt\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "aibot",
+          "ChatBotMcpServer",
+          "updatedAt"
+        ],
+        "expectation": {
+          "expects": "present",
+          "object": "column \"updatedAt\" on \"ChatBotMcpServer\""
+        }
+      },
+      {
+        "description": "verify column \"updatedAt\" is NOT NULL",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3 AND \"is_nullable\" = $4)) AS \"result\"",
+        "params": [
+          "aibot",
+          "ChatBotMcpServer",
+          "updatedAt",
+          "NO"
+        ]
+      },
+      {
+        "description": "verify column \"updatedAt\" has no default after temporary default removal",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3 AND \"column_default\" IS NOT NULL)) AS \"result\"",
+        "params": [
+          "aibot",
+          "ChatBotMcpServer",
+          "updatedAt"
+        ]
+      },
+      {
+        "description": "verify column \"updatedAt\" has type \"timestamp(3) with time zone\"",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_attribute\" AS \"a\" INNER JOIN \"pg_class\" AS \"c\" ON \"c\".\"oid\" = \"a\".\"attrelid\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"relnamespace\" WHERE (\"n\".\"nspname\" = $1 AND \"c\".\"relname\" = $2 AND \"a\".\"attname\" = $3 AND (format_type(\"a\".\"atttypid\", \"a\".\"atttypmod\")) = $4 AND NOT (\"a\".\"attisdropped\"))) AS \"result\"",
+        "params": [
+          "aibot",
+          "ChatBotMcpServer",
+          "updatedAt",
+          "timestamp(3) with time zone"
+        ]
+      }
+    ]
+  }
+]

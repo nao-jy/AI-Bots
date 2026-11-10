@@ -109,10 +109,6 @@ export function EntityPageView({
       ...option,
       label: tMessage(option.label),
     })),
-    toolSetSchemas: page.toolSetSchemas?.map((toolset) => ({
-      ...toolset,
-      displayName: tMessage(toolset.displayName),
-    })),
   };
 
   const closeDialog = useCallback(() => {

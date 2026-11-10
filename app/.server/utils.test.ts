@@ -5,6 +5,7 @@ import {
   decryptEncryptedStringMap,
   decryptMcpContext,
   decryptMcpHeaders,
+  encryptMcpContext,
   encryptCredential,
   encryptStringMap,
   idList,
@@ -113,12 +114,12 @@ describe("credential encryption", () => {
     vi.stubEnv("CREDENTIALS_ENCRYPTION_KEY", key);
     const envelope = {
       ...encryptStringMap({ "X-Test": "value" }),
-      contextCiphertext: encryptCredential(JSON.stringify({ apiKey: "secret" })),
     };
-    expect(JSON.stringify(envelope)).not.toContain("secret");
+    const context = encryptMcpContext({ apiKey: "secret" });
+    expect(JSON.stringify(context)).not.toContain("secret");
     expect(decryptMcpHeaders(envelope)).toEqual({ "X-Test": "value" });
-    expect(decryptMcpContext(envelope)).toEqual({ apiKey: "secret" });
-    expect(decryptMcpContext(encryptStringMap({}))).toEqual({});
+    expect(decryptMcpContext(context)).toEqual({ apiKey: "secret" });
+    expect(decryptMcpContext(null)).toEqual({});
   });
 });
 

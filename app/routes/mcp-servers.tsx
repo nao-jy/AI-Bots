@@ -61,10 +61,9 @@ function getPage(transport: Record<string, string>) {
         wide: true,
       },
       {
-        key: "context",
-        label: t("pages.mcpServers.contextLabel"),
-        type: "textarea",
-        placeholder: '{"apiKey": "..."}',
+        key: "contextEndpoint",
+        label: t("pages.mcpServers.contextEndpointLabel"),
+        placeholder: "https://example.com/context-schema",
         wide: true,
       },
     ],

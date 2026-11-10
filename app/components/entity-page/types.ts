@@ -18,7 +18,6 @@ export type EntityField = {
     | "mcp-servers"
     | "tags"
     | "password"
-    | "toolset-contexts"
     | "cron"
     | "schedule-targets";
   options?: string[] | EntityOption[];
@@ -97,5 +96,9 @@ export type EntityPageDefinition = {
   launchIntent?: string;
   launchLabel?: string;
   adapterSchemas?: { id: string; schema: unknown }[];
-  toolSetSchemas?: { name: string; displayName: string; schema: unknown }[];
+  mcpContextSchemas?: {
+    serverId: string;
+    schema: import("@rjsf/utils").RJSFSchema | null;
+    error: boolean;
+  }[];
 };

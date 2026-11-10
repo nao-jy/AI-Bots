@@ -31,7 +31,7 @@ const page: Omit<EntityPageDefinition, "records"> = {
     { key: "agent", label: "pages.bots.agentLabel" },
     { key: "adapters", label: "pages.bots.adaptersLabel" },
     { key: "sandboxes", label: "pages.bots.sandboxLabel" },
-    { key: "toolsets", label: "pages.bots.toolsetsLabel" },
+    { key: "toolsets", label: "pages.bots.mcpServersLabel" },
     {
       key: "webhooks",
       label: "pages.bots.webhookEndpointLabel",
@@ -111,12 +111,6 @@ const page: Omit<EntityPageDefinition, "records"> = {
       placeholder: "pages.bots.sandboxPlaceholder",
     },
     {
-      key: "toolSetContexts",
-      label: "pages.bots.toolsetContextLabel",
-      type: "toolset-contexts",
-      wide: true,
-    },
-    {
       key: "mcpServerIds",
       label: "pages.bots.mcpServersLabel",
       type: "mcp-servers",
@@ -180,7 +174,7 @@ export default function Bots({ loaderData }: Route.ComponentProps) {
         ...page,
         records: loaderData.records,
         pagination: loaderData.pagination,
-        toolSetSchemas: loaderData.toolSetSchemas,
+        mcpContextSchemas: loaderData.mcpContextSchemas,
         mcpAuthenticationOptions: loaderData.mcpAuthenticationOptions,
         fields: page.fields.map((field) => ({
           ...field,

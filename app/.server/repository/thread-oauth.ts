@@ -22,7 +22,7 @@ export async function getThreadOAuthAuthentication(scope: ThreadOAuthScope) {
 
 /** Check that the current bot configuration still permits this OAuth client. */
 export async function isThreadOAuthAllowed(scope: ThreadOAuthScope) {
-  const [bot, adapter, client, mcp, toolsets] = await Promise.all([
+  const [bot, adapter, client, mcp] = await Promise.all([
     db.orm.aibot.ChatBot.first({
       id: scope.chatbotId,
       organizationId: scope.organizationId,
@@ -42,29 +42,8 @@ export async function isThreadOAuthAllowed(scope: ThreadOAuthScope) {
       oauthClientId: scope.oauthClientId,
       organizationId: scope.organizationId,
     }),
-    db.orm.aibot.ChatBotToolSetContext.where({
-      chatbotId: scope.chatbotId,
-      organizationId: scope.organizationId,
-    }).all(),
   ]);
-  return Boolean(
-    bot &&
-    adapter &&
-    client &&
-    (mcp ||
-      toolsets.some(({ toolSetContext }) => {
-        if (
-          !toolSetContext ||
-          typeof toolSetContext !== "object" ||
-          Array.isArray(toolSetContext)
-        )
-          return false;
-        return (
-          (toolSetContext as Record<string, unknown>).authId ===
-          `thread:${scope.oauthClientId}`
-        );
-      })),
-  );
+  return Boolean(bot && adapter && client && mcp);
 }
 
 /** Save encrypted token values. The caller must validate the current configuration. */
@@ -87,7 +66,7 @@ export async function saveThreadOAuthAuthentication(
       .forUpdate()
       .first();
     if (!bot) throw new Error("OAuth bot unavailable");
-    const [adapter, client, mcp, toolsets] = await Promise.all([
+    const [adapter, client, mcp] = await Promise.all([
       tx.orm.aibot.ChatBotAdapter.first({
         chatbotId: scope.chatbotId,
         adapterId: scope.adapterId,
@@ -104,10 +83,6 @@ export async function saveThreadOAuthAuthentication(
         oauthClientId: scope.oauthClientId,
         organizationId: scope.organizationId,
       }),
-      tx.orm.aibot.ChatBotToolSetContext.where({
-        chatbotId: scope.chatbotId,
-        organizationId: scope.organizationId,
-      }).all(),
     ]);
     const adapterResource = await tx.orm.aibot.ChatAdapter.where({
       id: scope.adapterId,
@@ -115,22 +90,7 @@ export async function saveThreadOAuthAuthentication(
     })
       .forUpdate()
       .first();
-    if (
-      !adapter ||
-      !adapterResource ||
-      !client ||
-      !(
-        mcp ||
-        toolsets.some(
-          ({ toolSetContext }) =>
-            !!toolSetContext &&
-            typeof toolSetContext === "object" &&
-            !Array.isArray(toolSetContext) &&
-            (toolSetContext as Record<string, unknown>).authId ===
-              `thread:${scope.oauthClientId}`,
-        )
-      )
-    )
+    if (!adapter || !adapterResource || !client || !mcp)
       throw new Error("OAuth client is not configured for this bot");
     const existing = await tx.orm.aibot.ThreadOAuthConnection.first(scope);
     if (existing) {

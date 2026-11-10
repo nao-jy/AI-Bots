@@ -23,7 +23,6 @@ import type { EntityDialogMode, EntityPageDefinition } from "./types";
 import { InfoIcon } from "@phosphor-icons/react";
 import type { RJSFSchema } from "@rjsf/utils";
 import { AdapterConfigEditor } from "./adapter-config-editor";
-import { ToolSetContextEditor } from "./toolset-context-editor";
 import { McpServerEditor } from "./mcp-server-editor";
 import { CronScheduleEditor } from "./cron-schedule-editor";
 import { ScheduleTargetsEditor } from "./schedule-targets-editor";
@@ -598,13 +597,7 @@ export function EntityPageDialogs({
               .filter((field) => !field.createOnly || mode === "create")
               .map((field) => (
                 <div className={field.wide ? "field-wide" : ""} key={field.key}>
-                  {field.type === "toolset-contexts" ? (
-                    <ToolSetContextEditor
-                      name={field.key}
-                      schemas={page.toolSetSchemas ?? []}
-                      initialValue={selected?.[field.key]}
-                    />
-                  ) : field.type === "cron" ? (
+                  {field.type === "cron" ? (
                     <CronScheduleEditor
                       name={field.key}
                       label={field.label}
@@ -620,6 +613,7 @@ export function EntityPageDialogs({
                     />
                   ) : field.type === "mcp-servers" ? (
                     <McpServerEditor
+                      contextSchemas={page.mcpContextSchemas ?? []}
                       label={field.label}
                       serverOptions={field.options ?? []}
                       authenticationOptions={
