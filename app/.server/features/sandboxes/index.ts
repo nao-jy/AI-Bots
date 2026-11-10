@@ -5,7 +5,6 @@ export interface BashSandboxExtended extends BashSandbox {
   readFileBinaryStream(
     path: string,
   ): AsyncIterable<Uint8Array<ArrayBufferLike>>;
-  release(): Promise<void>;
 }
 
 interface BashSandboxInfo {

@@ -29,7 +29,7 @@ describe("sandbox API client", () => {
     expect(options.redirect).toBe("error");
   });
 
-  it("uses binary HTTP for files and releases the session", async () => {
+  it("uses stateless operations and binary HTTP for files", async () => {
     const requests: Array<{ url: string; method: string; body: unknown }> = [];
     vi.stubGlobal(
       "fetch",
@@ -39,11 +39,8 @@ describe("sandbox API client", () => {
           method: options.method ?? "GET",
           body: options.body,
         });
-        if (target.pathname === "/v1/sessions" && options.method === "POST")
-          return Response.json({
-            sessionId: "session",
-            createdInstanceId: "instance",
-          });
+        if (target.pathname === "/v1/instances" && options.method === "POST")
+          return Response.json({ instanceId: "instance" });
         if (target.pathname.endsWith("/commands"))
           return Response.json({ stdout: "ok", stderr: "", exitCode: 0 });
         if (target.pathname.endsWith("/file") && options.method !== "PUT")
@@ -67,16 +64,27 @@ describe("sandbox API client", () => {
     for await (const part of sandbox.readFileBinaryStream("/tmp/a"))
       chunks.push(part);
     expect(Buffer.concat(chunks)).toEqual(Buffer.from([0, 255]));
-    await sandbox.release();
     expect(
       requests.some(
         (entry) => entry.method === "PUT" && Buffer.isBuffer(entry.body),
       ),
     ).toBe(true);
-    expect(requests.at(-1)).toMatchObject({
-      method: "DELETE",
-      url: "http://sandbox.test/v1/sessions/session",
+    expect(
+      requests.find((entry) => entry.url.endsWith("/commands")),
+    ).toMatchObject({
+      method: "POST",
+      url: "http://sandbox.test/v1/instances/instance/commands",
+      body: JSON.stringify({
+        provider: "OpenSandbox",
+        envs: {},
+        allowedDomains: [],
+        command: "echo ok",
+      }),
     });
+    expect(requests.some((entry) => entry.url.includes("/sessions"))).toBe(
+      false,
+    );
+    expect(requests.at(-1)?.url).toContain("provider=OpenSandbox");
   });
 
   it("returns no providers when the API is unavailable", async () => {
@@ -87,5 +95,26 @@ describe("sandbox API client", () => {
       }),
     );
     expect(await listSandboxApiProviders()).toEqual([]);
+  });
+
+  it("configures an existing instance without creating another one", async () => {
+    const fetch = vi.fn(async () => new Response(null, { status: 204 }));
+    vi.stubGlobal("fetch", fetch);
+    const backend = createSandboxApiProvider("OpenSandbox");
+    const { createdInstanceId } = await backend.getBashSandbox(
+      "existing",
+      { LANG: "ja" },
+      ["example.com"],
+      ["setup"],
+    );
+    expect(createdInstanceId).toBeNull();
+    const [target, options] = fetch.mock.calls[0] as unknown as [URL, RequestInit];
+    expect(target.pathname).toBe("/v1/instances/existing/configure");
+    expect(JSON.parse(options.body as string)).toEqual({
+      provider: "OpenSandbox",
+      envs: { LANG: "ja" },
+      allowedDomains: ["example.com"],
+    });
+    expect(fetch).toHaveBeenCalledTimes(1);
   });
 });

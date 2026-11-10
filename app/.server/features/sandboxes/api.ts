@@ -241,33 +241,41 @@ export function createSandboxApiProvider(provider: string): Sandbox {
         onExit,
       ),
     getBashSandbox: async (instanceId, envs, allowedDomains, initCommands) => {
-      const response = await request(
-        "v1/sessions",
-        json("POST", {
-          provider,
-          instanceId,
-          envs,
-          allowedDomains,
-          initCommands,
-        }),
-      );
-      const opened: unknown = await response.json();
-      if (
-        !opened ||
-        typeof opened !== "object" ||
-        !("sessionId" in opened) ||
-        typeof opened.sessionId !== "string" ||
-        !("createdInstanceId" in opened) ||
-        (opened.createdInstanceId !== null &&
-          typeof opened.createdInstanceId !== "string")
-      )
-        throw new Error("Invalid sandbox API session response");
-      const path = `v1/sessions/${encodeURIComponent(opened.sessionId)}`;
+      let actualInstanceId = instanceId;
+      let createdInstanceId: string | null = null;
+      if (actualInstanceId) {
+        await request(
+          `${instancePath(actualInstanceId)}/configure`,
+          json("POST", { provider, envs, allowedDomains }),
+        );
+      } else {
+        const response = await request(
+          "v1/instances",
+          json("POST", { provider, envs, allowedDomains, initCommands }),
+        );
+        const result: unknown = await response.json();
+        if (
+          !result ||
+          typeof result !== "object" ||
+          !("instanceId" in result) ||
+          typeof result.instanceId !== "string" ||
+          !result.instanceId
+        )
+          throw new Error("Invalid sandbox API instance response");
+        actualInstanceId = result.instanceId;
+        createdInstanceId = result.instanceId;
+      }
+      const path = instancePath(actualInstanceId);
       const file = (filePath: string) =>
-        `${path}/file?${new URLSearchParams({ path: filePath })}`;
+        `${path}/file?${new URLSearchParams({ provider, path: filePath })}`;
       const sandbox: BashSandboxExtended = {
         executeCommand: async (command) =>
-          (await request(`${path}/commands`, json("POST", { command }))).json(),
+          (
+            await request(
+              `${path}/commands`,
+              json("POST", { provider, envs, allowedDomains, command }),
+            )
+          ).json(),
         readFile: async (filePath) => (await request(file(filePath))).text(),
         readFileBinaryStream: async function* (filePath) {
           const response = await request(file(filePath));
@@ -296,14 +304,8 @@ export function createSandboxApiProvider(provider: string): Sandbox {
             });
           }
         },
-        release: async () => {
-          await request(path, {
-            method: "DELETE",
-            signal: AbortSignal.timeout(5000),
-          });
-        },
       };
-      return { createdInstanceId: opened.createdInstanceId, sandbox };
+      return { createdInstanceId, sandbox };
     },
     destroySandbox: async (instanceId) => {
       await request(instancePath(instanceId), json("DELETE", { provider }));
