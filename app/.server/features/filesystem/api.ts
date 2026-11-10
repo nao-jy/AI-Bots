@@ -5,8 +5,6 @@ export interface FileSystemConfig {
   config: Record<string, string>;
 }
 
-const sessions = new Map<string, Promise<string>>();
-
 export class ApiFileSystem implements BinaryFileSystem {
   constructor(
     private readonly storage: FileSystemConfig,
@@ -26,8 +24,8 @@ export class ApiFileSystem implements BinaryFileSystem {
 
   private async request(
     operation: string,
-    params: Record<string, string> = {},
-    init: RequestInit = {},
+    data: Record<string, string> = {},
+    content?: Uint8Array,
   ): Promise<Response> {
     const raw = process.env.FILESYSTEM_API_URL;
     const token = process.env.FILESYSTEM_API_TOKEN;
@@ -42,73 +40,30 @@ export class ApiFileSystem implements BinaryFileSystem {
     )
       throw new Error("Invalid filesystem API URL");
     if (!base.pathname.endsWith("/")) base.pathname += "/";
-    const headers = new Headers(init.headers);
-    headers.set("Authorization", `Bearer ${token}`);
-    const cacheKey = JSON.stringify([base.href, token, this.storage]);
-    const open = (): Promise<string> => {
-      let pending = sessions.get(cacheKey);
-      if (!pending) {
-        pending = (async () => {
-          const response = await fetch(new URL("v1/filesystems", base), {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(this.storage),
-            redirect: "error",
-            signal: AbortSignal.timeout(60000),
-          });
-          if (!response.ok)
-            throw new Error(
-              `Filesystem API request failed (HTTP ${response.status})`,
-            );
-          const data: unknown = await response.json();
-          if (
-            !data ||
-            typeof data !== "object" ||
-            !("sessionId" in data) ||
-            typeof data.sessionId !== "string" ||
-            !/^[A-Za-z0-9_-]+$/.test(data.sessionId)
-          )
-            throw new Error("Invalid filesystem session");
-          return data.sessionId;
-        })();
-        sessions.set(cacheKey, pending);
-        void pending.catch(() => {
-          if (sessions.get(cacheKey) === pending) sessions.delete(cacheKey);
-        });
-      }
-      return pending;
-    };
-    const send = async (id: string): Promise<Response> => {
-      const target = new URL(`v1/filesystems/${id}/${operation}`, base);
-      for (const [key, value] of Object.entries(params))
-        target.searchParams.set(key, value);
-      return fetch(target, {
-        ...init,
-        headers,
-        redirect: "error",
-        signal: init.signal ?? AbortSignal.timeout(60000),
-      });
-    };
-    const pending = open();
-    let response = await send(await pending);
-    if (
-      response.status === 404 &&
-      response.headers.get("X-Filesystem-Session") === "missing"
-    ) {
-      if (sessions.get(cacheKey) === pending) sessions.delete(cacheKey);
-      response = await send(await open());
+    const headers = new Headers({ Authorization: `Bearer ${token}` });
+    let body: BodyInit;
+    if (content !== undefined) {
+      const form = new FormData();
+      form.set("context", JSON.stringify(this.storage));
+      form.set("path", data.path);
+      form.set(
+        "file",
+        new Blob([Buffer.from(content)], { type: "application/octet-stream" }),
+        "file",
+      );
+      body = form;
+    } else {
+      headers.set("Content-Type", "application/json");
+      body = JSON.stringify({ context: this.storage, ...data });
     }
-    if (
-      !response.ok &&
-      !(
-        operation === "file" &&
-        (!init.method || init.method === "GET") &&
-        response.status === 404
-      )
-    )
+    const response = await fetch(new URL(`v1/${operation}`, base), {
+      method: "POST",
+      headers,
+      body,
+      redirect: "error",
+      signal: AbortSignal.timeout(60000),
+    });
+    if (!response.ok && !(operation === "read" && response.status === 404))
       throw new Error(
         `Filesystem API request failed (HTTP ${response.status})`,
       );
@@ -119,7 +74,7 @@ export class ApiFileSystem implements BinaryFileSystem {
     return (await this.readBytes(path))?.toString("utf8") ?? null;
   }
   async readBytes(path: string): Promise<Buffer | null> {
-    const response = await this.request("file", { path: this.path(path) });
+    const response = await this.request("read", { path: this.path(path) });
     return response.status === 404
       ? null
       : Buffer.from(await response.arrayBuffer());
@@ -128,34 +83,14 @@ export class ApiFileSystem implements BinaryFileSystem {
     await this.writeBytes(path, Buffer.from(content));
   }
   async writeBytes(path: string, content: Uint8Array): Promise<void> {
-    await this.request(
-      "file",
-      { path: this.path(path) },
-      {
-        method: "PUT",
-        headers: { "Content-Type": "application/octet-stream" },
-        body: Buffer.from(content),
-      },
-    );
+    await this.request("write", { path: this.path(path) }, content);
   }
   async delete(path: string): Promise<boolean> {
-    const response = await this.request(
-      "file",
-      { path: this.path(path) },
-      { method: "DELETE" },
-    );
+    const response = await this.request("delete", { path: this.path(path) });
     return (await response.json()).deleted;
   }
   async rename(from: string, to: string): Promise<void> {
-    await this.request(
-      "rename",
-      {},
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ from: this.path(from), to: this.path(to) }),
-      },
-    );
+    await this.request("rename", { from: this.path(from), to: this.path(to) });
   }
   async list(prefix: string): Promise<FileEntry[]> {
     const response = await this.request("list", { prefix: this.path(prefix) });

@@ -5,17 +5,15 @@ afterEach(() => {
   vi.unstubAllGlobals();
   vi.unstubAllEnvs();
 });
-const opened = (id: string) =>
-  new Response(JSON.stringify({ sessionId: id }), { status: 201 });
 
 describe("filesystem API client", () => {
-  it("opens with the supplied configuration, sends scoped paths and restores relative list paths", async () => {
+  it("sends context on every request and preserves binary file data", async () => {
     vi.stubEnv("FILESYSTEM_API_URL", "http://files.example/base/");
-    vi.stubEnv("FILESYSTEM_API_TOKEN", "secret-1");
+    vi.stubEnv("FILESYSTEM_API_TOKEN", "secret");
     const fetchMock = vi
       .fn()
-      .mockResolvedValueOnce(opened("session-a"))
       .mockResolvedValueOnce(new Response(Buffer.from([0, 255])))
+      .mockResolvedValueOnce(new Response(null, { status: 204 }))
       .mockResolvedValueOnce(
         new Response(
           JSON.stringify({
@@ -30,54 +28,56 @@ describe("filesystem API client", () => {
         ),
       );
     vi.stubGlobal("fetch", fetchMock);
-    const fs = new ApiFileSystem(
-      { service: "fs", config: { root: "custom" } },
-      "org/bot",
-    );
+    const context = { service: "fs", config: { root: "custom" } };
+    const fs = new ApiFileSystem(context, "org/bot");
     expect(await fs.readBytes("notes/a")).toEqual(Buffer.from([0, 255]));
-    const [openUrl, openOptions] = fetchMock.mock.calls[0] as [
+    await fs.writeBytes("notes/a", Buffer.from([0, 255]));
+    const [url, options] = fetchMock.mock.calls[0] as [URL, RequestInit];
+    expect(url.pathname).toBe("/base/v1/read");
+    expect(JSON.parse(options.body as string)).toEqual({
+      context,
+      path: "org/bot/notes/a",
+    });
+    expect(new Headers(options.headers).get("Authorization")).toBe(
+      "Bearer secret",
+    );
+    const [writeUrl, writeOptions] = fetchMock.mock.calls[1] as [
       URL,
       RequestInit,
     ];
-    expect(openUrl.pathname).toBe("/base/v1/filesystems");
-    expect(JSON.parse(openOptions.body as string)).toEqual({
-      service: "fs",
-      config: { root: "custom" },
-    });
-    const [url, options] = fetchMock.mock.calls[1] as [URL, RequestInit];
-    expect(url.pathname).toBe("/base/v1/filesystems/session-a/file");
-    expect(url.searchParams.get("path")).toBe("org/bot/notes/a");
-    expect(new Headers(options.headers).get("Authorization")).toBe(
-      "Bearer secret-1",
+    expect(writeUrl.pathname).toBe("/base/v1/write");
+    const form = writeOptions.body as FormData;
+    expect(JSON.parse(form.get("context") as string)).toEqual(context);
+    expect(form.get("path")).toBe("org/bot/notes/a");
+    expect(Buffer.from(await (form.get("file") as File).arrayBuffer())).toEqual(
+      Buffer.from([0, 255]),
     );
     expect((await fs.list("notes/"))[0]).toEqual({
       path: "notes/a",
       size: 2,
       updatedAt: new Date("2026-01-01T00:00:00Z"),
     });
+    const [, listOptions] = fetchMock.mock.calls[2] as [URL, RequestInit];
+    expect(JSON.parse(listOptions.body as string)).toEqual({
+      context,
+      prefix: "org/bot/notes/",
+    });
     await expect(fs.read("../other")).rejects.toThrow("Invalid storage path");
     expect(fetchMock).toHaveBeenCalledTimes(3);
   });
 
-  it("reopens an expired session but treats a missing file as null", async () => {
+  it("treats a missing file as null and propagates other errors", async () => {
     vi.stubEnv("FILESYSTEM_API_URL", "http://files.example");
-    vi.stubEnv("FILESYSTEM_API_TOKEN", "secret-2");
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValueOnce(opened("old"))
-      .mockResolvedValueOnce(
-        new Response(null, {
-          status: 404,
-          headers: { "X-Filesystem-Session": "missing" },
-        }),
-      )
-      .mockResolvedValueOnce(opened("new"))
-      .mockResolvedValueOnce(new Response(null, { status: 404 }))
-      .mockResolvedValueOnce(new Response(null, { status: 500 }));
-    vi.stubGlobal("fetch", fetchMock);
+    vi.stubEnv("FILESYSTEM_API_TOKEN", "secret");
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockResolvedValueOnce(new Response(null, { status: 404 }))
+        .mockResolvedValueOnce(new Response(null, { status: 500 })),
+    );
     const fs = new ApiFileSystem({ service: "s3", config: { bucket: "test" } });
     expect(await fs.read("missing")).toBeNull();
     await expect(fs.read("error")).rejects.toThrow("HTTP 500");
-    expect(fetchMock).toHaveBeenCalledTimes(5);
   });
 });
