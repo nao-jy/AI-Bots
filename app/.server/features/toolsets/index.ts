@@ -2,7 +2,6 @@ import type { Tool } from "ai";
 import { z } from "zod";
 import type { FileHandleReaderMap } from "./helpers/file-handle";
 import { getToolSetFactory as getGdriveToolSetFactory } from "./gdrive";
-import { getToolSetFactory as getKingOfTimeToolSetFactory } from "./king-of-time";
 import { getToolSetFactory as getRemoteFilesToolSetFactory } from "./remote-files";
 
 export interface ToolSetFactory {
@@ -32,10 +31,7 @@ export class ToolSetFactoryRegistry {
       this.organizationId,
       this.principalId,
     );
-    const kingOfTimeFactory = await getKingOfTimeToolSetFactory(
-      this.organizationId,
-    );
-    return [remoteFilesFactory, gdriveFactory, kingOfTimeFactory];
+    return [remoteFilesFactory, gdriveFactory];
   }
 
   async listToolSetNames() {

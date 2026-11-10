@@ -15,24 +15,6 @@ services:
       timeout: 5s
       retries: 5
   
-  searxng-core:
-    container_name: searxng-core
-    image: docker.io/searxng/searxng:${SEARXNG_VERSION:-latest}
-    restart: always
-    ports:
-      - ${SEARXNG_HOST:+${SEARXNG_HOST}:}${SEARXNG_PORT:-8080}:${SEARXNG_PORT:-8080}
-    volumes:
-      - ./core-config/:/etc/searxng/:Z
-      - core-data:/var/cache/searxng/
-
-  searxng-valkey:
-    container_name: searxng-valkey
-    image: docker.io/valkey/valkey:9-alpine
-    command: valkey-server --save 300 1 --save 60 1000 --loglevel warning
-    restart: always
-    volumes:
-      - valkey-data:/data/
-  
   opensandbox-server:
     image: opensandbox/server:release-1.2.0
     container_name: opensandbox-server
@@ -57,8 +39,6 @@ services:
 
 volumes:
   postgres-data:
-  core-data:
-  valkey-data:
 
 networks:
   opensandbox-net:

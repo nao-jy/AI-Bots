@@ -265,6 +265,7 @@ export const ja = {
       namePlaceholder: "例：社内ナレッジ",
       endpointPlaceholder: "https://mcp.example.com/mcp",
       httpHeadersLabel: "HTTPヘッダー",
+      contextLabel: "ツールのコンテキスト（JSON）",
       documentTitle: "MCPサーバー | {{0}}",
       notFound: "MCPサーバーが見つかりません。",
       unknownAction: "操作を判定できませんでした。",
@@ -809,6 +810,7 @@ export const ja = {
         delete: "削除",
         addToolset: "＋ ツールセットを追加",
         noToolsetsAvailable: "利用可能な ToolSet がありません。",
+        legacyKingOfTime: "King of Time（MCPへ移行してください）",
       },
     },
   },
@@ -1062,42 +1064,18 @@ export const ja = {
       "指定されたGoogleドライブ項目はファイルではありません。",
     googleDriveExpectedBinaryContent:
       "Googleドライブからファイルデータを取得できませんでした。",
-    targetMonth: "対象年月（YYYY-MM）",
-    employeeKey: "従業員検索結果に含まれる従業員識別キー",
-    unselected: "未選択",
     chatworkApiToken: "Chatwork APIトークン",
-    chatworkApiTokenDescription: "APIトークンを使用する場合に指定します。アクセストークンとは併用できません。",
+    chatworkApiTokenDescription:
+      "APIトークンを使用する場合に指定します。アクセストークンとは併用できません。",
     chatworkAccessToken: "Chatwork アクセストークン",
-    chatworkAccessTokenDescription: "OAuthアクセストークンを指定します。OAuth認証情報を選択した場合は不要です。APIトークンとは併用できません。",
+    chatworkAccessTokenDescription:
+      "OAuthアクセストークンを指定します。OAuth認証情報を選択した場合は不要です。APIトークンとは併用できません。",
     chatworkWebhookToken: "Chatwork Webhookトークン",
-    chatworkWebhookTokenDescription: "Webhook設定画面に表示されるBase64形式のトークンを指定します。",
+    chatworkWebhookTokenDescription:
+      "Webhook設定画面に表示されるBase64形式のトークンを指定します。",
     chatworkUserName: "Chatworkユーザー名",
-    chatworkUserNameDescription: "アダプタのユーザー名です。省略するとchatworkになります。",
-    kingOfTimeApiKey: "King of Time APIキー",
-    kingOfTimeAttendance: "King of Time 勤怠データ",
-    kingOfTimeSearchEmployeeDescription:
-      "従業員名（姓・名の一部または全部）で従業員を検索します。対象年月時点の従業員データを使います。同姓同名の場合は候補をすべて返すため、識別キーを確認してから勤怠データを取得してください。",
-    kingOfTimeEmployeeName: "検索する従業員名（姓・名の一部または全部）",
-    kingOfTimeDailyAttendanceDescription:
-      "指定従業員の対象月の日別勤怠データを取得します。先に従業員名検索を行い、employeeKeyを指定してください。",
-    kingOfTimeDailyTimeClockDescription:
-      "指定従業員の対象月の日別打刻データを取得します。先に従業員名検索を行い、employeeKeyを指定してください。",
-    kingOfTimeMonthlyAttendanceDescription:
-      "指定従業員の月別勤怠データを取得します。先に従業員名検索を行い、employeeKeyを指定してください。",
-    kingOfTimeDailyScheduleDescription:
-      "指定従業員の対象月の日別スケジュールデータを取得します。先に従業員名検索を行い、employeeKeyを指定してください。",
-    kingOfTimeLeaveTypesDescription:
-      "King of Time に登録されている休暇区分コードと名称を一覧します。",
-    kingOfTimeApiRequestFailed:
-      "King of Time APIへのリクエストに失敗しました (HTTP {{0}}): {{1}}",
-    kingOfTimeApiInvalidJson:
-      "King of Time APIから不正なJSON応答が返されました (HTTP {{0}})。",
-    kingOfTimeUnexpectedEmployeeList:
-      "King of Time APIから予期しない従業員一覧が返されました。",
-    kingOfTimeEmployeeKeyMissing:
-      "King of Timeの従業員データに従業員識別キーがありません。",
-    kingOfTimeUnexpectedHolidayTypes:
-      "King of Time APIから予期しない休暇区分一覧が返されました。",
+    chatworkUserNameDescription:
+      "アダプタのユーザー名です。省略するとchatworkになります。",
     uploadFileToChatDescription:
       "ファイルハンドルからチャットにファイルを送信します。直接送信できない場合は期限付きのダウンロードリンクをスレッドに投稿します。",
     downloadFile: "ファイルをダウンロード",
@@ -1117,8 +1095,6 @@ export const ja = {
     documentExtractionEmpty: "ファイルから文書を抽出できませんでした。",
     documentExtractionFailed: "文書の抽出に失敗しました: {{0}}",
     chatFileOperationFailed: "チャットのファイル操作に失敗しました: {{0}}",
-    webSearchServiceNotConfigured: "Web検索サービスが設定されていません。",
-    webSearchRequestFailed: "Web検索に失敗しました (HTTP {{0}})。",
     openDalServiceName: "OpenDALサービス名",
     openDalServiceNameDescription:
       "OpenDALサービス名を指定してください。https://opendal.apache.org/services/",
@@ -1175,8 +1151,5 @@ export const ja = {
     shellSessionUnavailable:
       "シェルセッションが見つからないか、終了しています。",
     inputLimitExceeded: "一度に送信できる入力は16,000文字までです。",
-    webSearchToolDescription:
-      "Webを検索し、タイトル・URL・抜粋の一覧を返す。最新情報や知らない事柄を調べるときに使う。",
-    webSearchQuery: "検索クエリ",
   },
 } as const;

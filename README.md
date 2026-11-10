@@ -23,8 +23,8 @@ For example, to run a bot that posts a recurring checklist to a team thread on w
 - **Chatbots:** Configure instructions, failure messages, conversation history, enabled state, and the services available to each bot. View and regenerate public IDs and copy adapter webhook URLs.
 - **Chat adapters:** Connect Slack, Microsoft Teams, Google Chat, Discord, X, and LINE. Configure platform-specific settings, optionally link OAuth credentials, and test adapter connections.
 - **AI providers and agents:** Configure OpenAI, Azure OpenAI, Anthropic, or an OpenAI-compatible provider, then define agents with a model ID and model options. Test agents before assigning them to bots.
-- **Tools and files:** Give bots access to chat and attachment tools, Google Drive, OpenDAL-backed remote file stores, and King of Time attendance data. Tool availability depends on each bot's configuration and connected credentials.
-- **Web search and memory:** Enable web search with SearXNG. Choose whether a bot's memory is disabled, kept per thread, or shared across the bot.
+- **Tools and files:** Give bots access to chat and attachment tools, Google Drive and OpenDAL-backed remote file stores. Tool availability depends on each bot's configuration and connected credentials.
+- **Web search and memory:** Connect a web search MCP server to enable search. Choose whether a bot's memory is disabled, kept per thread, or shared across the bot.
 - **MCP servers:** Configure MCP endpoints and HTTP headers, test connections, and make the servers available to bots.
 - **Sandboxes:** Configure E2B or OpenSandbox execution environments, including environment variables, allowed network domains, initialization commands, and sharing scope. Inspect persistent instances and use the built-in terminal.
 - **Scheduled prompts:** Run a prompt on selected bot/adapter threads using a five-field or six-field Cron expression and an IANA timezone. Schedule changes are synchronized with the running scheduler.
@@ -55,7 +55,7 @@ The file system interface backs bot memory and temporary file storage. Chat atta
 - PostgreSQL 15 or later
 - npm
 
-The provided Compose configuration uses PostgreSQL 16. SearXNG and OpenSandbox are also defined there for optional integrations.
+The provided Compose configuration uses PostgreSQL 16. OpenSandbox is also defined there as an optional integration.
 
 ## Getting started
 
@@ -135,7 +135,6 @@ The built-in email provider sends through an SMTP relay. Once configured, it can
 | `E2B_API_KEY`                | For E2B   | Enables the E2B sandbox provider.                                                                                                                                                                       |
 | `OPEN_SANDBOX_DOMAIN`        | Optional  | Enables OpenSandbox and sets its connection domain.                                                                                                                                                     |
 | `OPEN_SANDBOX_API_KEY`       | Optional  | API key passed to the OpenSandbox server in the included Compose setup.                                                                                                                                 |
-| `SEARXNG_URL`                | Optional  | SearXNG endpoint for the web search tool.                                                                                                                                                               |
 | `SMTP_RELAY_HOST`            | For email | SMTP relay host.                                                                                                                                                                                        |
 | `SMTP_RELAY_PORT`            | For email | SMTP relay port.                                                                                                                                                                                        |
 | `SMTP_RELAY_SECURE`          | For email | Set to `true` for TLS; when `false`, STARTTLS is required.                                                                                                                                              |
@@ -149,7 +148,7 @@ The built-in email provider sends through an SMTP relay. Once configured, it can
 | `TEMP_FILE_STORAGE_SERVICE`  | Optional  | OpenDAL service for temporary files; defaults to `fs`. Set to `s3` to use S3.                                                                                                                           |
 | `TEMP_FILE_STORAGE_CONFIG`   | Optional  | OpenDAL temporary storage options as a JSON object with string values. For `s3`, supply options such as `bucket` and `region`.                                                                          |
 
-`infra/compose.yaml` defines PostgreSQL, SearXNG, and OpenSandbox. From the repository root, start the optional services using the same `.env.dev` file:
+`infra/compose.yaml` defines PostgreSQL and OpenSandbox. From the repository root, start the optional services using the same `.env.dev` file:
 
 ```bash
 docker compose --env-file .env.dev -f infra/compose.yaml up -d
@@ -173,7 +172,7 @@ npm run start
 
 #### Production Compose
 
-Configure `.env.prd` using [`.env.prd.example`](./.env.prd.example). If `.env.prd` already exists, preserve it and check `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `DATABASE_URL` with matching credentials, `SEARXNG_SECRET`, and `OPEN_SANDBOX_API_KEY`. The `DATABASE_URL` host and port are `postgres:5432`. Percent-encode reserved characters in database credentials in the URL. Configure the sample `SMTP_RELAY_*` settings to use email verification and password reset.
+Configure `.env.prd` using [`.env.prd.example`](./.env.prd.example). If `.env.prd` already exists, preserve it and check `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `DATABASE_URL` with matching credentials, and `OPEN_SANDBOX_API_KEY`. The `DATABASE_URL` host and port are `postgres:5432`. Percent-encode reserved characters in database credentials in the URL. Configure the sample `SMTP_RELAY_*` settings to use email verification and password reset.
 
 For a new production environment, use a dedicated `CREDENTIALS_ENCRYPTION_KEY` and Cloudflare Tunnel. Configure the Tunnel's public hostname to reach `http://127.0.0.1:3001` inside the container. Use separate development and production Tunnels: running both connectors on the same Tunnel can route requests to either environment. Restrict access with Cloudflare Access or an equivalent policy until the initial administrator is created.
 
@@ -185,7 +184,7 @@ docker compose --env-file .env.prd -f infra/compose.production.yaml up -d --buil
 
 Run `run --rm --build migrate` before starting a new application version when upgrading. View application logs with `docker compose --env-file .env.prd -f infra/compose.production.yaml logs -f app`.
 
-The production Compose project creates separate volumes from development. PostgreSQL is not published to the host; containers connect to `postgres:5432`. SearXNG and OpenSandbox also use the internal Compose network. Logs, memories, and temporary files use a production-specific volume. To access PostgreSQL directly, connect from inside its container:
+The production Compose project creates separate volumes from development. PostgreSQL is not published to the host; containers connect to `postgres:5432`. OpenSandbox also uses the internal Compose network. Logs, memories, and temporary files use a production-specific volume. To access PostgreSQL directly, connect from inside its container:
 
 ```bash
 docker compose --env-file .env.prd -f infra/compose.production.yaml \

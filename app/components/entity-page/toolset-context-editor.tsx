@@ -118,10 +118,12 @@ export function ToolSetContextEditor({
                   placeholder={t(
                     "components.entityPage.toolsetContextEditor.selectToolset",
                   )}
-                  data={schemas.map(({ name: value, displayName: label }) => ({
-                    value,
-                    label,
-                  }))}
+                  data={[
+                    ...schemas.map(({ name: value, displayName: label }) => ({ value, label })),
+                    ...(!toolSet && instance.toolSetName === "king-of-time"
+                      ? [{ value: "king-of-time", label: t("components.entityPage.toolsetContextEditor.legacyKingOfTime"), disabled: true }]
+                      : []),
+                  ]}
                   value={instance.toolSetName || null}
                   onChange={(toolSetName) =>
                     setContexts((current) =>

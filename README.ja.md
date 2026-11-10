@@ -25,8 +25,8 @@ AI Botsは、SlackやMicrosoft Teamsなどで動くAIボットを作り、運用
 - **チャットボット:** 指示プロンプト、失敗時メッセージ、会話履歴、稼働状態、利用するサービスを設定できます。パブリックIDの確認・再生成や、アダプタごとのWebhook URLの確認・コピーにも対応します。
 - **チャットアダプタ:** Slack、Microsoft Teams、Google Chat、Discord、X、LINEに接続できます。プラットフォーム固有の設定、OAuth認証情報の紐付け、接続テストを行えます。
 - **AIプロバイダーとエージェント:** OpenAI、Azure OpenAI、Anthropic、OpenAI互換プロバイダーを設定し、モデルIDとモデルオプションを指定したエージェントを作成できます。ボットに割り当てる前にエージェントをテストできます。
-- **ツールとファイル:** チャット・添付ファイル用ツール、Google Drive、OpenDAL対応のリモートファイルストレージ、King of Timeの勤怠データをボットに利用させることができます。利用可能なツールは、ボットの設定と接続済みの認証情報によって異なります。
-- **Web検索とメモリ:** SearXNGを設定するとWeb検索を利用できます。ボットのメモリは無効・スレッド別・ボット全体で共有から選べます。
+- **ツールとファイル:** チャット・添付ファイル用ツール、Google Drive、OpenDAL対応のリモートファイルストレージをボットに利用させることができます。利用可能なツールは、ボットの設定と接続済みの認証情報によって異なります。
+- **Web検索とメモリ:** Web検索用MCPサーバーを接続するとWeb検索を利用できます。ボットのメモリは無効・スレッド別・ボット全体で共有から選べます。
 - **MCPサーバー:** MCPエンドポイントとHTTPヘッダーを設定し、接続テストを行って、ボットから利用できるようにできます。
 - **サンドボックス:** E2BまたはOpenSandboxの実行環境を設定できます。環境変数、許可するネットワークドメイン、初期化コマンド、共有範囲を管理できます。永続インスタンスの確認や内蔵ターミナルの利用にも対応します。
 - **スケジュール実行:** 5フィールドまたは6フィールドのCron式とIANAタイムゾーンを指定し、選択したボット／アダプタのスレッドでプロンプトを実行できます。スケジュールの変更は実行中のスケジューラーに反映されます。
@@ -57,7 +57,7 @@ AI Botsは、SlackやMicrosoft Teamsなどで動くAIボットを作り、運用
 - PostgreSQL 15 以降
 - npm
 
-同梱のCompose設定ではPostgreSQL 16を使用します。オプションの連携先としてSearXNGとOpenSandboxも定義されています。
+同梱のCompose設定ではPostgreSQL 16を使用します。オプションの連携先としてOpenSandboxも定義されています。
 
 ## セットアップ
 
@@ -137,7 +137,6 @@ OAuthクライアントを管理し、連携サービスのアカウントを認
 | `E2B_API_KEY`                | E2B利用時    | E2Bサンドボックスプロバイダーを有効にします。                                                                                                                                                          |
 | `OPEN_SANDBOX_DOMAIN`        | 任意         | OpenSandboxを有効にし、接続先ドメインを指定します。                                                                                                                                                    |
 | `OPEN_SANDBOX_API_KEY`       | 任意         | 同梱Compose設定でOpenSandboxサーバーに渡すAPIキー。                                                                                                                                                    |
-| `SEARXNG_URL`                | 任意         | Web検索ツールが使用するSearXNGのエンドポイント。                                                                                                                                                       |
 | `SMTP_RELAY_HOST`            | メール利用時 | SMTPリレーのホスト名。                                                                                                                                                                                 |
 | `SMTP_RELAY_PORT`            | メール利用時 | SMTPリレーのポート番号。                                                                                                                                                                               |
 | `SMTP_RELAY_SECURE`          | メール利用時 | `true` でTLS接続を使用。`false` の場合はSTARTTLSを要求します。                                                                                                                                         |
@@ -151,7 +150,7 @@ OAuthクライアントを管理し、連携サービスのアカウントを認
 | `TEMP_FILE_STORAGE_SERVICE`  | 任意         | 一時ファイルの OpenDAL サービス名。既定値は `fs`。S3 に保存する場合は `s3` を指定します。                                                                                                              |
 | `TEMP_FILE_STORAGE_CONFIG`   | 任意         | 一時ファイル保存先の OpenDAL 設定を文字列値の JSON オブジェクトで指定します。`s3` では `bucket` などの設定を渡します。                                                                                 |
 
-`infra/compose.yaml` にはPostgreSQL、SearXNG、OpenSandboxが定義されています。オプションのサービスも起動する場合は、リポジトリのルートから同じ `.env.dev` を指定して実行します。
+`infra/compose.yaml` にはPostgreSQL、OpenSandboxが定義されています。オプションのサービスも起動する場合は、リポジトリのルートから同じ `.env.dev` を指定して実行します。
 
 ```bash
 docker compose --env-file .env.dev -f infra/compose.yaml up -d
@@ -175,7 +174,7 @@ npm run start
 
 #### 本番用 Compose
 
-[`.env.prd.example`](./.env.prd.example) を参考に `.env.prd` を設定します。既に `.env.prd` がある場合は上書きせず、`POSTGRES_USER`、`POSTGRES_PASSWORD`、`POSTGRES_DB` と、同じ認証情報を含む `DATABASE_URL`、`SEARXNG_SECRET`、`OPEN_SANDBOX_API_KEY` を確認してください。`DATABASE_URL` のホストは `postgres`、ポートは `5432` です。パスワードにURLの予約文字を使う場合は接続URL内でパーセントエンコードしてください。メール認証やパスワード再設定を使う場合は、サンプルの `SMTP_RELAY_*` も設定してください。
+[`.env.prd.example`](./.env.prd.example) を参考に `.env.prd` を設定します。既に `.env.prd` がある場合は上書きせず、`POSTGRES_USER`、`POSTGRES_PASSWORD`、`POSTGRES_DB` と、同じ認証情報を含む `DATABASE_URL`、`OPEN_SANDBOX_API_KEY` を確認してください。`DATABASE_URL` のホストは `postgres`、ポートは `5432` です。パスワードにURLの予約文字を使う場合は接続URL内でパーセントエンコードしてください。メール認証やパスワード再設定を使う場合は、サンプルの `SMTP_RELAY_*` も設定してください。
 
 新しい本番環境では、本番専用の `CREDENTIALS_ENCRYPTION_KEY` とCloudflare Tunnelを設定します。Tunnelの公開ホスト名はコンテナ内の `http://127.0.0.1:3001` に接続します。開発用と同じTunnelを同時に起動すると異なる環境に振り分けられるため、別のTunnelを使ってください。初回管理者を作成するまではCloudflare Accessなどでアクセスを制限してください。
 
@@ -187,7 +186,7 @@ docker compose --env-file .env.prd -f infra/compose.production.yaml up -d --buil
 
 更新時もアプリの新バージョンを起動する前に `run --rm --build migrate` を実行してください。アプリのログは `docker compose --env-file .env.prd -f infra/compose.production.yaml logs -f app` で確認できます。
 
-本番Composeは開発環境と別のボリュームを作成します。PostgreSQLのポートはホストに公開せず、コンテナ間では `postgres:5432` を使います。SearXNGとOpenSandboxもComposeの内部ネットワークに接続されます。ログ、メモリ、一時ファイルも本番専用のボリュームに保存されます。PostgreSQLを直接操作する場合は、次のコマンドでコンテナ内から接続できます。
+本番Composeは開発環境と別のボリュームを作成します。PostgreSQLのポートはホストに公開せず、コンテナ間では `postgres:5432` を使います。OpenSandboxもComposeの内部ネットワークに接続されます。ログ、メモリ、一時ファイルも本番専用のボリュームに保存されます。PostgreSQLを直接操作する場合は、次のコマンドでコンテナ内から接続できます。
 
 ```bash
 docker compose --env-file .env.prd -f infra/compose.production.yaml \

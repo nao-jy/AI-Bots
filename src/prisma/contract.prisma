@@ -207,7 +207,6 @@ namespace aibot {
     agentId                Uuid?                   @unique
     adapters               ChatBotAdapter[]
     mcpServers             ChatBotMcpServer[]
-    toolSets               ChatBotToolSetContext[]
     +Timestamps
     publicIds              ChatBotPublicId[]
     usage                  AgentUsage[]
@@ -344,11 +343,12 @@ namespace aibot {
 
   model McpServer {
     +Resource
-    description String?
-    transport   MCPTransport
-    endpoint    String?
-    headers     Jsonb?
-    bots        ChatBotMcpServer[]
+    description     String?
+    transport       MCPTransport
+    endpoint        String?
+    contextEndpoint String?
+    headers         Jsonb?
+    bots            ChatBotMcpServer[]
     +Timestamps
   }
 
@@ -362,7 +362,8 @@ namespace aibot {
     authId         Uuid?
     oauthClient    OAuthClient?         @relation(fields: [oauthClientId], references: [id], onDelete: Cascade)
     oauthClientId  Uuid?
-    createdAt      TimestamptzString    @default(now())
+    context        Jsonb?
+    +Timestamps
 
     @@unique([chatbotId, mcpServerId, authId])
     @@unique([chatbotId, mcpServerId, oauthClientId])
@@ -479,18 +480,6 @@ namespace aibot {
     +Timestamps
 
     @@unique([sandboxId, chatbotId])
-    @@index([chatbotId])
-  }
-
-  model ChatBotToolSetContext {
-    +Resource
-    toolSetName    String
-    chatbotId      Uuid
-    chatbot        ChatBot @relation(fields: [chatbotId], references: [id], onDelete: Cascade)
-    toolSetContext Jsonb   @default(json`{}`)
-    +Timestamps
-
-    @@unique([toolSetName, chatbotId, toolSetContext])
     @@index([chatbotId])
   }
 

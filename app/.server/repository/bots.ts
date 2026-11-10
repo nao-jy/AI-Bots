@@ -501,6 +501,17 @@ export async function saveBot(
   if (new Set(toolSetContextKeys).size !== toolSetContextKeys.length)
     return { error: "server.duplicateToolsetContext" };
   for (const { toolSetName, context } of toolSetContexts) {
+    // Keep existing legacy settings until the bot owner removes them after migration.
+    // New or modified King of Time settings must use an MCP server instead.
+    if (toolSetName === "king-of-time" && id !== null) {
+      const existing = await db.orm.aibot.ChatBotToolSetContext.where({
+        organizationId: user.organizationId,
+        chatbotId: id,
+        toolSetName,
+      }).all();
+      if (existing.some((item) => stableJson(item.toolSetContext) === stableJson(context)))
+        continue;
+    }
     const isValidContext = await toolSetRegistry.validateToolSetContext(
       toolSetName,
       context,

@@ -300,6 +300,7 @@ export const en = {
         delete: "Delete",
         addToolset: "+ Add tool set",
         noToolsetsAvailable: "No ToolSets are available.",
+        legacyKingOfTime: "King of Time (migrate to MCP)",
       },
     },
   },
@@ -545,42 +546,17 @@ export const en = {
     googleDriveExpectedFile: "The specified Google Drive item is not a file.",
     googleDriveExpectedBinaryContent:
       "Could not retrieve file data from Google Drive.",
-    targetMonth: "Target month (YYYY-MM)",
-    employeeKey: "Employee identifier from the employee search results",
-    unselected: "Not selected",
     chatworkApiToken: "Chatwork API token",
-    chatworkApiTokenDescription: "Provide an API token when using API token authentication. Do not combine it with an access token.",
+    chatworkApiTokenDescription:
+      "Provide an API token when using API token authentication. Do not combine it with an access token.",
     chatworkAccessToken: "Chatwork access token",
-    chatworkAccessTokenDescription: "Provide an OAuth access token, or select OAuth credentials separately. Do not combine it with an API token.",
+    chatworkAccessTokenDescription:
+      "Provide an OAuth access token, or select OAuth credentials separately. Do not combine it with an API token.",
     chatworkWebhookToken: "Chatwork webhook token",
-    chatworkWebhookTokenDescription: "Enter the Base64 token shown in the webhook settings.",
+    chatworkWebhookTokenDescription:
+      "Enter the Base64 token shown in the webhook settings.",
     chatworkUserName: "Chatwork username",
     chatworkUserNameDescription: "Adapter username. Defaults to chatwork.",
-    kingOfTimeApiKey: "King of Time API key",
-    kingOfTimeAttendance: "King of Time attendance data",
-    kingOfTimeSearchEmployeeDescription:
-      "Search employees by all or part of their name. Uses employee data for the target month. If multiple employees have the same name, all matches are returned; verify the employee key before retrieving attendance data.",
-    kingOfTimeEmployeeName: "Employee name to search (all or part of the name)",
-    kingOfTimeDailyAttendanceDescription:
-      "Get daily attendance data for the specified employee and month. Search by employee name first, then provide employeeKey.",
-    kingOfTimeDailyTimeClockDescription:
-      "Get daily time clock records for the specified employee and month. Search by employee name first, then provide employeeKey.",
-    kingOfTimeMonthlyAttendanceDescription:
-      "Get monthly attendance data for the specified employee. Search by employee name first, then provide employeeKey.",
-    kingOfTimeDailyScheduleDescription:
-      "Get daily schedule data for the specified employee and month. Search by employee name first, then provide employeeKey.",
-    kingOfTimeLeaveTypesDescription:
-      "List leave type codes and names configured in King of Time.",
-    kingOfTimeApiRequestFailed:
-      "King of Time API request failed (HTTP {{0}}): {{1}}",
-    kingOfTimeApiInvalidJson:
-      "King of Time API returned an invalid JSON response (HTTP {{0}}).",
-    kingOfTimeUnexpectedEmployeeList:
-      "King of Time API returned an unexpected employee list.",
-    kingOfTimeEmployeeKeyMissing:
-      "The King of Time employee record has no employee identifier.",
-    kingOfTimeUnexpectedHolidayTypes:
-      "King of Time API returned an unexpected leave type list.",
     uploadFileToChatDescription:
       "Send a file to the chat using a file handle. If direct upload fails, post a temporary download link to the thread.",
     downloadFile: "Download file",
@@ -599,8 +575,6 @@ export const en = {
     documentExtractionEmpty: "Could not extract a document from the file.",
     documentExtractionFailed: "Document extraction failed: {{0}}",
     chatFileOperationFailed: "Chat file operation failed: {{0}}",
-    webSearchServiceNotConfigured: "Web search service is not configured.",
-    webSearchRequestFailed: "Web search failed (HTTP {{0}}).",
     openDalServiceName: "OpenDAL service name",
     openDalServiceNameDescription:
       "Specify an OpenDAL service name. See https://opendal.apache.org/services/",
@@ -656,9 +630,6 @@ export const en = {
       "The shell process exited immediately after starting.",
     shellSessionUnavailable: "The shell session was not found or has ended.",
     inputLimitExceeded: "Input is limited to 16,000 characters at a time.",
-    webSearchToolDescription:
-      "Search the web and return a list of titles, URLs, and snippets. Use this to look up current information or unfamiliar topics.",
-    webSearchQuery: "Search query",
   },
   pages: {
     dashboard: {
@@ -867,6 +838,7 @@ export const en = {
       namePlaceholder: "e.g. Internal knowledge base",
       endpointPlaceholder: "https://mcp.example.com/mcp",
       httpHeadersLabel: "HTTP headers",
+      contextLabel: "Tool context (JSON)",
       documentTitle: "MCP servers | {{0}}",
       notFound: "MCP server not found.",
       unknownAction: "Could not determine the requested action.",

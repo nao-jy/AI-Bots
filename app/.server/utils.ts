@@ -153,6 +153,17 @@ export function decryptMcpHeaders(value: unknown): Record<string, string> {
   );
 }
 
+export function decryptMcpContext(value: unknown): Record<string, unknown> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  const ciphertext = (value as { contextCiphertext?: unknown })
+    .contextCiphertext;
+  if (typeof ciphertext !== "string") return {};
+  const context: unknown = JSON.parse(decryptCredential(ciphertext));
+  if (!context || typeof context !== "object" || Array.isArray(context))
+    throw new Error("Invalid saved MCP context");
+  return context as Record<string, unknown>;
+}
+
 export type ConnectionTestResult =
   | { ok: true; intent: "test"; message: string | TranslationMessage }
   | { ok: false; intent: "test"; error: string | TranslationMessage };

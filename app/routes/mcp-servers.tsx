@@ -60,6 +60,13 @@ function getPage(transport: Record<string, string>) {
         valueType: "string",
         wide: true,
       },
+      {
+        key: "context",
+        label: t("pages.mcpServers.contextLabel"),
+        type: "textarea",
+        placeholder: '{"apiKey": "..."}',
+        wide: true,
+      },
     ],
   };
   return page;

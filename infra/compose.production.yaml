@@ -10,7 +10,6 @@ services:
       - ${PRD_ENV_FILE:-../.env.prd}
     environment:
       OPEN_SANDBOX_DOMAIN: opensandbox-server:3000
-      SEARXNG_URL: http://searxng-core:8080
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:
@@ -47,26 +46,6 @@ services:
       timeout: 5s
       retries: 5
 
-  searxng-core:
-    image: docker.io/searxng/searxng:${SEARXNG_VERSION:-latest}
-    restart: unless-stopped
-    environment:
-      SEARXNG_SETTINGS_PATH: /etc/searxng-production/settings.yml
-      SEARXNG_SECRET: ${SEARXNG_SECRET:?Set SEARXNG_SECRET in .env.prd}
-      SEARXNG_VALKEY_URL: valkey://searxng-valkey:6379/0
-    volumes:
-      - ./searxng-production.yml:/etc/searxng-production/settings.yml:ro
-      - searxng-data:/var/cache/searxng
-    depends_on:
-      - searxng-valkey
-
-  searxng-valkey:
-    image: docker.io/valkey/valkey:9-alpine
-    command: ["valkey-server", "--save", "300", "1", "--save", "60", "1000", "--loglevel", "warning"]
-    restart: unless-stopped
-    volumes:
-      - valkey-data:/data
-
   opensandbox-server:
     image: opensandbox/server:release-1.2.0
     restart: unless-stopped
@@ -82,5 +61,3 @@ services:
 volumes:
   app-data:
   postgres-data:
-  searxng-data:
-  valkey-data:

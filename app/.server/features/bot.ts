@@ -9,7 +9,11 @@ import {
   getPersistentSandboxInstance,
   type SandboxScope,
 } from "../repository/sandboxes";
-import { decryptMcpHeaders, jsonbToStringRecord } from "../utils";
+import {
+  decryptMcpContext,
+  decryptMcpHeaders,
+  jsonbToStringRecord,
+} from "../utils";
 import { getModelInfo } from "./provider";
 import { getAvailableBot } from "../repository/bots";
 import { getMcpClient } from "./mcp";
@@ -20,7 +24,6 @@ import { appLogger } from "../logger/app-logger";
 import { conversationLogger } from "../logger/conversation-logger";
 import { insertUsage } from "../repository/agents";
 import { getExceededRateLimit } from "../repository/rate-limits";
-import { getSearXNGWebSearch } from "./toolsets/tools/web/search-searxng";
 import { getChatTools } from "./toolsets/chat-tools";
 import type { FileHandleReaderMap } from "./toolsets/helpers/file-handle";
 import { ToolSetFactoryRegistry } from "./toolsets";
@@ -299,7 +302,6 @@ async function processBotMessage(
               ),
           })
         : {}),
-      searchWeb: getSearXNGWebSearch(),
       ...(oauthClients.size
         ? getThreadOAuthTools(thread, oauthScope, oauthClients)
         : {}),
@@ -339,6 +341,7 @@ async function processBotMessage(
         server.endpoint,
         decryptMcpHeaders(server.headers),
         authId,
+        decryptMcpContext(server.headers),
       );
       mcpClients.push(client);
 

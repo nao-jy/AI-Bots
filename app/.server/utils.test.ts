@@ -3,6 +3,7 @@ import {
   decryptAdapterEnvs,
   decryptCredential,
   decryptEncryptedStringMap,
+  decryptMcpContext,
   decryptMcpHeaders,
   encryptCredential,
   encryptStringMap,
@@ -106,6 +107,18 @@ describe("credential encryption", () => {
         encryptedValues: { invalid: 42 },
       }),
     ).toEqual({});
+  });
+
+  it("keeps MCP context encrypted separately from HTTP headers", () => {
+    vi.stubEnv("CREDENTIALS_ENCRYPTION_KEY", key);
+    const envelope = {
+      ...encryptStringMap({ "X-Test": "value" }),
+      contextCiphertext: encryptCredential(JSON.stringify({ apiKey: "secret" })),
+    };
+    expect(JSON.stringify(envelope)).not.toContain("secret");
+    expect(decryptMcpHeaders(envelope)).toEqual({ "X-Test": "value" });
+    expect(decryptMcpContext(envelope)).toEqual({ apiKey: "secret" });
+    expect(decryptMcpContext(encryptStringMap({}))).toEqual({});
   });
 });
 

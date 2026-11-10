@@ -1,0 +1,10 @@
+services:
+  app:
+    networks:
+      - default
+      - bot-tools
+
+networks:
+  bot-tools:
+    name: bot-tools-mcp
+    external: true
