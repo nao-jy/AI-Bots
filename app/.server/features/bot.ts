@@ -17,7 +17,11 @@ import {
 import { getModelInfo } from "./provider";
 import { getAvailableBot } from "../repository/bots";
 import { getMcpClient } from "./mcp";
-import { getMcpCredential, usesUpstreamOAuth } from "./mcp-credentials";
+import {
+  getMcpCredential,
+  resolveMcpCredentials,
+  usesUpstreamOAuth,
+} from "./mcp-credentials";
 import { registerMcpFile } from "./mcp-file";
 import { getMcpContextSchema } from "./mcp-schema";
 import { getSandboxTools } from "./toolsets/sandbox";
@@ -342,13 +346,14 @@ async function processBotMessage(
               server.endpoint,
             )
           : null;
+      const upstreamOAuth = usesUpstreamOAuth(schema);
       const client = await getMcpClient(
         server.transport,
         server.endpoint,
         headers,
         authId,
         decryptMcpContext(link.context),
-        usesUpstreamOAuth(schema),
+        upstreamOAuth,
       );
       mcpClients.push(client);
 
@@ -364,7 +369,19 @@ async function processBotMessage(
           ? {
               ...tool,
               execute: async (input, options) =>
-                registerMcpFile(await execute(input, options), fileHandles),
+                registerMcpFile(
+                  await execute(input, options),
+                  fileHandles,
+                  server.endpoint!,
+                  async () =>
+                    (
+                      await resolveMcpCredentials(
+                        authId,
+                        headers,
+                        upstreamOAuth,
+                      )
+                    ).headers,
+                ),
             }
           : tool;
       }
