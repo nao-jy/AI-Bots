@@ -140,7 +140,7 @@ The built-in email provider sends through an SMTP relay. Once configured, it can
 | `SMTP_RELAY_PASS`            | For email | SMTP authentication password.                                                                                                                                                                           |
 | `SMTP_RELAY_DOMAIN_FROM`     | For email | Domain used for the `noreply@<domain>` sender address.                                                                                                                                                  |
 | `CLOUDFLARE_TOKEN`           | Required for production Docker | Cloudflare Tunnel token; also optionally used by `npm run dev`.                                                                                                                  |
-| `FILESYSTEM_API_URL`         | Required  | URL of the bot_tools filesystem API (for example `http://localhost:8091`). |
+| `FILESYSTEM_API_URL`         | Required  | Filesystem API URL for legacy environment-based storage; the bundled bot_tools API is available inside the shared Docker network. |
 | `FILESYSTEM_API_TOKEN`       | Required  | Bearer token shared with the filesystem API. |
 | `MEMORY_STORAGE_SERVICE`, `TEMP_FILE_STORAGE_SERVICE` | Optional | OpenDAL service names for bot memory and temporary files; default `fs`. |
 | `MEMORY_STORAGE_CONFIG`, `TEMP_FILE_STORAGE_CONFIG` | Optional | OpenDAL configuration as JSON objects with string values. For `fs`, `root` is relative to the API server's allowed root. |
@@ -154,7 +154,7 @@ docker compose --env-file .env.dev -f infra/compose.yaml up -d
 
 Optional Compose settings are documented in [`.env.example`](./.env.example). If you change the PostgreSQL credentials, update `DATABASE_URL` to match; existing database volumes retain their original credentials.
 
-Configure each integration's provider credentials and settings in the workspace. Administrators register Sandbox and Filesystem API endpoints and headers in Settings. Select a Sandbox API when creating a sandbox, and select a Filesystem API for bot memory or as the organization’s temporary file store. Filesystem contexts and headers are encrypted at rest. Keep an old temporary-file API registered until its download links expire. To connect the included OpenSandbox through bot_tools, follow the Sandbox API setup in the bot_tools README; direct E2B integration has been removed.
+Configure each integration's provider credentials and settings in the workspace. Administrators register Sandbox and Filesystem API endpoints and headers in Settings. Use `http://bot-tools/sandbox` and `http://bot-tools/filesystem` for the bundled APIs. Select a Sandbox API when creating a sandbox, and select a Filesystem API for bot memory or as the organization’s temporary file store. Filesystem contexts and headers are encrypted at rest. Keep an old temporary-file API registered until its download links expire. To connect the included OpenSandbox through bot_tools, follow the Sandbox API setup in the bot_tools README; direct E2B integration has been removed.
 
 The API configuration migration removes pre-release sandbox records and their persistent instance records; it does not terminate existing remote instances. Apply migrations before starting this version, then register the APIs in Settings.
 
@@ -171,6 +171,9 @@ npm run start
 ### Docker
 
 #### Production Compose
+
+Start bot_tools first to create the shared `bot-tools-mcp` network. See its README for the startup commands. Its services publish no host ports, so a bot_manager development process running on the host cannot access them directly.
+
 
 Configure `.env.prd` using [`.env.prd.example`](./.env.prd.example). If `.env.prd` already exists, preserve it and check `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `DATABASE_URL` with matching credentials. The `DATABASE_URL` host and port are `postgres:5432`. Percent-encode reserved characters in database credentials in the URL. Configure the sample `SMTP_RELAY_*` settings to use email verification and password reset.
 

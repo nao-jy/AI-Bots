@@ -8,6 +8,30 @@ import {
 } from "../utils";
 import { logAuditEvent } from "../logger/audit-logger";
 
+export function isBuiltinApiRouteMigration(
+  kind: "sandbox" | "filesystem",
+  previous: string,
+  next: string,
+) {
+  try {
+    const from = new URL(previous);
+    const to = new URL(next);
+    const direct =
+      kind === "sandbox"
+        ? "http://sandbox-api:8090/"
+        : "http://filesystem-api:8091/";
+    const routed =
+      kind === "sandbox"
+        ? "http://bot-tools/sandbox"
+        : "http://bot-tools/filesystem";
+    return (
+      from.href === direct && (to.href === routed || to.href === `${routed}/`)
+    );
+  } catch {
+    return false;
+  }
+}
+
 export async function listServiceApis(user: AuthUser) {
   if (!user.isAdmin) throw new Response("Forbidden", { status: 403 });
   const [sandboxes, filesystems] = await Promise.all([
@@ -112,6 +136,7 @@ export async function saveServiceApi(user: AuthUser, form: FormData) {
     if (kind === "sandbox") {
       if (
         existing.endpoint !== endpoint &&
+        !isBuiltinApiRouteMigration(kind, existing.endpoint, endpoint) &&
         (await db.orm.aibot.Sandbox.first({ apiId: id }))
       )
         return { error: "Cannot change an API endpoint while it is in use" };
@@ -121,7 +146,9 @@ export async function saveServiceApi(user: AuthUser, form: FormData) {
       }).update({ name, endpoint, headers: encryptedHeaders });
     } else {
       if (
-        (existing.endpoint !== endpoint || encryptedContext) &&
+        ((existing.endpoint !== endpoint &&
+          !isBuiltinApiRouteMigration(kind, existing.endpoint, endpoint)) ||
+          encryptedContext) &&
         ((await db.orm.aibot.ChatBotFileSystem.first({ sandboxId: id })) ||
           (await db.orm.aibot.Organization.first({
             temporaryFileSystemApiId: id,

@@ -6,6 +6,11 @@ services:
       context: ..
       dockerfile: infra/Dockerfile
     restart: unless-stopped
+    environment:
+      FILESYSTEM_API_URL: http://bot-tools/filesystem
+    networks:
+      - default
+      - bot-tools
     env_file:
       - ${PRD_ENV_FILE:-../.env.prd}
     extra_hosts:
@@ -47,3 +52,8 @@ services:
 volumes:
   app-data:
   postgres-data:
+
+networks:
+  bot-tools:
+    name: bot-tools-mcp
+    external: true

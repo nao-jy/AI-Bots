@@ -156,7 +156,7 @@ docker compose --env-file .env.dev -f infra/compose.yaml up -d
 
 Composeの任意設定は [`.env.example`](./.env.example) を参照してください。PostgreSQLの認証情報を変更した場合は `DATABASE_URL` も合わせて変更してください。既存のデータベースボリュームには元の認証情報が保持されます。
 
-各連携サービスの認証情報や設定はワークスペース上で設定してください。管理者が設定画面でSandbox APIとFilesystem APIのエンドポイントおよびヘッダーを登録します。Sandbox APIはサンドボックス作成時に、Filesystem APIはボットのメモリ用または組織の一時ファイル保存先として選択します。Filesystemのcontextとヘッダーは暗号化して保存します。一時ファイルの保存先を変更した場合、旧URLの期限が切れるまで旧APIを残してください。同梱のOpenSandboxとの接続手順はbot_toolsのREADMEを参照してください。E2Bの直接連携は削除しました。
+各連携サービスの認証情報や設定はワークスペース上で設定してください。管理者が設定画面でSandbox APIとFilesystem APIのエンドポイントおよびヘッダーを登録します。同梱APIのURLは `http://bot-tools/sandbox` と `http://bot-tools/filesystem` です。Sandbox APIはサンドボックス作成時に、Filesystem APIはボットのメモリ用または組織の一時ファイル保存先として選択します。Filesystemのcontextとヘッダーは暗号化して保存します。一時ファイルの保存先を変更した場合、旧URLの期限が切れるまで旧APIを残してください。同梱のOpenSandboxとの接続手順はbot_toolsのREADMEを参照してください。E2Bの直接連携は削除しました。
 
 API設定のマイグレーションは運用前のSandboxと永続インスタンスのDBレコードを削除します。既存のリモートインスタンスは終了しません。このバージョンの起動前にマイグレーションを実行し、設定画面でAPIを登録してください。
 
@@ -173,6 +173,9 @@ npm run start
 ### Docker
 
 #### 本番用 Compose
+
+bot_toolsを先に起動して共有ネットワーク `bot-tools-mcp` を作成してください。起動手順はbot_toolsのREADMEを参照してください。bot_toolsはホストにポートを公開しないため、ホスト上で動く開発サーバーからは直接接続できません。
+
 
 [`.env.prd.example`](./.env.prd.example) を参考に `.env.prd` を設定します。既に `.env.prd` がある場合は上書きせず、`POSTGRES_USER`、`POSTGRES_PASSWORD`、`POSTGRES_DB` と、同じ認証情報を含む `DATABASE_URL` を確認してください。`DATABASE_URL` のホストは `postgres`、ポートは `5432` です。パスワードにURLの予約文字を使う場合は接続URL内でパーセントエンコードしてください。メール認証やパスワード再設定を使う場合は、サンプルの `SMTP_RELAY_*` も設定してください。
 
