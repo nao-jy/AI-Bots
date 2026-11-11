@@ -93,6 +93,16 @@ export async function listBots(
     filterResourcesByRole(user, sandboxRows),
     filterResourcesByRole(user, authRows),
   ]);
+  const [fileSystems, fileSystemLinks] = await Promise.all([
+    db.orm.aibot.FileSystemAPI.where({
+      organizationId: user.organizationId,
+    }).all(),
+    db.orm.aibot.ChatBotFileSystem.where({
+      organizationId: user.organizationId,
+    })
+      .where((link) => link.chatbotId.in(ids))
+      .all(),
+  ]);
   const mcpContextSchemas = await Promise.all(
     mcpServers.map(async (server) => {
       if (!server.contextEndpoint || !server.endpoint)
@@ -169,6 +179,9 @@ export async function listBots(
           lookbackMessages: bot.lookbackMessages,
           memoryConfig: bot.memoryConfig,
           onFailedMessage: bot.onFailedMessage,
+          fileSystemId:
+            fileSystemLinks.find((link) => link.chatbotId === bot.id)
+              ?.sandboxId ?? "",
           sandboxId: sandboxLinks
             .filter(
               (link) =>
@@ -183,7 +196,7 @@ export async function listBots(
               .map(
                 (link) =>
                   sandboxes.find((sandbox) => sandbox.id === link.sandboxId)
-                    ?.sandboxType,
+                    ?.name,
               )
               .filter(Boolean)
               .join("、") || "—",
@@ -245,8 +258,12 @@ export async function listBots(
         value: `thread:${client.id}`,
       })),
     ],
+    fileSystemOptions: fileSystems.map((item) => ({
+      label: item.name,
+      value: item.id,
+    })),
     sandboxOptions: sandboxes.map((sandbox) => ({
-      label: `${sandbox.sandboxType} (${sandbox.sandboxScope})`,
+      label: `${sandbox.name} (${sandbox.sandboxScope})`,
       value: String(sandbox.id),
     })),
     mcpContextSchemas,
@@ -335,6 +352,7 @@ export async function saveBot(
     return { error: "server.invalidMcpConnectionSettings" };
   }
   const mcpServerIds = mcpConnections.map(({ serverId }) => serverId);
+  const fileSystemId = String(values.get("fileSystemId") ?? "") || null;
   const sandboxIdRaw = values.get("sandboxId")?.toString() ?? null;
   const sandboxId = sandboxIdRaw || null;
   if (!name) return { error: "server.botNameRequired" };
@@ -440,6 +458,15 @@ export async function saveBot(
       !(await hasResourceAccess(user, sandboxId, "read")))
   )
     return { error: "server.selectedSandboxUnavailable" };
+  if (
+    fileSystemId &&
+    (!isUuid(fileSystemId) ||
+      !(await db.orm.aibot.FileSystemAPI.first({
+        id: fileSystemId,
+        organizationId: user.organizationId,
+      })))
+  )
+    return { error: "Selected filesystem API not found" };
   for (const { serverId, context } of mcpConnections) {
     const server = mcpServers.find((item) => item.id === serverId)!;
     if (!server.contextEndpoint) {
@@ -538,6 +565,13 @@ export async function saveBot(
         context: jsonb(encryptMcpContext(context)),
       });
     }
+    await tx.orm.aibot.ChatBotFileSystem.where({ chatbotId: botId! }).delete();
+    if (fileSystemId)
+      await tx.orm.aibot.ChatBotFileSystem.create({
+        organizationId: user.organizationId,
+        chatbotId: botId!,
+        sandboxId: fileSystemId,
+      });
     await tx.orm.aibot.ChatBotToolSandbox.where({ chatbotId: botId! }).delete();
     if (sandboxId !== null) {
       await tx.orm.aibot.ChatBotToolSandbox.create({

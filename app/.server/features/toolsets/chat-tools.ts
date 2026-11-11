@@ -25,6 +25,7 @@ export function getChatTools(
   thread: Thread<Record<string, unknown>, unknown>,
   fileHandles: FileHandleReaderMap,
   publicOrigin?: string,
+  organizationId?: string,
 ) {
   const adapter = chat.getAdapter(adapterPlatform);
   const tools = createChatTools({
@@ -72,6 +73,7 @@ export function getChatTools(
             data,
             filename,
             publicOrigin,
+            organizationId,
           );
           await chat
             .thread(thread.id)

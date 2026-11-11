@@ -135,8 +135,6 @@ OAuthクライアントを管理し、連携サービスのアカウントを認
 | `CREDENTIALS_ENCRYPTION_KEY` | 必須         | 認証情報の暗号化とOAuth認可状態の署名に使用する、Base64形式の32バイトキー。                                                                                                                            |
 | `OAUTH_BASE_URL`             | OAuth利用時  | OAuthコールバックURL `/oauth/callback` の生成に使う公開HTTPSオリジン（パスなし）。ローカル開発では `http://localhost` も使用できます。生成されたコールバックURLをOAuthプロバイダーに登録してください。 |
 | `PUBLIC_APP_URL`             | 任意         | Webhook URL、メール検証リンク、一時ファイルのダウンロードリンクの生成に使う公開アプリURL。未設定時はリクエストのオリジンを使用します。                                                                 |
-| `SANDBOX_API_URL`           | Sandbox利用時 | 別サービスのSandbox APIのURL。 |
-| `SANDBOX_API_TOKEN`         | Sandbox利用時 | Sandbox APIと共有するBearerトークン。 |
 | `SMTP_RELAY_HOST`            | メール利用時 | SMTPリレーのホスト名。                                                                                                                                                                                 |
 | `SMTP_RELAY_PORT`            | メール利用時 | SMTPリレーのポート番号。                                                                                                                                                                               |
 | `SMTP_RELAY_SECURE`          | メール利用時 | `true` でTLS接続を使用。`false` の場合はSTARTTLSを要求します。                                                                                                                                         |
@@ -158,7 +156,9 @@ docker compose --env-file .env.dev -f infra/compose.yaml up -d
 
 Composeの任意設定は [`.env.example`](./.env.example) を参照してください。PostgreSQLの認証情報を変更した場合は `DATABASE_URL` も合わせて変更してください。既存のデータベースボリュームには元の認証情報が保持されます。
 
-各連携サービスの認証情報や設定はワークスペース上で設定してください。Sandbox APIが接続可能になると、提供されるサンドボックスを画面から選択できます。同梱のOpenSandboxとの接続手順はbot_toolsのREADMEを参照してください。E2Bの直接連携は削除しました。
+各連携サービスの認証情報や設定はワークスペース上で設定してください。管理者が設定画面でSandbox APIとFilesystem APIのエンドポイントおよびヘッダーを登録します。Sandbox APIはサンドボックス作成時に、Filesystem APIはボットのメモリ用または組織の一時ファイル保存先として選択します。Filesystemのcontextとヘッダーは暗号化して保存します。一時ファイルの保存先を変更した場合、旧URLの期限が切れるまで旧APIを残してください。同梱のOpenSandboxとの接続手順はbot_toolsのREADMEを参照してください。E2Bの直接連携は削除しました。
+
+API設定のマイグレーションは運用前のSandboxと永続インスタンスのDBレコードを削除します。既存のリモートインスタンスは終了しません。このバージョンの起動前にマイグレーションを実行し、設定画面でAPIを登録してください。
 
 ## ビルドと起動
 
@@ -174,7 +174,7 @@ npm run start
 
 #### 本番用 Compose
 
-[`.env.prd.example`](./.env.prd.example) を参考に `.env.prd` を設定します。既に `.env.prd` がある場合は上書きせず、`POSTGRES_USER`、`POSTGRES_PASSWORD`、`POSTGRES_DB` と、同じ認証情報を含む `DATABASE_URL`、`SANDBOX_API_TOKEN` を確認してください。`DATABASE_URL` のホストは `postgres`、ポートは `5432` です。パスワードにURLの予約文字を使う場合は接続URL内でパーセントエンコードしてください。メール認証やパスワード再設定を使う場合は、サンプルの `SMTP_RELAY_*` も設定してください。
+[`.env.prd.example`](./.env.prd.example) を参考に `.env.prd` を設定します。既に `.env.prd` がある場合は上書きせず、`POSTGRES_USER`、`POSTGRES_PASSWORD`、`POSTGRES_DB` と、同じ認証情報を含む `DATABASE_URL` を確認してください。`DATABASE_URL` のホストは `postgres`、ポートは `5432` です。パスワードにURLの予約文字を使う場合は接続URL内でパーセントエンコードしてください。メール認証やパスワード再設定を使う場合は、サンプルの `SMTP_RELAY_*` も設定してください。
 
 新しい本番環境では、本番専用の `CREDENTIALS_ENCRYPTION_KEY` とCloudflare Tunnelを設定します。Tunnelの公開ホスト名はコンテナ内の `http://127.0.0.1:3001` に接続します。開発用と同じTunnelを同時に起動すると異なる環境に振り分けられるため、別のTunnelを使ってください。初回管理者を作成するまではCloudflare Accessなどでアクセスを制限してください。
 

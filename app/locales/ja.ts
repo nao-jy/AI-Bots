@@ -453,6 +453,15 @@ export const ja = {
         "DBには保存しましたがCronの再読み込みに失敗しました。サーバーログを確認してください。",
     },
     settings: {
+      temporaryApiLabel: "一時ファイル保存先 API",
+      apiNameLabel: "名前",
+      apiEndpointLabel: "エンドポイント",
+      apiHeadersLabel: "ヘッダー（JSON）",
+      apiContextLabel: "コンテキスト（JSON）",
+      keepApiHeaders: "空欄の場合は既存のヘッダーを維持",
+      keepApiContext: "空欄の場合は既存のコンテキストを維持",
+      addApi: "追加",
+      deleteApi: "削除",
       documentTitle: "設定 | {{0}}",
       invalidOrganizationName: "組織名は1〜120文字で入力してください。",
       invalidSessionDuration:
@@ -713,7 +722,8 @@ export const ja = {
         addSuffix: "を追加",
       },
       mcpServerEditor: {
-        contextSchemaUnavailable: "コンテキストスキーマを取得できませんでした。",
+        contextSchemaUnavailable:
+          "コンテキストスキーマを取得できませんでした。",
         serverConnectionLabel: "接続 {{0}} のMCPサーバー",
         noOptions: "該当するオプションがありません",
         oauthAuthenticationLabel: "OAuth認証",
@@ -885,9 +895,11 @@ export const ja = {
     active: "稼働中",
     inactive: "停止中",
     invalidMcpConnectionSettings: "MCP接続の設定形式を確認してください。",
-    mcpContextSchemaRequired: "MCPサーバーにコンテキストスキーマURLを設定してください。",
+    mcpContextSchemaRequired:
+      "MCPサーバーにコンテキストスキーマURLを設定してください。",
     mcpContextInvalid: "MCPコンテキストがサーバーのスキーマに一致しません。",
-    mcpContextSchemaUnavailable: "MCPコンテキストのスキーマを取得できませんでした。",
+    mcpContextSchemaUnavailable:
+      "MCPコンテキストのスキーマを取得できませんでした。",
     botNameRequired: "ボット名を入力してください。",
     invalidMemoryConfig: "メモリ設定を選択してください。",
     agentRequired: "AIエージェントを選択してください。",

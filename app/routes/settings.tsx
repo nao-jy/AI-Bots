@@ -7,6 +7,7 @@ import {
   Switch,
   Text,
   TextInput,
+  Textarea,
 } from "@mantine/core";
 import { Form, useActionData } from "react-router";
 import type { Route } from "./+types/settings";
@@ -16,6 +17,12 @@ import {
   saveAppSettings,
 } from "../.server/repository/app-settings";
 import { APP_NAME } from "~/const";
+import {
+  listServiceApis,
+  saveServiceApi,
+  deleteServiceApi,
+  saveTemporaryFileApi,
+} from "../.server/repository/service-apis";
 
 export function meta() {
   return [{ title: t("pages.settings.documentTitle", { 0: APP_NAME }) }];
@@ -25,6 +32,8 @@ export async function loader({ request }: Route.LoaderArgs) {
   const user = await requireAdmin(request);
   const settings = await getAppSettings(user.organizationId);
   return {
+    serviceApis: await listServiceApis(user),
+    temporaryFileSystemApiId: settings.temporaryFileSystemApiId,
     organizationName: settings.organizationName,
     mfaEnabled: settings.mfaEnabled,
     sessionDurationDays: settings.sessionDurationSeconds / 86400,
@@ -36,6 +45,10 @@ export async function loader({ request }: Route.LoaderArgs) {
 export async function action({ request }: Route.ActionArgs) {
   const user = await requireAdmin(request);
   const form = await request.formData();
+  if (form.get("_intent") === "save-temporary-api")
+    return saveTemporaryFileApi(user, form);
+  if (form.get("_intent") === "save-api") return saveServiceApi(user, form);
+  if (form.get("_intent") === "delete-api") return deleteServiceApi(user, form);
   const organizationName = String(form.get("organizationName") ?? "").trim();
   if (!organizationName || organizationName.length > 120)
     return { error: t("pages.settings.invalidOrganizationName") };
@@ -154,6 +167,115 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
           </Text>
           <Button type="submit">{t("pages.settings.save")}</Button>
         </Form>
+      </section>
+      <section
+        className="entity-panel"
+        style={{ padding: 24, maxWidth: 680, marginTop: 24 }}
+      >
+        <h2>Sandbox API / Filesystem API</h2>
+        <Form method="post">
+          <input type="hidden" name="_intent" value="save-temporary-api" />
+          <Select
+            name="temporaryFileSystemApiId"
+            label={t("pages.settings.temporaryApiLabel")}
+            data={loaderData.serviceApis.filesystems.map((api) => ({
+              value: api.id,
+              label: api.name,
+            }))}
+            defaultValue={loaderData.temporaryFileSystemApiId || null}
+            clearable
+          />
+          <Button type="submit" mt="sm">
+            {t("pages.settings.save")}
+          </Button>
+        </Form>
+        {(
+          [
+            ["sandbox", loaderData.serviceApis.sandboxes],
+            ["filesystem", loaderData.serviceApis.filesystems],
+          ] as const
+        ).map(([kind, apis]) => (
+          <div key={kind}>
+            <h3>{kind === "sandbox" ? "Sandbox API" : "Filesystem API"}</h3>
+            {apis.map((api) => (
+              <div
+                key={api.id}
+                style={{ borderTop: "1px solid #ddd", paddingTop: 12 }}
+              >
+                <Form method="post">
+                  <input type="hidden" name="_intent" value="save-api" />
+                  <input type="hidden" name="kind" value={kind} />
+                  <input type="hidden" name="id" value={api.id} />
+                  <TextInput
+                    name="name"
+                    label={t("pages.settings.apiNameLabel")}
+                    defaultValue={api.name}
+                    required
+                  />
+                  <TextInput
+                    name="endpoint"
+                    label={t("pages.settings.apiEndpointLabel")}
+                    defaultValue={api.endpoint}
+                    required
+                  />
+                  <Textarea
+                    name="headers"
+                    label={t("pages.settings.apiHeadersLabel")}
+                    placeholder={t("pages.settings.keepApiHeaders")}
+                  />
+                  {kind === "filesystem" && (
+                    <Textarea
+                      name="context"
+                      label={t("pages.settings.apiContextLabel")}
+                      placeholder={t("pages.settings.keepApiContext")}
+                    />
+                  )}
+                  <Button type="submit" mt="sm">
+                    {t("pages.settings.save")}
+                  </Button>
+                </Form>
+                <Form method="post">
+                  <input type="hidden" name="_intent" value="delete-api" />
+                  <input type="hidden" name="kind" value={kind} />
+                  <input type="hidden" name="id" value={api.id} />
+                  <Button type="submit" color="red" variant="subtle">
+                    {t("pages.settings.deleteApi")}
+                  </Button>
+                </Form>
+              </div>
+            ))}
+            <Form method="post" style={{ marginTop: 16 }}>
+              <input type="hidden" name="_intent" value="save-api" />
+              <input type="hidden" name="kind" value={kind} />
+              <TextInput
+                name="name"
+                label={t("pages.settings.apiNameLabel")}
+                required
+              />
+              <TextInput
+                name="endpoint"
+                label={t("pages.settings.apiEndpointLabel")}
+                required
+              />
+              <Textarea
+                name="headers"
+                label={t("pages.settings.apiHeadersLabel")}
+                placeholder={'{"Authorization":"Bearer ..."}'}
+              />
+              {kind === "filesystem" && (
+                <Textarea
+                  name="context"
+                  label={t("pages.settings.apiContextLabel")}
+                  placeholder={'{"service":"fs","config":{"root":""}}'}
+                  required
+                />
+              )}
+              <Button type="submit" mt="sm">
+                {t("pages.settings.addApi")}
+              </Button>
+            </Form>
+          </div>
+        ))}
       </section>
     </div>
   );

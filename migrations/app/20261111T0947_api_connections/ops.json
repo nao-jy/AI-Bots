@@ -1,0 +1,1707 @@
+[
+  {
+    "id": "sandbox.clear-legacy",
+    "label": "Remove pre-release sandbox resources before configuring API connections",
+    "operationClass": "destructive",
+    "target": {
+      "id": "postgres"
+    },
+    "precheck": [],
+    "postcheck": [],
+    "execute": [
+      {
+        "description": "Delete legacy sandbox resources and dependent instances",
+        "sql": "DELETE FROM aibot.\"ResourceBase\" WHERE id IN (SELECT id FROM aibot.\"Sandbox\")"
+      }
+    ]
+  },
+  {
+    "id": "dropConstraint.PersistentSandboxInstance.PersistentSandboxInstance_instanceId_key",
+    "label": "Drop constraint \"PersistentSandboxInstance_instanceId_key\" on \"PersistentSandboxInstance\"",
+    "operationClass": "widening",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "aibot",
+        "objectType": "unique",
+        "name": "PersistentSandboxInstance_instanceId_key",
+        "table": "PersistentSandboxInstance"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"PersistentSandboxInstance_instanceId_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "PersistentSandboxInstance_instanceId_key",
+          "aibot",
+          "\"aibot\".\"PersistentSandboxInstance\""
+        ],
+        "expectation": {
+          "expects": "present",
+          "object": "constraint \"PersistentSandboxInstance_instanceId_key\" on \"PersistentSandboxInstance\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "drop constraint \"PersistentSandboxInstance_instanceId_key\"",
+        "sql": "ALTER TABLE \"aibot\".\"PersistentSandboxInstance\" DROP CONSTRAINT \"PersistentSandboxInstance_instanceId_key\""
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"PersistentSandboxInstance_instanceId_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "PersistentSandboxInstance_instanceId_key",
+          "aibot",
+          "\"aibot\".\"PersistentSandboxInstance\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "constraint \"PersistentSandboxInstance_instanceId_key\" on \"PersistentSandboxInstance\""
+        }
+      }
+    ]
+  },
+  {
+    "id": "dropColumn.Sandbox.sandboxType",
+    "label": "Drop column \"sandboxType\" from \"Sandbox\"",
+    "operationClass": "destructive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "aibot",
+        "objectType": "column",
+        "name": "sandboxType",
+        "table": "Sandbox"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"sandboxType\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "aibot",
+          "Sandbox",
+          "sandboxType"
+        ],
+        "expectation": {
+          "expects": "present",
+          "object": "column \"sandboxType\" on \"Sandbox\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "drop column \"sandboxType\"",
+        "sql": "ALTER TABLE \"aibot\".\"Sandbox\" DROP COLUMN \"sandboxType\""
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"sandboxType\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "aibot",
+          "Sandbox",
+          "sandboxType"
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "column \"sandboxType\" on \"Sandbox\""
+        }
+      }
+    ]
+  },
+  {
+    "id": "table.ChatBotFileSystem",
+    "label": "Create table \"ChatBotFileSystem\"",
+    "summary": "Creates table \"ChatBotFileSystem\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "aibot",
+        "objectType": "table",
+        "name": "ChatBotFileSystem"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"ChatBotFileSystem\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"aibot\".\"ChatBotFileSystem\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "table \"ChatBotFileSystem\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"ChatBotFileSystem\"",
+        "sql": "CREATE TABLE \"aibot\".\"ChatBotFileSystem\" (\n  \"chatbotId\" uuid NOT NULL,\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"organizationId\" uuid NOT NULL,\n  \"sandboxId\" uuid NOT NULL,\n  \"updatedAt\" timestamptz(3) NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"ChatBotFileSystem\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_class\" AS \"c\" WHERE (\"c\".\"oid\" = to_regclass($1) AND (\"c\".\"relkind\" = $2 OR \"c\".\"relkind\" = $3))) AS \"result\"",
+        "params": [
+          "\"aibot\".\"ChatBotFileSystem\"",
+          "r",
+          "p"
+        ],
+        "expectation": {
+          "expects": "present",
+          "object": "table \"ChatBotFileSystem\""
+        }
+      }
+    ]
+  },
+  {
+    "id": "table.FileSystemAPI",
+    "label": "Create table \"FileSystemAPI\"",
+    "summary": "Creates table \"FileSystemAPI\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "aibot",
+        "objectType": "table",
+        "name": "FileSystemAPI"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"FileSystemAPI\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"aibot\".\"FileSystemAPI\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "table \"FileSystemAPI\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"FileSystemAPI\"",
+        "sql": "CREATE TABLE \"aibot\".\"FileSystemAPI\" (\n  \"context\" jsonb NOT NULL,\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"endpoint\" text NOT NULL,\n  \"headers\" jsonb,\n  \"id\" uuid NOT NULL,\n  \"name\" text NOT NULL,\n  \"organizationId\" uuid NOT NULL,\n  \"updatedAt\" timestamptz(3) NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"FileSystemAPI\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_class\" AS \"c\" WHERE (\"c\".\"oid\" = to_regclass($1) AND (\"c\".\"relkind\" = $2 OR \"c\".\"relkind\" = $3))) AS \"result\"",
+        "params": [
+          "\"aibot\".\"FileSystemAPI\"",
+          "r",
+          "p"
+        ],
+        "expectation": {
+          "expects": "present",
+          "object": "table \"FileSystemAPI\""
+        }
+      }
+    ]
+  },
+  {
+    "id": "table.SandboxAPI",
+    "label": "Create table \"SandboxAPI\"",
+    "summary": "Creates table \"SandboxAPI\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "aibot",
+        "objectType": "table",
+        "name": "SandboxAPI"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"SandboxAPI\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"aibot\".\"SandboxAPI\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "table \"SandboxAPI\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"SandboxAPI\"",
+        "sql": "CREATE TABLE \"aibot\".\"SandboxAPI\" (\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"endpoint\" text NOT NULL,\n  \"headers\" jsonb,\n  \"id\" uuid NOT NULL,\n  \"name\" text NOT NULL,\n  \"organizationId\" uuid NOT NULL,\n  \"updatedAt\" timestamptz(3) NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"SandboxAPI\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_class\" AS \"c\" WHERE (\"c\".\"oid\" = to_regclass($1) AND (\"c\".\"relkind\" = $2 OR \"c\".\"relkind\" = $3))) AS \"result\"",
+        "params": [
+          "\"aibot\".\"SandboxAPI\"",
+          "r",
+          "p"
+        ],
+        "expectation": {
+          "expects": "present",
+          "object": "table \"SandboxAPI\""
+        }
+      }
+    ]
+  },
+  {
+    "id": "column.aibot.Organization.temporaryFileSystemApiId",
+    "label": "Add column \"temporaryFileSystemApiId\" to \"Organization\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "aibot",
+        "objectType": "column",
+        "name": "temporaryFileSystemApiId",
+        "table": "Organization"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"temporaryFileSystemApiId\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "aibot",
+          "Organization",
+          "temporaryFileSystemApiId"
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "column \"temporaryFileSystemApiId\" on \"Organization\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"temporaryFileSystemApiId\"",
+        "sql": "ALTER TABLE \"aibot\".\"Organization\" ADD COLUMN \"temporaryFileSystemApiId\" uuid"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"temporaryFileSystemApiId\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "aibot",
+          "Organization",
+          "temporaryFileSystemApiId"
+        ],
+        "expectation": {
+          "expects": "present",
+          "object": "column \"temporaryFileSystemApiId\" on \"Organization\""
+        }
+      },
+      {
+        "description": "verify column \"temporaryFileSystemApiId\" has type \"uuid\"",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_attribute\" AS \"a\" INNER JOIN \"pg_class\" AS \"c\" ON \"c\".\"oid\" = \"a\".\"attrelid\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"relnamespace\" WHERE (\"n\".\"nspname\" = $1 AND \"c\".\"relname\" = $2 AND \"a\".\"attname\" = $3 AND (format_type(\"a\".\"atttypid\", \"a\".\"atttypmod\")) = $4 AND NOT (\"a\".\"attisdropped\"))) AS \"result\"",
+        "params": [
+          "aibot",
+          "Organization",
+          "temporaryFileSystemApiId",
+          "uuid"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.aibot.PersistentSandboxInstance.apiId",
+    "label": "Add column \"apiId\" to \"PersistentSandboxInstance\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "aibot",
+        "objectType": "column",
+        "name": "apiId",
+        "table": "PersistentSandboxInstance"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"apiId\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "aibot",
+          "PersistentSandboxInstance",
+          "apiId"
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "column \"apiId\" on \"PersistentSandboxInstance\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"apiId\"",
+        "sql": "ALTER TABLE \"aibot\".\"PersistentSandboxInstance\" ADD COLUMN \"apiId\" uuid"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"apiId\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "aibot",
+          "PersistentSandboxInstance",
+          "apiId"
+        ],
+        "expectation": {
+          "expects": "present",
+          "object": "column \"apiId\" on \"PersistentSandboxInstance\""
+        }
+      },
+      {
+        "description": "verify column \"apiId\" has type \"uuid\"",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_attribute\" AS \"a\" INNER JOIN \"pg_class\" AS \"c\" ON \"c\".\"oid\" = \"a\".\"attrelid\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"relnamespace\" WHERE (\"n\".\"nspname\" = $1 AND \"c\".\"relname\" = $2 AND \"a\".\"attname\" = $3 AND (format_type(\"a\".\"atttypid\", \"a\".\"atttypmod\")) = $4 AND NOT (\"a\".\"attisdropped\"))) AS \"result\"",
+        "params": [
+          "aibot",
+          "PersistentSandboxInstance",
+          "apiId",
+          "uuid"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "alterNullability.setNotNull.PersistentSandboxInstance.apiId",
+    "label": "Set NOT NULL on \"PersistentSandboxInstance\".\"apiId\"",
+    "operationClass": "widening",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "aibot",
+        "objectType": "column",
+        "name": "apiId",
+        "table": "PersistentSandboxInstance"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"apiId\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "aibot",
+          "PersistentSandboxInstance",
+          "apiId"
+        ],
+        "expectation": {
+          "expects": "present",
+          "object": "column \"apiId\" on \"PersistentSandboxInstance\""
+        }
+      },
+      {
+        "description": "ensure no NULL values in \"apiId\"",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"aibot\".\"PersistentSandboxInstance\" WHERE \"apiId\" IS NULL) AS \"result\"",
+        "params": [],
+        "meta": {
+          "requiredColumn": {
+            "table": "PersistentSandboxInstance",
+            "column": "apiId",
+            "reason": "nullValues"
+          }
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "set NOT NULL on \"apiId\"",
+        "sql": "ALTER TABLE \"aibot\".\"PersistentSandboxInstance\" ALTER COLUMN \"apiId\" SET NOT NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"apiId\" is NOT NULL",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3 AND \"is_nullable\" = $4)) AS \"result\"",
+        "params": [
+          "aibot",
+          "PersistentSandboxInstance",
+          "apiId",
+          "NO"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.aibot.Sandbox.apiId",
+    "label": "Add column \"apiId\" to \"Sandbox\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "aibot",
+        "objectType": "column",
+        "name": "apiId",
+        "table": "Sandbox"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"apiId\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "aibot",
+          "Sandbox",
+          "apiId"
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "column \"apiId\" on \"Sandbox\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"apiId\"",
+        "sql": "ALTER TABLE \"aibot\".\"Sandbox\" ADD COLUMN \"apiId\" uuid"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"apiId\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "aibot",
+          "Sandbox",
+          "apiId"
+        ],
+        "expectation": {
+          "expects": "present",
+          "object": "column \"apiId\" on \"Sandbox\""
+        }
+      },
+      {
+        "description": "verify column \"apiId\" has type \"uuid\"",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_attribute\" AS \"a\" INNER JOIN \"pg_class\" AS \"c\" ON \"c\".\"oid\" = \"a\".\"attrelid\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"relnamespace\" WHERE (\"n\".\"nspname\" = $1 AND \"c\".\"relname\" = $2 AND \"a\".\"attname\" = $3 AND (format_type(\"a\".\"atttypid\", \"a\".\"atttypmod\")) = $4 AND NOT (\"a\".\"attisdropped\"))) AS \"result\"",
+        "params": [
+          "aibot",
+          "Sandbox",
+          "apiId",
+          "uuid"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "alterNullability.setNotNull.Sandbox.apiId",
+    "label": "Set NOT NULL on \"Sandbox\".\"apiId\"",
+    "operationClass": "widening",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "aibot",
+        "objectType": "column",
+        "name": "apiId",
+        "table": "Sandbox"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"apiId\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "aibot",
+          "Sandbox",
+          "apiId"
+        ],
+        "expectation": {
+          "expects": "present",
+          "object": "column \"apiId\" on \"Sandbox\""
+        }
+      },
+      {
+        "description": "ensure no NULL values in \"apiId\"",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"aibot\".\"Sandbox\" WHERE \"apiId\" IS NULL) AS \"result\"",
+        "params": [],
+        "meta": {
+          "requiredColumn": {
+            "table": "Sandbox",
+            "column": "apiId",
+            "reason": "nullValues"
+          }
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "set NOT NULL on \"apiId\"",
+        "sql": "ALTER TABLE \"aibot\".\"Sandbox\" ALTER COLUMN \"apiId\" SET NOT NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"apiId\" is NOT NULL",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3 AND \"is_nullable\" = $4)) AS \"result\"",
+        "params": [
+          "aibot",
+          "Sandbox",
+          "apiId",
+          "NO"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.FileSystemAPI.FileSystemAPI_organizationId_name_key",
+    "label": "Add unique constraint on \"FileSystemAPI\" (organizationId, name)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "aibot",
+        "objectType": "unique",
+        "name": "FileSystemAPI_organizationId_name_key",
+        "table": "FileSystemAPI"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"FileSystemAPI_organizationId_name_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "FileSystemAPI_organizationId_name_key",
+          "aibot",
+          "\"aibot\".\"FileSystemAPI\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "constraint \"FileSystemAPI_organizationId_name_key\" on \"FileSystemAPI\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"FileSystemAPI_organizationId_name_key\"",
+        "sql": "ALTER TABLE \"aibot\".\"FileSystemAPI\" ADD CONSTRAINT \"FileSystemAPI_organizationId_name_key\" UNIQUE (\"organizationId\", \"name\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify unique constraint \"FileSystemAPI_organizationId_name_key\" exists on (organizationId, name)",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3) AND \"c\".\"contype\" = $4 AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"c\".\"conkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"c\".\"conrelid\" AND key_attribute.attnum = key_column.attnum) = ($5)::jsonb)) AS \"result\"",
+        "params": [
+          "FileSystemAPI_organizationId_name_key",
+          "aibot",
+          "\"aibot\".\"FileSystemAPI\"",
+          "u",
+          "[\"organizationId\",\"name\"]"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.FileSystemAPI.FileSystemAPI_endpoint_context_headers_key",
+    "label": "Add unique constraint on \"FileSystemAPI\" (endpoint, context, headers)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "aibot",
+        "objectType": "unique",
+        "name": "FileSystemAPI_endpoint_context_headers_key",
+        "table": "FileSystemAPI"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"FileSystemAPI_endpoint_context_headers_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "FileSystemAPI_endpoint_context_headers_key",
+          "aibot",
+          "\"aibot\".\"FileSystemAPI\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "constraint \"FileSystemAPI_endpoint_context_headers_key\" on \"FileSystemAPI\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"FileSystemAPI_endpoint_context_headers_key\"",
+        "sql": "ALTER TABLE \"aibot\".\"FileSystemAPI\" ADD CONSTRAINT \"FileSystemAPI_endpoint_context_headers_key\" UNIQUE (\"endpoint\", \"context\", \"headers\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify unique constraint \"FileSystemAPI_endpoint_context_headers_key\" exists on (endpoint, context, headers)",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3) AND \"c\".\"contype\" = $4 AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"c\".\"conkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"c\".\"conrelid\" AND key_attribute.attnum = key_column.attnum) = ($5)::jsonb)) AS \"result\"",
+        "params": [
+          "FileSystemAPI_endpoint_context_headers_key",
+          "aibot",
+          "\"aibot\".\"FileSystemAPI\"",
+          "u",
+          "[\"endpoint\",\"context\",\"headers\"]"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.PersistentSandboxInstance.PersistentSandboxInstance_apiId_instanceId_key",
+    "label": "Add unique constraint on \"PersistentSandboxInstance\" (apiId, instanceId)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "aibot",
+        "objectType": "unique",
+        "name": "PersistentSandboxInstance_apiId_instanceId_key",
+        "table": "PersistentSandboxInstance"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"PersistentSandboxInstance_apiId_instanceId_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "PersistentSandboxInstance_apiId_instanceId_key",
+          "aibot",
+          "\"aibot\".\"PersistentSandboxInstance\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "constraint \"PersistentSandboxInstance_apiId_instanceId_key\" on \"PersistentSandboxInstance\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"PersistentSandboxInstance_apiId_instanceId_key\"",
+        "sql": "ALTER TABLE \"aibot\".\"PersistentSandboxInstance\" ADD CONSTRAINT \"PersistentSandboxInstance_apiId_instanceId_key\" UNIQUE (\"apiId\", \"instanceId\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify unique constraint \"PersistentSandboxInstance_apiId_instanceId_key\" exists on (apiId, instanceId)",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3) AND \"c\".\"contype\" = $4 AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"c\".\"conkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"c\".\"conrelid\" AND key_attribute.attnum = key_column.attnum) = ($5)::jsonb)) AS \"result\"",
+        "params": [
+          "PersistentSandboxInstance_apiId_instanceId_key",
+          "aibot",
+          "\"aibot\".\"PersistentSandboxInstance\"",
+          "u",
+          "[\"apiId\",\"instanceId\"]"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.SandboxAPI.SandboxAPI_organizationId_name_key",
+    "label": "Add unique constraint on \"SandboxAPI\" (organizationId, name)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "aibot",
+        "objectType": "unique",
+        "name": "SandboxAPI_organizationId_name_key",
+        "table": "SandboxAPI"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"SandboxAPI_organizationId_name_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "SandboxAPI_organizationId_name_key",
+          "aibot",
+          "\"aibot\".\"SandboxAPI\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "constraint \"SandboxAPI_organizationId_name_key\" on \"SandboxAPI\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"SandboxAPI_organizationId_name_key\"",
+        "sql": "ALTER TABLE \"aibot\".\"SandboxAPI\" ADD CONSTRAINT \"SandboxAPI_organizationId_name_key\" UNIQUE (\"organizationId\", \"name\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify unique constraint \"SandboxAPI_organizationId_name_key\" exists on (organizationId, name)",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3) AND \"c\".\"contype\" = $4 AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"c\".\"conkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"c\".\"conrelid\" AND key_attribute.attnum = key_column.attnum) = ($5)::jsonb)) AS \"result\"",
+        "params": [
+          "SandboxAPI_organizationId_name_key",
+          "aibot",
+          "\"aibot\".\"SandboxAPI\"",
+          "u",
+          "[\"organizationId\",\"name\"]"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.SandboxAPI.SandboxAPI_endpoint_headers_key",
+    "label": "Add unique constraint on \"SandboxAPI\" (endpoint, headers)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "aibot",
+        "objectType": "unique",
+        "name": "SandboxAPI_endpoint_headers_key",
+        "table": "SandboxAPI"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"SandboxAPI_endpoint_headers_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "SandboxAPI_endpoint_headers_key",
+          "aibot",
+          "\"aibot\".\"SandboxAPI\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "constraint \"SandboxAPI_endpoint_headers_key\" on \"SandboxAPI\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"SandboxAPI_endpoint_headers_key\"",
+        "sql": "ALTER TABLE \"aibot\".\"SandboxAPI\" ADD CONSTRAINT \"SandboxAPI_endpoint_headers_key\" UNIQUE (\"endpoint\", \"headers\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify unique constraint \"SandboxAPI_endpoint_headers_key\" exists on (endpoint, headers)",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3) AND \"c\".\"contype\" = $4 AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"c\".\"conkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"c\".\"conrelid\" AND key_attribute.attnum = key_column.attnum) = ($5)::jsonb)) AS \"result\"",
+        "params": [
+          "SandboxAPI_endpoint_headers_key",
+          "aibot",
+          "\"aibot\".\"SandboxAPI\"",
+          "u",
+          "[\"endpoint\",\"headers\"]"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.ChatBotFileSystem.ChatBotFileSystem_chatbotId_idx_52db07ea",
+    "label": "Create index \"ChatBotFileSystem_chatbotId_idx_52db07ea\" on \"ChatBotFileSystem\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "aibot",
+        "objectType": "index",
+        "name": "ChatBotFileSystem_chatbotId_idx_52db07ea",
+        "table": "ChatBotFileSystem"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"ChatBotFileSystem_chatbotId_idx_52db07ea\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"aibot\".\"ChatBotFileSystem_chatbotId_idx_52db07ea\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "index \"ChatBotFileSystem_chatbotId_idx_52db07ea\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"ChatBotFileSystem_chatbotId_idx_52db07ea\"",
+        "sql": "CREATE INDEX \"ChatBotFileSystem_chatbotId_idx_52db07ea\" ON \"aibot\".\"ChatBotFileSystem\" (\"chatbotId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"ChatBotFileSystem_chatbotId_idx_52db07ea\" exists on \"ChatBotFileSystem\" with the planned definition",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_class\" AS \"c\" INNER JOIN \"pg_index\" AS \"i\" ON \"i\".\"indexrelid\" = \"c\".\"oid\" INNER JOIN \"pg_am\" AS \"m\" ON \"m\".\"oid\" = \"c\".\"relam\" WHERE (\"c\".\"oid\" = to_regclass($1) AND (\"c\".\"relkind\" = $2 OR \"c\".\"relkind\" = $3) AND \"i\".\"indrelid\" = to_regclass($4) AND NOT (\"i\".\"indisunique\") AND \"m\".\"amname\" = $5 AND (\"i\".\"indexprs\" IS NULL AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"i\".\"indkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"i\".\"indrelid\" AND key_attribute.attnum = key_column.attnum) = ($6)::jsonb) AND \"i\".\"indpred\" IS NULL)) AS \"result\"",
+        "params": [
+          "\"aibot\".\"ChatBotFileSystem_chatbotId_idx_52db07ea\"",
+          "i",
+          "I",
+          "\"aibot\".\"ChatBotFileSystem\"",
+          "btree",
+          "[\"chatbotId\"]"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.ChatBotFileSystem.ChatBotFileSystem_organizationId_idx_2e17ef41",
+    "label": "Create index \"ChatBotFileSystem_organizationId_idx_2e17ef41\" on \"ChatBotFileSystem\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "aibot",
+        "objectType": "index",
+        "name": "ChatBotFileSystem_organizationId_idx_2e17ef41",
+        "table": "ChatBotFileSystem"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"ChatBotFileSystem_organizationId_idx_2e17ef41\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"aibot\".\"ChatBotFileSystem_organizationId_idx_2e17ef41\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "index \"ChatBotFileSystem_organizationId_idx_2e17ef41\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"ChatBotFileSystem_organizationId_idx_2e17ef41\"",
+        "sql": "CREATE INDEX \"ChatBotFileSystem_organizationId_idx_2e17ef41\" ON \"aibot\".\"ChatBotFileSystem\" (\"organizationId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"ChatBotFileSystem_organizationId_idx_2e17ef41\" exists on \"ChatBotFileSystem\" with the planned definition",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_class\" AS \"c\" INNER JOIN \"pg_index\" AS \"i\" ON \"i\".\"indexrelid\" = \"c\".\"oid\" INNER JOIN \"pg_am\" AS \"m\" ON \"m\".\"oid\" = \"c\".\"relam\" WHERE (\"c\".\"oid\" = to_regclass($1) AND (\"c\".\"relkind\" = $2 OR \"c\".\"relkind\" = $3) AND \"i\".\"indrelid\" = to_regclass($4) AND NOT (\"i\".\"indisunique\") AND \"m\".\"amname\" = $5 AND (\"i\".\"indexprs\" IS NULL AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"i\".\"indkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"i\".\"indrelid\" AND key_attribute.attnum = key_column.attnum) = ($6)::jsonb) AND \"i\".\"indpred\" IS NULL)) AS \"result\"",
+        "params": [
+          "\"aibot\".\"ChatBotFileSystem_organizationId_idx_2e17ef41\"",
+          "i",
+          "I",
+          "\"aibot\".\"ChatBotFileSystem\"",
+          "btree",
+          "[\"organizationId\"]"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.ChatBotFileSystem.ChatBotFileSystem_sandboxId_idx_2b30d542",
+    "label": "Create index \"ChatBotFileSystem_sandboxId_idx_2b30d542\" on \"ChatBotFileSystem\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "aibot",
+        "objectType": "index",
+        "name": "ChatBotFileSystem_sandboxId_idx_2b30d542",
+        "table": "ChatBotFileSystem"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"ChatBotFileSystem_sandboxId_idx_2b30d542\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"aibot\".\"ChatBotFileSystem_sandboxId_idx_2b30d542\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "index \"ChatBotFileSystem_sandboxId_idx_2b30d542\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"ChatBotFileSystem_sandboxId_idx_2b30d542\"",
+        "sql": "CREATE INDEX \"ChatBotFileSystem_sandboxId_idx_2b30d542\" ON \"aibot\".\"ChatBotFileSystem\" (\"sandboxId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"ChatBotFileSystem_sandboxId_idx_2b30d542\" exists on \"ChatBotFileSystem\" with the planned definition",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_class\" AS \"c\" INNER JOIN \"pg_index\" AS \"i\" ON \"i\".\"indexrelid\" = \"c\".\"oid\" INNER JOIN \"pg_am\" AS \"m\" ON \"m\".\"oid\" = \"c\".\"relam\" WHERE (\"c\".\"oid\" = to_regclass($1) AND (\"c\".\"relkind\" = $2 OR \"c\".\"relkind\" = $3) AND \"i\".\"indrelid\" = to_regclass($4) AND NOT (\"i\".\"indisunique\") AND \"m\".\"amname\" = $5 AND (\"i\".\"indexprs\" IS NULL AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"i\".\"indkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"i\".\"indrelid\" AND key_attribute.attnum = key_column.attnum) = ($6)::jsonb) AND \"i\".\"indpred\" IS NULL)) AS \"result\"",
+        "params": [
+          "\"aibot\".\"ChatBotFileSystem_sandboxId_idx_2b30d542\"",
+          "i",
+          "I",
+          "\"aibot\".\"ChatBotFileSystem\"",
+          "btree",
+          "[\"sandboxId\"]"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.FileSystemAPI.FileSystemAPI_organizationId_idx_2e17ef41",
+    "label": "Create index \"FileSystemAPI_organizationId_idx_2e17ef41\" on \"FileSystemAPI\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "aibot",
+        "objectType": "index",
+        "name": "FileSystemAPI_organizationId_idx_2e17ef41",
+        "table": "FileSystemAPI"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"FileSystemAPI_organizationId_idx_2e17ef41\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"aibot\".\"FileSystemAPI_organizationId_idx_2e17ef41\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "index \"FileSystemAPI_organizationId_idx_2e17ef41\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"FileSystemAPI_organizationId_idx_2e17ef41\"",
+        "sql": "CREATE INDEX \"FileSystemAPI_organizationId_idx_2e17ef41\" ON \"aibot\".\"FileSystemAPI\" (\"organizationId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"FileSystemAPI_organizationId_idx_2e17ef41\" exists on \"FileSystemAPI\" with the planned definition",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_class\" AS \"c\" INNER JOIN \"pg_index\" AS \"i\" ON \"i\".\"indexrelid\" = \"c\".\"oid\" INNER JOIN \"pg_am\" AS \"m\" ON \"m\".\"oid\" = \"c\".\"relam\" WHERE (\"c\".\"oid\" = to_regclass($1) AND (\"c\".\"relkind\" = $2 OR \"c\".\"relkind\" = $3) AND \"i\".\"indrelid\" = to_regclass($4) AND NOT (\"i\".\"indisunique\") AND \"m\".\"amname\" = $5 AND (\"i\".\"indexprs\" IS NULL AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"i\".\"indkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"i\".\"indrelid\" AND key_attribute.attnum = key_column.attnum) = ($6)::jsonb) AND \"i\".\"indpred\" IS NULL)) AS \"result\"",
+        "params": [
+          "\"aibot\".\"FileSystemAPI_organizationId_idx_2e17ef41\"",
+          "i",
+          "I",
+          "\"aibot\".\"FileSystemAPI\"",
+          "btree",
+          "[\"organizationId\"]"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.Organization.Organization_temporaryFileSystemApiId_idx_d50d93e3",
+    "label": "Create index \"Organization_temporaryFileSystemApiId_idx_d50d93e3\" on \"Organization\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "aibot",
+        "objectType": "index",
+        "name": "Organization_temporaryFileSystemApiId_idx_d50d93e3",
+        "table": "Organization"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"Organization_temporaryFileSystemApiId_idx_d50d93e3\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"aibot\".\"Organization_temporaryFileSystemApiId_idx_d50d93e3\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "index \"Organization_temporaryFileSystemApiId_idx_d50d93e3\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"Organization_temporaryFileSystemApiId_idx_d50d93e3\"",
+        "sql": "CREATE INDEX \"Organization_temporaryFileSystemApiId_idx_d50d93e3\" ON \"aibot\".\"Organization\" (\"temporaryFileSystemApiId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"Organization_temporaryFileSystemApiId_idx_d50d93e3\" exists on \"Organization\" with the planned definition",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_class\" AS \"c\" INNER JOIN \"pg_index\" AS \"i\" ON \"i\".\"indexrelid\" = \"c\".\"oid\" INNER JOIN \"pg_am\" AS \"m\" ON \"m\".\"oid\" = \"c\".\"relam\" WHERE (\"c\".\"oid\" = to_regclass($1) AND (\"c\".\"relkind\" = $2 OR \"c\".\"relkind\" = $3) AND \"i\".\"indrelid\" = to_regclass($4) AND NOT (\"i\".\"indisunique\") AND \"m\".\"amname\" = $5 AND (\"i\".\"indexprs\" IS NULL AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"i\".\"indkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"i\".\"indrelid\" AND key_attribute.attnum = key_column.attnum) = ($6)::jsonb) AND \"i\".\"indpred\" IS NULL)) AS \"result\"",
+        "params": [
+          "\"aibot\".\"Organization_temporaryFileSystemApiId_idx_d50d93e3\"",
+          "i",
+          "I",
+          "\"aibot\".\"Organization\"",
+          "btree",
+          "[\"temporaryFileSystemApiId\"]"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.PersistentSandboxInstance.PersistentSandboxInstance_apiId_idx_a7249ccd",
+    "label": "Create index \"PersistentSandboxInstance_apiId_idx_a7249ccd\" on \"PersistentSandboxInstance\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "aibot",
+        "objectType": "index",
+        "name": "PersistentSandboxInstance_apiId_idx_a7249ccd",
+        "table": "PersistentSandboxInstance"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"PersistentSandboxInstance_apiId_idx_a7249ccd\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"aibot\".\"PersistentSandboxInstance_apiId_idx_a7249ccd\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "index \"PersistentSandboxInstance_apiId_idx_a7249ccd\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"PersistentSandboxInstance_apiId_idx_a7249ccd\"",
+        "sql": "CREATE INDEX \"PersistentSandboxInstance_apiId_idx_a7249ccd\" ON \"aibot\".\"PersistentSandboxInstance\" (\"apiId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"PersistentSandboxInstance_apiId_idx_a7249ccd\" exists on \"PersistentSandboxInstance\" with the planned definition",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_class\" AS \"c\" INNER JOIN \"pg_index\" AS \"i\" ON \"i\".\"indexrelid\" = \"c\".\"oid\" INNER JOIN \"pg_am\" AS \"m\" ON \"m\".\"oid\" = \"c\".\"relam\" WHERE (\"c\".\"oid\" = to_regclass($1) AND (\"c\".\"relkind\" = $2 OR \"c\".\"relkind\" = $3) AND \"i\".\"indrelid\" = to_regclass($4) AND NOT (\"i\".\"indisunique\") AND \"m\".\"amname\" = $5 AND (\"i\".\"indexprs\" IS NULL AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"i\".\"indkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"i\".\"indrelid\" AND key_attribute.attnum = key_column.attnum) = ($6)::jsonb) AND \"i\".\"indpred\" IS NULL)) AS \"result\"",
+        "params": [
+          "\"aibot\".\"PersistentSandboxInstance_apiId_idx_a7249ccd\"",
+          "i",
+          "I",
+          "\"aibot\".\"PersistentSandboxInstance\"",
+          "btree",
+          "[\"apiId\"]"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.Sandbox.Sandbox_apiId_idx_a7249ccd",
+    "label": "Create index \"Sandbox_apiId_idx_a7249ccd\" on \"Sandbox\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "aibot",
+        "objectType": "index",
+        "name": "Sandbox_apiId_idx_a7249ccd",
+        "table": "Sandbox"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"Sandbox_apiId_idx_a7249ccd\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"aibot\".\"Sandbox_apiId_idx_a7249ccd\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "index \"Sandbox_apiId_idx_a7249ccd\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"Sandbox_apiId_idx_a7249ccd\"",
+        "sql": "CREATE INDEX \"Sandbox_apiId_idx_a7249ccd\" ON \"aibot\".\"Sandbox\" (\"apiId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"Sandbox_apiId_idx_a7249ccd\" exists on \"Sandbox\" with the planned definition",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_class\" AS \"c\" INNER JOIN \"pg_index\" AS \"i\" ON \"i\".\"indexrelid\" = \"c\".\"oid\" INNER JOIN \"pg_am\" AS \"m\" ON \"m\".\"oid\" = \"c\".\"relam\" WHERE (\"c\".\"oid\" = to_regclass($1) AND (\"c\".\"relkind\" = $2 OR \"c\".\"relkind\" = $3) AND \"i\".\"indrelid\" = to_regclass($4) AND NOT (\"i\".\"indisunique\") AND \"m\".\"amname\" = $5 AND (\"i\".\"indexprs\" IS NULL AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"i\".\"indkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"i\".\"indrelid\" AND key_attribute.attnum = key_column.attnum) = ($6)::jsonb) AND \"i\".\"indpred\" IS NULL)) AS \"result\"",
+        "params": [
+          "\"aibot\".\"Sandbox_apiId_idx_a7249ccd\"",
+          "i",
+          "I",
+          "\"aibot\".\"Sandbox\"",
+          "btree",
+          "[\"apiId\"]"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.SandboxAPI.SandboxAPI_organizationId_idx_2e17ef41",
+    "label": "Create index \"SandboxAPI_organizationId_idx_2e17ef41\" on \"SandboxAPI\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "aibot",
+        "objectType": "index",
+        "name": "SandboxAPI_organizationId_idx_2e17ef41",
+        "table": "SandboxAPI"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"SandboxAPI_organizationId_idx_2e17ef41\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"aibot\".\"SandboxAPI_organizationId_idx_2e17ef41\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "index \"SandboxAPI_organizationId_idx_2e17ef41\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"SandboxAPI_organizationId_idx_2e17ef41\"",
+        "sql": "CREATE INDEX \"SandboxAPI_organizationId_idx_2e17ef41\" ON \"aibot\".\"SandboxAPI\" (\"organizationId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"SandboxAPI_organizationId_idx_2e17ef41\" exists on \"SandboxAPI\" with the planned definition",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_class\" AS \"c\" INNER JOIN \"pg_index\" AS \"i\" ON \"i\".\"indexrelid\" = \"c\".\"oid\" INNER JOIN \"pg_am\" AS \"m\" ON \"m\".\"oid\" = \"c\".\"relam\" WHERE (\"c\".\"oid\" = to_regclass($1) AND (\"c\".\"relkind\" = $2 OR \"c\".\"relkind\" = $3) AND \"i\".\"indrelid\" = to_regclass($4) AND NOT (\"i\".\"indisunique\") AND \"m\".\"amname\" = $5 AND (\"i\".\"indexprs\" IS NULL AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"i\".\"indkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"i\".\"indrelid\" AND key_attribute.attnum = key_column.attnum) = ($6)::jsonb) AND \"i\".\"indpred\" IS NULL)) AS \"result\"",
+        "params": [
+          "\"aibot\".\"SandboxAPI_organizationId_idx_2e17ef41\"",
+          "i",
+          "I",
+          "\"aibot\".\"SandboxAPI\"",
+          "btree",
+          "[\"organizationId\"]"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.ChatBotFileSystem.ChatBotFileSystem_organizationId_fkey",
+    "label": "Add foreign key \"ChatBotFileSystem_organizationId_fkey\" on \"ChatBotFileSystem\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "aibot",
+        "objectType": "foreignKey",
+        "name": "ChatBotFileSystem_organizationId_fkey",
+        "table": "ChatBotFileSystem"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"ChatBotFileSystem_organizationId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "ChatBotFileSystem_organizationId_fkey",
+          "aibot",
+          "\"aibot\".\"ChatBotFileSystem\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "FK \"ChatBotFileSystem_organizationId_fkey\" on \"ChatBotFileSystem\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"ChatBotFileSystem_organizationId_fkey\"",
+        "sql": "ALTER TABLE \"aibot\".\"ChatBotFileSystem\"\nADD CONSTRAINT \"ChatBotFileSystem_organizationId_fkey\"\nFOREIGN KEY (\"organizationId\")\nREFERENCES \"aibot\".\"Organization\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"ChatBotFileSystem_organizationId_fkey\" exists with the planned columns, referenced table and actions",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3) AND \"c\".\"contype\" = $4 AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"c\".\"conkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"c\".\"conrelid\" AND key_attribute.attnum = key_column.attnum) = ($5)::jsonb AND \"c\".\"confrelid\" = to_regclass($6) AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"c\".\"confkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"c\".\"confrelid\" AND key_attribute.attnum = key_column.attnum) = ($7)::jsonb AND \"c\".\"confdeltype\" = $8 AND \"c\".\"confupdtype\" = $9)) AS \"result\"",
+        "params": [
+          "ChatBotFileSystem_organizationId_fkey",
+          "aibot",
+          "\"aibot\".\"ChatBotFileSystem\"",
+          "f",
+          "[\"organizationId\"]",
+          "\"aibot\".\"Organization\"",
+          "[\"id\"]",
+          "c",
+          "a"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.ChatBotFileSystem.ChatBotFileSystem_chatbotId_fkey",
+    "label": "Add foreign key \"ChatBotFileSystem_chatbotId_fkey\" on \"ChatBotFileSystem\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "aibot",
+        "objectType": "foreignKey",
+        "name": "ChatBotFileSystem_chatbotId_fkey",
+        "table": "ChatBotFileSystem"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"ChatBotFileSystem_chatbotId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "ChatBotFileSystem_chatbotId_fkey",
+          "aibot",
+          "\"aibot\".\"ChatBotFileSystem\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "FK \"ChatBotFileSystem_chatbotId_fkey\" on \"ChatBotFileSystem\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"ChatBotFileSystem_chatbotId_fkey\"",
+        "sql": "ALTER TABLE \"aibot\".\"ChatBotFileSystem\"\nADD CONSTRAINT \"ChatBotFileSystem_chatbotId_fkey\"\nFOREIGN KEY (\"chatbotId\")\nREFERENCES \"aibot\".\"ChatBot\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"ChatBotFileSystem_chatbotId_fkey\" exists with the planned columns, referenced table and actions",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3) AND \"c\".\"contype\" = $4 AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"c\".\"conkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"c\".\"conrelid\" AND key_attribute.attnum = key_column.attnum) = ($5)::jsonb AND \"c\".\"confrelid\" = to_regclass($6) AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"c\".\"confkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"c\".\"confrelid\" AND key_attribute.attnum = key_column.attnum) = ($7)::jsonb AND \"c\".\"confdeltype\" = $8 AND \"c\".\"confupdtype\" = $9)) AS \"result\"",
+        "params": [
+          "ChatBotFileSystem_chatbotId_fkey",
+          "aibot",
+          "\"aibot\".\"ChatBotFileSystem\"",
+          "f",
+          "[\"chatbotId\"]",
+          "\"aibot\".\"ChatBot\"",
+          "[\"id\"]",
+          "c",
+          "a"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.ChatBotFileSystem.ChatBotFileSystem_sandboxId_fkey",
+    "label": "Add foreign key \"ChatBotFileSystem_sandboxId_fkey\" on \"ChatBotFileSystem\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "aibot",
+        "objectType": "foreignKey",
+        "name": "ChatBotFileSystem_sandboxId_fkey",
+        "table": "ChatBotFileSystem"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"ChatBotFileSystem_sandboxId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "ChatBotFileSystem_sandboxId_fkey",
+          "aibot",
+          "\"aibot\".\"ChatBotFileSystem\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "FK \"ChatBotFileSystem_sandboxId_fkey\" on \"ChatBotFileSystem\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"ChatBotFileSystem_sandboxId_fkey\"",
+        "sql": "ALTER TABLE \"aibot\".\"ChatBotFileSystem\"\nADD CONSTRAINT \"ChatBotFileSystem_sandboxId_fkey\"\nFOREIGN KEY (\"sandboxId\")\nREFERENCES \"aibot\".\"FileSystemAPI\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"ChatBotFileSystem_sandboxId_fkey\" exists with the planned columns, referenced table and actions",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3) AND \"c\".\"contype\" = $4 AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"c\".\"conkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"c\".\"conrelid\" AND key_attribute.attnum = key_column.attnum) = ($5)::jsonb AND \"c\".\"confrelid\" = to_regclass($6) AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"c\".\"confkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"c\".\"confrelid\" AND key_attribute.attnum = key_column.attnum) = ($7)::jsonb AND \"c\".\"confdeltype\" = $8 AND \"c\".\"confupdtype\" = $9)) AS \"result\"",
+        "params": [
+          "ChatBotFileSystem_sandboxId_fkey",
+          "aibot",
+          "\"aibot\".\"ChatBotFileSystem\"",
+          "f",
+          "[\"sandboxId\"]",
+          "\"aibot\".\"FileSystemAPI\"",
+          "[\"id\"]",
+          "c",
+          "a"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.FileSystemAPI.FileSystemAPI_id_fkey",
+    "label": "Add foreign key \"FileSystemAPI_id_fkey\" on \"FileSystemAPI\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "aibot",
+        "objectType": "foreignKey",
+        "name": "FileSystemAPI_id_fkey",
+        "table": "FileSystemAPI"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"FileSystemAPI_id_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "FileSystemAPI_id_fkey",
+          "aibot",
+          "\"aibot\".\"FileSystemAPI\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "FK \"FileSystemAPI_id_fkey\" on \"FileSystemAPI\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"FileSystemAPI_id_fkey\"",
+        "sql": "ALTER TABLE \"aibot\".\"FileSystemAPI\"\nADD CONSTRAINT \"FileSystemAPI_id_fkey\"\nFOREIGN KEY (\"id\")\nREFERENCES \"aibot\".\"ResourceBase\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"FileSystemAPI_id_fkey\" exists with the planned columns, referenced table and actions",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3) AND \"c\".\"contype\" = $4 AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"c\".\"conkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"c\".\"conrelid\" AND key_attribute.attnum = key_column.attnum) = ($5)::jsonb AND \"c\".\"confrelid\" = to_regclass($6) AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"c\".\"confkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"c\".\"confrelid\" AND key_attribute.attnum = key_column.attnum) = ($7)::jsonb AND \"c\".\"confdeltype\" = $8 AND \"c\".\"confupdtype\" = $9)) AS \"result\"",
+        "params": [
+          "FileSystemAPI_id_fkey",
+          "aibot",
+          "\"aibot\".\"FileSystemAPI\"",
+          "f",
+          "[\"id\"]",
+          "\"aibot\".\"ResourceBase\"",
+          "[\"id\"]",
+          "c",
+          "a"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.FileSystemAPI.FileSystemAPI_organizationId_fkey",
+    "label": "Add foreign key \"FileSystemAPI_organizationId_fkey\" on \"FileSystemAPI\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "aibot",
+        "objectType": "foreignKey",
+        "name": "FileSystemAPI_organizationId_fkey",
+        "table": "FileSystemAPI"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"FileSystemAPI_organizationId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "FileSystemAPI_organizationId_fkey",
+          "aibot",
+          "\"aibot\".\"FileSystemAPI\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "FK \"FileSystemAPI_organizationId_fkey\" on \"FileSystemAPI\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"FileSystemAPI_organizationId_fkey\"",
+        "sql": "ALTER TABLE \"aibot\".\"FileSystemAPI\"\nADD CONSTRAINT \"FileSystemAPI_organizationId_fkey\"\nFOREIGN KEY (\"organizationId\")\nREFERENCES \"aibot\".\"Organization\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"FileSystemAPI_organizationId_fkey\" exists with the planned columns, referenced table and actions",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3) AND \"c\".\"contype\" = $4 AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"c\".\"conkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"c\".\"conrelid\" AND key_attribute.attnum = key_column.attnum) = ($5)::jsonb AND \"c\".\"confrelid\" = to_regclass($6) AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"c\".\"confkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"c\".\"confrelid\" AND key_attribute.attnum = key_column.attnum) = ($7)::jsonb AND \"c\".\"confdeltype\" = $8 AND \"c\".\"confupdtype\" = $9)) AS \"result\"",
+        "params": [
+          "FileSystemAPI_organizationId_fkey",
+          "aibot",
+          "\"aibot\".\"FileSystemAPI\"",
+          "f",
+          "[\"organizationId\"]",
+          "\"aibot\".\"Organization\"",
+          "[\"id\"]",
+          "c",
+          "a"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.Organization.Organization_temporaryFileSystemApiId_fkey",
+    "label": "Add foreign key \"Organization_temporaryFileSystemApiId_fkey\" on \"Organization\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "aibot",
+        "objectType": "foreignKey",
+        "name": "Organization_temporaryFileSystemApiId_fkey",
+        "table": "Organization"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"Organization_temporaryFileSystemApiId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "Organization_temporaryFileSystemApiId_fkey",
+          "aibot",
+          "\"aibot\".\"Organization\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "FK \"Organization_temporaryFileSystemApiId_fkey\" on \"Organization\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"Organization_temporaryFileSystemApiId_fkey\"",
+        "sql": "ALTER TABLE \"aibot\".\"Organization\"\nADD CONSTRAINT \"Organization_temporaryFileSystemApiId_fkey\"\nFOREIGN KEY (\"temporaryFileSystemApiId\")\nREFERENCES \"aibot\".\"FileSystemAPI\" (\"id\")\nON DELETE SET NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"Organization_temporaryFileSystemApiId_fkey\" exists with the planned columns, referenced table and actions",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3) AND \"c\".\"contype\" = $4 AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"c\".\"conkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"c\".\"conrelid\" AND key_attribute.attnum = key_column.attnum) = ($5)::jsonb AND \"c\".\"confrelid\" = to_regclass($6) AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"c\".\"confkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"c\".\"confrelid\" AND key_attribute.attnum = key_column.attnum) = ($7)::jsonb AND \"c\".\"confdeltype\" = $8 AND \"c\".\"confupdtype\" = $9)) AS \"result\"",
+        "params": [
+          "Organization_temporaryFileSystemApiId_fkey",
+          "aibot",
+          "\"aibot\".\"Organization\"",
+          "f",
+          "[\"temporaryFileSystemApiId\"]",
+          "\"aibot\".\"FileSystemAPI\"",
+          "[\"id\"]",
+          "n",
+          "a"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.SandboxAPI.SandboxAPI_id_fkey",
+    "label": "Add foreign key \"SandboxAPI_id_fkey\" on \"SandboxAPI\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "aibot",
+        "objectType": "foreignKey",
+        "name": "SandboxAPI_id_fkey",
+        "table": "SandboxAPI"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"SandboxAPI_id_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "SandboxAPI_id_fkey",
+          "aibot",
+          "\"aibot\".\"SandboxAPI\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "FK \"SandboxAPI_id_fkey\" on \"SandboxAPI\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"SandboxAPI_id_fkey\"",
+        "sql": "ALTER TABLE \"aibot\".\"SandboxAPI\"\nADD CONSTRAINT \"SandboxAPI_id_fkey\"\nFOREIGN KEY (\"id\")\nREFERENCES \"aibot\".\"ResourceBase\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"SandboxAPI_id_fkey\" exists with the planned columns, referenced table and actions",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3) AND \"c\".\"contype\" = $4 AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"c\".\"conkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"c\".\"conrelid\" AND key_attribute.attnum = key_column.attnum) = ($5)::jsonb AND \"c\".\"confrelid\" = to_regclass($6) AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"c\".\"confkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"c\".\"confrelid\" AND key_attribute.attnum = key_column.attnum) = ($7)::jsonb AND \"c\".\"confdeltype\" = $8 AND \"c\".\"confupdtype\" = $9)) AS \"result\"",
+        "params": [
+          "SandboxAPI_id_fkey",
+          "aibot",
+          "\"aibot\".\"SandboxAPI\"",
+          "f",
+          "[\"id\"]",
+          "\"aibot\".\"ResourceBase\"",
+          "[\"id\"]",
+          "c",
+          "a"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.SandboxAPI.SandboxAPI_organizationId_fkey",
+    "label": "Add foreign key \"SandboxAPI_organizationId_fkey\" on \"SandboxAPI\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "aibot",
+        "objectType": "foreignKey",
+        "name": "SandboxAPI_organizationId_fkey",
+        "table": "SandboxAPI"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"SandboxAPI_organizationId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "SandboxAPI_organizationId_fkey",
+          "aibot",
+          "\"aibot\".\"SandboxAPI\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "FK \"SandboxAPI_organizationId_fkey\" on \"SandboxAPI\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"SandboxAPI_organizationId_fkey\"",
+        "sql": "ALTER TABLE \"aibot\".\"SandboxAPI\"\nADD CONSTRAINT \"SandboxAPI_organizationId_fkey\"\nFOREIGN KEY (\"organizationId\")\nREFERENCES \"aibot\".\"Organization\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"SandboxAPI_organizationId_fkey\" exists with the planned columns, referenced table and actions",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3) AND \"c\".\"contype\" = $4 AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"c\".\"conkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"c\".\"conrelid\" AND key_attribute.attnum = key_column.attnum) = ($5)::jsonb AND \"c\".\"confrelid\" = to_regclass($6) AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"c\".\"confkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"c\".\"confrelid\" AND key_attribute.attnum = key_column.attnum) = ($7)::jsonb AND \"c\".\"confdeltype\" = $8 AND \"c\".\"confupdtype\" = $9)) AS \"result\"",
+        "params": [
+          "SandboxAPI_organizationId_fkey",
+          "aibot",
+          "\"aibot\".\"SandboxAPI\"",
+          "f",
+          "[\"organizationId\"]",
+          "\"aibot\".\"Organization\"",
+          "[\"id\"]",
+          "c",
+          "a"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.PersistentSandboxInstance.PersistentSandboxInstance_apiId_fkey",
+    "label": "Add foreign key \"PersistentSandboxInstance_apiId_fkey\" on \"PersistentSandboxInstance\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "aibot",
+        "objectType": "foreignKey",
+        "name": "PersistentSandboxInstance_apiId_fkey",
+        "table": "PersistentSandboxInstance"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"PersistentSandboxInstance_apiId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "PersistentSandboxInstance_apiId_fkey",
+          "aibot",
+          "\"aibot\".\"PersistentSandboxInstance\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "FK \"PersistentSandboxInstance_apiId_fkey\" on \"PersistentSandboxInstance\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"PersistentSandboxInstance_apiId_fkey\"",
+        "sql": "ALTER TABLE \"aibot\".\"PersistentSandboxInstance\"\nADD CONSTRAINT \"PersistentSandboxInstance_apiId_fkey\"\nFOREIGN KEY (\"apiId\")\nREFERENCES \"aibot\".\"SandboxAPI\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"PersistentSandboxInstance_apiId_fkey\" exists with the planned columns, referenced table and actions",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3) AND \"c\".\"contype\" = $4 AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"c\".\"conkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"c\".\"conrelid\" AND key_attribute.attnum = key_column.attnum) = ($5)::jsonb AND \"c\".\"confrelid\" = to_regclass($6) AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"c\".\"confkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"c\".\"confrelid\" AND key_attribute.attnum = key_column.attnum) = ($7)::jsonb AND \"c\".\"confdeltype\" = $8 AND \"c\".\"confupdtype\" = $9)) AS \"result\"",
+        "params": [
+          "PersistentSandboxInstance_apiId_fkey",
+          "aibot",
+          "\"aibot\".\"PersistentSandboxInstance\"",
+          "f",
+          "[\"apiId\"]",
+          "\"aibot\".\"SandboxAPI\"",
+          "[\"id\"]",
+          "c",
+          "a"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.Sandbox.Sandbox_apiId_fkey",
+    "label": "Add foreign key \"Sandbox_apiId_fkey\" on \"Sandbox\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "aibot",
+        "objectType": "foreignKey",
+        "name": "Sandbox_apiId_fkey",
+        "table": "Sandbox"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"Sandbox_apiId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "Sandbox_apiId_fkey",
+          "aibot",
+          "\"aibot\".\"Sandbox\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "FK \"Sandbox_apiId_fkey\" on \"Sandbox\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"Sandbox_apiId_fkey\"",
+        "sql": "ALTER TABLE \"aibot\".\"Sandbox\"\nADD CONSTRAINT \"Sandbox_apiId_fkey\"\nFOREIGN KEY (\"apiId\")\nREFERENCES \"aibot\".\"SandboxAPI\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"Sandbox_apiId_fkey\" exists with the planned columns, referenced table and actions",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3) AND \"c\".\"contype\" = $4 AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"c\".\"conkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"c\".\"conrelid\" AND key_attribute.attnum = key_column.attnum) = ($5)::jsonb AND \"c\".\"confrelid\" = to_regclass($6) AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"c\".\"confkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"c\".\"confrelid\" AND key_attribute.attnum = key_column.attnum) = ($7)::jsonb AND \"c\".\"confdeltype\" = $8 AND \"c\".\"confupdtype\" = $9)) AS \"result\"",
+        "params": [
+          "Sandbox_apiId_fkey",
+          "aibot",
+          "\"aibot\".\"Sandbox\"",
+          "f",
+          "[\"apiId\"]",
+          "\"aibot\".\"SandboxAPI\"",
+          "[\"id\"]",
+          "c",
+          "a"
+        ]
+      }
+    ]
+  }
+]

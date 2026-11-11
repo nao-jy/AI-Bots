@@ -1,5 +1,7 @@
 import { type Sandbox as BashSandbox } from "bash-tool";
-import { createSandboxApiProvider, listSandboxApiProviders } from "./api";
+import { createSandboxApiProvider } from "./api";
+import { db } from "../../repository/db";
+import { decryptMcpHeaders } from "../../utils";
 
 export interface BashSandboxExtended extends BashSandbox {
   readFileBinaryStream(
@@ -49,12 +51,14 @@ export interface Sandbox {
   destroySandbox: (instanceId: string) => Promise<void>;
 }
 
-export async function listSandboxNames() {
-  return listSandboxApiProviders();
-}
-
-export function getSandbox(sandboxType: string) {
-  return sandboxType ? createSandboxApiProvider(sandboxType) : null;
+export async function getSandbox(apiId: string) {
+  const api = await db.orm.aibot.SandboxAPI.first({ id: apiId });
+  return api
+    ? createSandboxApiProvider(api.id, {
+        baseUrl: api.endpoint,
+        headers: decryptMcpHeaders(api.headers),
+      })
+    : null;
 }
 
 export async function executeSandboxCommand(
@@ -64,7 +68,7 @@ export async function executeSandboxCommand(
   allowedDomains: string[],
   command: string,
 ) {
-  const sandboxProvider = getSandbox(sandboxType);
+  const sandboxProvider = await getSandbox(sandboxType);
   if (!sandboxProvider)
     throw new Error(`Unsupported sandbox type: ${sandboxType}`);
 
@@ -85,7 +89,7 @@ export async function createSandboxTerminalSession(
   onData: (data: Uint8Array) => void,
   onExit: (exitCode?: number) => void,
 ) {
-  const sandboxProvider = getSandbox(sandboxType);
+  const sandboxProvider = await getSandbox(sandboxType);
   if (!sandboxProvider)
     throw new Error(`Unsupported sandbox type: ${sandboxType}`);
 

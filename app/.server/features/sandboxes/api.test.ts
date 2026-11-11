@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { createSandboxApiProvider, listSandboxApiProviders } from "./api";
+import { createSandboxApiProvider } from "./api";
 
 afterEach(() => {
   vi.unstubAllEnvs();
@@ -12,23 +12,6 @@ beforeEach(() => {
 });
 
 describe("sandbox API client", () => {
-  it("discovers providers dynamically and keeps the API token in headers", async () => {
-    const fetch = vi.fn(async () =>
-      Response.json({ providers: ["OpenSandbox", "NewProvider"] }),
-    );
-    vi.stubGlobal("fetch", fetch);
-    expect(await listSandboxApiProviders()).toEqual([
-      "OpenSandbox",
-      "NewProvider",
-    ]);
-    const [url, options] = fetch.mock.calls[0] as unknown as [URL, RequestInit];
-    expect(url.href).toBe("http://sandbox.test/v1/providers");
-    expect(new Headers(options.headers).get("Authorization")).toBe(
-      "Bearer secret",
-    );
-    expect(options.redirect).toBe("error");
-  });
-
   it("uses stateless operations and binary HTTP for files", async () => {
     const requests: Array<{ url: string; method: string; body: unknown }> = [];
     vi.stubGlobal(
@@ -48,7 +31,10 @@ describe("sandbox API client", () => {
         return new Response(null, { status: 204 });
       }),
     );
-    const backend = createSandboxApiProvider("OpenSandbox");
+    const backend = createSandboxApiProvider("OpenSandbox", {
+      baseUrl: "http://sandbox.test",
+      headers: { Authorization: "Bearer secret" },
+    });
     const { sandbox, createdInstanceId } = await backend.getBashSandbox(
       null,
       {},
@@ -75,7 +61,6 @@ describe("sandbox API client", () => {
       method: "POST",
       url: "http://sandbox.test/v1/instances/instance/commands",
       body: JSON.stringify({
-        provider: "OpenSandbox",
         envs: {},
         allowedDomains: [],
         command: "echo ok",
@@ -84,23 +69,46 @@ describe("sandbox API client", () => {
     expect(requests.some((entry) => entry.url.includes("/sessions"))).toBe(
       false,
     );
-    expect(requests.at(-1)?.url).toContain("provider=OpenSandbox");
+    expect(requests.at(-1)?.url).not.toContain("provider=");
   });
 
-  it("returns no providers when the API is unavailable", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async () => {
-        throw new Error("offline");
-      }),
-    );
-    expect(await listSandboxApiProviders()).toEqual([]);
+  it("uses each provider's own base URL and token", async () => {
+    const fetch = vi.fn(async () => new Response(null, { status: 204 }));
+    vi.stubGlobal("fetch", fetch);
+    const first = createSandboxApiProvider("first", {
+      baseUrl: "https://first.example/api/",
+      headers: { Authorization: "Bearer first-secret" },
+    });
+    const second = createSandboxApiProvider("second", {
+      baseUrl: "https://second.example/other",
+      headers: { Authorization: "Bearer second-secret" },
+    });
+    await first.destroySandbox("same/id");
+    await second.destroySandbox("same/id");
+    const calls = fetch.mock.calls as unknown as [URL, RequestInit][];
+    expect(calls.map(([target]) => target.href)).toEqual([
+      "https://first.example/api/v1/instances/same%2Fid",
+      "https://second.example/other/v1/instances/same%2Fid",
+    ]);
+    expect(
+      calls.map(([, options]) =>
+        new Headers(options.headers).get("Authorization"),
+      ),
+    ).toEqual(["Bearer first-secret", "Bearer second-secret"]);
+    expect(
+      calls.every(
+        ([, options]) => options.method === "DELETE" && !options.body,
+      ),
+    ).toBe(true);
   });
 
   it("configures an existing instance without creating another one", async () => {
     const fetch = vi.fn(async () => new Response(null, { status: 204 }));
     vi.stubGlobal("fetch", fetch);
-    const backend = createSandboxApiProvider("OpenSandbox");
+    const backend = createSandboxApiProvider("OpenSandbox", {
+      baseUrl: "http://sandbox.test",
+      headers: { Authorization: "Bearer secret" },
+    });
     const { createdInstanceId } = await backend.getBashSandbox(
       "existing",
       { LANG: "ja" },
@@ -108,10 +116,12 @@ describe("sandbox API client", () => {
       ["setup"],
     );
     expect(createdInstanceId).toBeNull();
-    const [target, options] = fetch.mock.calls[0] as unknown as [URL, RequestInit];
+    const [target, options] = fetch.mock.calls[0] as unknown as [
+      URL,
+      RequestInit,
+    ];
     expect(target.pathname).toBe("/v1/instances/existing/configure");
     expect(JSON.parse(options.body as string)).toEqual({
-      provider: "OpenSandbox",
       envs: { LANG: "ja" },
       allowedDomains: ["example.com"],
     });

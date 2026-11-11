@@ -66,6 +66,24 @@ describe("filesystem API client", () => {
     expect(fetchMock).toHaveBeenCalledTimes(3);
   });
 
+  it("uses the selected API endpoint and headers", async () => {
+    const fetch = vi.fn(async () => new Response(null, { status: 404 }));
+    vi.stubGlobal("fetch", fetch);
+    const fs = new ApiFileSystem({ service: "fs", config: { root: "" } }, "", {
+      endpoint: "https://selected.example/base",
+      headers: { Authorization: "Bearer selected" },
+    });
+    await fs.read("a");
+    const [target, options] = fetch.mock.calls[0] as unknown as [
+      URL,
+      RequestInit,
+    ];
+    expect(target.href).toBe("https://selected.example/base/v1/read");
+    expect(new Headers(options.headers).get("Authorization")).toBe(
+      "Bearer selected",
+    );
+  });
+
   it("treats a missing file as null and propagates other errors", async () => {
     vi.stubEnv("FILESYSTEM_API_URL", "http://files.example");
     vi.stubEnv("FILESYSTEM_API_TOKEN", "secret");

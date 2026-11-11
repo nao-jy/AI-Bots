@@ -967,6 +967,15 @@ export const en = {
         "Saved to the database, but failed to reload cron jobs. Check the server logs.",
     },
     settings: {
+      temporaryApiLabel: "Temporary file storage API",
+      apiNameLabel: "Name",
+      apiEndpointLabel: "Endpoint",
+      apiHeadersLabel: "Headers (JSON)",
+      apiContextLabel: "Context (JSON)",
+      keepApiHeaders: "Leave blank to keep existing headers",
+      keepApiContext: "Leave blank to keep existing context",
+      addApi: "Add",
+      deleteApi: "Delete",
       documentTitle: "Settings | {{0}}",
       invalidOrganizationName: "Organization name must be 1 to 120 characters.",
       invalidSessionDuration:

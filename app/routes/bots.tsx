@@ -104,6 +104,12 @@ const page: Omit<EntityPageDefinition, "records"> = {
       placeholder: "pages.bots.adaptersPlaceholder",
     },
     {
+      key: "fileSystemId",
+      label: "Filesystem API",
+      type: "select",
+      options: [],
+    },
+    {
       key: "sandboxId",
       label: "pages.bots.sandboxLabel",
       type: "select",
@@ -183,11 +189,13 @@ export default function Bots({ loaderData }: Route.ComponentProps) {
               ? loaderData.agentOptions
               : field.key === "adapterIds"
                 ? loaderData.adapterOptions
-                : field.key === "sandboxId"
-                  ? loaderData.sandboxOptions
-                  : field.key === "mcpServerIds"
-                    ? loaderData.mcpServerOptions
-                    : field.options,
+                : field.key === "fileSystemId"
+                  ? loaderData.fileSystemOptions
+                  : field.key === "sandboxId"
+                    ? loaderData.sandboxOptions
+                    : field.key === "mcpServerIds"
+                      ? loaderData.mcpServerOptions
+                      : field.options,
         })),
       }}
     />

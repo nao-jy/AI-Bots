@@ -16,6 +16,7 @@ type ManagedTerminal = {
   id: string;
   userId: string;
   instanceId: string;
+  apiId: string;
   backend: SandboxTerminalSession | null;
   chunks: OutputChunk[];
   outputLength: number;
@@ -73,6 +74,7 @@ export async function openSandboxTerminal(
     id,
     userId,
     instanceId,
+    apiId: sandboxType,
     backend: null,
     chunks: [],
     outputLength: 0,
@@ -194,10 +196,14 @@ export async function closeSandboxTerminal(userId: string, id: string) {
 
 export async function closeSandboxTerminalsForInstance(
   userId: string,
+  apiId: string,
   instanceId: string,
 ) {
   const instanceSessions = [...sessions.values()].filter(
-    (session) => session.userId === userId && session.instanceId === instanceId,
+    (session) =>
+      session.userId === userId &&
+      session.apiId === apiId &&
+      session.instanceId === instanceId,
   );
   for (const session of instanceSessions)
     await closeSandboxTerminal(userId, session.id);

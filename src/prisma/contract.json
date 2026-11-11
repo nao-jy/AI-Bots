@@ -32,6 +32,10 @@
       "model": "ChatBotAdapter",
       "namespace": "aibot"
     },
+    "ChatBotFileSystem": {
+      "model": "ChatBotFileSystem",
+      "namespace": "aibot"
+    },
     "ChatBotMcpServer": {
       "model": "ChatBotMcpServer",
       "namespace": "aibot"
@@ -50,6 +54,10 @@
     },
     "ChatTarget": {
       "model": "ChatTarget",
+      "namespace": "aibot"
+    },
+    "FileSystemAPI": {
+      "model": "FileSystemAPI",
       "namespace": "aibot"
     },
     "Grant": {
@@ -110,6 +118,10 @@
     },
     "Sandbox": {
       "model": "Sandbox",
+      "namespace": "aibot"
+    },
+    "SandboxAPI": {
+      "model": "SandboxAPI",
       "namespace": "aibot"
     },
     "Session": {
@@ -1555,6 +1567,129 @@
               "table": "ChatBotAdapter"
             }
           },
+          "ChatBotFileSystem": {
+            "fields": {
+              "chatbotId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              },
+              "createdAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "organizationId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              },
+              "sandboxId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              },
+              "updatedAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-date@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 3
+                  }
+                }
+              }
+            },
+            "relations": {
+              "chatbot": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "chatbotId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "ChatBot",
+                  "namespace": "aibot"
+                }
+              },
+              "organization": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "organizationId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Organization",
+                  "namespace": "aibot"
+                }
+              },
+              "sandBox": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "sandboxId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "FileSystemAPI",
+                  "namespace": "aibot"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "chatbotId": {
+                  "column": "chatbotId"
+                },
+                "createdAt": {
+                  "column": "createdAt"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "organizationId": {
+                  "column": "organizationId"
+                },
+                "sandboxId": {
+                  "column": "sandboxId"
+                },
+                "updatedAt": {
+                  "column": "updatedAt"
+                }
+              },
+              "namespaceId": "aibot",
+              "table": "ChatBotFileSystem"
+            }
+          },
           "ChatBotMcpServer": {
             "fields": {
               "authId": {
@@ -2274,6 +2409,133 @@
               },
               "namespaceId": "aibot",
               "table": "ChatTarget"
+            }
+          },
+          "FileSystemAPI": {
+            "fields": {
+              "context": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/jsonb@1",
+                  "kind": "scalar"
+                }
+              },
+              "createdAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              },
+              "endpoint": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "headers": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/jsonb@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              },
+              "name": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "organizationId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              },
+              "updatedAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-date@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 3
+                  }
+                }
+              }
+            },
+            "relations": {
+              "organization": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "organizationId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Organization",
+                  "namespace": "aibot"
+                }
+              },
+              "resource": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "ResourceBase",
+                  "namespace": "aibot"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "context": {
+                  "column": "context"
+                },
+                "createdAt": {
+                  "column": "createdAt"
+                },
+                "endpoint": {
+                  "column": "endpoint"
+                },
+                "headers": {
+                  "column": "headers"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "name": {
+                  "column": "name"
+                },
+                "organizationId": {
+                  "column": "organizationId"
+                },
+                "updatedAt": {
+                  "column": "updatedAt"
+                }
+              },
+              "namespaceId": "aibot",
+              "table": "FileSystemAPI"
             }
           },
           "Grant": {
@@ -3435,6 +3697,13 @@
                   "kind": "scalar"
                 }
               },
+              "temporaryFileSystemApiId": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              },
               "updatedAt": {
                 "nullable": false,
                 "type": {
@@ -3612,6 +3881,22 @@
                   "namespace": "aibot"
                 }
               },
+              "temporaryFileSystemApi": {
+                "cardinality": "N:1",
+                "nullable": true,
+                "on": {
+                  "localFields": [
+                    "temporaryFileSystemApiId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "FileSystemAPI",
+                  "namespace": "aibot"
+                }
+              },
               "threadOAuthConnections": {
                 "cardinality": "1:N",
                 "on": {
@@ -3681,6 +3966,9 @@
                 "sessionDurationSeconds": {
                   "column": "sessionDurationSeconds"
                 },
+                "temporaryFileSystemApiId": {
+                  "column": "temporaryFileSystemApiId"
+                },
                 "updatedAt": {
                   "column": "updatedAt"
                 }
@@ -3693,6 +3981,13 @@
             "fields": {
               "adapterId": {
                 "nullable": true,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              },
+              "apiId": {
+                "nullable": false,
                 "type": {
                   "codecId": "pg/uuid@1",
                   "kind": "scalar"
@@ -3775,6 +4070,22 @@
                   "namespace": "aibot"
                 }
               },
+              "api": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "apiId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "SandboxAPI",
+                  "namespace": "aibot"
+                }
+              },
               "chatbot": {
                 "cardinality": "N:1",
                 "nullable": true,
@@ -3828,6 +4139,9 @@
               "fields": {
                 "adapterId": {
                   "column": "adapterId"
+                },
+                "apiId": {
+                  "column": "apiId"
                 },
                 "chatbotId": {
                   "column": "chatbotId"
@@ -4321,6 +4635,13 @@
                   "kind": "scalar"
                 }
               },
+              "apiId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              },
               "createdAt": {
                 "nullable": false,
                 "type": {
@@ -4379,13 +4700,6 @@
                   "plane": "domain"
                 }
               },
-              "sandboxType": {
-                "nullable": false,
-                "type": {
-                  "codecId": "pg/text@1",
-                  "kind": "scalar"
-                }
-              },
               "updatedAt": {
                 "nullable": false,
                 "type": {
@@ -4398,6 +4712,22 @@
               }
             },
             "relations": {
+              "api": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "apiId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "SandboxAPI",
+                  "namespace": "aibot"
+                }
+              },
               "instances": {
                 "cardinality": "1:N",
                 "on": {
@@ -4451,6 +4781,9 @@
                 "allowedDomainList": {
                   "column": "allowedDomainList"
                 },
+                "apiId": {
+                  "column": "apiId"
+                },
                 "createdAt": {
                   "column": "createdAt"
                 },
@@ -4472,15 +4805,129 @@
                 "sandboxScope": {
                   "column": "sandboxScope"
                 },
-                "sandboxType": {
-                  "column": "sandboxType"
-                },
                 "updatedAt": {
                   "column": "updatedAt"
                 }
               },
               "namespaceId": "aibot",
               "table": "Sandbox"
+            }
+          },
+          "SandboxAPI": {
+            "fields": {
+              "createdAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              },
+              "endpoint": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "headers": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/jsonb@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              },
+              "name": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "organizationId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              },
+              "updatedAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-date@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 3
+                  }
+                }
+              }
+            },
+            "relations": {
+              "organization": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "organizationId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Organization",
+                  "namespace": "aibot"
+                }
+              },
+              "resource": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "ResourceBase",
+                  "namespace": "aibot"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "createdAt": {
+                  "column": "createdAt"
+                },
+                "endpoint": {
+                  "column": "endpoint"
+                },
+                "headers": {
+                  "column": "headers"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "name": {
+                  "column": "name"
+                },
+                "organizationId": {
+                  "column": "organizationId"
+                },
+                "updatedAt": {
+                  "column": "updatedAt"
+                }
+              },
+              "namespaceId": "aibot",
+              "table": "SandboxAPI"
             }
           },
           "Session": {
@@ -6415,6 +6862,145 @@
               },
               "uniques": []
             },
+            "ChatBotFileSystem": {
+              "columns": {
+                "chatbotId": {
+                  "codecId": "pg/uuid@1",
+                  "dataType": "pg/uuid",
+                  "nullable": false
+                },
+                "createdAt": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "dataType": "pg/timestamptz",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nullable": false
+                },
+                "id": {
+                  "codecId": "pg/int4@1",
+                  "dataType": "pg/int4",
+                  "default": {
+                    "expression": "autoincrement()",
+                    "kind": "function"
+                  },
+                  "nullable": false
+                },
+                "organizationId": {
+                  "codecId": "pg/uuid@1",
+                  "dataType": "pg/uuid",
+                  "nullable": false
+                },
+                "sandboxId": {
+                  "codecId": "pg/uuid@1",
+                  "dataType": "pg/uuid",
+                  "nullable": false
+                },
+                "updatedAt": {
+                  "codecId": "pg/timestamptz-date@1",
+                  "dataType": "pg/timestamptz",
+                  "nullable": false,
+                  "typeParams": {
+                    "precision": 3
+                  }
+                }
+              },
+              "foreignKeys": [
+                {
+                  "index": {
+                    "name": "ChatBotFileSystem_organizationId_idx_2e17ef41"
+                  },
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "organizationId"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "ChatBotFileSystem"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "Organization"
+                  }
+                },
+                {
+                  "index": {
+                    "name": "ChatBotFileSystem_chatbotId_idx_52db07ea"
+                  },
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "chatbotId"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "ChatBotFileSystem"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "ChatBot"
+                  }
+                },
+                {
+                  "index": {
+                    "name": "ChatBotFileSystem_sandboxId_idx_2b30d542"
+                  },
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "sandboxId"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "ChatBotFileSystem"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "FileSystemAPI"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "chatbotId"
+                  ],
+                  "name": "ChatBotFileSystem_chatbotId_idx_52db07ea",
+                  "prefix": "ChatBotFileSystem_chatbotId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "organizationId"
+                  ],
+                  "name": "ChatBotFileSystem_organizationId_idx_2e17ef41",
+                  "prefix": "ChatBotFileSystem_organizationId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "sandboxId"
+                  ],
+                  "name": "ChatBotFileSystem_sandboxId_idx_2b30d542",
+                  "prefix": "ChatBotFileSystem_sandboxId_idx",
+                  "unique": false
+                }
+              ],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "uniques": []
+            },
             "ChatBotMcpServer": {
               "columns": {
                 "authId": {
@@ -7191,6 +7777,129 @@
                     "chatbotAdapterId",
                     "threadId",
                     "scheduleId"
+                  ]
+                }
+              ]
+            },
+            "FileSystemAPI": {
+              "columns": {
+                "context": {
+                  "codecId": "pg/jsonb@1",
+                  "dataType": "pg/jsonb",
+                  "nullable": false
+                },
+                "createdAt": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "dataType": "pg/timestamptz",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nullable": false
+                },
+                "endpoint": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "nullable": false
+                },
+                "headers": {
+                  "codecId": "pg/jsonb@1",
+                  "dataType": "pg/jsonb",
+                  "nullable": true
+                },
+                "id": {
+                  "codecId": "pg/uuid@1",
+                  "dataType": "pg/uuid",
+                  "nullable": false
+                },
+                "name": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "nullable": false
+                },
+                "organizationId": {
+                  "codecId": "pg/uuid@1",
+                  "dataType": "pg/uuid",
+                  "nullable": false
+                },
+                "updatedAt": {
+                  "codecId": "pg/timestamptz-date@1",
+                  "dataType": "pg/timestamptz",
+                  "nullable": false,
+                  "typeParams": {
+                    "precision": 3
+                  }
+                }
+              },
+              "foreignKeys": [
+                {
+                  "index": {
+                    "primaryKey": true
+                  },
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "FileSystemAPI"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "ResourceBase"
+                  }
+                },
+                {
+                  "index": {
+                    "name": "FileSystemAPI_organizationId_idx_2e17ef41"
+                  },
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "organizationId"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "FileSystemAPI"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "Organization"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "organizationId"
+                  ],
+                  "name": "FileSystemAPI_organizationId_idx_2e17ef41",
+                  "prefix": "FileSystemAPI_organizationId_idx",
+                  "unique": false
+                }
+              ],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "uniques": [
+                {
+                  "columns": [
+                    "organizationId",
+                    "name"
+                  ]
+                },
+                {
+                  "columns": [
+                    "endpoint",
+                    "context",
+                    "headers"
                   ]
                 }
               ]
@@ -8250,6 +8959,11 @@
                   },
                   "nullable": false
                 },
+                "temporaryFileSystemApiId": {
+                  "codecId": "pg/uuid@1",
+                  "dataType": "pg/uuid",
+                  "nullable": true
+                },
                 "updatedAt": {
                   "codecId": "pg/timestamptz-date@1",
                   "dataType": "pg/timestamptz",
@@ -8259,8 +8973,38 @@
                   }
                 }
               },
-              "foreignKeys": [],
-              "indexes": [],
+              "foreignKeys": [
+                {
+                  "index": {
+                    "name": "Organization_temporaryFileSystemApiId_idx_d50d93e3"
+                  },
+                  "onDelete": "setNull",
+                  "source": {
+                    "columns": [
+                      "temporaryFileSystemApiId"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "Organization"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "FileSystemAPI"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "temporaryFileSystemApiId"
+                  ],
+                  "name": "Organization_temporaryFileSystemApiId_idx_d50d93e3",
+                  "prefix": "Organization_temporaryFileSystemApiId_idx",
+                  "unique": false
+                }
+              ],
               "primaryKey": {
                 "columns": [
                   "id"
@@ -8274,6 +9018,11 @@
                   "codecId": "pg/uuid@1",
                   "dataType": "pg/uuid",
                   "nullable": true
+                },
+                "apiId": {
+                  "codecId": "pg/uuid@1",
+                  "dataType": "pg/uuid",
+                  "nullable": false
                 },
                 "chatbotId": {
                   "codecId": "pg/uuid@1",
@@ -8350,6 +9099,26 @@
                 },
                 {
                   "index": {
+                    "name": "PersistentSandboxInstance_apiId_idx_a7249ccd"
+                  },
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "apiId"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "PersistentSandboxInstance"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "SandboxAPI"
+                  }
+                },
+                {
+                  "index": {
                     "name": "PersistentSandboxInstance_sandboxId_idx_2b30d542"
                   },
                   "onDelete": "cascade",
@@ -8420,6 +9189,14 @@
                 },
                 {
                   "columns": [
+                    "apiId"
+                  ],
+                  "name": "PersistentSandboxInstance_apiId_idx_a7249ccd",
+                  "prefix": "PersistentSandboxInstance_apiId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
                     "chatbotId"
                   ],
                   "name": "PersistentSandboxInstance_chatbotId_idx_52db07ea",
@@ -8451,6 +9228,7 @@
               "uniques": [
                 {
                   "columns": [
+                    "apiId",
                     "instanceId"
                   ]
                 }
@@ -8863,6 +9641,11 @@
                   },
                   "nullable": false
                 },
+                "apiId": {
+                  "codecId": "pg/uuid@1",
+                  "dataType": "pg/uuid",
+                  "nullable": false
+                },
                 "createdAt": {
                   "codecId": "pg/timestamptz-string@1",
                   "dataType": "pg/timestamptz",
@@ -8915,11 +9698,6 @@
                     "plane": "storage"
                   }
                 },
-                "sandboxType": {
-                  "codecId": "pg/text@1",
-                  "dataType": "pg/text",
-                  "nullable": false
-                },
                 "updatedAt": {
                   "codecId": "pg/timestamptz-date@1",
                   "dataType": "pg/timestamptz",
@@ -8969,9 +9747,37 @@
                     "namespaceId": "aibot",
                     "tableName": "Organization"
                   }
+                },
+                {
+                  "index": {
+                    "name": "Sandbox_apiId_idx_a7249ccd"
+                  },
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "apiId"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "Sandbox"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "SandboxAPI"
+                  }
                 }
               ],
               "indexes": [
+                {
+                  "columns": [
+                    "apiId"
+                  ],
+                  "name": "Sandbox_apiId_idx_a7249ccd",
+                  "prefix": "Sandbox_apiId_idx",
+                  "unique": false
+                },
                 {
                   "columns": [
                     "organizationId"
@@ -8991,6 +9797,123 @@
                   "columns": [
                     "organizationId",
                     "name"
+                  ]
+                }
+              ]
+            },
+            "SandboxAPI": {
+              "columns": {
+                "createdAt": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "dataType": "pg/timestamptz",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nullable": false
+                },
+                "endpoint": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "nullable": false
+                },
+                "headers": {
+                  "codecId": "pg/jsonb@1",
+                  "dataType": "pg/jsonb",
+                  "nullable": true
+                },
+                "id": {
+                  "codecId": "pg/uuid@1",
+                  "dataType": "pg/uuid",
+                  "nullable": false
+                },
+                "name": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "nullable": false
+                },
+                "organizationId": {
+                  "codecId": "pg/uuid@1",
+                  "dataType": "pg/uuid",
+                  "nullable": false
+                },
+                "updatedAt": {
+                  "codecId": "pg/timestamptz-date@1",
+                  "dataType": "pg/timestamptz",
+                  "nullable": false,
+                  "typeParams": {
+                    "precision": 3
+                  }
+                }
+              },
+              "foreignKeys": [
+                {
+                  "index": {
+                    "primaryKey": true
+                  },
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "SandboxAPI"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "ResourceBase"
+                  }
+                },
+                {
+                  "index": {
+                    "name": "SandboxAPI_organizationId_idx_2e17ef41"
+                  },
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "organizationId"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "SandboxAPI"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "aibot",
+                    "tableName": "Organization"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "organizationId"
+                  ],
+                  "name": "SandboxAPI_organizationId_idx_2e17ef41",
+                  "prefix": "SandboxAPI_organizationId_idx",
+                  "unique": false
+                }
+              ],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "uniques": [
+                {
+                  "columns": [
+                    "organizationId",
+                    "name"
+                  ]
+                },
+                {
+                  "columns": [
+                    "endpoint",
+                    "headers"
                   ]
                 }
               ]
@@ -9593,10 +10516,10 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "fe81e888a4734a3a8b3fb92c7a0e892efdd46fefe287ae980ba3ce94d73f3528"
+    "storageHash": "736fa1b716cea356dc90b82d5aaafb1b8b892f97b91e3dccf2938f5367682359"
   },
   "execution": {
-    "executionHash": "3bc119f64d51b7235bd5ddbfa41b9a4d1218fba8bccdda447624d1c6fb1fdc3f",
+    "executionHash": "c710fde4219b5316eaf5f1849710427f86ea616903d61dd2302201d85f683c35",
     "mutations": {
       "defaults": [
         {
@@ -9752,6 +10675,27 @@
             }
           },
           "ref": {
+            "entry": "ChatBotFileSystem",
+            "field": "updatedAt",
+            "namespace": "aibot"
+          }
+        },
+        {
+          "onCreate": {
+            "id": "timestampNow",
+            "kind": "generator",
+            "params": {
+              "precision": 3
+            }
+          },
+          "onUpdate": {
+            "id": "timestampNow",
+            "kind": "generator",
+            "params": {
+              "precision": 3
+            }
+          },
+          "ref": {
             "entry": "ChatBotMcpServer",
             "field": "updatedAt",
             "namespace": "aibot"
@@ -9837,6 +10781,27 @@
           },
           "ref": {
             "entry": "ChatTarget",
+            "field": "updatedAt",
+            "namespace": "aibot"
+          }
+        },
+        {
+          "onCreate": {
+            "id": "timestampNow",
+            "kind": "generator",
+            "params": {
+              "precision": 3
+            }
+          },
+          "onUpdate": {
+            "id": "timestampNow",
+            "kind": "generator",
+            "params": {
+              "precision": 3
+            }
+          },
+          "ref": {
+            "entry": "FileSystemAPI",
             "field": "updatedAt",
             "namespace": "aibot"
           }
@@ -10101,6 +11066,27 @@
           },
           "ref": {
             "entry": "Sandbox",
+            "field": "updatedAt",
+            "namespace": "aibot"
+          }
+        },
+        {
+          "onCreate": {
+            "id": "timestampNow",
+            "kind": "generator",
+            "params": {
+              "precision": 3
+            }
+          },
+          "onUpdate": {
+            "id": "timestampNow",
+            "kind": "generator",
+            "params": {
+              "precision": 3
+            }
+          },
+          "ref": {
+            "entry": "SandboxAPI",
             "field": "updatedAt",
             "namespace": "aibot"
           }

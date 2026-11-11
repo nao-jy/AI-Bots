@@ -2,16 +2,13 @@ import { db } from "./db";
 import type { AuthUser } from "../auth";
 import {
   generateResourceId,
+  isUuid,
   jsonb,
   jsonbToStringRecord,
   parseStringList,
   record,
 } from "../utils";
-import {
-  executeSandboxCommand,
-  getSandbox,
-  listSandboxNames,
-} from "../features/sandboxes";
+import { executeSandboxCommand, getSandbox } from "../features/sandboxes";
 import {
   closeSandboxTerminalsForInstance,
   openSandboxTerminal,
@@ -40,11 +37,13 @@ export async function listSandboxes(user: AuthUser, ids: string[]) {
       .where((sandbox) => sandbox.id.in(ids))
       .all(),
   );
-  const sandboxNames = await listSandboxNames();
+  const sandboxApis = await db.orm.aibot.SandboxAPI.where({
+    organizationId: user.organizationId,
+  }).all();
   return {
-    sandboxTypeOptions: sandboxNames.map((name) => ({
-      label: name,
-      value: name,
+    sandboxApiOptions: sandboxApis.map((api) => ({
+      label: api.name,
+      value: api.id,
     })),
     records: await includeResourcePermissions(
       user,
@@ -54,8 +53,9 @@ export async function listSandboxes(user: AuthUser, ids: string[]) {
             sandboxId: sandbox.id,
           }).all();
           return record(sandbox.id, "—", {
-            sandboxType: sandbox.sandboxType,
-            type: sandbox.sandboxType,
+            apiId: sandbox.apiId,
+            type:
+              sandboxApis.find((api) => api.id === sandbox.apiId)?.name ?? "—",
             sandboxScope: sandbox.sandboxScope,
             scope: SANDBOX_SCOPES[sandbox.sandboxScope],
             name: sandbox.name,
@@ -111,15 +111,16 @@ export async function runPersistentSandboxCommand(
   if (!(await hasResourceAccess(user, sandboxId, "update")))
     return { ok: false, error: "server.sandboxNotFound" };
 
-  const instance = await db.orm.aibot.PersistentSandboxInstance.whereUnique({
+  const instance = await db.orm.aibot.PersistentSandboxInstance.where({
     instanceId,
+    sandboxId,
   }).first();
   if (!instance || instance.sandboxId !== sandbox.id)
     return { ok: false, error: "server.selectedInstanceNotFound" };
 
   try {
     const result = await executeSandboxCommand(
-      sandbox.sandboxType,
+      sandbox.apiId,
       instanceId,
       jsonbToStringRecord(sandbox.envs),
       [...sandbox.allowedDomainList],
@@ -183,8 +184,9 @@ export async function startPersistentSandboxTerminal(
   if (!(await hasResourceAccess(user, sandboxId, "update")))
     return { ok: false, error: "server.sandboxNotFound" };
 
-  const instance = await db.orm.aibot.PersistentSandboxInstance.whereUnique({
+  const instance = await db.orm.aibot.PersistentSandboxInstance.where({
     instanceId,
+    sandboxId,
   }).first();
   if (!instance || instance.sandboxId !== sandbox.id)
     return { ok: false, error: "server.selectedInstanceNotFound" };
@@ -192,7 +194,7 @@ export async function startPersistentSandboxTerminal(
   try {
     const terminalId = await openSandboxTerminal(
       user.id,
-      sandbox.sandboxType,
+      sandbox.apiId,
       instanceId,
       jsonbToStringRecord(sandbox.envs),
       [...sandbox.allowedDomainList],
@@ -226,10 +228,16 @@ export async function saveSandbox(
   id: string | null,
   values: FormData,
 ) {
-  const sandboxType = String(values.get("sandboxType") ?? "").trim();
+  const apiId = String(values.get("apiId") ?? "").trim();
   const sandboxScope = String(values.get("sandboxScope") ?? "").trim();
   const sandboxName = String(values.get("name") ?? "").trim();
-  if (!(await listSandboxNames()).includes(sandboxType))
+  if (
+    !isUuid(apiId) ||
+    !(await db.orm.aibot.SandboxAPI.first({
+      id: apiId,
+      organizationId: user.organizationId,
+    }))
+  )
     return { error: "server.unsupportedSandboxType" };
   if (!isSandboxScope(sandboxScope))
     return { error: "server.sandboxScopeRequired" };
@@ -269,8 +277,22 @@ export async function saveSandbox(
       !(await hasResourceAccess(user, id, "update")))
   )
     return { error: "server.sandboxNotFound" };
+  if (id !== null) {
+    const existing = await db.orm.aibot.Sandbox.first({
+      id,
+      organizationId: user.organizationId,
+    });
+    if (
+      existing &&
+      existing.apiId !== apiId &&
+      (await db.orm.aibot.PersistentSandboxInstance.first({ sandboxId: id }))
+    )
+      return {
+        error: "Delete existing sandbox instances before changing the API.",
+      };
+  }
   const saved = {
-    sandboxType,
+    apiId,
     sandboxScope,
     envs: jsonb(envs),
     allowedDomainList,
@@ -320,20 +342,11 @@ export async function deleteSandbox(user: AuthUser, id: string) {
     sandboxId: id,
   }).all();
   for (const instance of instances)
-    await destroySandboxInstance(sandbox.sandboxType, instance.instanceId);
+    await destroySandboxInstance(sandbox.apiId, instance.instanceId);
 
   await db.orm.aibot.ResourceBase.where({ id }).delete();
   logAuditEvent("sandbox.deleted", "sandbox", id, user.id);
   return true;
-}
-
-export async function getSandboxInstance(instanceId: string) {
-  const instance = await db.orm.aibot.PersistentSandboxInstance.whereUnique({
-    instanceId,
-  })
-    .include("sandbox")
-    .first();
-  return instance;
 }
 
 export async function getChatBotSandbox(
@@ -407,6 +420,7 @@ export async function createPersistentSandboxInstance(values: {
   if (!sandbox) throw new Error("server.sandboxNotFound");
   const instance = await db.orm.aibot.PersistentSandboxInstance.create({
     ...values,
+    apiId: sandbox.apiId,
     organizationId: sandbox.organizationId,
   });
   logAuditEvent(
@@ -423,8 +437,9 @@ export async function deleteSandboxInstance(
   instanceId: string,
 ) {
   if (!/^[0-9a-f-]{36}$/i.test(sandboxId) || !instanceId.trim()) return false;
-  const instance = await db.orm.aibot.PersistentSandboxInstance.whereUnique({
+  const instance = await db.orm.aibot.PersistentSandboxInstance.where({
     instanceId,
+    sandboxId,
   })
     .include("sandbox")
     .first();
@@ -436,9 +451,16 @@ export async function deleteSandboxInstance(
   )
     return false;
 
-  await closeSandboxTerminalsForInstance(user.id, instanceId);
-  await destroySandboxInstance(instance.sandbox.sandboxType, instanceId);
-  await db.orm.aibot.PersistentSandboxInstance.where({ instanceId }).delete();
+  await closeSandboxTerminalsForInstance(
+    user.id,
+    instance.sandbox.apiId,
+    instanceId,
+  );
+  await destroySandboxInstance(instance.sandbox.apiId, instanceId);
+  await db.orm.aibot.PersistentSandboxInstance.where({
+    instanceId,
+    sandboxId,
+  }).delete();
   logAuditEvent(
     "sandbox_instance.deleted",
     "sandbox_instance",
@@ -449,7 +471,7 @@ export async function deleteSandboxInstance(
 }
 
 async function destroySandboxInstance(sandboxType: string, instanceId: string) {
-  const sandboxProvider = getSandbox(sandboxType);
+  const sandboxProvider = await getSandbox(sandboxType);
   if (!sandboxProvider)
     throw new Error(`Unsupported sandbox type: ${sandboxType}`);
   await sandboxProvider.destroySandbox(instanceId);

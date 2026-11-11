@@ -33,7 +33,7 @@ const page: Omit<EntityPageDefinition, "records"> = {
   fields: [
     { key: "name", label: "pages.sandboxes.nameLabel", type: "text" },
     {
-      key: "sandboxType",
+      key: "apiId",
       label: "pages.sandboxes.typeLabel",
       type: "select",
       options: [],
@@ -142,8 +142,8 @@ export default function Sandboxes({ loaderData }: Route.ComponentProps) {
         records: loaderData.records,
         pagination: loaderData.pagination,
         fields: page.fields.map((field) =>
-          field.key === "sandboxType"
-            ? { ...field, options: loaderData.sandboxTypeOptions }
+          field.key === "apiId"
+            ? { ...field, options: loaderData.sandboxApiOptions }
             : field,
         ),
       }}

@@ -32,5 +32,6 @@ export default [
   route("api/webhooks/:botId/:adapterId", "routes/webhook.tsx"),
   route("api/sandbox-terminals/:terminalId", "routes/sandbox-terminal.tsx"),
   route("api/resource-grants", "routes/api.resource-grants.ts"),
+  route("api/files/:apiId/:token", "routes/api.files.$apiId.$token.ts"),
   route("api/files/:token", "routes/api.files.$token.ts"),
 ] satisfies RouteConfig;

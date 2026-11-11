@@ -133,8 +133,6 @@ The built-in email provider sends through an SMTP relay. Once configured, it can
 | `CREDENTIALS_ENCRYPTION_KEY` | Yes       | Base64-encoded 32-byte key for encrypting credentials and signing OAuth authorization state.                                                                                                            |
 | `OAUTH_BASE_URL`             | For OAuth | Public HTTPS origin (no path) used to form the OAuth callback URL, `/oauth/callback`. `http://localhost` is allowed for local development. Register the resulting callback URL with the OAuth provider. |
 | `PUBLIC_APP_URL`             | Optional  | Public application URL used for webhook URLs, email verification links, and temporary file download links. If unset, the request origin is used.                                                        |
-| `SANDBOX_API_URL`           | For sandbox | URL of the separate Sandbox API service. |
-| `SANDBOX_API_TOKEN`         | For sandbox | Bearer token shared with the Sandbox API service. |
 | `SMTP_RELAY_HOST`            | For email | SMTP relay host.                                                                                                                                                                                        |
 | `SMTP_RELAY_PORT`            | For email | SMTP relay port.                                                                                                                                                                                        |
 | `SMTP_RELAY_SECURE`          | For email | Set to `true` for TLS; when `false`, STARTTLS is required.                                                                                                                                              |
@@ -156,7 +154,9 @@ docker compose --env-file .env.dev -f infra/compose.yaml up -d
 
 Optional Compose settings are documented in [`.env.example`](./.env.example). If you change the PostgreSQL credentials, update `DATABASE_URL` to match; existing database volumes retain their original credentials.
 
-Configure each integration's provider credentials and settings in the workspace. Sandbox providers appear in the UI when the Sandbox API is reachable and advertises them. To connect the included OpenSandbox through bot_tools, follow the Sandbox API setup in the bot_tools README; direct E2B integration has been removed.
+Configure each integration's provider credentials and settings in the workspace. Administrators register Sandbox and Filesystem API endpoints and headers in Settings. Select a Sandbox API when creating a sandbox, and select a Filesystem API for bot memory or as the organization’s temporary file store. Filesystem contexts and headers are encrypted at rest. Keep an old temporary-file API registered until its download links expire. To connect the included OpenSandbox through bot_tools, follow the Sandbox API setup in the bot_tools README; direct E2B integration has been removed.
+
+The API configuration migration removes pre-release sandbox records and their persistent instance records; it does not terminate existing remote instances. Apply migrations before starting this version, then register the APIs in Settings.
 
 ## Build and run
 
@@ -172,7 +172,7 @@ npm run start
 
 #### Production Compose
 
-Configure `.env.prd` using [`.env.prd.example`](./.env.prd.example). If `.env.prd` already exists, preserve it and check `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `DATABASE_URL` with matching credentials, and `SANDBOX_API_TOKEN`. The `DATABASE_URL` host and port are `postgres:5432`. Percent-encode reserved characters in database credentials in the URL. Configure the sample `SMTP_RELAY_*` settings to use email verification and password reset.
+Configure `.env.prd` using [`.env.prd.example`](./.env.prd.example). If `.env.prd` already exists, preserve it and check `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `DATABASE_URL` with matching credentials. The `DATABASE_URL` host and port are `postgres:5432`. Percent-encode reserved characters in database credentials in the URL. Configure the sample `SMTP_RELAY_*` settings to use email verification and password reset.
 
 For a new production environment, use a dedicated `CREDENTIALS_ENCRYPTION_KEY` and Cloudflare Tunnel. Configure the Tunnel's public hostname to reach `http://127.0.0.1:3001` inside the container. Use separate development and production Tunnels: running both connectors on the same Tunnel can route requests to either environment. Restrict access with Cloudflare Access or an equivalent policy until the initial administrator is created.
 

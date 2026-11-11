@@ -106,28 +106,30 @@ namespace aibot {
   }
 
   model Organization {
-    id                      Uuid                    @id @onCreate(uuid(7))
-    name                    String
-    groups                  Group[]
-    users                   User[]
-    chatbots                ChatBot[]
-    providers               Provider[]
-    adapters                ChatAdapter[]
-    mcpServers              McpServer[]
-    agents                  AgentDefinition[]
-    usage                   AgentUsage[]
-    botExecutions           BotExecution[]
-    rateLimits              RateLimit[]
-    oauthClients            OAuthClient[]
-    threadOAuthConnections  ThreadOAuthConnection[]
-    sandboxes               Sandbox[]
-    schedules               ChatBotSchedule[]
+    id                       Uuid                    @id @onCreate(uuid(7))
+    name                     String
+    groups                   Group[]
+    users                    User[]
+    chatbots                 ChatBot[]
+    providers                Provider[]
+    adapters                 ChatAdapter[]
+    mcpServers               McpServer[]
+    agents                   AgentDefinition[]
+    usage                    AgentUsage[]
+    botExecutions            BotExecution[]
+    rateLimits               RateLimit[]
+    oauthClients             OAuthClient[]
+    threadOAuthConnections   ThreadOAuthConnection[]
+    sandboxes                Sandbox[]
+    schedules                ChatBotSchedule[]
     +Timestamps
 
-    mfaEnabled              Boolean                 @default(false)
-    sessionDurationSeconds  Int                     @default(2592000)
-    maxLoginAttempts        Int                     @default(5)
-    minimumPasswordStrength Int                     @default(2)
+    mfaEnabled               Boolean                 @default(false)
+    sessionDurationSeconds   Int                     @default(2592000)
+    maxLoginAttempts         Int                     @default(5)
+    minimumPasswordStrength  Int                     @default(2)
+    temporaryFileSystemApiId Uuid?
+    temporaryFileSystemApi   FileSystemAPI?          @relation(fields: [temporaryFileSystemApiId], references: [id], onDelete: SetNull)
   }
 
   model Group {
@@ -442,9 +444,38 @@ namespace aibot {
     @@index([nextAttemptAt, id])
   }
 
+  model FileSystemAPI {
+    +Resource
+    endpoint String
+    context  Jsonb
+    headers  Jsonb?
+    +Timestamps
+
+    @@unique([endpoint, context, headers])
+  }
+
+  model ChatBotFileSystem {
+    +Junction
+    chatbotId Uuid
+    chatbot   ChatBot       @relation(fields: [chatbotId], references: [id], onDelete: Cascade)
+    sandboxId Uuid
+    sandBox   FileSystemAPI @relation(fields: [sandboxId], references: [id], onDelete: Cascade)
+    +Timestamps
+  }
+
+  model SandboxAPI {
+    +Resource
+    endpoint String
+    headers  Jsonb?
+    +Timestamps
+
+    @@unique([endpoint, headers])
+  }
+
   model Sandbox {
     +Resource
-    sandboxType       String
+    apiId             Uuid
+    api               SandboxAPI                  @relation(fields: [apiId], references: [id], onDelete: Cascade)
     envs              Jsonb?
     allowedDomainList String[]
     initCommands      String[]                    @default([])
@@ -460,7 +491,9 @@ namespace aibot {
   // all           null       null      null  
   model PersistentSandboxInstance {
     +Owned
-    instanceId String       @unique
+    apiId      Uuid
+    api        SandboxAPI   @relation(fields: [apiId], references: [id], onDelete: Cascade)
+    instanceId String
     sandboxId  Uuid
     sandbox    Sandbox      @relation(fields: [sandboxId], references: [id], onDelete: Cascade)
     threadId   String?
@@ -469,6 +502,8 @@ namespace aibot {
     chatbotId  Uuid?
     chatbot    ChatBot?     @relation(fields: [chatbotId], references: [id], onDelete: Cascade)
     +Timestamps
+
+    @@unique([apiId, instanceId])
   }
 
   model ChatBotToolSandbox {

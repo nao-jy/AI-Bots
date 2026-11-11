@@ -38,6 +38,7 @@ import { getThreadOAuthAuthentication } from "../repository/thread-oauth";
 import { getOwnedOAuthClient } from "../repository/oauth";
 import { ApiFileSystem } from "./filesystem/api";
 import { storageConfig } from "./filesystem/config";
+import { db } from "../repository/db";
 import { buildMemoryPrompt, getMemoryTools } from "./toolsets/memory";
 import { getMemoryDirectory } from "./memory-config";
 import { t } from "~/.server/i18n";
@@ -115,7 +116,7 @@ async function getBotSandbox(
     threadId,
   );
 
-  const sandboxProvider = getSandbox(sandbox.sandboxType);
+  const sandboxProvider = await getSandbox(sandbox.apiId);
   if (!sandboxProvider) return null;
 
   if (scopedIds !== null) {
@@ -289,14 +290,42 @@ async function processBotMessage(
       adapterId,
       thread.id,
     );
+    const fsLink = await db.orm.aibot.ChatBotFileSystem.first({
+      chatbotId: chatbot.id,
+      organizationId: chatbot.organizationId,
+    });
+    const fileSystemApi = fsLink
+      ? await db.orm.aibot.FileSystemAPI.first({
+          id: fsLink.sandboxId,
+          organizationId: chatbot.organizationId,
+        })
+      : null;
+    const fsContext = fileSystemApi
+      ? decryptMcpContext(fileSystemApi.context)
+      : null;
     const memoryFs = memoryDirectory
       ? new ApiFileSystem(
-          storageConfig("MEMORY", ""),
+          fsContext
+            ? (fsContext as unknown as import("./filesystem/api").FileSystemConfig)
+            : storageConfig("MEMORY", ""),
           `memory/${memoryDirectory.slice(1)}`,
+          fileSystemApi
+            ? {
+                endpoint: fileSystemApi.endpoint,
+                headers: decryptMcpHeaders(fileSystemApi.headers),
+              }
+            : undefined,
         )
       : null;
     const tools = {
-      ...getChatTools(chat, adapterPlatform, thread, fileHandles, publicOrigin),
+      ...getChatTools(
+        chat,
+        adapterPlatform,
+        thread,
+        fileHandles,
+        publicOrigin,
+        chatbot.organizationId,
+      ),
       ...getFileParseTools(fileHandles),
       ...(memoryFs
         ? getMemoryTools(memoryFs, {

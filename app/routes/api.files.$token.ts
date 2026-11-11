@@ -3,6 +3,12 @@ import { getTemporaryFileStore } from "../.server/features/filesystem/temporary"
 
 export async function loader({ params }: Route.LoaderArgs) {
   const file = await getTemporaryFileStore().get(params.token || "");
+  return serveTemporaryFile(file);
+}
+
+export function serveTemporaryFile(
+  file: Awaited<ReturnType<ReturnType<typeof getTemporaryFileStore>["get"]>>,
+) {
   if (!file) return new Response("Not Found", { status: 404 });
 
   const encodedFilename = encodeURIComponent(file.filename).replace(

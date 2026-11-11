@@ -23,9 +23,9 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'fe81e888a4734a3a8b3fb92c7a0e892efdd46fefe287ae980ba3ce94d73f3528'>;
+  StorageHashBase<'736fa1b716cea356dc90b82d5aaafb1b8b892f97b91e3dccf2938f5367682359'>;
 export type ExecutionHash =
-  ExecutionHashBase<'3bc119f64d51b7235bd5ddbfa41b9a4d1218fba8bccdda447624d1c6fb1fdc3f'>;
+  ExecutionHashBase<'c710fde4219b5316eaf5f1849710427f86ea616903d61dd2302201d85f683c35'>;
 export type ProfileHash =
   ProfileHashBase<'3916f444a8a17ad749191acf9e08dad97d1a327b88c2f1d45d12f240296aa8b2'>;
 
@@ -548,6 +548,18 @@ export namespace Models {
     schedules: aibot_ChatTarget[];
     readonly [RelationKeys]?: 'adapter' | 'chatbot' | 'organization' | 'schedules';
   };
+  export type aibot_ChatBotFileSystem = {
+    chatbotId: FieldOutputTypes['aibot']['ChatBotFileSystem']['chatbotId'];
+    createdAt: FieldOutputTypes['aibot']['ChatBotFileSystem']['createdAt'];
+    id: FieldOutputTypes['aibot']['ChatBotFileSystem']['id'];
+    organizationId: FieldOutputTypes['aibot']['ChatBotFileSystem']['organizationId'];
+    sandboxId: FieldOutputTypes['aibot']['ChatBotFileSystem']['sandboxId'];
+    updatedAt: FieldOutputTypes['aibot']['ChatBotFileSystem']['updatedAt'];
+    chatbot: aibot_ChatBot;
+    organization: aibot_Organization;
+    sandBox: aibot_FileSystemAPI;
+    readonly [RelationKeys]?: 'chatbot' | 'organization' | 'sandBox';
+  };
   export type aibot_ChatBotMcpServer = {
     authId: FieldOutputTypes['aibot']['ChatBotMcpServer']['authId'];
     chatbotId: FieldOutputTypes['aibot']['ChatBotMcpServer']['chatbotId'];
@@ -617,6 +629,19 @@ export namespace Models {
     organization: aibot_Organization;
     schedule: aibot_ChatBotSchedule;
     readonly [RelationKeys]?: 'chatbotAdapter' | 'organization' | 'schedule';
+  };
+  export type aibot_FileSystemAPI = {
+    context: FieldOutputTypes['aibot']['FileSystemAPI']['context'];
+    createdAt: FieldOutputTypes['aibot']['FileSystemAPI']['createdAt'];
+    endpoint: FieldOutputTypes['aibot']['FileSystemAPI']['endpoint'];
+    headers: FieldOutputTypes['aibot']['FileSystemAPI']['headers'];
+    id: FieldOutputTypes['aibot']['FileSystemAPI']['id'];
+    name: FieldOutputTypes['aibot']['FileSystemAPI']['name'];
+    organizationId: FieldOutputTypes['aibot']['FileSystemAPI']['organizationId'];
+    updatedAt: FieldOutputTypes['aibot']['FileSystemAPI']['updatedAt'];
+    organization: aibot_Organization;
+    resource: aibot_ResourceBase;
+    readonly [RelationKeys]?: 'organization' | 'resource';
   };
   export type aibot_Grant = {
     createdAt: FieldOutputTypes['aibot']['Grant']['createdAt'];
@@ -737,6 +762,7 @@ export namespace Models {
     minimumPasswordStrength: FieldOutputTypes['aibot']['Organization']['minimumPasswordStrength'];
     name: FieldOutputTypes['aibot']['Organization']['name'];
     sessionDurationSeconds: FieldOutputTypes['aibot']['Organization']['sessionDurationSeconds'];
+    temporaryFileSystemApiId: FieldOutputTypes['aibot']['Organization']['temporaryFileSystemApiId'];
     updatedAt: FieldOutputTypes['aibot']['Organization']['updatedAt'];
     adapters: aibot_ChatAdapter[];
     agents: aibot_AgentDefinition[];
@@ -749,6 +775,7 @@ export namespace Models {
     rateLimits: aibot_RateLimit[];
     sandboxes: aibot_Sandbox[];
     schedules: aibot_ChatBotSchedule[];
+    temporaryFileSystemApi: aibot_FileSystemAPI | null;
     threadOAuthConnections: aibot_ThreadOAuthConnection[];
     usage: aibot_AgentUsage[];
     users: aibot_User[];
@@ -764,12 +791,14 @@ export namespace Models {
       | 'rateLimits'
       | 'sandboxes'
       | 'schedules'
+      | 'temporaryFileSystemApi'
       | 'threadOAuthConnections'
       | 'usage'
       | 'users';
   };
   export type aibot_PersistentSandboxInstance = {
     adapterId: FieldOutputTypes['aibot']['PersistentSandboxInstance']['adapterId'];
+    apiId: FieldOutputTypes['aibot']['PersistentSandboxInstance']['apiId'];
     chatbotId: FieldOutputTypes['aibot']['PersistentSandboxInstance']['chatbotId'];
     createdAt: FieldOutputTypes['aibot']['PersistentSandboxInstance']['createdAt'];
     id: FieldOutputTypes['aibot']['PersistentSandboxInstance']['id'];
@@ -779,10 +808,11 @@ export namespace Models {
     threadId: FieldOutputTypes['aibot']['PersistentSandboxInstance']['threadId'];
     updatedAt: FieldOutputTypes['aibot']['PersistentSandboxInstance']['updatedAt'];
     adapter: aibot_ChatAdapter | null;
+    api: aibot_SandboxAPI;
     chatbot: aibot_ChatBot | null;
     organization: aibot_Organization;
     sandbox: aibot_Sandbox;
-    readonly [RelationKeys]?: 'adapter' | 'chatbot' | 'organization' | 'sandbox';
+    readonly [RelationKeys]?: 'adapter' | 'api' | 'chatbot' | 'organization' | 'sandbox';
   };
   export type aibot_PrincipalBase = {
     id: FieldOutputTypes['aibot']['PrincipalBase']['id'];
@@ -832,6 +862,7 @@ export namespace Models {
   };
   export type aibot_Sandbox = {
     allowedDomainList: FieldOutputTypes['aibot']['Sandbox']['allowedDomainList'];
+    apiId: FieldOutputTypes['aibot']['Sandbox']['apiId'];
     createdAt: FieldOutputTypes['aibot']['Sandbox']['createdAt'];
     envs: FieldOutputTypes['aibot']['Sandbox']['envs'];
     id: FieldOutputTypes['aibot']['Sandbox']['id'];
@@ -839,12 +870,24 @@ export namespace Models {
     name: FieldOutputTypes['aibot']['Sandbox']['name'];
     organizationId: FieldOutputTypes['aibot']['Sandbox']['organizationId'];
     sandboxScope: FieldOutputTypes['aibot']['Sandbox']['sandboxScope'];
-    sandboxType: FieldOutputTypes['aibot']['Sandbox']['sandboxType'];
     updatedAt: FieldOutputTypes['aibot']['Sandbox']['updatedAt'];
+    api: aibot_SandboxAPI;
     instances: aibot_PersistentSandboxInstance[];
     organization: aibot_Organization;
     resource: aibot_ResourceBase;
-    readonly [RelationKeys]?: 'instances' | 'organization' | 'resource';
+    readonly [RelationKeys]?: 'api' | 'instances' | 'organization' | 'resource';
+  };
+  export type aibot_SandboxAPI = {
+    createdAt: FieldOutputTypes['aibot']['SandboxAPI']['createdAt'];
+    endpoint: FieldOutputTypes['aibot']['SandboxAPI']['endpoint'];
+    headers: FieldOutputTypes['aibot']['SandboxAPI']['headers'];
+    id: FieldOutputTypes['aibot']['SandboxAPI']['id'];
+    name: FieldOutputTypes['aibot']['SandboxAPI']['name'];
+    organizationId: FieldOutputTypes['aibot']['SandboxAPI']['organizationId'];
+    updatedAt: FieldOutputTypes['aibot']['SandboxAPI']['updatedAt'];
+    organization: aibot_Organization;
+    resource: aibot_ResourceBase;
+    readonly [RelationKeys]?: 'organization' | 'resource';
   };
   export type aibot_Session = {
     createdAt: FieldOutputTypes['aibot']['Session']['createdAt'];
@@ -906,11 +949,13 @@ export declare const models: {
     ChatAdapterPublicId: Models.aibot_ChatAdapterPublicId;
     ChatBot: Models.aibot_ChatBot;
     ChatBotAdapter: Models.aibot_ChatBotAdapter;
+    ChatBotFileSystem: Models.aibot_ChatBotFileSystem;
     ChatBotMcpServer: Models.aibot_ChatBotMcpServer;
     ChatBotPublicId: Models.aibot_ChatBotPublicId;
     ChatBotSchedule: Models.aibot_ChatBotSchedule;
     ChatBotToolSandbox: Models.aibot_ChatBotToolSandbox;
     ChatTarget: Models.aibot_ChatTarget;
+    FileSystemAPI: Models.aibot_FileSystemAPI;
     Grant: Models.aibot_Grant;
     Group: Models.aibot_Group;
     McpServer: Models.aibot_McpServer;
@@ -926,6 +971,7 @@ export declare const models: {
     RateLimit: Models.aibot_RateLimit;
     ResourceBase: Models.aibot_ResourceBase;
     Sandbox: Models.aibot_Sandbox;
+    SandboxAPI: Models.aibot_SandboxAPI;
     Session: Models.aibot_Session;
     ThreadOAuthConnection: Models.aibot_ThreadOAuthConnection;
     User: Models.aibot_User;
@@ -1910,6 +1956,112 @@ type ContractBase = Omit<
                 },
               ];
             };
+            readonly ChatBotFileSystem: {
+              columns: {
+                readonly chatbotId: {
+                  readonly dataType: 'pg/uuid';
+                  readonly codecId: 'pg/uuid@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly createdAt: {
+                  readonly dataType: 'pg/timestamptz';
+                  readonly codecId: 'pg/timestamptz-string@1';
+                  readonly nullable: false;
+                  readonly default: { readonly kind: 'function'; readonly expression: 'now()' };
+                  readonly many: false;
+                };
+                readonly id: {
+                  readonly dataType: 'pg/int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'function';
+                    readonly expression: 'autoincrement()';
+                  };
+                  readonly many: false;
+                };
+                readonly organizationId: {
+                  readonly dataType: 'pg/uuid';
+                  readonly codecId: 'pg/uuid@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly sandboxId: {
+                  readonly dataType: 'pg/uuid';
+                  readonly codecId: 'pg/uuid@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly updatedAt: {
+                  readonly dataType: 'pg/timestamptz';
+                  readonly codecId: 'pg/timestamptz-date@1';
+                  readonly nullable: false;
+                  readonly typeParams: { readonly precision: 3 };
+                  readonly many: false;
+                };
+              };
+              primaryKey: { readonly columns: readonly ['id'] };
+              uniques: readonly [];
+              indexes: readonly [
+                {
+                  readonly name: 'ChatBotFileSystem_chatbotId_idx_52db07ea';
+                  readonly prefix: 'ChatBotFileSystem_chatbotId_idx';
+                  readonly columns: readonly ['chatbotId'];
+                  readonly unique: false;
+                },
+                {
+                  readonly name: 'ChatBotFileSystem_organizationId_idx_2e17ef41';
+                  readonly prefix: 'ChatBotFileSystem_organizationId_idx';
+                  readonly columns: readonly ['organizationId'];
+                  readonly unique: false;
+                },
+                {
+                  readonly name: 'ChatBotFileSystem_sandboxId_idx_2b30d542';
+                  readonly prefix: 'ChatBotFileSystem_sandboxId_idx';
+                  readonly columns: readonly ['sandboxId'];
+                  readonly unique: false;
+                },
+              ];
+              foreignKeys: readonly [
+                {
+                  readonly source: {
+                    readonly namespaceId: 'aibot' & NamespaceId;
+                    readonly tableName: 'ChatBotFileSystem';
+                    readonly columns: readonly ['organizationId'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'aibot' & NamespaceId;
+                    readonly tableName: 'Organization';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+                {
+                  readonly source: {
+                    readonly namespaceId: 'aibot' & NamespaceId;
+                    readonly tableName: 'ChatBotFileSystem';
+                    readonly columns: readonly ['chatbotId'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'aibot' & NamespaceId;
+                    readonly tableName: 'ChatBot';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+                {
+                  readonly source: {
+                    readonly namespaceId: 'aibot' & NamespaceId;
+                    readonly tableName: 'ChatBotFileSystem';
+                    readonly columns: readonly ['sandboxId'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'aibot' & NamespaceId;
+                    readonly tableName: 'FileSystemAPI';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+              ];
+            };
             readonly ChatBotMcpServer: {
               columns: {
                 readonly authId: {
@@ -2475,6 +2627,99 @@ type ContractBase = Omit<
                   readonly target: {
                     readonly namespaceId: 'aibot' & NamespaceId;
                     readonly tableName: 'ChatBotSchedule';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+              ];
+            };
+            readonly FileSystemAPI: {
+              columns: {
+                readonly context: {
+                  readonly dataType: 'pg/jsonb';
+                  readonly codecId: 'pg/jsonb@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly createdAt: {
+                  readonly dataType: 'pg/timestamptz';
+                  readonly codecId: 'pg/timestamptz-string@1';
+                  readonly nullable: false;
+                  readonly default: { readonly kind: 'function'; readonly expression: 'now()' };
+                  readonly many: false;
+                };
+                readonly endpoint: {
+                  readonly dataType: 'pg/text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly headers: {
+                  readonly dataType: 'pg/jsonb';
+                  readonly codecId: 'pg/jsonb@1';
+                  readonly nullable: true;
+                  readonly many: false;
+                };
+                readonly id: {
+                  readonly dataType: 'pg/uuid';
+                  readonly codecId: 'pg/uuid@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly name: {
+                  readonly dataType: 'pg/text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly organizationId: {
+                  readonly dataType: 'pg/uuid';
+                  readonly codecId: 'pg/uuid@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly updatedAt: {
+                  readonly dataType: 'pg/timestamptz';
+                  readonly codecId: 'pg/timestamptz-date@1';
+                  readonly nullable: false;
+                  readonly typeParams: { readonly precision: 3 };
+                  readonly many: false;
+                };
+              };
+              primaryKey: { readonly columns: readonly ['id'] };
+              uniques: readonly [
+                { readonly columns: readonly ['organizationId', 'name'] },
+                { readonly columns: readonly ['endpoint', 'context', 'headers'] },
+              ];
+              indexes: readonly [
+                {
+                  readonly name: 'FileSystemAPI_organizationId_idx_2e17ef41';
+                  readonly prefix: 'FileSystemAPI_organizationId_idx';
+                  readonly columns: readonly ['organizationId'];
+                  readonly unique: false;
+                },
+              ];
+              foreignKeys: readonly [
+                {
+                  readonly source: {
+                    readonly namespaceId: 'aibot' & NamespaceId;
+                    readonly tableName: 'FileSystemAPI';
+                    readonly columns: readonly ['id'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'aibot' & NamespaceId;
+                    readonly tableName: 'ResourceBase';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+                {
+                  readonly source: {
+                    readonly namespaceId: 'aibot' & NamespaceId;
+                    readonly tableName: 'FileSystemAPI';
+                    readonly columns: readonly ['organizationId'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'aibot' & NamespaceId;
+                    readonly tableName: 'Organization';
                     readonly columns: readonly ['id'];
                   };
                 },
@@ -3315,6 +3560,12 @@ type ContractBase = Omit<
                   };
                   readonly many: false;
                 };
+                readonly temporaryFileSystemApiId: {
+                  readonly dataType: 'pg/uuid';
+                  readonly codecId: 'pg/uuid@1';
+                  readonly nullable: true;
+                  readonly many: false;
+                };
                 readonly updatedAt: {
                   readonly dataType: 'pg/timestamptz';
                   readonly codecId: 'pg/timestamptz-date@1';
@@ -3325,8 +3576,28 @@ type ContractBase = Omit<
               };
               primaryKey: { readonly columns: readonly ['id'] };
               uniques: readonly [];
-              indexes: readonly [];
-              foreignKeys: readonly [];
+              indexes: readonly [
+                {
+                  readonly name: 'Organization_temporaryFileSystemApiId_idx_d50d93e3';
+                  readonly prefix: 'Organization_temporaryFileSystemApiId_idx';
+                  readonly columns: readonly ['temporaryFileSystemApiId'];
+                  readonly unique: false;
+                },
+              ];
+              foreignKeys: readonly [
+                {
+                  readonly source: {
+                    readonly namespaceId: 'aibot' & NamespaceId;
+                    readonly tableName: 'Organization';
+                    readonly columns: readonly ['temporaryFileSystemApiId'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'aibot' & NamespaceId;
+                    readonly tableName: 'FileSystemAPI';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+              ];
             };
             readonly PersistentSandboxInstance: {
               columns: {
@@ -3334,6 +3605,12 @@ type ContractBase = Omit<
                   readonly dataType: 'pg/uuid';
                   readonly codecId: 'pg/uuid@1';
                   readonly nullable: true;
+                  readonly many: false;
+                };
+                readonly apiId: {
+                  readonly dataType: 'pg/uuid';
+                  readonly codecId: 'pg/uuid@1';
+                  readonly nullable: false;
                   readonly many: false;
                 };
                 readonly chatbotId: {
@@ -3392,12 +3669,18 @@ type ContractBase = Omit<
                 };
               };
               primaryKey: { readonly columns: readonly ['id'] };
-              uniques: readonly [{ readonly columns: readonly ['instanceId'] }];
+              uniques: readonly [{ readonly columns: readonly ['apiId', 'instanceId'] }];
               indexes: readonly [
                 {
                   readonly name: 'PersistentSandboxInstance_adapterId_idx_f5208af9';
                   readonly prefix: 'PersistentSandboxInstance_adapterId_idx';
                   readonly columns: readonly ['adapterId'];
+                  readonly unique: false;
+                },
+                {
+                  readonly name: 'PersistentSandboxInstance_apiId_idx_a7249ccd';
+                  readonly prefix: 'PersistentSandboxInstance_apiId_idx';
+                  readonly columns: readonly ['apiId'];
                   readonly unique: false;
                 },
                 {
@@ -3429,6 +3712,18 @@ type ContractBase = Omit<
                   readonly target: {
                     readonly namespaceId: 'aibot' & NamespaceId;
                     readonly tableName: 'Organization';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+                {
+                  readonly source: {
+                    readonly namespaceId: 'aibot' & NamespaceId;
+                    readonly tableName: 'PersistentSandboxInstance';
+                    readonly columns: readonly ['apiId'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'aibot' & NamespaceId;
+                    readonly tableName: 'SandboxAPI';
                     readonly columns: readonly ['id'];
                   };
                 },
@@ -3771,6 +4066,12 @@ type ContractBase = Omit<
                   readonly nullable: false;
                   readonly many: { readonly elementNullable: false };
                 };
+                readonly apiId: {
+                  readonly dataType: 'pg/uuid';
+                  readonly codecId: 'pg/uuid@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
                 readonly createdAt: {
                   readonly dataType: 'pg/timestamptz';
                   readonly codecId: 'pg/timestamptz-string@1';
@@ -3818,12 +4119,6 @@ type ContractBase = Omit<
                   readonly nullable: false;
                   readonly many: false;
                 };
-                readonly sandboxType: {
-                  readonly dataType: 'pg/text';
-                  readonly codecId: 'pg/text@1';
-                  readonly nullable: false;
-                  readonly many: false;
-                };
                 readonly updatedAt: {
                   readonly dataType: 'pg/timestamptz';
                   readonly codecId: 'pg/timestamptz-date@1';
@@ -3835,6 +4130,12 @@ type ContractBase = Omit<
               primaryKey: { readonly columns: readonly ['id'] };
               uniques: readonly [{ readonly columns: readonly ['organizationId', 'name'] }];
               indexes: readonly [
+                {
+                  readonly name: 'Sandbox_apiId_idx_a7249ccd';
+                  readonly prefix: 'Sandbox_apiId_idx';
+                  readonly columns: readonly ['apiId'];
+                  readonly unique: false;
+                },
                 {
                   readonly name: 'Sandbox_organizationId_idx_2e17ef41';
                   readonly prefix: 'Sandbox_organizationId_idx';
@@ -3859,6 +4160,105 @@ type ContractBase = Omit<
                   readonly source: {
                     readonly namespaceId: 'aibot' & NamespaceId;
                     readonly tableName: 'Sandbox';
+                    readonly columns: readonly ['organizationId'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'aibot' & NamespaceId;
+                    readonly tableName: 'Organization';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+                {
+                  readonly source: {
+                    readonly namespaceId: 'aibot' & NamespaceId;
+                    readonly tableName: 'Sandbox';
+                    readonly columns: readonly ['apiId'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'aibot' & NamespaceId;
+                    readonly tableName: 'SandboxAPI';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+              ];
+            };
+            readonly SandboxAPI: {
+              columns: {
+                readonly createdAt: {
+                  readonly dataType: 'pg/timestamptz';
+                  readonly codecId: 'pg/timestamptz-string@1';
+                  readonly nullable: false;
+                  readonly default: { readonly kind: 'function'; readonly expression: 'now()' };
+                  readonly many: false;
+                };
+                readonly endpoint: {
+                  readonly dataType: 'pg/text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly headers: {
+                  readonly dataType: 'pg/jsonb';
+                  readonly codecId: 'pg/jsonb@1';
+                  readonly nullable: true;
+                  readonly many: false;
+                };
+                readonly id: {
+                  readonly dataType: 'pg/uuid';
+                  readonly codecId: 'pg/uuid@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly name: {
+                  readonly dataType: 'pg/text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly organizationId: {
+                  readonly dataType: 'pg/uuid';
+                  readonly codecId: 'pg/uuid@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly updatedAt: {
+                  readonly dataType: 'pg/timestamptz';
+                  readonly codecId: 'pg/timestamptz-date@1';
+                  readonly nullable: false;
+                  readonly typeParams: { readonly precision: 3 };
+                  readonly many: false;
+                };
+              };
+              primaryKey: { readonly columns: readonly ['id'] };
+              uniques: readonly [
+                { readonly columns: readonly ['organizationId', 'name'] },
+                { readonly columns: readonly ['endpoint', 'headers'] },
+              ];
+              indexes: readonly [
+                {
+                  readonly name: 'SandboxAPI_organizationId_idx_2e17ef41';
+                  readonly prefix: 'SandboxAPI_organizationId_idx';
+                  readonly columns: readonly ['organizationId'];
+                  readonly unique: false;
+                },
+              ];
+              foreignKeys: readonly [
+                {
+                  readonly source: {
+                    readonly namespaceId: 'aibot' & NamespaceId;
+                    readonly tableName: 'SandboxAPI';
+                    readonly columns: readonly ['id'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'aibot' & NamespaceId;
+                    readonly tableName: 'ResourceBase';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+                {
+                  readonly source: {
+                    readonly namespaceId: 'aibot' & NamespaceId;
+                    readonly tableName: 'SandboxAPI';
                     readonly columns: readonly ['organizationId'];
                   };
                   readonly target: {
@@ -4354,6 +4754,10 @@ type ContractBase = Omit<
       readonly namespace: 'aibot' & NamespaceId;
       readonly model: 'ChatBotAdapter';
     };
+    readonly ChatBotFileSystem: {
+      readonly namespace: 'aibot' & NamespaceId;
+      readonly model: 'ChatBotFileSystem';
+    };
     readonly ChatBotMcpServer: {
       readonly namespace: 'aibot' & NamespaceId;
       readonly model: 'ChatBotMcpServer';
@@ -4373,6 +4777,10 @@ type ContractBase = Omit<
     readonly ChatTarget: {
       readonly namespace: 'aibot' & NamespaceId;
       readonly model: 'ChatTarget';
+    };
+    readonly FileSystemAPI: {
+      readonly namespace: 'aibot' & NamespaceId;
+      readonly model: 'FileSystemAPI';
     };
     readonly Grant: { readonly namespace: 'aibot' & NamespaceId; readonly model: 'Grant' };
     readonly Group: { readonly namespace: 'aibot' & NamespaceId; readonly model: 'Group' };
@@ -4416,6 +4824,10 @@ type ContractBase = Omit<
       readonly model: 'ResourceBase';
     };
     readonly Sandbox: { readonly namespace: 'aibot' & NamespaceId; readonly model: 'Sandbox' };
+    readonly SandboxAPI: {
+      readonly namespace: 'aibot' & NamespaceId;
+      readonly model: 'SandboxAPI';
+    };
     readonly Session: { readonly namespace: 'aibot' & NamespaceId; readonly model: 'Session' };
     readonly ThreadOAuthConnection: {
       readonly namespace: 'aibot' & NamespaceId;
@@ -5358,6 +5770,91 @@ type ContractBase = Omit<
               };
             };
           };
+          readonly ChatBotFileSystem: {
+            readonly fields: {
+              readonly chatbotId: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/uuid@1' };
+              };
+              readonly createdAt: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-string@1';
+                };
+              };
+              readonly id: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+              readonly organizationId: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/uuid@1' };
+              };
+              readonly sandboxId: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/uuid@1' };
+              };
+              readonly updatedAt: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-date@1';
+                  readonly typeParams: { readonly precision: 3 };
+                };
+              };
+            };
+            readonly relations: {
+              readonly chatbot: {
+                readonly to: {
+                  readonly namespace: 'aibot' & NamespaceId;
+                  readonly model: 'ChatBot';
+                };
+                readonly cardinality: 'N:1';
+                readonly nullable: false;
+                readonly on: {
+                  readonly localFields: readonly ['chatbotId'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
+              readonly organization: {
+                readonly to: {
+                  readonly namespace: 'aibot' & NamespaceId;
+                  readonly model: 'Organization';
+                };
+                readonly cardinality: 'N:1';
+                readonly nullable: false;
+                readonly on: {
+                  readonly localFields: readonly ['organizationId'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
+              readonly sandBox: {
+                readonly to: {
+                  readonly namespace: 'aibot' & NamespaceId;
+                  readonly model: 'FileSystemAPI';
+                };
+                readonly cardinality: 'N:1';
+                readonly nullable: false;
+                readonly on: {
+                  readonly localFields: readonly ['sandboxId'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
+            };
+            readonly storage: {
+              readonly table: 'ChatBotFileSystem';
+              readonly namespaceId: 'aibot';
+              readonly fields: {
+                readonly chatbotId: { readonly column: 'chatbotId' };
+                readonly createdAt: { readonly column: 'createdAt' };
+                readonly id: { readonly column: 'id' };
+                readonly organizationId: { readonly column: 'organizationId' };
+                readonly sandboxId: { readonly column: 'sandboxId' };
+                readonly updatedAt: { readonly column: 'updatedAt' };
+              };
+            };
+          };
           readonly ChatBotMcpServer: {
             readonly fields: {
               readonly authId: {
@@ -5836,6 +6333,89 @@ type ContractBase = Omit<
                 readonly organizationId: { readonly column: 'organizationId' };
                 readonly scheduleId: { readonly column: 'scheduleId' };
                 readonly threadId: { readonly column: 'threadId' };
+                readonly updatedAt: { readonly column: 'updatedAt' };
+              };
+            };
+          };
+          readonly FileSystemAPI: {
+            readonly fields: {
+              readonly context: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/jsonb@1' };
+              };
+              readonly createdAt: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-string@1';
+                };
+              };
+              readonly endpoint: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly headers: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/jsonb@1' };
+              };
+              readonly id: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/uuid@1' };
+              };
+              readonly name: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly organizationId: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/uuid@1' };
+              };
+              readonly updatedAt: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-date@1';
+                  readonly typeParams: { readonly precision: 3 };
+                };
+              };
+            };
+            readonly relations: {
+              readonly organization: {
+                readonly to: {
+                  readonly namespace: 'aibot' & NamespaceId;
+                  readonly model: 'Organization';
+                };
+                readonly cardinality: 'N:1';
+                readonly nullable: false;
+                readonly on: {
+                  readonly localFields: readonly ['organizationId'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
+              readonly resource: {
+                readonly to: {
+                  readonly namespace: 'aibot' & NamespaceId;
+                  readonly model: 'ResourceBase';
+                };
+                readonly cardinality: 'N:1';
+                readonly nullable: false;
+                readonly on: {
+                  readonly localFields: readonly ['id'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
+            };
+            readonly storage: {
+              readonly table: 'FileSystemAPI';
+              readonly namespaceId: 'aibot';
+              readonly fields: {
+                readonly context: { readonly column: 'context' };
+                readonly createdAt: { readonly column: 'createdAt' };
+                readonly endpoint: { readonly column: 'endpoint' };
+                readonly headers: { readonly column: 'headers' };
+                readonly id: { readonly column: 'id' };
+                readonly name: { readonly column: 'name' };
+                readonly organizationId: { readonly column: 'organizationId' };
                 readonly updatedAt: { readonly column: 'updatedAt' };
               };
             };
@@ -6585,6 +7165,10 @@ type ContractBase = Omit<
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
               };
+              readonly temporaryFileSystemApiId: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/uuid@1' };
+              };
               readonly updatedAt: {
                 readonly nullable: false;
                 readonly type: {
@@ -6713,6 +7297,18 @@ type ContractBase = Omit<
                   readonly targetFields: readonly ['organizationId'];
                 };
               };
+              readonly temporaryFileSystemApi: {
+                readonly to: {
+                  readonly namespace: 'aibot' & NamespaceId;
+                  readonly model: 'FileSystemAPI';
+                };
+                readonly cardinality: 'N:1';
+                readonly nullable: true;
+                readonly on: {
+                  readonly localFields: readonly ['temporaryFileSystemApiId'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
               readonly threadOAuthConnections: {
                 readonly to: {
                   readonly namespace: 'aibot' & NamespaceId;
@@ -6755,6 +7351,7 @@ type ContractBase = Omit<
                 readonly minimumPasswordStrength: { readonly column: 'minimumPasswordStrength' };
                 readonly name: { readonly column: 'name' };
                 readonly sessionDurationSeconds: { readonly column: 'sessionDurationSeconds' };
+                readonly temporaryFileSystemApiId: { readonly column: 'temporaryFileSystemApiId' };
                 readonly updatedAt: { readonly column: 'updatedAt' };
               };
             };
@@ -6763,6 +7360,10 @@ type ContractBase = Omit<
             readonly fields: {
               readonly adapterId: {
                 readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/uuid@1' };
+              };
+              readonly apiId: {
+                readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/uuid@1' };
               };
               readonly chatbotId: {
@@ -6818,6 +7419,18 @@ type ContractBase = Omit<
                   readonly targetFields: readonly ['id'];
                 };
               };
+              readonly api: {
+                readonly to: {
+                  readonly namespace: 'aibot' & NamespaceId;
+                  readonly model: 'SandboxAPI';
+                };
+                readonly cardinality: 'N:1';
+                readonly nullable: false;
+                readonly on: {
+                  readonly localFields: readonly ['apiId'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
               readonly chatbot: {
                 readonly to: {
                   readonly namespace: 'aibot' & NamespaceId;
@@ -6860,6 +7473,7 @@ type ContractBase = Omit<
               readonly namespaceId: 'aibot';
               readonly fields: {
                 readonly adapterId: { readonly column: 'adapterId' };
+                readonly apiId: { readonly column: 'apiId' };
                 readonly chatbotId: { readonly column: 'chatbotId' };
                 readonly createdAt: { readonly column: 'createdAt' };
                 readonly id: { readonly column: 'id' };
@@ -7164,6 +7778,10 @@ type ContractBase = Omit<
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
                 readonly many: { readonly elementNullable: false };
               };
+              readonly apiId: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/uuid@1' };
+              };
               readonly createdAt: {
                 readonly nullable: false;
                 readonly type: {
@@ -7196,10 +7814,6 @@ type ContractBase = Omit<
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
               };
-              readonly sandboxType: {
-                readonly nullable: false;
-                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
-              };
               readonly updatedAt: {
                 readonly nullable: false;
                 readonly type: {
@@ -7210,6 +7824,18 @@ type ContractBase = Omit<
               };
             };
             readonly relations: {
+              readonly api: {
+                readonly to: {
+                  readonly namespace: 'aibot' & NamespaceId;
+                  readonly model: 'SandboxAPI';
+                };
+                readonly cardinality: 'N:1';
+                readonly nullable: false;
+                readonly on: {
+                  readonly localFields: readonly ['apiId'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
               readonly instances: {
                 readonly to: {
                   readonly namespace: 'aibot' & NamespaceId;
@@ -7251,6 +7877,7 @@ type ContractBase = Omit<
               readonly namespaceId: 'aibot';
               readonly fields: {
                 readonly allowedDomainList: { readonly column: 'allowedDomainList' };
+                readonly apiId: { readonly column: 'apiId' };
                 readonly createdAt: { readonly column: 'createdAt' };
                 readonly envs: { readonly column: 'envs' };
                 readonly id: { readonly column: 'id' };
@@ -7258,7 +7885,84 @@ type ContractBase = Omit<
                 readonly name: { readonly column: 'name' };
                 readonly organizationId: { readonly column: 'organizationId' };
                 readonly sandboxScope: { readonly column: 'sandboxScope' };
-                readonly sandboxType: { readonly column: 'sandboxType' };
+                readonly updatedAt: { readonly column: 'updatedAt' };
+              };
+            };
+          };
+          readonly SandboxAPI: {
+            readonly fields: {
+              readonly createdAt: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-string@1';
+                };
+              };
+              readonly endpoint: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly headers: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/jsonb@1' };
+              };
+              readonly id: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/uuid@1' };
+              };
+              readonly name: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly organizationId: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/uuid@1' };
+              };
+              readonly updatedAt: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-date@1';
+                  readonly typeParams: { readonly precision: 3 };
+                };
+              };
+            };
+            readonly relations: {
+              readonly organization: {
+                readonly to: {
+                  readonly namespace: 'aibot' & NamespaceId;
+                  readonly model: 'Organization';
+                };
+                readonly cardinality: 'N:1';
+                readonly nullable: false;
+                readonly on: {
+                  readonly localFields: readonly ['organizationId'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
+              readonly resource: {
+                readonly to: {
+                  readonly namespace: 'aibot' & NamespaceId;
+                  readonly model: 'ResourceBase';
+                };
+                readonly cardinality: 'N:1';
+                readonly nullable: false;
+                readonly on: {
+                  readonly localFields: readonly ['id'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
+            };
+            readonly storage: {
+              readonly table: 'SandboxAPI';
+              readonly namespaceId: 'aibot';
+              readonly fields: {
+                readonly createdAt: { readonly column: 'createdAt' };
+                readonly endpoint: { readonly column: 'endpoint' };
+                readonly headers: { readonly column: 'headers' };
+                readonly id: { readonly column: 'id' };
+                readonly name: { readonly column: 'name' };
+                readonly organizationId: { readonly column: 'organizationId' };
                 readonly updatedAt: { readonly column: 'updatedAt' };
               };
             };
@@ -7850,6 +8554,23 @@ type ContractBase = Omit<
             readonly params: { readonly precision: 3 };
           };
           readonly ref: {
+            readonly entry: 'ChatBotFileSystem';
+            readonly field: 'updatedAt';
+            readonly namespace: 'aibot';
+          };
+        },
+        {
+          readonly onCreate: {
+            readonly id: 'timestampNow';
+            readonly kind: 'generator';
+            readonly params: { readonly precision: 3 };
+          };
+          readonly onUpdate: {
+            readonly id: 'timestampNow';
+            readonly kind: 'generator';
+            readonly params: { readonly precision: 3 };
+          };
+          readonly ref: {
             readonly entry: 'ChatBotMcpServer';
             readonly field: 'updatedAt';
             readonly namespace: 'aibot';
@@ -7919,6 +8640,23 @@ type ContractBase = Omit<
           };
           readonly ref: {
             readonly entry: 'ChatTarget';
+            readonly field: 'updatedAt';
+            readonly namespace: 'aibot';
+          };
+        },
+        {
+          readonly onCreate: {
+            readonly id: 'timestampNow';
+            readonly kind: 'generator';
+            readonly params: { readonly precision: 3 };
+          };
+          readonly onUpdate: {
+            readonly id: 'timestampNow';
+            readonly kind: 'generator';
+            readonly params: { readonly precision: 3 };
+          };
+          readonly ref: {
+            readonly entry: 'FileSystemAPI';
             readonly field: 'updatedAt';
             readonly namespace: 'aibot';
           };
@@ -8130,6 +8868,23 @@ type ContractBase = Omit<
           };
           readonly ref: {
             readonly entry: 'Sandbox';
+            readonly field: 'updatedAt';
+            readonly namespace: 'aibot';
+          };
+        },
+        {
+          readonly onCreate: {
+            readonly id: 'timestampNow';
+            readonly kind: 'generator';
+            readonly params: { readonly precision: 3 };
+          };
+          readonly onUpdate: {
+            readonly id: 'timestampNow';
+            readonly kind: 'generator';
+            readonly params: { readonly precision: 3 };
+          };
+          readonly ref: {
+            readonly entry: 'SandboxAPI';
             readonly field: 'updatedAt';
             readonly namespace: 'aibot';
           };

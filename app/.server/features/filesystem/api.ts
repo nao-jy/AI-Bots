@@ -9,6 +9,10 @@ export class ApiFileSystem implements BinaryFileSystem {
   constructor(
     private readonly storage: FileSystemConfig,
     private readonly prefix = "",
+    private readonly connection?: {
+      endpoint: string;
+      headers: Record<string, string>;
+    },
   ) {}
 
   private path(path: string): string {
@@ -27,9 +31,10 @@ export class ApiFileSystem implements BinaryFileSystem {
     data: Record<string, string> = {},
     content?: Uint8Array,
   ): Promise<Response> {
-    const raw = process.env.FILESYSTEM_API_URL;
+    const raw = this.connection?.endpoint ?? process.env.FILESYSTEM_API_URL;
     const token = process.env.FILESYSTEM_API_TOKEN;
-    if (!raw || !token) throw new Error("Filesystem API is not configured");
+    if (!raw || (!this.connection && !token))
+      throw new Error("Filesystem API is not configured");
     const base = new URL(raw);
     if (
       !["http:", "https:"].includes(base.protocol) ||
@@ -40,7 +45,9 @@ export class ApiFileSystem implements BinaryFileSystem {
     )
       throw new Error("Invalid filesystem API URL");
     if (!base.pathname.endsWith("/")) base.pathname += "/";
-    const headers = new Headers({ Authorization: `Bearer ${token}` });
+    const headers = new Headers(
+      this.connection?.headers ?? { Authorization: `Bearer ${token}` },
+    );
     let body: BodyInit;
     if (content !== undefined) {
       const form = new FormData();

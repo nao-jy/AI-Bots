@@ -6,8 +6,7 @@ import type {
   TerminalSize,
 } from ".";
 
-function endpoint(): URL {
-  const raw = process.env.SANDBOX_API_URL;
+function endpoint(raw: string | undefined): URL {
   if (!raw) throw new Error("Sandbox API URL is not configured");
   const url = new URL(raw);
   if (
@@ -22,24 +21,19 @@ function endpoint(): URL {
   return url;
 }
 
-function authorization(): Record<string, string> {
-  const token = process.env.SANDBOX_API_TOKEN;
-  if (!token) throw new Error("Sandbox API token is not configured");
-  return { Authorization: `Bearer ${token}` };
-}
-
-function url(path: string): URL {
-  return new URL(path.replace(/^\/+/, ""), endpoint());
+function url(path: string, baseUrl?: string): URL {
+  return new URL(path.replace(/^\/+/, ""), endpoint(baseUrl));
 }
 
 async function request(
   path: string,
   init: RequestInit = {},
+  config: SandboxApiConfig,
 ): Promise<Response> {
   const headers = new Headers(init.headers);
-  for (const [name, value] of Object.entries(authorization()))
+  for (const [name, value] of Object.entries(config.headers))
     headers.set(name, value);
-  const response = await fetch(url(path), {
+  const response = await fetch(url(path, config.baseUrl), {
     ...init,
     headers,
     redirect: "error",
@@ -58,29 +52,8 @@ function json(method: string, body: unknown): RequestInit {
   };
 }
 
-export async function listSandboxApiProviders(): Promise<string[]> {
-  if (!process.env.SANDBOX_API_URL || !process.env.SANDBOX_API_TOKEN) return [];
-  try {
-    const response = await request("v1/providers", {
-      signal: AbortSignal.timeout(5000),
-    });
-    const data: unknown = await response.json();
-    if (
-      !data ||
-      typeof data !== "object" ||
-      !("providers" in data) ||
-      !Array.isArray(data.providers) ||
-      !data.providers.every((name: unknown) => typeof name === "string")
-    )
-      throw new Error("Invalid sandbox provider list");
-    return data.providers;
-  } catch {
-    return [];
-  }
-}
-
 function terminalSocket(
-  provider: string,
+  config: SandboxApiConfig,
   instanceId: string,
   envs: Record<string, string>,
   allowedDomains: string[],
@@ -88,11 +61,11 @@ function terminalSocket(
   onData: (data: Uint8Array) => void,
   onExit: (exitCode?: number) => void,
 ): Promise<SandboxTerminalSession> {
-  const target = url("v1/terminals");
+  const target = url("v1/terminals", config.baseUrl);
   target.protocol = target.protocol === "https:" ? "wss:" : "ws:";
   return new Promise((resolve, reject) => {
     const ws = new WebSocket(target, {
-      headers: authorization(),
+      headers: config.headers,
       handshakeTimeout: 15000,
       maxPayload: 1024 * 1024,
     });
@@ -112,7 +85,6 @@ function terminalSocket(
       ws.send(
         JSON.stringify({
           type: "open",
-          provider,
           instanceId,
           envs,
           allowedDomains,
@@ -204,13 +176,22 @@ function terminalSocket(
   });
 }
 
-export function createSandboxApiProvider(provider: string): Sandbox {
+export interface SandboxApiConfig {
+  baseUrl: string;
+  headers: Record<string, string>;
+}
+
+export function createSandboxApiProvider(
+  provider: string,
+  connection: SandboxApiConfig,
+): Sandbox {
+  const send = (path: string, init: RequestInit = {}) =>
+    request(path, init, connection);
   const instancePath = (instanceId: string) =>
     `v1/instances/${encodeURIComponent(instanceId)}`;
   return {
     sandboxType: provider,
-    isAvailable: async () =>
-      (await listSandboxApiProviders()).includes(provider),
+    isAvailable: async () => true,
     executeCommandWithOpenNetwork: async (
       instanceId,
       envs,
@@ -218,9 +199,9 @@ export function createSandboxApiProvider(provider: string): Sandbox {
       command,
     ) =>
       (
-        await request(
+        await send(
           `${instancePath(instanceId)}/commands/open-network`,
-          json("POST", { provider, envs, allowedDomains, command }),
+          json("POST", { envs, allowedDomains, command }),
         )
       ).json(),
     createTerminalSession: (
@@ -232,7 +213,7 @@ export function createSandboxApiProvider(provider: string): Sandbox {
       onExit,
     ) =>
       terminalSocket(
-        provider,
+        connection,
         instanceId,
         envs,
         allowedDomains,
@@ -244,14 +225,14 @@ export function createSandboxApiProvider(provider: string): Sandbox {
       let actualInstanceId = instanceId;
       let createdInstanceId: string | null = null;
       if (actualInstanceId) {
-        await request(
+        await send(
           `${instancePath(actualInstanceId)}/configure`,
-          json("POST", { provider, envs, allowedDomains }),
+          json("POST", { envs, allowedDomains }),
         );
       } else {
-        const response = await request(
+        const response = await send(
           "v1/instances",
-          json("POST", { provider, envs, allowedDomains, initCommands }),
+          json("POST", { envs, allowedDomains, initCommands }),
         );
         const result: unknown = await response.json();
         if (
@@ -267,18 +248,18 @@ export function createSandboxApiProvider(provider: string): Sandbox {
       }
       const path = instancePath(actualInstanceId);
       const file = (filePath: string) =>
-        `${path}/file?${new URLSearchParams({ provider, path: filePath })}`;
+        `${path}/file?${new URLSearchParams({ path: filePath })}`;
       const sandbox: BashSandboxExtended = {
         executeCommand: async (command) =>
           (
-            await request(
+            await send(
               `${path}/commands`,
-              json("POST", { provider, envs, allowedDomains, command }),
+              json("POST", { envs, allowedDomains, command }),
             )
           ).json(),
-        readFile: async (filePath) => (await request(file(filePath))).text(),
+        readFile: async (filePath) => (await send(file(filePath))).text(),
         readFileBinaryStream: async function* (filePath) {
-          const response = await request(file(filePath));
+          const response = await send(file(filePath));
           if (!response.body) return;
           const reader = response.body.getReader();
           try {
@@ -297,7 +278,7 @@ export function createSandboxApiProvider(provider: string): Sandbox {
               typeof item.content === "string"
                 ? Buffer.from(item.content)
                 : Buffer.from(item.content);
-            await request(file(item.path), {
+            await send(file(item.path), {
               method: "PUT",
               headers: { "Content-Type": "application/octet-stream" },
               body: bytes,
@@ -308,7 +289,7 @@ export function createSandboxApiProvider(provider: string): Sandbox {
       return { createdInstanceId, sandbox };
     },
     destroySandbox: async (instanceId) => {
-      await request(instancePath(instanceId), json("DELETE", { provider }));
+      await send(instancePath(instanceId), { method: "DELETE" });
     },
   };
 }

@@ -15,6 +15,7 @@ export async function getAppSettings(organizationId?: string) {
     settings?.minimumPasswordStrength ?? DEFAULT_MINIMUM_PASSWORD_STRENGTH;
   return {
     organizationName: settings?.name ?? "",
+    temporaryFileSystemApiId: settings?.temporaryFileSystemApiId ?? "",
     mfaEnabled: settings?.mfaEnabled ?? false,
     sessionDurationSeconds:
       sessionDurationSeconds &&
