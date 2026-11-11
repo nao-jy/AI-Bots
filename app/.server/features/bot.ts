@@ -49,8 +49,6 @@ import {
   type ExecutionSource,
 } from "../repository/executions";
 
-const MAX_AGENT_STEPS = 8;
-
 function asRecord(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value)
     ? (value as Record<string, unknown>)
@@ -448,6 +446,8 @@ async function processBotMessage(
       },
     ];
     phase = "processing";
+    let maxStepsReached = false;
+    const stepLimit = stepCountIs(chatbot.maxAgentSteps);
     const result = await generateText({
       model: modelInfo.model,
       providerOptions: modelInfo.options,
@@ -462,7 +462,10 @@ async function processBotMessage(
         .join("\n\n"),
       prompt: inputMessages,
       tools,
-      stopWhen: stepCountIs(MAX_AGENT_STEPS),
+      stopWhen: (context) => {
+        maxStepsReached = stepLimit(context) === true;
+        return maxStepsReached;
+      },
       onStepFinish: ({ toolResults }) => {
         if (
           toolResults.some(
@@ -488,13 +491,15 @@ async function processBotMessage(
       appLogger.error(`Failed to insert usage for chatbot ${botId}`, error);
     }
 
-    const postUsageExceededMessage = await getExceededRateLimit(
-      chatbot.organizationId,
-      chatbot.id,
-      agent.id,
-      agent.providerId,
-      thread.id,
-    );
+    const postUsageExceededMessage = maxStepsReached
+      ? null
+      : await getExceededRateLimit(
+          chatbot.organizationId,
+          chatbot.id,
+          agent.id,
+          agent.providerId,
+          thread.id,
+        );
     if (postUsageExceededMessage && !replied) {
       phase = "delivery";
       await thread.post(postUsageExceededMessage);
@@ -529,6 +534,31 @@ async function processBotMessage(
         providerName: agent.provider.providerName,
       },
     });
+
+    if (maxStepsReached) {
+      outcome = { status: "failed", errorCode: "max_agent_steps", usageId };
+      if (!replied && result.text.trim()) {
+        try {
+          await thread.post(result.text);
+        } catch (error) {
+          appLogger.error(
+            `Failed to post partial response for execution ${executionId}`,
+            error,
+          );
+        }
+      }
+      try {
+        await thread.post(
+          t("server.maxAgentStepsReached", { 0: chatbot.maxAgentSteps }),
+        );
+      } catch (error) {
+        appLogger.error(
+          `Failed to post step limit notice for execution ${executionId}`,
+          error,
+        );
+      }
+      return outcome;
+    }
 
     if (!replied && result.text.trim()) {
       phase = "delivery";

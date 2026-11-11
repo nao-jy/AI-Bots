@@ -780,7 +780,9 @@ export function EntityPageDialogs({
                       }
                       label={field.label}
                       placeholder={field.placeholder}
-                      defaultValue={String(selected?.[field.key] ?? "")}
+                      defaultValue={String(
+                        selected?.[field.key] ?? field.defaultValue ?? "",
+                      )}
                       required={field.required}
                     />
                   )}

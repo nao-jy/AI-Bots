@@ -411,6 +411,10 @@ export const en = {
     mcpContextSchemaUnavailable: "Could not load the MCP context schema.",
     botNameRequired: "Enter a bot name.",
     invalidMemoryConfig: "Select a memory setting.",
+    invalidMaxAgentSteps:
+      "Enter a whole number between 1 and 2147483647 for the maximum agent steps.",
+    maxAgentStepsReached:
+      "The agent stopped because it reached the maximum number of steps ({{0}}). The task may be incomplete.",
     agentRequired: "Select an agent.",
     selectedAgentNotFound: "The selected agent was not found.",
     selectedAgentAlreadyUsed:
@@ -678,6 +682,7 @@ export const en = {
         rate_limited: "The configured rate limit was reached.",
         bot_disabled: "The bot was disabled at the scheduled time.",
         empty_response: "The model returned no response.",
+        max_agent_steps: "The agent reached its maximum number of steps.",
         unknown: "Check the server log for details.",
       },
     },
@@ -735,6 +740,7 @@ export const en = {
       failureMessageLabel: "Failure message",
       failureMessagePlaceholder: "Sorry, failed to generate answer.",
       historyMessageCountLabel: "Number of messages to include",
+      maxAgentStepsLabel: "Maximum agent steps",
       zeroHistoryMessages: "0",
       memoryConfigLabel: "Memory",
       memoryConfigNouseOption: "Do not use memory",

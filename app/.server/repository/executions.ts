@@ -12,6 +12,7 @@ export type ExecutionErrorCode =
   | "adapter_error"
   | "rate_limited"
   | "bot_disabled"
+  | "max_agent_steps"
   | "empty_response";
 
 const errorSummaries: Record<ExecutionErrorCode, string> = {
@@ -21,6 +22,7 @@ const errorSummaries: Record<ExecutionErrorCode, string> = {
   adapter_error: "The chat adapter could not be initialized.",
   rate_limited: "The configured rate limit was reached.",
   bot_disabled: "The chatbot was disabled at the scheduled time.",
+  max_agent_steps: "The agent reached its maximum number of steps.",
   empty_response: "The model returned no response.",
 };
 

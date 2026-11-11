@@ -177,6 +177,7 @@ export async function listBots(
           ),
           instruction: bot.instruction,
           lookbackMessages: bot.lookbackMessages,
+          maxAgentSteps: bot.maxAgentSteps,
           memoryConfig: bot.memoryConfig,
           onFailedMessage: bot.onFailedMessage,
           fileSystemId:
@@ -282,6 +283,15 @@ export async function saveBot(
   const lookbackMessages = Number(
     String(values.get("lookbackMessages") ?? "").trim(),
   );
+  const maxAgentStepsValue = String(values.get("maxAgentSteps") ?? "").trim();
+  const maxAgentSteps = Number(maxAgentStepsValue);
+  if (
+    !maxAgentStepsValue ||
+    !Number.isInteger(maxAgentSteps) ||
+    maxAgentSteps < 1 ||
+    maxAgentSteps > 2147483647
+  )
+    return { error: "server.invalidMaxAgentSteps" };
   const memoryConfig = String(values.get("memoryConfig") ?? "");
   if (!isMemoryConfig(memoryConfig))
     return { error: "server.invalidMemoryConfig" };
@@ -511,6 +521,7 @@ export async function saveBot(
         description: description || null,
         instruction: instruction,
         lookbackMessages: lookbackMessages,
+        maxAgentSteps,
         memoryConfig,
         onFailedMessage: onFailedMessage,
         agentId,
@@ -542,6 +553,7 @@ export async function saveBot(
         instruction: instruction,
         onFailedMessage: onFailedMessage,
         lookbackMessages: lookbackMessages,
+        maxAgentSteps,
         memoryConfig,
         agentId,
       });

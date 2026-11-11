@@ -167,6 +167,7 @@ export const ja = {
         rate_limited: "利用量の上限に達しました。",
         bot_disabled: "実行時にボットが無効でした。",
         empty_response: "モデルから応答がありませんでした。",
+        max_agent_steps: "エージェントのステップ数が上限に達しました。",
         unknown: "詳細はサーバーログを確認してください。",
       },
     },
@@ -226,6 +227,7 @@ export const ja = {
       failureMessageLabel: "失敗時メッセージ",
       failureMessagePlaceholder: "Sorry, failed to generate answer.",
       historyMessageCountLabel: "見返すメッセージ数",
+      maxAgentStepsLabel: "エージェントの最大ステップ数",
       zeroHistoryMessages: "0",
       memoryConfigLabel: "メモリ",
       memoryConfigNouseOption: "使用しない",
@@ -962,6 +964,10 @@ export const ja = {
       "MCPコンテキストのスキーマを取得できませんでした。",
     botNameRequired: "ボット名を入力してください。",
     invalidMemoryConfig: "メモリ設定を選択してください。",
+    invalidMaxAgentSteps:
+      "最大ステップ数には1から2147483647までの整数を入力してください。",
+    maxAgentStepsReached:
+      "エージェントのステップ数が上限（{{0}}回）に達したため、処理を中断しました。作業が完了していない可能性があります。",
     agentRequired: "AIエージェントを選択してください。",
     selectedAgentNotFound: "選択したAIエージェントが見つかりません。",
     selectedAgentAlreadyUsed:

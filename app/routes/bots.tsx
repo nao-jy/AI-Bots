@@ -78,6 +78,13 @@ const page: Omit<EntityPageDefinition, "records"> = {
       placeholder: "pages.bots.zeroHistoryMessages",
     },
     {
+      key: "maxAgentSteps",
+      label: "pages.bots.maxAgentStepsLabel",
+      type: "number",
+      defaultValue: "8",
+      required: true,
+    },
+    {
       key: "memoryConfig",
       label: "pages.bots.memoryConfigLabel",
       type: "select",

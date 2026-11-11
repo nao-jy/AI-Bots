@@ -23,7 +23,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'736fa1b716cea356dc90b82d5aaafb1b8b892f97b91e3dccf2938f5367682359'>;
+  StorageHashBase<'57ad65998e079efb63f0c5e10fb003ba312c33cf2a1eb8913a3e52a2a1b928f2'>;
 export type ExecutionHash =
   ExecutionHashBase<'c710fde4219b5316eaf5f1849710427f86ea616903d61dd2302201d85f683c35'>;
 export type ProfileHash =
@@ -510,6 +510,7 @@ export namespace Models {
     instruction: FieldOutputTypes['aibot']['ChatBot']['instruction'];
     isEnabled: FieldOutputTypes['aibot']['ChatBot']['isEnabled'];
     lookbackMessages: FieldOutputTypes['aibot']['ChatBot']['lookbackMessages'];
+    maxAgentSteps: FieldOutputTypes['aibot']['ChatBot']['maxAgentSteps'];
     memoryConfig: FieldOutputTypes['aibot']['ChatBot']['memoryConfig'];
     name: FieldOutputTypes['aibot']['ChatBot']['name'];
     onFailedMessage: FieldOutputTypes['aibot']['ChatBot']['onFailedMessage'];
@@ -1760,6 +1761,16 @@ type ContractBase = Omit<
                   readonly dataType: 'pg/int4';
                   readonly codecId: 'pg/int4@1';
                   readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly maxAgentSteps: {
+                  readonly dataType: 'pg/int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/int4@1', 8>;
+                  };
                   readonly many: false;
                 };
                 readonly memoryConfig: {
@@ -5526,6 +5537,10 @@ type ContractBase = Omit<
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
               };
+              readonly maxAgentSteps: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
               readonly memoryConfig: {
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
@@ -5666,6 +5681,7 @@ type ContractBase = Omit<
                 readonly instruction: { readonly column: 'instruction' };
                 readonly isEnabled: { readonly column: 'isEnabled' };
                 readonly lookbackMessages: { readonly column: 'lookbackMessages' };
+                readonly maxAgentSteps: { readonly column: 'maxAgentSteps' };
                 readonly memoryConfig: { readonly column: 'memoryConfig' };
                 readonly name: { readonly column: 'name' };
                 readonly onFailedMessage: { readonly column: 'onFailedMessage' };

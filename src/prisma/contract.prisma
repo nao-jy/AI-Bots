@@ -203,6 +203,7 @@ namespace aibot {
     instruction            String
     onFailedMessage        String
     lookbackMessages       Int
+    maxAgentSteps          Int                     @default(8)
     memoryConfig           MemoryConfig            @default(nouse)
     isEnabled              Boolean                 @default(true)
     agent                  AgentDefinition?        @relation(fields: [agentId], references: [id], onDelete: SetNull)
