@@ -6,10 +6,6 @@ services:
     networks:
       - default
       - bot-tools
-  opensandbox-server:
-    networks:
-      - default
-      - bot-tools
 
 networks:
   bot-tools:

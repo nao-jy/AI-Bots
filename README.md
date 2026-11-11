@@ -56,7 +56,7 @@ The file system interface backs bot memory and temporary file storage. Chat atta
 - PostgreSQL 15 or later
 - npm
 
-The provided Compose configuration uses PostgreSQL 16. OpenSandbox is also defined there as an optional integration.
+The provided Compose configuration uses PostgreSQL 16.
 
 ## Getting started
 
@@ -135,7 +135,6 @@ The built-in email provider sends through an SMTP relay. Once configured, it can
 | `PUBLIC_APP_URL`             | Optional  | Public application URL used for webhook URLs, email verification links, and temporary file download links. If unset, the request origin is used.                                                        |
 | `SANDBOX_API_URL`           | For sandbox | URL of the separate Sandbox API service. |
 | `SANDBOX_API_TOKEN`         | For sandbox | Bearer token shared with the Sandbox API service. |
-| `OPEN_SANDBOX_API_KEY`       | Optional  | API key passed to the OpenSandbox server in the included Compose setup.                                                                                                                                 |
 | `SMTP_RELAY_HOST`            | For email | SMTP relay host.                                                                                                                                                                                        |
 | `SMTP_RELAY_PORT`            | For email | SMTP relay port.                                                                                                                                                                                        |
 | `SMTP_RELAY_SECURE`          | For email | Set to `true` for TLS; when `false`, STARTTLS is required.                                                                                                                                              |
@@ -149,7 +148,7 @@ The built-in email provider sends through an SMTP relay. Once configured, it can
 | `MEMORY_STORAGE_CONFIG`, `TEMP_FILE_STORAGE_CONFIG` | Optional | OpenDAL configuration as JSON objects with string values. For `fs`, `root` is relative to the API server's allowed root. |
 | `LOG_DIR`                    | Optional  | Log directory; defaults to `logs`.                                                                                                                                                                      |
 
-`infra/compose.yaml` defines PostgreSQL and OpenSandbox. From the repository root, start the optional services using the same `.env.dev` file:
+`infra/compose.yaml` defines PostgreSQL. From the repository root, start it using the same `.env.dev` file:
 
 ```bash
 docker compose --env-file .env.dev -f infra/compose.yaml up -d
@@ -173,7 +172,7 @@ npm run start
 
 #### Production Compose
 
-Configure `.env.prd` using [`.env.prd.example`](./.env.prd.example). If `.env.prd` already exists, preserve it and check `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `DATABASE_URL` with matching credentials, `SANDBOX_API_TOKEN`, and `OPEN_SANDBOX_API_KEY`. The `DATABASE_URL` host and port are `postgres:5432`. Percent-encode reserved characters in database credentials in the URL. Configure the sample `SMTP_RELAY_*` settings to use email verification and password reset.
+Configure `.env.prd` using [`.env.prd.example`](./.env.prd.example). If `.env.prd` already exists, preserve it and check `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `DATABASE_URL` with matching credentials, and `SANDBOX_API_TOKEN`. The `DATABASE_URL` host and port are `postgres:5432`. Percent-encode reserved characters in database credentials in the URL. Configure the sample `SMTP_RELAY_*` settings to use email verification and password reset.
 
 For a new production environment, use a dedicated `CREDENTIALS_ENCRYPTION_KEY` and Cloudflare Tunnel. Configure the Tunnel's public hostname to reach `http://127.0.0.1:3001` inside the container. Use separate development and production Tunnels: running both connectors on the same Tunnel can route requests to either environment. Restrict access with Cloudflare Access or an equivalent policy until the initial administrator is created.
 
@@ -185,7 +184,7 @@ docker compose --env-file .env.prd -f infra/compose.production.yaml up -d --buil
 
 Run `run --rm --build migrate` before starting a new application version when upgrading. View application logs with `docker compose --env-file .env.prd -f infra/compose.production.yaml logs -f app`.
 
-The production Compose project creates separate volumes from development. PostgreSQL is not published to the host; containers connect to `postgres:5432`. OpenSandbox also uses the internal Compose network. Logs, memories, and temporary files use a production-specific volume. To access PostgreSQL directly, connect from inside its container:
+The production Compose project creates separate volumes from development. PostgreSQL is not published to the host; containers connect to `postgres:5432`. Logs, memories, and temporary files use a production-specific volume. To access PostgreSQL directly, connect from inside its container:
 
 ```bash
 docker compose --env-file .env.prd -f infra/compose.production.yaml \

@@ -58,7 +58,7 @@ AI Botsは、SlackやMicrosoft Teamsなどで動くAIボットを作り、運用
 - PostgreSQL 15 以降
 - npm
 
-同梱のCompose設定ではPostgreSQL 16を使用します。オプションの連携先としてOpenSandboxも定義されています。
+同梱のCompose設定ではPostgreSQL 16を使用します。
 
 ## セットアップ
 
@@ -137,7 +137,6 @@ OAuthクライアントを管理し、連携サービスのアカウントを認
 | `PUBLIC_APP_URL`             | 任意         | Webhook URL、メール検証リンク、一時ファイルのダウンロードリンクの生成に使う公開アプリURL。未設定時はリクエストのオリジンを使用します。                                                                 |
 | `SANDBOX_API_URL`           | Sandbox利用時 | 別サービスのSandbox APIのURL。 |
 | `SANDBOX_API_TOKEN`         | Sandbox利用時 | Sandbox APIと共有するBearerトークン。 |
-| `OPEN_SANDBOX_API_KEY`       | 任意         | 同梱Compose設定でOpenSandboxサーバーに渡すAPIキー。                                                                                                                                                    |
 | `SMTP_RELAY_HOST`            | メール利用時 | SMTPリレーのホスト名。                                                                                                                                                                                 |
 | `SMTP_RELAY_PORT`            | メール利用時 | SMTPリレーのポート番号。                                                                                                                                                                               |
 | `SMTP_RELAY_SECURE`          | メール利用時 | `true` でTLS接続を使用。`false` の場合はSTARTTLSを要求します。                                                                                                                                         |
@@ -151,7 +150,7 @@ OAuthクライアントを管理し、連携サービスのアカウントを認
 | `MEMORY_STORAGE_CONFIG`, `TEMP_FILE_STORAGE_CONFIG` | 任意 | OpenDAL の設定を文字列値の JSON オブジェクトで指定。`fs` の `root` は API サーバーの基準ディレクトリからの相対パス。 |
 | `LOG_DIR`                    | 任意         | ログ出力先。既定値は `logs`。                                                                                                                                                                          |
 
-`infra/compose.yaml` にはPostgreSQL、OpenSandboxが定義されています。オプションのサービスも起動する場合は、リポジトリのルートから同じ `.env.dev` を指定して実行します。
+`infra/compose.yaml` にはPostgreSQLが定義されています。起動するには、リポジトリのルートから同じ `.env.dev` を指定して実行します。
 
 ```bash
 docker compose --env-file .env.dev -f infra/compose.yaml up -d
@@ -175,7 +174,7 @@ npm run start
 
 #### 本番用 Compose
 
-[`.env.prd.example`](./.env.prd.example) を参考に `.env.prd` を設定します。既に `.env.prd` がある場合は上書きせず、`POSTGRES_USER`、`POSTGRES_PASSWORD`、`POSTGRES_DB` と、同じ認証情報を含む `DATABASE_URL`、`SANDBOX_API_TOKEN`、`OPEN_SANDBOX_API_KEY` を確認してください。`DATABASE_URL` のホストは `postgres`、ポートは `5432` です。パスワードにURLの予約文字を使う場合は接続URL内でパーセントエンコードしてください。メール認証やパスワード再設定を使う場合は、サンプルの `SMTP_RELAY_*` も設定してください。
+[`.env.prd.example`](./.env.prd.example) を参考に `.env.prd` を設定します。既に `.env.prd` がある場合は上書きせず、`POSTGRES_USER`、`POSTGRES_PASSWORD`、`POSTGRES_DB` と、同じ認証情報を含む `DATABASE_URL`、`SANDBOX_API_TOKEN` を確認してください。`DATABASE_URL` のホストは `postgres`、ポートは `5432` です。パスワードにURLの予約文字を使う場合は接続URL内でパーセントエンコードしてください。メール認証やパスワード再設定を使う場合は、サンプルの `SMTP_RELAY_*` も設定してください。
 
 新しい本番環境では、本番専用の `CREDENTIALS_ENCRYPTION_KEY` とCloudflare Tunnelを設定します。Tunnelの公開ホスト名はコンテナ内の `http://127.0.0.1:3001` に接続します。開発用と同じTunnelを同時に起動すると異なる環境に振り分けられるため、別のTunnelを使ってください。初回管理者を作成するまではCloudflare Accessなどでアクセスを制限してください。
 
@@ -187,7 +186,7 @@ docker compose --env-file .env.prd -f infra/compose.production.yaml up -d --buil
 
 更新時もアプリの新バージョンを起動する前に `run --rm --build migrate` を実行してください。アプリのログは `docker compose --env-file .env.prd -f infra/compose.production.yaml logs -f app` で確認できます。
 
-本番Composeは開発環境と別のボリュームを作成します。PostgreSQLのポートはホストに公開せず、コンテナ間では `postgres:5432` を使います。OpenSandboxもComposeの内部ネットワークに接続されます。ログ、メモリ、一時ファイルも本番専用のボリュームに保存されます。PostgreSQLを直接操作する場合は、次のコマンドでコンテナ内から接続できます。
+本番Composeは開発環境と別のボリュームを作成します。PostgreSQLのポートはホストに公開せず、コンテナ間では `postgres:5432` を使います。ログ、メモリ、一時ファイルも本番専用のボリュームに保存されます。PostgreSQLを直接操作する場合は、次のコマンドでコンテナ内から接続できます。
 
 ```bash
 docker compose --env-file .env.prd -f infra/compose.production.yaml \
