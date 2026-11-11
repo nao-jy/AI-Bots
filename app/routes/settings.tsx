@@ -233,6 +233,16 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
                   <Button type="submit" mt="sm">
                     {t("pages.settings.save")}
                   </Button>
+                  {kind === "filesystem" && (
+                    <Button
+                      component="a"
+                      href={`/files?api=${encodeURIComponent(api.id)}`}
+                      variant="subtle"
+                      mt="sm"
+                    >
+                      {t("navigation.files")}
+                    </Button>
+                  )}
                 </Form>
                 <Form method="post">
                   <input type="hidden" name="_intent" value="delete-api" />

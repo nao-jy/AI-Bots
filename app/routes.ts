@@ -18,6 +18,7 @@ export default [
     route("users", "routes/users.tsx"),
     route("groups", "routes/groups.tsx"),
     route("settings", "routes/settings.tsx"),
+    route("files", "routes/files.tsx"),
   ]),
   route("oauth/start", "routes/oauth-start.tsx"),
   route("oauth/complete", "routes/oauth-complete.tsx"),
@@ -32,6 +33,7 @@ export default [
   route("api/webhooks/:botId/:adapterId", "routes/webhook.tsx"),
   route("api/sandbox-terminals/:terminalId", "routes/sandbox-terminal.tsx"),
   route("api/resource-grants", "routes/api.resource-grants.ts"),
+  route("api/admin/files/content", "routes/api.admin.files.content.ts"),
   route("api/files/:apiId/:token", "routes/api.files.$apiId.$token.ts"),
   route("api/files/:token", "routes/api.files.$token.ts"),
 ] satisfies RouteConfig;

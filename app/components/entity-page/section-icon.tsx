@@ -10,6 +10,7 @@ import {
   HardDrivesIcon,
   ClockIcon,
   GearIcon,
+  FolderOpenIcon,
   GaugeIcon,
   ChartLineIcon,
 } from "@phosphor-icons/react";
@@ -57,6 +58,8 @@ export function SectionIcon({
       return <ClockIcon {...props} />;
     case "executions":
       return <ChartLineIcon {...props} />;
+    case "files":
+      return <FolderOpenIcon {...props} />;
     case "settings":
       return <GearIcon {...props} />;
   }

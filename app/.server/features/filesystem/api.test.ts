@@ -84,6 +84,61 @@ describe("filesystem API client", () => {
     );
   });
 
+  it("requests immediate directory entries and rejects paths outside the directory", async () => {
+    const fetch = vi
+      .fn()
+      .mockResolvedValueOnce(
+        Response.json({
+          entries: [
+            {
+              path: "folder/empty/",
+              type: "directory",
+              size: null,
+              updatedAt: null,
+            },
+            {
+              path: "folder/a.txt",
+              type: "file",
+              size: 3,
+              updatedAt: "2026-01-01T00:00:00Z",
+            },
+          ],
+        }),
+      )
+      .mockResolvedValueOnce(
+        Response.json({
+          entries: [
+            {
+              path: "folder/child/escape.txt",
+              type: "file",
+              size: 2,
+              updatedAt: null,
+            },
+          ],
+        }),
+      );
+    vi.stubGlobal("fetch", fetch);
+    const context = { service: "fs", config: { root: "" } };
+    const fs = new ApiFileSystem(context, "", {
+      endpoint: "http://files.test/api",
+      headers: { Authorization: "Bearer secret" },
+    });
+    expect(await fs.listDirectory("folder/")).toHaveLength(2);
+    const [target, options] = fetch.mock.calls[0] as [URL, RequestInit];
+    expect(target.pathname).toBe("/api/v1/list");
+    expect(JSON.parse(options.body as string)).toEqual({
+      context,
+      prefix: "folder/",
+      mode: "directory",
+    });
+    await expect(fs.listDirectory("folder/")).rejects.toThrow(
+      "Invalid filesystem API response",
+    );
+    await expect(fs.listDirectory("../")).rejects.toThrow(
+      "Invalid storage path",
+    );
+  });
+
   it("treats a missing file as null and propagates other errors", async () => {
     vi.stubEnv("FILESYSTEM_API_URL", "http://files.example");
     vi.stubEnv("FILESYSTEM_API_TOKEN", "secret");

@@ -47,7 +47,8 @@ export type EntitySection =
   | "sandboxes"
   | "schedules"
   | "executions"
-  | "settings";
+  | "settings"
+  | "files";
 
 export type EntityColumn = {
   key: string;

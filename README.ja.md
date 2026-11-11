@@ -156,7 +156,7 @@ docker compose --env-file .env.dev -f infra/compose.yaml up -d
 
 Composeの任意設定は [`.env.example`](./.env.example) を参照してください。PostgreSQLの認証情報を変更した場合は `DATABASE_URL` も合わせて変更してください。既存のデータベースボリュームには元の認証情報が保持されます。
 
-各連携サービスの認証情報や設定はワークスペース上で設定してください。管理者が設定画面でSandbox APIとFilesystem APIのエンドポイントおよびヘッダーを登録します。同梱APIのURLは `http://bot-tools/sandbox` と `http://bot-tools/filesystem` です。Sandbox APIはサンドボックス作成時に、Filesystem APIはボットのメモリ用または組織の一時ファイル保存先として選択します。Filesystemのcontextとヘッダーは暗号化して保存します。一時ファイルの保存先を変更した場合、旧URLの期限が切れるまで旧APIを残してください。同梱のOpenSandboxとの接続手順はbot_toolsのREADMEを参照してください。E2Bの直接連携は削除しました。
+各連携サービスの認証情報や設定はワークスペース上で設定してください。管理者が設定画面でSandbox APIとFilesystem APIのエンドポイントおよびヘッダーを登録します。同梱APIのURLは `http://bot-tools/sandbox` と `http://bot-tools/filesystem` です。Sandbox APIはサンドボックス作成時に、Filesystem APIはボットのメモリ用または組織の一時ファイル保存先として選択します。Filesystemのcontextとヘッダーは暗号化して保存します。管理者は「ファイル」画面で登録済みストレージを閲覧できます。ファイル画面を使うには `POST /v1/list` の `directory` モード に対応したbot_toolsへの更新が必要です。一時ファイルの保存先を変更した場合、旧URLの期限が切れるまで旧APIを残してください。同梱のOpenSandboxとの接続手順はbot_toolsのREADMEを参照してください。E2Bの直接連携は削除しました。
 
 API設定のマイグレーションは運用前のSandboxと永続インスタンスのDBレコードを削除します。既存のリモートインスタンスは終了しません。このバージョンの起動前にマイグレーションを実行し、設定画面でAPIを登録してください。
 

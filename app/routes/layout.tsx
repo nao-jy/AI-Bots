@@ -69,7 +69,7 @@ const navigationGroups = [
   {
     id: "admin",
     labelKey: "navigation.groupAdmin",
-    items: ["users", "groups", "settings"],
+    items: ["users", "groups", "files", "settings"],
   },
 ] as const;
 
@@ -92,6 +92,11 @@ export async function loader({ request }: Route.LoaderArgs) {
             path: "/groups",
             id: "groups" as const,
             labelKey: "navigation.groups",
+          },
+          {
+            path: "/files",
+            id: "files" as const,
+            labelKey: "navigation.files",
           },
           {
             path: "/settings",

@@ -5,6 +5,13 @@ export interface FileSystemConfig {
   config: Record<string, string>;
 }
 
+export interface DirectoryEntry {
+  path: string;
+  type: "file" | "directory";
+  size: number | null;
+  updatedAt: string | null;
+}
+
 export class ApiFileSystem implements BinaryFileSystem {
   constructor(
     private readonly storage: FileSystemConfig,
@@ -75,6 +82,70 @@ export class ApiFileSystem implements BinaryFileSystem {
         `Filesystem API request failed (HTTP ${response.status})`,
       );
     return response;
+  }
+
+  async openRead(path: string): Promise<Response> {
+    return this.request("read", { path: this.path(path) });
+  }
+
+  async listDirectory(path: string): Promise<DirectoryEntry[]> {
+    if (path && !path.endsWith("/")) throw new Error("Invalid directory path");
+    const target = this.path(path);
+    const response = await this.request("list", {
+      prefix: target,
+      mode: "directory",
+    });
+    const value: unknown = await response.json();
+    if (
+      !value ||
+      typeof value !== "object" ||
+      !("entries" in value) ||
+      !Array.isArray(value.entries)
+    )
+      throw new Error("Invalid filesystem API response");
+    return value.entries.map((entry: unknown) => {
+      if (!entry || typeof entry !== "object")
+        throw new Error("Invalid filesystem API response");
+      const item = entry as Record<string, unknown>;
+      if (
+        typeof item.path !== "string" ||
+        !item.path.startsWith(target) ||
+        (item.type !== "file" && item.type !== "directory") ||
+        !(
+          item.size === null ||
+          (typeof item.size === "number" &&
+            Number.isFinite(item.size) &&
+            item.size >= 0)
+        ) ||
+        !(
+          item.updatedAt === null ||
+          (typeof item.updatedAt === "string" &&
+            Number.isFinite(Date.parse(item.updatedAt)))
+        )
+      )
+        throw new Error("Invalid filesystem API response");
+      const relative = item.path.slice(target.length);
+      const name =
+        item.type === "directory" && relative.endsWith("/")
+          ? relative.slice(0, -1)
+          : relative;
+      if (
+        !name ||
+        name.includes("/") ||
+        name === "." ||
+        name === ".." ||
+        name.includes("\\") ||
+        name.includes("\0") ||
+        (item.type === "directory" && !relative.endsWith("/"))
+      )
+        throw new Error("Invalid filesystem API response");
+      return {
+        path: this.prefix ? item.path.slice(this.prefix.length + 1) : item.path,
+        type: item.type,
+        size: item.size,
+        updatedAt: item.updatedAt,
+      } as DirectoryEntry;
+    });
   }
 
   async read(path: string): Promise<string | null> {
