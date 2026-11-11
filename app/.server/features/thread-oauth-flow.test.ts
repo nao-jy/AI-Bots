@@ -42,7 +42,7 @@ const scope = {
   oauthClientId: "client",
   chatbotId: "bot",
   adapterId: "adapter",
-  threadId: "thread",
+  authorId: "author",
 };
 
 describe("thread OAuth browser flow", () => {

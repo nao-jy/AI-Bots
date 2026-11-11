@@ -6,10 +6,10 @@ export type ThreadOAuthScope = {
   oauthClientId: string;
   chatbotId: string;
   adapterId: string;
-  threadId: string;
+  authorId: string;
 };
 
-/** Resolve only credentials belonging to the exact organization and thread. */
+/** Resolve only credentials belonging to the invoking user. */
 export async function getThreadOAuthAuthentication(scope: ThreadOAuthScope) {
   const connection = await db.orm.aibot.ThreadOAuthConnection.first(scope);
   if (!connection) return null;

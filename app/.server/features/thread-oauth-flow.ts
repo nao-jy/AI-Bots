@@ -44,7 +44,7 @@ function validLaunch(value: unknown): value is Launch {
       item.scope.oauthClientId,
       item.scope.chatbotId,
       item.scope.adapterId,
-      item.scope.threadId,
+      item.scope.authorId,
     ].every((part) => typeof part === "string" && part.length > 0)
   );
 }

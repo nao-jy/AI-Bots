@@ -5,6 +5,8 @@ const mocks = vi.hoisted(() => ({
   adapter: vi.fn(),
   client: vi.fn(),
   mcp: vi.fn(),
+  connection: vi.fn(),
+  authentication: vi.fn(),
 }));
 vi.mock("./db", () => ({
   db: {
@@ -14,19 +16,21 @@ vi.mock("./db", () => ({
         ChatBotAdapter: { first: mocks.adapter },
         OAuthClient: { first: mocks.client },
         ChatBotMcpServer: { first: mocks.mcp },
+        ThreadOAuthConnection: { first: mocks.connection },
+        OAuthAuthentication: { first: mocks.authentication },
       },
     },
   },
 }));
 
-import { isThreadOAuthAllowed } from "./thread-oauth";
+import { getThreadOAuthAuthentication, isThreadOAuthAllowed } from "./thread-oauth";
 
 const scope = {
   organizationId: "org",
   chatbotId: "bot",
   adapterId: "adapter",
   oauthClientId: "client",
-  threadId: "thread",
+  authorId: "author",
 };
 
 describe("thread OAuth authorization", () => {
@@ -50,5 +54,15 @@ describe("thread OAuth authorization", () => {
     });
     mocks.mcp.mockResolvedValue(null);
     expect(await isThreadOAuthAllowed(scope)).toBe(false);
+  });
+
+  it("resolves credentials using the invoking author and never falls back to a thread connection", async () => {
+    mocks.connection.mockResolvedValueOnce({ authenticationId: "auth-a" }).mockResolvedValueOnce(null);
+    mocks.authentication.mockResolvedValue({ id: "auth-a" });
+    expect(await getThreadOAuthAuthentication(scope)).toEqual({ id: "auth-a" });
+    expect(await getThreadOAuthAuthentication({ ...scope, authorId: "other" })).toBeNull();
+    expect(mocks.connection).toHaveBeenNthCalledWith(1, scope);
+    expect(mocks.connection).toHaveBeenNthCalledWith(2, { ...scope, authorId: "other" });
+    expect(mocks.authentication).toHaveBeenCalledOnce();
   });
 });

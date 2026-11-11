@@ -401,7 +401,7 @@ namespace aibot {
     @@index([oauthId])
   }
 
-  // One shared connection for an OAuth client in a bot's chat thread.
+  // OAuth connections are scoped to the user who invoked the bot.
   model ThreadOAuthConnection {
     +Owned
     oauthClientId    Uuid
@@ -410,12 +410,12 @@ namespace aibot {
     chatbot          ChatBot             @relation(fields: [chatbotId], references: [id], onDelete: Cascade)
     adapterId        Uuid
     adapter          ChatAdapter         @relation(fields: [adapterId], references: [id], onDelete: Cascade)
-    threadId         String
+    authorId         String
     authenticationId Uuid                @unique
     authentication   OAuthAuthentication @relation(fields: [authenticationId], references: [id], onDelete: Cascade)
     +Timestamps
 
-    @@unique([oauthClientId, chatbotId, adapterId, threadId])
+    @@unique([oauthClientId, chatbotId, adapterId, authorId])
     @@index([organizationId])
   }
 

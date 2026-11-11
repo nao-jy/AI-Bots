@@ -570,9 +570,9 @@ export const en = {
     documentExtractionFailed: "Document extraction failed: {{0}}",
     chatFileOperationFailed: "Chat file operation failed: {{0}}",
     oauthAuthentication: "OAuth credentials",
-    threadOAuthSelection: "{{0}} (shared thread OAuth)",
+    threadOAuthSelection: "{{0}} (per-user OAuth)",
     threadOAuthLink:
-      "Connect {{0}}: {{1}}\nThis connection is shared with everyone in this thread.",
+      "Connect {{0}}: {{1}}\nOnly the user who made the request should use this link.",
     initCommandFailed:
       "Privileged command on creation failed (exit code {{0}}): {{1}}",
     sandboxCleanupAfterInitFailed:

@@ -32,7 +32,7 @@ describe("thread OAuth chat tools", () => {
         organizationId: "org",
         chatbotId: "bot",
         adapterId: "adapter",
-        threadId: "thread",
+        authorId: "author",
       },
       new Map([["client", "Service"]]),
     );
@@ -53,7 +53,7 @@ describe("thread OAuth chat tools", () => {
         organizationId: "org",
         chatbotId: "bot",
         adapterId: "adapter",
-        threadId: "thread",
+        authorId: "author",
       },
       new Map(),
     );

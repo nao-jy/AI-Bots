@@ -1,0 +1,249 @@
+[
+  {
+    "id": "oauth.clear-legacy-thread-connections",
+    "label": "Remove pre-release thread OAuth credentials",
+    "operationClass": "destructive",
+    "target": {
+      "id": "postgres"
+    },
+    "precheck": [],
+    "postcheck": [],
+    "execute": [
+      {
+        "description": "Delete legacy authentication resources and their connections",
+        "sql": "DELETE FROM aibot.\"ResourceBase\" WHERE id IN (SELECT \"authenticationId\" FROM aibot.\"ThreadOAuthConnection\")"
+      }
+    ]
+  },
+  {
+    "id": "dropConstraint.ThreadOAuthConnection.ThreadOAuthConnection_oauthClientId_chatbotId_adapterId_threadI",
+    "label": "Drop constraint \"ThreadOAuthConnection_oauthClientId_chatbotId_adapterId_threadI\" on \"ThreadOAuthConnection\"",
+    "operationClass": "widening",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "aibot",
+        "objectType": "unique",
+        "name": "ThreadOAuthConnection_oauthClientId_chatbotId_adapterId_threadI",
+        "table": "ThreadOAuthConnection"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"ThreadOAuthConnection_oauthClientId_chatbotId_adapterId_threadI\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "ThreadOAuthConnection_oauthClientId_chatbotId_adapterId_threadI",
+          "aibot",
+          "\"aibot\".\"ThreadOAuthConnection\""
+        ],
+        "expectation": {
+          "expects": "present",
+          "object": "constraint \"ThreadOAuthConnection_oauthClientId_chatbotId_adapterId_threadI\" on \"ThreadOAuthConnection\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "drop constraint \"ThreadOAuthConnection_oauthClientId_chatbotId_adapterId_threadI\"",
+        "sql": "ALTER TABLE \"aibot\".\"ThreadOAuthConnection\" DROP CONSTRAINT \"ThreadOAuthConnection_oauthClientId_chatbotId_adapterId_threadI\""
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"ThreadOAuthConnection_oauthClientId_chatbotId_adapterId_threadI\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "ThreadOAuthConnection_oauthClientId_chatbotId_adapterId_threadI",
+          "aibot",
+          "\"aibot\".\"ThreadOAuthConnection\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "constraint \"ThreadOAuthConnection_oauthClientId_chatbotId_adapterId_threadI\" on \"ThreadOAuthConnection\""
+        }
+      }
+    ]
+  },
+  {
+    "id": "dropColumn.ThreadOAuthConnection.threadId",
+    "label": "Drop column \"threadId\" from \"ThreadOAuthConnection\"",
+    "operationClass": "destructive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "aibot",
+        "objectType": "column",
+        "name": "threadId",
+        "table": "ThreadOAuthConnection"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"threadId\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "aibot",
+          "ThreadOAuthConnection",
+          "threadId"
+        ],
+        "expectation": {
+          "expects": "present",
+          "object": "column \"threadId\" on \"ThreadOAuthConnection\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "drop column \"threadId\"",
+        "sql": "ALTER TABLE \"aibot\".\"ThreadOAuthConnection\" DROP COLUMN \"threadId\""
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"threadId\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "aibot",
+          "ThreadOAuthConnection",
+          "threadId"
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "column \"threadId\" on \"ThreadOAuthConnection\""
+        }
+      }
+    ]
+  },
+  {
+    "id": "column.ThreadOAuthConnection.authorId",
+    "label": "Add column authorId to ThreadOAuthConnection",
+    "summary": "Adds column authorId to table ThreadOAuthConnection",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "aibot",
+        "objectType": "column",
+        "name": "authorId",
+        "table": "ThreadOAuthConnection"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"authorId\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "aibot",
+          "ThreadOAuthConnection",
+          "authorId"
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "column \"authorId\" on \"ThreadOAuthConnection\""
+        }
+      },
+      {
+        "description": "ensure table \"ThreadOAuthConnection\" is empty before adding NOT NULL column without default",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"aibot\".\"ThreadOAuthConnection\" LIMIT 1) AS \"result\"",
+        "params": [],
+        "meta": {
+          "requiredColumn": {
+            "table": "ThreadOAuthConnection",
+            "column": "authorId",
+            "reason": "newField"
+          }
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"authorId\"",
+        "sql": "ALTER TABLE \"aibot\".\"ThreadOAuthConnection\" ADD COLUMN \"authorId\" text NOT NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"authorId\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "aibot",
+          "ThreadOAuthConnection",
+          "authorId"
+        ],
+        "expectation": {
+          "expects": "present",
+          "object": "column \"authorId\" on \"ThreadOAuthConnection\""
+        }
+      },
+      {
+        "description": "verify column \"authorId\" is NOT NULL",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3 AND \"is_nullable\" = $4)) AS \"result\"",
+        "params": [
+          "aibot",
+          "ThreadOAuthConnection",
+          "authorId",
+          "NO"
+        ]
+      },
+      {
+        "description": "verify column \"authorId\" has type \"text\"",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_attribute\" AS \"a\" INNER JOIN \"pg_class\" AS \"c\" ON \"c\".\"oid\" = \"a\".\"attrelid\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"relnamespace\" WHERE (\"n\".\"nspname\" = $1 AND \"c\".\"relname\" = $2 AND \"a\".\"attname\" = $3 AND (format_type(\"a\".\"atttypid\", \"a\".\"atttypmod\")) = $4 AND NOT (\"a\".\"attisdropped\"))) AS \"result\"",
+        "params": [
+          "aibot",
+          "ThreadOAuthConnection",
+          "authorId",
+          "text"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.ThreadOAuthConnection.ThreadOAuthConnection_oauthClientId_chatbotId_adapterId_authorI",
+    "label": "Add unique constraint on \"ThreadOAuthConnection\" (oauthClientId, chatbotId, adapterId, authorId)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "aibot",
+        "objectType": "unique",
+        "name": "ThreadOAuthConnection_oauthClientId_chatbotId_adapterId_authorI",
+        "table": "ThreadOAuthConnection"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"ThreadOAuthConnection_oauthClientId_chatbotId_adapterId_authorI\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "ThreadOAuthConnection_oauthClientId_chatbotId_adapterId_authorI",
+          "aibot",
+          "\"aibot\".\"ThreadOAuthConnection\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "constraint \"ThreadOAuthConnection_oauthClientId_chatbotId_adapterId_authorI\" on \"ThreadOAuthConnection\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"ThreadOAuthConnection_oauthClientId_chatbotId_adapterId_authorI\"",
+        "sql": "ALTER TABLE \"aibot\".\"ThreadOAuthConnection\" ADD CONSTRAINT \"ThreadOAuthConnection_oauthClientId_chatbotId_adapterId_authorI\" UNIQUE (\"oauthClientId\", \"chatbotId\", \"adapterId\", \"authorId\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify unique constraint \"ThreadOAuthConnection_oauthClientId_chatbotId_adapterId_authorI\" exists on (oauthClientId, chatbotId, adapterId, authorId)",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3) AND \"c\".\"contype\" = $4 AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"c\".\"conkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"c\".\"conrelid\" AND key_attribute.attnum = key_column.attnum) = ($5)::jsonb)) AS \"result\"",
+        "params": [
+          "ThreadOAuthConnection_oauthClientId_chatbotId_adapterId_authorI",
+          "aibot",
+          "\"aibot\".\"ThreadOAuthConnection\"",
+          "u",
+          "[\"oauthClientId\",\"chatbotId\",\"adapterId\",\"authorId\"]"
+        ]
+      }
+    ]
+  }
+]

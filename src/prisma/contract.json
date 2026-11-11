@@ -5093,6 +5093,13 @@
                   "kind": "scalar"
                 }
               },
+              "authorId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
               "chatbotId": {
                 "nullable": false,
                 "type": {
@@ -5125,13 +5132,6 @@
                 "nullable": false,
                 "type": {
                   "codecId": "pg/uuid@1",
-                  "kind": "scalar"
-                }
-              },
-              "threadId": {
-                "nullable": false,
-                "type": {
-                  "codecId": "pg/text@1",
                   "kind": "scalar"
                 }
               },
@@ -5236,6 +5236,9 @@
                 "authenticationId": {
                   "column": "authenticationId"
                 },
+                "authorId": {
+                  "column": "authorId"
+                },
                 "chatbotId": {
                   "column": "chatbotId"
                 },
@@ -5250,9 +5253,6 @@
                 },
                 "organizationId": {
                   "column": "organizationId"
-                },
-                "threadId": {
-                  "column": "threadId"
                 },
                 "updatedAt": {
                   "column": "updatedAt"
@@ -10097,6 +10097,11 @@
                   "dataType": "pg/uuid",
                   "nullable": false
                 },
+                "authorId": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "nullable": false
+                },
                 "chatbotId": {
                   "codecId": "pg/uuid@1",
                   "dataType": "pg/uuid",
@@ -10128,11 +10133,6 @@
                 "organizationId": {
                   "codecId": "pg/uuid@1",
                   "dataType": "pg/uuid",
-                  "nullable": false
-                },
-                "threadId": {
-                  "codecId": "pg/text@1",
-                  "dataType": "pg/text",
                   "nullable": false
                 },
                 "updatedAt": {
@@ -10298,7 +10298,7 @@
                     "oauthClientId",
                     "chatbotId",
                     "adapterId",
-                    "threadId"
+                    "authorId"
                   ]
                 }
               ]
@@ -10535,7 +10535,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "57ad65998e079efb63f0c5e10fb003ba312c33cf2a1eb8913a3e52a2a1b928f2"
+    "storageHash": "6bfd13fddf7ed0f0922329fecd4b0740578ee51b3d4af580901aede42a5255c6"
   },
   "execution": {
     "executionHash": "c710fde4219b5316eaf5f1849710427f86ea616903d61dd2302201d85f683c35",

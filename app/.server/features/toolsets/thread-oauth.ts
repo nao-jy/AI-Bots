@@ -20,7 +20,7 @@ export function getThreadOAuthTools(
   return {
     listThreadOAuthConnections: tool({
       description:
-        "List OAuth services configured for this thread and their connection status.",
+        "List OAuth services configured for this bot and the invoking user's connection status.",
       inputSchema: z.object({}),
       execute: async () =>
         Promise.all(
@@ -38,7 +38,7 @@ export function getThreadOAuthTools(
     }),
     startThreadOAuth: tool({
       description:
-        "Post a link to connect or reconnect a configured OAuth service for the whole thread. The user must complete it and then retry their request. Reconnecting changes the account used by everyone in the thread.",
+        "Post a link for the invoking user to connect or reconnect a configured OAuth service. Only that user should complete it, then retry their request.",
       inputSchema: z.object({
         oauthClientId: z
           .string()
@@ -68,7 +68,7 @@ export function getThreadOAuthTools(
     }),
     disconnectThreadOAuth: tool({
       description:
-        "Disconnect a configured OAuth service for everyone in this thread. Only use when the user has clearly requested disconnection; ask if ambiguous.",
+        "Disconnect the invoking user's OAuth service. Only use when the user has clearly requested disconnection; ask if ambiguous.",
       inputSchema: z.object({
         oauthClientId: z
           .string()

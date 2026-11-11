@@ -23,7 +23,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'57ad65998e079efb63f0c5e10fb003ba312c33cf2a1eb8913a3e52a2a1b928f2'>;
+  StorageHashBase<'6bfd13fddf7ed0f0922329fecd4b0740578ee51b3d4af580901aede42a5255c6'>;
 export type ExecutionHash =
   ExecutionHashBase<'c710fde4219b5316eaf5f1849710427f86ea616903d61dd2302201d85f683c35'>;
 export type ProfileHash =
@@ -907,12 +907,12 @@ export namespace Models {
   export type aibot_ThreadOAuthConnection = {
     adapterId: FieldOutputTypes['aibot']['ThreadOAuthConnection']['adapterId'];
     authenticationId: FieldOutputTypes['aibot']['ThreadOAuthConnection']['authenticationId'];
+    authorId: FieldOutputTypes['aibot']['ThreadOAuthConnection']['authorId'];
     chatbotId: FieldOutputTypes['aibot']['ThreadOAuthConnection']['chatbotId'];
     createdAt: FieldOutputTypes['aibot']['ThreadOAuthConnection']['createdAt'];
     id: FieldOutputTypes['aibot']['ThreadOAuthConnection']['id'];
     oauthClientId: FieldOutputTypes['aibot']['ThreadOAuthConnection']['oauthClientId'];
     organizationId: FieldOutputTypes['aibot']['ThreadOAuthConnection']['organizationId'];
-    threadId: FieldOutputTypes['aibot']['ThreadOAuthConnection']['threadId'];
     updatedAt: FieldOutputTypes['aibot']['ThreadOAuthConnection']['updatedAt'];
     adapter: aibot_ChatAdapter;
     authentication: aibot_OAuthAuthentication;
@@ -4414,6 +4414,12 @@ type ContractBase = Omit<
                   readonly nullable: false;
                   readonly many: false;
                 };
+                readonly authorId: {
+                  readonly dataType: 'pg/text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
                 readonly chatbotId: {
                   readonly dataType: 'pg/uuid';
                   readonly codecId: 'pg/uuid@1';
@@ -4449,12 +4455,6 @@ type ContractBase = Omit<
                   readonly nullable: false;
                   readonly many: false;
                 };
-                readonly threadId: {
-                  readonly dataType: 'pg/text';
-                  readonly codecId: 'pg/text@1';
-                  readonly nullable: false;
-                  readonly many: false;
-                };
                 readonly updatedAt: {
                   readonly dataType: 'pg/timestamptz';
                   readonly codecId: 'pg/timestamptz-date@1';
@@ -4471,7 +4471,7 @@ type ContractBase = Omit<
                     'oauthClientId',
                     'chatbotId',
                     'adapterId',
-                    'threadId',
+                    'authorId',
                   ];
                 },
               ];
@@ -8081,6 +8081,10 @@ type ContractBase = Omit<
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/uuid@1' };
               };
+              readonly authorId: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
               readonly chatbotId: {
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/uuid@1' };
@@ -8103,10 +8107,6 @@ type ContractBase = Omit<
               readonly organizationId: {
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/uuid@1' };
-              };
-              readonly threadId: {
-                readonly nullable: false;
-                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
               };
               readonly updatedAt: {
                 readonly nullable: false;
@@ -8185,12 +8185,12 @@ type ContractBase = Omit<
               readonly fields: {
                 readonly adapterId: { readonly column: 'adapterId' };
                 readonly authenticationId: { readonly column: 'authenticationId' };
+                readonly authorId: { readonly column: 'authorId' };
                 readonly chatbotId: { readonly column: 'chatbotId' };
                 readonly createdAt: { readonly column: 'createdAt' };
                 readonly id: { readonly column: 'id' };
                 readonly oauthClientId: { readonly column: 'oauthClientId' };
                 readonly organizationId: { readonly column: 'organizationId' };
-                readonly threadId: { readonly column: 'threadId' };
                 readonly updatedAt: { readonly column: 'updatedAt' };
               };
             };

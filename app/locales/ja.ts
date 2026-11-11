@@ -1127,9 +1127,9 @@ export const ja = {
     documentExtractionFailed: "文書の抽出に失敗しました: {{0}}",
     chatFileOperationFailed: "チャットのファイル操作に失敗しました: {{0}}",
     oauthAuthentication: "OAuth認証情報",
-    threadOAuthSelection: "{{0}}（スレッド共有 OAuth）",
+    threadOAuthSelection: "{{0}}（ユーザー別 OAuth）",
     threadOAuthLink:
-      "{{0}} を接続: {{1}}\nこの接続はスレッドの参加者と共有されます。",
+      "{{0}} を接続: {{1}}\nこのリンクはリクエストした本人が使用してください。",
     initCommandFailed:
       "生成時特権コマンドが失敗しました (exit code {{0}}): {{1}}",
     sandboxCleanupAfterInitFailed:

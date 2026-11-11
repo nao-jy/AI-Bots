@@ -260,10 +260,14 @@ async function processBotMessage(
       organizationId: chatbot.organizationId,
       chatbotId: chatbot.id,
       adapterId,
-      threadId: thread.id,
+      authorId: message.author.userId,
     };
     const missingOAuth = new Set<string>();
     const resolveThreadAuth = async (clientId: string) => {
+      if (source === "schedule" || !oauthScope.authorId) {
+        missingOAuth.add(clientId);
+        return null;
+      }
       const authentication = await getThreadOAuthAuthentication({
         ...oauthScope,
         oauthClientId: clientId,
@@ -334,7 +338,7 @@ async function processBotMessage(
               ),
           })
         : {}),
-      ...(oauthClients.size
+      ...(oauthClients.size && source !== "schedule" && oauthScope.authorId
         ? getThreadOAuthTools(thread, oauthScope, oauthClients)
         : {}),
     } as ToolSet;
@@ -455,7 +459,7 @@ async function processBotMessage(
         chatbot.instruction,
         memoryFs ? await buildMemoryPrompt(memoryFs) : "",
         missingOAuth.size
-          ? `Some configured tools require OAuth before they can be used: ${[...missingOAuth].map((id) => `${oauthClients.get(id) ?? id} (${id})`).join(", ")}. If needed for the user's request, use startThreadOAuth to post an authorization link and ask the user to retry after authorizing.`
+          ? `Some configured tools require OAuth before they can be used: ${[...missingOAuth].map((id) => `${oauthClients.get(id) ?? id} (${id})`).join(", ")}. ${source === "schedule" || !oauthScope.authorId ? "OAuth is unavailable because this execution has no invoking user." : "If needed for the user's request, use startThreadOAuth to post an authorization link and ask the user to retry after authorizing."}`
           : "",
       ]
         .filter(Boolean)
