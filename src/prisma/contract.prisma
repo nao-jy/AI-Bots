@@ -341,7 +341,7 @@ namespace aibot {
     timezone             String
     +Timestamps
 
-    @@unique([criteria, criteriaId])
+    @@unique([criteria, criteriaId, resetOnCron])
   }
 
   model McpServer {

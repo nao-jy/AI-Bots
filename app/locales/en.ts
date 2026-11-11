@@ -475,7 +475,7 @@ export const en = {
     rateLimitNotFound: "Rate limit not found.",
     selectedBotNotFound: "The selected bot was not found.",
     duplicateRateLimitTarget:
-      "A rate limit for the same target already exists.",
+      "A rate limit for the same target and reset schedule already exists.",
     thread: "Thread",
     adapterNumber: "Adapter #{{0}}",
     botNumber: "Bot #{{0}}",

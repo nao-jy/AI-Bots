@@ -9576,7 +9576,8 @@
                 {
                   "columns": [
                     "criteria",
-                    "criteriaId"
+                    "criteriaId",
+                    "resetOnCron"
                   ]
                 }
               ]
@@ -10535,7 +10536,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "6bfd13fddf7ed0f0922329fecd4b0740578ee51b3d4af580901aede42a5255c6"
+    "storageHash": "927579b9a46ad16089da0de5f5d070d6fe005255dcefba603c4eef5f339cbc30"
   },
   "execution": {
     "executionHash": "c710fde4219b5316eaf5f1849710427f86ea616903d61dd2302201d85f683c35",

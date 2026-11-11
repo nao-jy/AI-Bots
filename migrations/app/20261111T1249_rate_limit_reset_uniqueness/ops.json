@@ -1,0 +1,100 @@
+[
+  {
+    "id": "dropConstraint.RateLimit.RateLimit_criteria_criteriaId_key",
+    "label": "Drop constraint \"RateLimit_criteria_criteriaId_key\" on \"RateLimit\"",
+    "operationClass": "widening",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "aibot",
+        "objectType": "unique",
+        "name": "RateLimit_criteria_criteriaId_key",
+        "table": "RateLimit"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"RateLimit_criteria_criteriaId_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "RateLimit_criteria_criteriaId_key",
+          "aibot",
+          "\"aibot\".\"RateLimit\""
+        ],
+        "expectation": {
+          "expects": "present",
+          "object": "constraint \"RateLimit_criteria_criteriaId_key\" on \"RateLimit\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "drop constraint \"RateLimit_criteria_criteriaId_key\"",
+        "sql": "ALTER TABLE \"aibot\".\"RateLimit\" DROP CONSTRAINT \"RateLimit_criteria_criteriaId_key\""
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"RateLimit_criteria_criteriaId_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "RateLimit_criteria_criteriaId_key",
+          "aibot",
+          "\"aibot\".\"RateLimit\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "constraint \"RateLimit_criteria_criteriaId_key\" on \"RateLimit\""
+        }
+      }
+    ]
+  },
+  {
+    "id": "unique.RateLimit.RateLimit_criteria_criteriaId_resetOnCron_key",
+    "label": "Add unique constraint on \"RateLimit\" (criteria, criteriaId, resetOnCron)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "aibot",
+        "objectType": "unique",
+        "name": "RateLimit_criteria_criteriaId_resetOnCron_key",
+        "table": "RateLimit"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"RateLimit_criteria_criteriaId_resetOnCron_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "RateLimit_criteria_criteriaId_resetOnCron_key",
+          "aibot",
+          "\"aibot\".\"RateLimit\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "constraint \"RateLimit_criteria_criteriaId_resetOnCron_key\" on \"RateLimit\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"RateLimit_criteria_criteriaId_resetOnCron_key\"",
+        "sql": "ALTER TABLE \"aibot\".\"RateLimit\" ADD CONSTRAINT \"RateLimit_criteria_criteriaId_resetOnCron_key\" UNIQUE (\"criteria\", \"criteriaId\", \"resetOnCron\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify unique constraint \"RateLimit_criteria_criteriaId_resetOnCron_key\" exists on (criteria, criteriaId, resetOnCron)",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3) AND \"c\".\"contype\" = $4 AND (SELECT coalesce(jsonb_agg(key_attribute.attname ORDER BY key_column.position), '[]'::jsonb) FROM unnest(\"c\".\"conkey\"::int2[]) WITH ORDINALITY AS key_column(attnum, position) JOIN pg_attribute key_attribute ON key_attribute.attrelid = \"c\".\"conrelid\" AND key_attribute.attnum = key_column.attnum) = ($5)::jsonb)) AS \"result\"",
+        "params": [
+          "RateLimit_criteria_criteriaId_resetOnCron_key",
+          "aibot",
+          "\"aibot\".\"RateLimit\"",
+          "u",
+          "[\"criteria\",\"criteriaId\",\"resetOnCron\"]"
+        ]
+      }
+    ]
+  }
+]

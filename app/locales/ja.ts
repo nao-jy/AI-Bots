@@ -1032,7 +1032,8 @@ export const ja = {
     limitExceededMessageRequired: "上限超過時のメッセージを入力してください。",
     rateLimitNotFound: "利用量の上限設定が見つかりません。",
     selectedBotNotFound: "選択したボットが見つかりません。",
-    duplicateRateLimitTarget: "同じ対象の利用量の上限設定が既にあります。",
+    duplicateRateLimitTarget:
+      "同じ対象とリセット時刻の利用量の上限設定が既にあります。",
     thread: "スレッド",
     adapterNumber: "チャットアダプタ #{{0}}",
     botNumber: "ボット #{{0}}",

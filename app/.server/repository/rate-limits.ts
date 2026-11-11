@@ -19,7 +19,10 @@ type UsageMetric =
   | "inputDetails.cacheWriteTokens"
   | "outputDetails.textTokens"
   | "outputDetails.reasoningTokens";
-type UsageRow = Awaited<ReturnType<typeof db.orm.aibot.AgentUsage.all>>[number];
+type UsageRow = Pick<
+  Awaited<ReturnType<typeof db.orm.aibot.AgentUsage.all>>[number],
+  "inputTokens" | "outputTokens" | "inputDetails" | "outputDetails"
+>;
 type RateLimitRow = Awaited<
   ReturnType<typeof db.orm.aibot.RateLimit.all>
 >[number];
@@ -95,33 +98,49 @@ async function getUsageForLimit(
   agentId: string,
   providerId: string,
   threadId: string,
+  resetAt: Date,
 ) {
   const threadFilter = limit.perThread ? { threadId } : {};
+  const since = resetAt.toISOString();
+  const usage = db.orm.aibot.AgentUsage;
+  const columns = [
+    "inputTokens",
+    "outputTokens",
+    "inputDetails",
+    "outputDetails",
+  ] as const;
   switch (limit.criteria) {
     case "bot":
-      return db.orm.aibot.AgentUsage.where({
-        chatbotId: limit.criteriaId ?? chatbotId,
-        ...threadFilter,
-      }).all();
+      return usage
+        .where({
+          chatbotId: limit.criteriaId ?? chatbotId,
+          ...threadFilter,
+        })
+        .where((row) => row.createdAt.gte(since))
+        .select(...columns)
+        .all();
     case "agent":
-      return db.orm.aibot.AgentUsage.where({
-        agentId: limit.criteriaId ?? agentId,
-        ...threadFilter,
-      }).all();
+      return usage
+        .where({
+          agentId: limit.criteriaId ?? agentId,
+          ...threadFilter,
+        })
+        .where((row) => row.createdAt.gte(since))
+        .select(...columns)
+        .all();
     case "provider":
-      return db.orm.aibot.AgentUsage.where({
-        providerId: limit.criteriaId ?? providerId,
-        ...threadFilter,
-      }).all();
+      return usage
+        .where({
+          providerId: limit.criteriaId ?? providerId,
+          ...threadFilter,
+        })
+        .where((row) => row.createdAt.gte(since))
+        .select(...columns)
+        .all();
   }
 }
 
-function isExceeded(limit: RateLimitRow, rows: UsageRow[], now: Date) {
-  const resetAt = resetBoundary(
-    limit.resetOnCron,
-    limit.timezone,
-    now,
-  ).getTime();
+function isExceeded(limit: RateLimitRow, rows: UsageRow[]) {
   const coefficients = limit.coefficient;
   if (
     !coefficients ||
@@ -131,7 +150,6 @@ function isExceeded(limit: RateLimitRow, rows: UsageRow[], now: Date) {
     throw new Error(`Invalid coefficient JSON for rate limit ${limit.id}`);
 
   const total = rows.reduce((sum, usage) => {
-    if (new Date(usage.createdAt).getTime() < resetAt) return sum;
     return (
       sum +
       Object.entries(coefficients).reduce((weighted, [metric, coefficient]) => {
@@ -163,14 +181,20 @@ export async function getExceededRateLimit(
       (limit.criteria === "provider" && limit.criteriaId === providerId),
   );
   for (const limit of matches) {
+    const resetAt = resetBoundary(
+      limit.resetOnCron,
+      limit.timezone,
+      new Date(),
+    );
     const usage = await getUsageForLimit(
       limit,
       chatbotId,
       agentId,
       providerId,
       threadId,
+      resetAt,
     );
-    if (isExceeded(limit, usage, new Date())) return limit.limitExceededMessage;
+    if (isExceeded(limit, usage)) return limit.limitExceededMessage;
   }
   return null;
 }
@@ -356,7 +380,8 @@ export async function saveRateLimit(
       (existing) =>
         existing.id !== id &&
         existing.criteria === criteria &&
-        existing.criteriaId === criteriaId,
+        existing.criteriaId === criteriaId &&
+        existing.resetOnCron === resetOnCron,
     )
   )
     return { error: "server.duplicateRateLimitTarget" };
