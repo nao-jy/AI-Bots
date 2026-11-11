@@ -1,11 +1,14 @@
 import { db } from "./db";
 import type { AuthUser } from "../auth";
 import {
+  decryptMcpHeaders,
+  decryptMcpContext,
   encryptMcpContext,
   encryptStringMap,
   generateResourceId,
   jsonb,
 } from "../utils";
+import { getMcpContextSchema } from "../features/mcp-schema";
 import { logAuditEvent } from "../logger/audit-logger";
 
 export function isBuiltinApiRouteMigration(
@@ -54,6 +57,151 @@ export async function listServiceApis(user: AuthUser) {
       endpoint,
     })),
   };
+}
+
+export async function loadFileSystemContextSchema(
+  user: AuthUser,
+  form: FormData,
+) {
+  if (!user.isAdmin) throw new Response("Forbidden", { status: 403 });
+  try {
+    const endpoint = String(form.get("endpoint") ?? "").trim();
+    const url = new URL(endpoint);
+    if (
+      !["http:", "https:"].includes(url.protocol) ||
+      url.username ||
+      url.password ||
+      url.search ||
+      url.hash
+    )
+      throw new Error("Invalid endpoint");
+    const id = String(form.get("id") ?? "");
+    const rawHeaders = String(form.get("headers") ?? "").trim();
+    let headers: Record<string, string>;
+    if (rawHeaders) {
+      const parsed: unknown = JSON.parse(rawHeaders);
+      if (
+        !parsed ||
+        typeof parsed !== "object" ||
+        Array.isArray(parsed) ||
+        Object.values(parsed).some((v) => typeof v !== "string")
+      )
+        throw new Error("Invalid headers");
+      headers = parsed as Record<string, string>;
+    } else if (id) {
+      const api = await db.orm.aibot.FileSystemAPI.first({
+        id,
+        organizationId: user.organizationId,
+      });
+      if (!api || api.endpoint !== endpoint) throw new Error("Invalid API");
+      headers = decryptMcpHeaders(api.headers);
+    } else {
+      headers = {};
+    }
+    new Headers(headers);
+    if (!url.pathname.endsWith("/")) url.pathname += "/";
+    const schema = await getMcpContextSchema(
+      new URL("context-schema", url).href,
+      headers,
+      endpoint,
+    );
+    return { schema };
+  } catch {
+    return { schemaError: true };
+  }
+}
+
+export async function testServiceApi(user: AuthUser, form: FormData) {
+  if (!user.isAdmin) throw new Response("Forbidden", { status: 403 });
+  try {
+    const kind = String(form.get("kind") ?? "");
+    if (kind !== "sandbox" && kind !== "filesystem") throw new Error();
+    const endpoint = String(form.get("endpoint") ?? "").trim();
+    const url = new URL(endpoint);
+    if (
+      !["http:", "https:"].includes(url.protocol) ||
+      url.username ||
+      url.password ||
+      url.search ||
+      url.hash
+    )
+      throw new Error();
+    const id = String(form.get("id") ?? "");
+    const rawHeaders = String(form.get("headers") ?? "").trim();
+    const rawContext = String(form.get("context") ?? "").trim();
+    let existing = null;
+    if (id && (!rawHeaders || (kind === "filesystem" && !rawContext))) {
+      if (!/^[0-9a-f-]{36}$/i.test(id)) throw new Error();
+      existing =
+        kind === "sandbox"
+          ? await db.orm.aibot.SandboxAPI.first({
+              id,
+              organizationId: user.organizationId,
+            })
+          : await db.orm.aibot.FileSystemAPI.first({
+              id,
+              organizationId: user.organizationId,
+            });
+      if (!existing || existing.endpoint !== endpoint) throw new Error();
+    }
+    const parsedHeaders: unknown = rawHeaders
+      ? JSON.parse(rawHeaders)
+      : existing
+        ? decryptMcpHeaders(existing.headers)
+        : {};
+    if (
+      !parsedHeaders ||
+      typeof parsedHeaders !== "object" ||
+      Array.isArray(parsedHeaders) ||
+      Object.values(parsedHeaders).some((value) => typeof value !== "string")
+    )
+      throw new Error();
+    const headers = new Headers(parsedHeaders as Record<string, string>);
+    if (!url.pathname.endsWith("/")) url.pathname += "/";
+    if (kind === "sandbox") {
+      const response = await fetch(new URL("v1/instances", url), {
+        headers,
+        redirect: "error",
+        signal: AbortSignal.timeout(10_000),
+      });
+      if (
+        response.status !== 405 ||
+        !response.headers
+          .get("allow")
+          ?.split(",")
+          .some((method) => method.trim().toUpperCase() === "POST")
+      )
+        throw new Error();
+    } else {
+      const context: unknown = rawContext
+        ? JSON.parse(rawContext)
+        : existing && "context" in existing
+          ? decryptMcpContext(existing.context)
+          : null;
+      if (!context || typeof context !== "object" || Array.isArray(context))
+        throw new Error();
+      headers.set("Content-Type", "application/json");
+      const response = await fetch(new URL("v1/list", url), {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ context, prefix: "", mode: "directory" }),
+        redirect: "error",
+        signal: AbortSignal.timeout(10_000),
+      });
+      if (!response.ok) throw new Error();
+      const result: unknown = await response.json();
+      if (
+        !result ||
+        typeof result !== "object" ||
+        !("entries" in result) ||
+        !Array.isArray(result.entries)
+      )
+        throw new Error();
+    }
+    return { apiTest: true, apiTestOk: true };
+  } catch {
+    return { apiTest: true, apiTestOk: false };
+  }
 }
 
 export async function saveServiceApi(user: AuthUser, form: FormData) {

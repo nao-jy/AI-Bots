@@ -135,6 +135,7 @@ function getNavigationLabel(pathname: string): NavigationLabelKey {
     "/schedules": "navigation.schedules",
     "/users": "navigation.users",
     "/groups": "navigation.groups",
+    "/service-apis": "navigation.serviceApis",
     "/login": "navigation.login",
     "/logout": "navigation.logout",
   };

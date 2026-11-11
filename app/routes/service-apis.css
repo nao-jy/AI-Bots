@@ -1,0 +1,23 @@
+.service-apis-page .mantine-Tabs-tab {
+  color: #777585;
+  font-size: 11px;
+  font-weight: 600;
+}
+.service-apis-page .mantine-Tabs-tab[data-active] {
+  color: #694bc9;
+  border-color: #7153d1;
+}
+.service-apis-temporary-form {
+  padding: 0 18px 18px;
+}
+.service-apis-temporary-form .mantine-Input-input {
+  min-height: 37px;
+  border-color: #e9e8ef;
+  border-radius: 7px;
+  font-size: 11px;
+}
+@media (max-width: 600px) {
+  .service-api-actions {
+    flex-wrap: wrap;
+  }
+}

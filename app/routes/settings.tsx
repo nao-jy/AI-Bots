@@ -7,7 +7,6 @@ import {
   Switch,
   Text,
   TextInput,
-  Textarea,
 } from "@mantine/core";
 import { Form, useActionData } from "react-router";
 import type { Route } from "./+types/settings";
@@ -17,12 +16,7 @@ import {
   saveAppSettings,
 } from "../.server/repository/app-settings";
 import { APP_NAME } from "~/const";
-import {
-  listServiceApis,
-  saveServiceApi,
-  deleteServiceApi,
-  saveTemporaryFileApi,
-} from "../.server/repository/service-apis";
+import "./settings.css";
 
 export function meta() {
   return [{ title: t("pages.settings.documentTitle", { 0: APP_NAME }) }];
@@ -32,8 +26,6 @@ export async function loader({ request }: Route.LoaderArgs) {
   const user = await requireAdmin(request);
   const settings = await getAppSettings(user.organizationId);
   return {
-    serviceApis: await listServiceApis(user),
-    temporaryFileSystemApiId: settings.temporaryFileSystemApiId,
     organizationName: settings.organizationName,
     mfaEnabled: settings.mfaEnabled,
     sessionDurationDays: settings.sessionDurationSeconds / 86400,
@@ -45,10 +37,6 @@ export async function loader({ request }: Route.LoaderArgs) {
 export async function action({ request }: Route.ActionArgs) {
   const user = await requireAdmin(request);
   const form = await request.formData();
-  if (form.get("_intent") === "save-temporary-api")
-    return saveTemporaryFileApi(user, form);
-  if (form.get("_intent") === "save-api") return saveServiceApi(user, form);
-  if (form.get("_intent") === "delete-api") return deleteServiceApi(user, form);
   const organizationName = String(form.get("organizationName") ?? "").trim();
   if (!organizationName || organizationName.length > 120)
     return { error: t("pages.settings.invalidOrganizationName") };
@@ -87,205 +75,90 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
 
   return (
     <div className="entity-page">
-      <header className="page-header">
+      <header className="page-heading">
         <div>
           <h1>{t("pages.settings.title")}</h1>
         </div>
       </header>
-      <section className="entity-panel" style={{ padding: 24, maxWidth: 680 }}>
-        <Form method="post">
-          {actionData?.error && (
+      <section className="entity-panel settings-panel">
+        <Form method="post" className="settings-form">
+          {actionData && "error" in actionData && actionData.error && (
             <Alert color="red" role="alert" mb="md">
               {actionData.error}
             </Alert>
           )}
-          {actionData?.ok && (
+          {actionData && "ok" in actionData && actionData.ok && (
             <Alert color="green" role="status" mb="md">
               {t("pages.settings.saved")}
             </Alert>
           )}
-          <TextInput
-            name="organizationName"
-            label={t("pages.settings.organizationNameLabel")}
-            description={t("pages.settings.organizationNameHelp")}
-            defaultValue={loaderData.organizationName}
-            maxLength={120}
-            required
-            mb="lg"
-          />
-          <Switch
-            name="mfaEnabled"
-            label={t("pages.settings.requireMfaLabel")}
-            description={t("pages.settings.requireMfaHelp")}
-            defaultChecked={loaderData.mfaEnabled}
-            mb="lg"
-          />
-          <NumberInput
-            name="sessionDurationDays"
-            label={t("pages.settings.sessionDurationLabel")}
-            description={t("pages.settings.sessionDurationHelp")}
-            min={1}
-            max={365}
-            step={1}
-            defaultValue={loaderData.sessionDurationDays}
-            allowDecimal={false}
-            required
-            mb="lg"
-          />
-          <Select
-            name="minimumPasswordStrength"
-            label={t("pages.settings.minimumPasswordStrengthLabel")}
-            description={t("pages.settings.minimumPasswordStrengthHelp")}
-            data={[
-              { value: "0", label: t("components.passwordStrength.noMinimum") },
-              { value: "1", label: t("components.passwordStrength.weak") },
-              { value: "2", label: t("components.passwordStrength.fair") },
-              { value: "3", label: t("components.passwordStrength.strong") },
-              {
-                value: "4",
-                label: t("components.passwordStrength.veryStrong"),
-              },
-            ]}
-            defaultValue={String(loaderData.minimumPasswordStrength)}
-            allowDeselect={false}
-            required
-            mb="lg"
-          />
-          <NumberInput
-            name="maxLoginAttempts"
-            label={t("pages.settings.loginAttemptLimitLabel")}
-            description={t("pages.settings.loginAttemptLimitHelp")}
-            min={1}
-            step={1}
-            defaultValue={loaderData.maxLoginAttempts}
-            allowDecimal={false}
-            required
-            mb="lg"
-          />
-          <Text size="xs" c="dimmed" mb="md">
-            {t("pages.settings.mfaSettingsPreservedHelp")}
-          </Text>
-          <Button type="submit">{t("pages.settings.save")}</Button>
-        </Form>
-      </section>
-      <section
-        className="entity-panel"
-        style={{ padding: 24, maxWidth: 680, marginTop: 24 }}
-      >
-        <h2>Sandbox API / Filesystem API</h2>
-        <Form method="post">
-          <input type="hidden" name="_intent" value="save-temporary-api" />
-          <Select
-            name="temporaryFileSystemApiId"
-            label={t("pages.settings.temporaryApiLabel")}
-            data={loaderData.serviceApis.filesystems.map((api) => ({
-              value: api.id,
-              label: api.name,
-            }))}
-            defaultValue={loaderData.temporaryFileSystemApiId || null}
-            clearable
-          />
-          <Button type="submit" mt="sm">
-            {t("pages.settings.save")}
-          </Button>
-        </Form>
-        {(
-          [
-            ["sandbox", loaderData.serviceApis.sandboxes],
-            ["filesystem", loaderData.serviceApis.filesystems],
-          ] as const
-        ).map(([kind, apis]) => (
-          <div key={kind}>
-            <h3>{kind === "sandbox" ? "Sandbox API" : "Filesystem API"}</h3>
-            {apis.map((api) => (
-              <div
-                key={api.id}
-                style={{ borderTop: "1px solid #ddd", paddingTop: 12 }}
-              >
-                <Form method="post">
-                  <input type="hidden" name="_intent" value="save-api" />
-                  <input type="hidden" name="kind" value={kind} />
-                  <input type="hidden" name="id" value={api.id} />
-                  <TextInput
-                    name="name"
-                    label={t("pages.settings.apiNameLabel")}
-                    defaultValue={api.name}
-                    required
-                  />
-                  <TextInput
-                    name="endpoint"
-                    label={t("pages.settings.apiEndpointLabel")}
-                    defaultValue={api.endpoint}
-                    required
-                  />
-                  <Textarea
-                    name="headers"
-                    label={t("pages.settings.apiHeadersLabel")}
-                    placeholder={t("pages.settings.keepApiHeaders")}
-                  />
-                  {kind === "filesystem" && (
-                    <Textarea
-                      name="context"
-                      label={t("pages.settings.apiContextLabel")}
-                      placeholder={t("pages.settings.keepApiContext")}
-                    />
-                  )}
-                  <Button type="submit" mt="sm">
-                    {t("pages.settings.save")}
-                  </Button>
-                  {kind === "filesystem" && (
-                    <Button
-                      component="a"
-                      href={`/files?api=${encodeURIComponent(api.id)}`}
-                      variant="subtle"
-                      mt="sm"
-                    >
-                      {t("navigation.files")}
-                    </Button>
-                  )}
-                </Form>
-                <Form method="post">
-                  <input type="hidden" name="_intent" value="delete-api" />
-                  <input type="hidden" name="kind" value={kind} />
-                  <input type="hidden" name="id" value={api.id} />
-                  <Button type="submit" color="red" variant="subtle">
-                    {t("pages.settings.deleteApi")}
-                  </Button>
-                </Form>
-              </div>
-            ))}
-            <Form method="post" style={{ marginTop: 16 }}>
-              <input type="hidden" name="_intent" value="save-api" />
-              <input type="hidden" name="kind" value={kind} />
-              <TextInput
-                name="name"
-                label={t("pages.settings.apiNameLabel")}
-                required
-              />
-              <TextInput
-                name="endpoint"
-                label={t("pages.settings.apiEndpointLabel")}
-                required
-              />
-              <Textarea
-                name="headers"
-                label={t("pages.settings.apiHeadersLabel")}
-                placeholder={'{"Authorization":"Bearer ..."}'}
-              />
-              {kind === "filesystem" && (
-                <Textarea
-                  name="context"
-                  label={t("pages.settings.apiContextLabel")}
-                  placeholder={'{"service":"fs","config":{"root":""}}'}
-                  required
-                />
-              )}
-              <Button type="submit" mt="sm">
-                {t("pages.settings.addApi")}
-              </Button>
-            </Form>
+          <div className="form-grid settings-fields">
+            <TextInput
+              name="organizationName"
+              label={t("pages.settings.organizationNameLabel")}
+              description={t("pages.settings.organizationNameHelp")}
+              defaultValue={loaderData.organizationName}
+              maxLength={120}
+              required
+            />
+            <Switch
+              name="mfaEnabled"
+              label={t("pages.settings.requireMfaLabel")}
+              description={t("pages.settings.requireMfaHelp")}
+              defaultChecked={loaderData.mfaEnabled}
+            />
+            <NumberInput
+              name="sessionDurationDays"
+              label={t("pages.settings.sessionDurationLabel")}
+              description={t("pages.settings.sessionDurationHelp")}
+              min={1}
+              max={365}
+              step={1}
+              defaultValue={loaderData.sessionDurationDays}
+              allowDecimal={false}
+              required
+            />
+            <Select
+              name="minimumPasswordStrength"
+              label={t("pages.settings.minimumPasswordStrengthLabel")}
+              description={t("pages.settings.minimumPasswordStrengthHelp")}
+              data={[
+                {
+                  value: "0",
+                  label: t("components.passwordStrength.noMinimum"),
+                },
+                { value: "1", label: t("components.passwordStrength.weak") },
+                { value: "2", label: t("components.passwordStrength.fair") },
+                { value: "3", label: t("components.passwordStrength.strong") },
+                {
+                  value: "4",
+                  label: t("components.passwordStrength.veryStrong"),
+                },
+              ]}
+              defaultValue={String(loaderData.minimumPasswordStrength)}
+              allowDeselect={false}
+              required
+            />
+            <NumberInput
+              name="maxLoginAttempts"
+              label={t("pages.settings.loginAttemptLimitLabel")}
+              description={t("pages.settings.loginAttemptLimitHelp")}
+              min={1}
+              step={1}
+              defaultValue={loaderData.maxLoginAttempts}
+              allowDecimal={false}
+              required
+            />
+            <Text size="xs" c="dimmed">
+              {t("pages.settings.mfaSettingsPreservedHelp")}
+            </Text>
           </div>
-        ))}
+          <div className="settings-actions">
+            <Button type="submit" className="primary-button small">
+              {t("pages.settings.save")}
+            </Button>
+          </div>
+        </Form>
       </section>
     </div>
   );

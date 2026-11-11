@@ -140,10 +140,9 @@ export default function Files({ loaderData }: Route.ComponentProps) {
   const crumbs = path.split("/").filter(Boolean);
   const activeApi = apis.find((api) => api.id === apiId);
   return (
-    <div className="files-page">
-      <header className="files-header">
+    <div className="entity-page files-page">
+      <header className="page-heading">
         <div>
-          <Text className="files-eyebrow">{t("fileBrowser.adminLabel")}</Text>
           <h1>{t("fileBrowser.title")}</h1>
           <Text c="dimmed" size="sm">
             {t("fileBrowser.description")}
@@ -152,13 +151,14 @@ export default function Files({ loaderData }: Route.ComponentProps) {
         <Badge
           variant="light"
           color="violet"
-          size="lg"
-          leftSection={<HardDrivesIcon size={15} />}
+          size="sm"
+          className="status-badge"
+          leftSection={<HardDrivesIcon size={13} />}
         >
           {t("fileBrowser.readOnly")}
         </Badge>
       </header>
-      <Paper className="files-panel" radius="lg" withBorder>
+      <Paper className="entity-panel files-panel">
         <div className="files-toolbar">
           <div className="files-source">
             <ThemeIcon variant="light" color="violet" size="lg" radius="md">
@@ -180,9 +180,6 @@ export default function Files({ loaderData }: Route.ComponentProps) {
               />
             </div>
           </div>
-          <Text size="xs" c="dimmed">
-            {t("fileBrowser.hint")}
-          </Text>
         </div>
         {apis.length === 0 ? (
           <Center className="files-empty">
@@ -192,7 +189,12 @@ export default function Files({ loaderData }: Route.ComponentProps) {
               <Text size="sm" c="dimmed">
                 {t("fileBrowser.noSourcesHelp")}
               </Text>
-              <Button component="a" href="/settings" variant="light" mt="sm">
+              <Button
+                component="a"
+                href="/service-apis?tab=filesystem"
+                variant="light"
+                mt="sm"
+              >
                 {t("fileBrowser.openSettings")}
               </Button>
             </Stack>
@@ -233,7 +235,7 @@ export default function Files({ loaderData }: Route.ComponentProps) {
                 <div className="files-list">
                   <ScrollArea>
                     <Table
-                      className="files-table"
+                      className="entity-table files-table"
                       highlightOnHover
                       verticalSpacing="sm"
                     >

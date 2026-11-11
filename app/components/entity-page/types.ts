@@ -47,6 +47,7 @@ export type EntitySection =
   | "sandboxes"
   | "schedules"
   | "executions"
+  | "service_apis"
   | "settings"
   | "files";
 

@@ -60,6 +60,8 @@ export function SectionIcon({
       return <ChartLineIcon {...props} />;
     case "files":
       return <FolderOpenIcon {...props} />;
+    case "service_apis":
+      return <PlugsConnectedIcon {...props} />;
     case "settings":
       return <GearIcon {...props} />;
   }

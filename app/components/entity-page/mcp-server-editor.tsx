@@ -17,7 +17,7 @@ type ContextSchema = {
   error: boolean;
 };
 
-function contextUiSchema(
+export function contextUiSchema(
   schema: RJSFSchema,
   root = schema,
   seen = new Set<string>(),

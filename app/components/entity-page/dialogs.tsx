@@ -318,7 +318,7 @@ function submitFormInNewTab(sourceForm: HTMLFormElement, data: FormData) {
   return true;
 }
 
-function KeyValueEditor({
+export function KeyValueEditor({
   name,
   label,
   initialValue,
@@ -332,9 +332,11 @@ function KeyValueEditor({
   const [pairs, setPairs] = useState(() => parsePairs(initialValue));
   return (
     <div>
-      <Text size="sm" fw={500} mb={6}>
-        {label}
-      </Text>
+      <div>
+        <Input.Label component="div" mb={6}>
+          {label}
+        </Input.Label>
+      </div>
       <input
         type="hidden"
         name={name}

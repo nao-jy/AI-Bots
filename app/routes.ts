@@ -18,6 +18,7 @@ export default [
     route("users", "routes/users.tsx"),
     route("groups", "routes/groups.tsx"),
     route("settings", "routes/settings.tsx"),
+    route("service-apis", "routes/service-apis.tsx"),
     route("files", "routes/files.tsx"),
   ]),
   route("oauth/start", "routes/oauth-start.tsx"),
