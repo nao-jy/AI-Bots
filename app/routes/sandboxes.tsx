@@ -15,7 +15,7 @@ import {
   EntityPageView,
   type EntityPageDefinition,
 } from "../components/entity-page-view";
-import { APP_NAME, SANDBOX_SCOPES } from "~/const";
+import { APP_NAME } from "~/const";
 import { entityListPage } from "../.server/repository/list-pages";
 
 const page: Omit<EntityPageDefinition, "records"> = {
@@ -26,7 +26,6 @@ const page: Omit<EntityPageDefinition, "records"> = {
   columns: [
     { key: "name", label: "pages.sandboxes.title" },
     { key: "type", label: "pages.sandboxes.typeLabel" },
-    { key: "scope", label: "pages.sandboxes.scopeLabel" },
     { key: "allowedDomainList", label: "pages.sandboxes.allowedDomainsLabel" },
     { key: "initCommands", label: "pages.sandboxes.initCommandsLabel" },
   ],
@@ -37,15 +36,6 @@ const page: Omit<EntityPageDefinition, "records"> = {
       label: "pages.sandboxes.typeLabel",
       type: "select",
       options: [],
-    },
-    {
-      key: "sandboxScope",
-      label: "pages.sandboxes.scopeLabel",
-      type: "select",
-      options: Object.entries(SANDBOX_SCOPES).map(([value, labelKey]) => ({
-        value,
-        label: labelKey,
-      })),
     },
     {
       key: "envs",

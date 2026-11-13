@@ -13,7 +13,7 @@ import {
   setBotEnabled,
 } from "../.server/repository/entities";
 import { requireUser } from "../.server/auth";
-import { APP_NAME } from "~/const";
+import { APP_NAME, DATA_PERSISTENCE_SCOPES } from "~/const";
 import { entityListPage } from "../.server/repository/list-pages";
 
 const page: Omit<EntityPageDefinition, "records"> = {
@@ -85,16 +85,14 @@ const page: Omit<EntityPageDefinition, "records"> = {
       required: true,
     },
     {
-      key: "memoryConfig",
-      label: "pages.bots.memoryConfigLabel",
+      key: "dataPersistenceScope",
+      label: "pages.bots.dataPersistenceScopeLabel",
       type: "select",
-      defaultValue: "nouse",
+      defaultValue: "nopersistence",
       required: true,
-      options: [
-        { value: "nouse", label: "pages.bots.memoryConfigNouseOption" },
-        { value: "thread", label: "pages.bots.memoryConfigThreadOption" },
-        { value: "bot", label: "pages.bots.memoryConfigBotOption" },
-      ],
+      options: Object.entries(DATA_PERSISTENCE_SCOPES).map(
+        ([value, label]) => ({ value, label }),
+      ),
     },
     {
       key: "agentId",

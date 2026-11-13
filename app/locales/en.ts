@@ -64,13 +64,6 @@ export const en = {
     japanese: "Japanese",
     english: "English",
   },
-  sandboxScopes: {
-    turn: "Turn",
-    thread: "Thread",
-    adapter: "Chat adapter",
-    bot: "Chatbot",
-    all: "Shared",
-  },
   loading: {
     destination: "Loading {{label}}",
     logout: "Logging out",
@@ -410,7 +403,7 @@ export const en = {
     mcpContextInvalid: "The MCP context does not match the server schema.",
     mcpContextSchemaUnavailable: "Could not load the MCP context schema.",
     botNameRequired: "Enter a bot name.",
-    invalidMemoryConfig: "Select a memory setting.",
+    invalidDataPersistenceScope: "Select a data persistence scope.",
     invalidMaxAgentSteps:
       "Enter a whole number between 1 and 2147483647 for the maximum agent steps.",
     maxAgentStepsReached:
@@ -490,7 +483,6 @@ export const en = {
     invalidTerminalSize: "Invalid terminal size.",
     sandboxShellStartFailed: "Could not start the sandbox shell.",
     unsupportedSandboxType: "Unsupported sandbox type.",
-    sandboxScopeRequired: "Select a sandbox scope.",
     sandboxEnvironmentVariablesMustBeStringObject:
       "Environment variables must be a string key-value object.",
     invalidInput: "Check the input value.",
@@ -742,10 +734,10 @@ export const en = {
       historyMessageCountLabel: "Number of messages to include",
       maxAgentStepsLabel: "Maximum agent steps",
       zeroHistoryMessages: "0",
-      memoryConfigLabel: "Memory",
-      memoryConfigNouseOption: "Do not use memory",
-      memoryConfigThreadOption: "Save per thread",
-      memoryConfigBotOption: "Share across the bot",
+      dataPersistenceScopeLabel: "Data persistence scope",
+      dataPersistenceScopeNopersistenceOption: "Per turn (do not persist)",
+      dataPersistenceScopeThreadOption: "Save per thread",
+      dataPersistenceScopeBotOption: "Share across the bot",
       noLimitOption: "No limit",
       adaptersPlaceholder: "Select adapters to connect",
       sandboxPlaceholder: "Select a sandbox to use",
@@ -972,7 +964,6 @@ export const en = {
       description:
         "Manage execution environments, environment variables, and network restrictions used by chatbots. Privileged commands temporarily bypass allowed-domain restrictions when a new sandbox is created.",
       typeLabel: "Type",
-      scopeLabel: "Scope",
       allowedDomainsLabel: "Allowed domains",
       initCommandsLabel: "Privileged commands on creation",
       nameLabel: "Name",

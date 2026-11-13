@@ -1,9 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { getMemoryDirectory, isMemoryConfig } from "./memory-config";
+import {
+  getMemoryDirectory,
+  isDataPersistenceScope,
+} from "./data-persistence-scope";
 
-describe("chatbot memory configuration", () => {
+describe("data persistence scope", () => {
   const directory = (
-    config: "nouse" | "thread" | "bot",
+    scope: "nopersistence" | "thread" | "bot",
     organizationId = "organization-a",
     chatbotId = "bot-a",
     adapterId = "adapter-a",
@@ -13,13 +16,13 @@ describe("chatbot memory configuration", () => {
       "/tmp/memory",
       organizationId,
       chatbotId,
-      config,
+      scope,
       adapterId,
       threadId,
     );
 
-  it("disables memory for nouse", () => {
-    expect(directory("nouse")).toBeNull();
+  it("disables memory for nopersistence", () => {
+    expect(directory("nopersistence")).toBeNull();
   });
 
   it("isolates thread memory by adapter and thread", () => {
@@ -44,9 +47,9 @@ describe("chatbot memory configuration", () => {
   });
 
   it("rejects unknown configuration values", () => {
-    expect(isMemoryConfig("nouse")).toBe(true);
-    expect(isMemoryConfig("thread")).toBe(true);
-    expect(isMemoryConfig("bot")).toBe(true);
-    expect(isMemoryConfig("shared")).toBe(false);
+    expect(isDataPersistenceScope("nopersistence")).toBe(true);
+    expect(isDataPersistenceScope("thread")).toBe(true);
+    expect(isDataPersistenceScope("bot")).toBe(true);
+    expect(isDataPersistenceScope("shared")).toBe(false);
   });
 });

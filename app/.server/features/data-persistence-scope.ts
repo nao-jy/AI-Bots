@@ -1,25 +1,27 @@
 import { createHash } from "node:crypto";
 import { resolve } from "node:path";
+import { DATA_PERSISTENCE_SCOPES } from "~/const";
 
-export const MEMORY_CONFIGS = ["nouse", "thread", "bot"] as const;
-export type MemoryConfig = (typeof MEMORY_CONFIGS)[number];
+export type DataPersistenceScope = keyof typeof DATA_PERSISTENCE_SCOPES;
 
-export function isMemoryConfig(value: string): value is MemoryConfig {
-  return MEMORY_CONFIGS.some((config) => config === value);
+export function isDataPersistenceScope(
+  value: string,
+): value is DataPersistenceScope {
+  return Object.hasOwn(DATA_PERSISTENCE_SCOPES, value);
 }
 
 export function getMemoryDirectory(
   root: string,
   organizationId: string,
   chatbotId: string,
-  config: MemoryConfig,
+  scope: DataPersistenceScope,
   adapterId: string,
   threadId: string,
 ): string | null {
-  if (config === "nouse") return null;
+  if (scope === "nopersistence") return null;
 
   const botRoot = resolve(root, organizationId, chatbotId);
-  if (config === "bot") return resolve(botRoot, "bot");
+  if (scope === "bot") return resolve(botRoot, "bot");
 
   const threadScope = createHash("sha256")
     .update(adapterId)

@@ -17,7 +17,7 @@ import {
   validateMcpContext,
 } from "../features/mcp-schema";
 import { logAuditEvent } from "../logger/audit-logger";
-import { isMemoryConfig } from "../features/memory-config";
+import { isDataPersistenceScope } from "../features/data-persistence-scope";
 import { listOauth } from "./oauth";
 import { t } from "../i18n";
 import {
@@ -178,7 +178,7 @@ export async function listBots(
           instruction: bot.instruction,
           lookbackMessages: bot.lookbackMessages,
           maxAgentSteps: bot.maxAgentSteps,
-          memoryConfig: bot.memoryConfig,
+          dataPersistenceScope: bot.dataPersistenceScope,
           onFailedMessage: bot.onFailedMessage,
           fileSystemId:
             fileSystemLinks.find((link) => link.chatbotId === bot.id)
@@ -264,7 +264,7 @@ export async function listBots(
       value: item.id,
     })),
     sandboxOptions: sandboxes.map((sandbox) => ({
-      label: `${sandbox.name} (${sandbox.sandboxScope})`,
+      label: sandbox.name,
       value: String(sandbox.id),
     })),
     mcpContextSchemas,
@@ -292,9 +292,11 @@ export async function saveBot(
     maxAgentSteps > 2147483647
   )
     return { error: "server.invalidMaxAgentSteps" };
-  const memoryConfig = String(values.get("memoryConfig") ?? "");
-  if (!isMemoryConfig(memoryConfig))
-    return { error: "server.invalidMemoryConfig" };
+  const dataPersistenceScope = String(
+    values.get("dataPersistenceScope") ?? "",
+  );
+  if (!isDataPersistenceScope(dataPersistenceScope))
+    return { error: "server.invalidDataPersistenceScope" };
   const agentValue = String(values.get("agentId") ?? "").trim();
   const agentId = agentValue || null;
   const adapterIds = idList(values.get("adapterIds")?.toString() ?? null);
@@ -522,7 +524,7 @@ export async function saveBot(
         instruction: instruction,
         lookbackMessages: lookbackMessages,
         maxAgentSteps,
-        memoryConfig,
+        dataPersistenceScope,
         onFailedMessage: onFailedMessage,
         agentId,
         organizationId: user.organizationId,
@@ -554,7 +556,7 @@ export async function saveBot(
         onFailedMessage: onFailedMessage,
         lookbackMessages: lookbackMessages,
         maxAgentSteps,
-        memoryConfig,
+        dataPersistenceScope,
         agentId,
       });
     }

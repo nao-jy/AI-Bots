@@ -1,0 +1,319 @@
+[
+  {
+    "id": "dropCheckConstraint.ChatBot.ChatBot_memoryConfig_check_0c542cf2",
+    "label": "Drop check constraint \"ChatBot_memoryConfig_check_0c542cf2\" on \"ChatBot\"",
+    "operationClass": "widening",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "aibot",
+        "objectType": "checkConstraint",
+        "name": "ChatBot_memoryConfig_check_0c542cf2",
+        "table": "ChatBot"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"ChatBot_memoryConfig_check_0c542cf2\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "ChatBot_memoryConfig_check_0c542cf2",
+          "aibot",
+          "\"aibot\".\"ChatBot\""
+        ],
+        "expectation": {
+          "expects": "present",
+          "object": "constraint \"ChatBot_memoryConfig_check_0c542cf2\" on \"ChatBot\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "drop check constraint \"ChatBot_memoryConfig_check_0c542cf2\"",
+        "sql": "ALTER TABLE \"aibot\".\"ChatBot\" DROP CONSTRAINT \"ChatBot_memoryConfig_check_0c542cf2\""
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"ChatBot_memoryConfig_check_0c542cf2\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "ChatBot_memoryConfig_check_0c542cf2",
+          "aibot",
+          "\"aibot\".\"ChatBot\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "constraint \"ChatBot_memoryConfig_check_0c542cf2\" on \"ChatBot\""
+        }
+      }
+    ]
+  },
+  {
+    "id": "dropColumn.ChatBot.memoryConfig",
+    "label": "Drop column \"memoryConfig\" from \"ChatBot\"",
+    "operationClass": "destructive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "aibot",
+        "objectType": "column",
+        "name": "memoryConfig",
+        "table": "ChatBot"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"memoryConfig\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "aibot",
+          "ChatBot",
+          "memoryConfig"
+        ],
+        "expectation": {
+          "expects": "present",
+          "object": "column \"memoryConfig\" on \"ChatBot\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "drop column \"memoryConfig\"",
+        "sql": "ALTER TABLE \"aibot\".\"ChatBot\" DROP COLUMN \"memoryConfig\""
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"memoryConfig\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "aibot",
+          "ChatBot",
+          "memoryConfig"
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "column \"memoryConfig\" on \"ChatBot\""
+        }
+      }
+    ]
+  },
+  {
+    "id": "dropCheckConstraint.Sandbox.Sandbox_sandboxScope_check_825fb1d7",
+    "label": "Drop check constraint \"Sandbox_sandboxScope_check_825fb1d7\" on \"Sandbox\"",
+    "operationClass": "widening",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "aibot",
+        "objectType": "checkConstraint",
+        "name": "Sandbox_sandboxScope_check_825fb1d7",
+        "table": "Sandbox"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"Sandbox_sandboxScope_check_825fb1d7\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "Sandbox_sandboxScope_check_825fb1d7",
+          "aibot",
+          "\"aibot\".\"Sandbox\""
+        ],
+        "expectation": {
+          "expects": "present",
+          "object": "constraint \"Sandbox_sandboxScope_check_825fb1d7\" on \"Sandbox\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "drop check constraint \"Sandbox_sandboxScope_check_825fb1d7\"",
+        "sql": "ALTER TABLE \"aibot\".\"Sandbox\" DROP CONSTRAINT \"Sandbox_sandboxScope_check_825fb1d7\""
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"Sandbox_sandboxScope_check_825fb1d7\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "Sandbox_sandboxScope_check_825fb1d7",
+          "aibot",
+          "\"aibot\".\"Sandbox\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "constraint \"Sandbox_sandboxScope_check_825fb1d7\" on \"Sandbox\""
+        }
+      }
+    ]
+  },
+  {
+    "id": "dropColumn.Sandbox.sandboxScope",
+    "label": "Drop column \"sandboxScope\" from \"Sandbox\"",
+    "operationClass": "destructive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "aibot",
+        "objectType": "column",
+        "name": "sandboxScope",
+        "table": "Sandbox"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"sandboxScope\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "aibot",
+          "Sandbox",
+          "sandboxScope"
+        ],
+        "expectation": {
+          "expects": "present",
+          "object": "column \"sandboxScope\" on \"Sandbox\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "drop column \"sandboxScope\"",
+        "sql": "ALTER TABLE \"aibot\".\"Sandbox\" DROP COLUMN \"sandboxScope\""
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"sandboxScope\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "aibot",
+          "Sandbox",
+          "sandboxScope"
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "column \"sandboxScope\" on \"Sandbox\""
+        }
+      }
+    ]
+  },
+  {
+    "id": "column.aibot.ChatBot.dataPersistenceScope",
+    "label": "Add column \"dataPersistenceScope\" to \"ChatBot\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "aibot",
+        "objectType": "column",
+        "name": "dataPersistenceScope",
+        "table": "ChatBot"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"dataPersistenceScope\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "aibot",
+          "ChatBot",
+          "dataPersistenceScope"
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "column \"dataPersistenceScope\" on \"ChatBot\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"dataPersistenceScope\"",
+        "sql": "ALTER TABLE \"aibot\".\"ChatBot\" ADD COLUMN \"dataPersistenceScope\" text DEFAULT 'nopersistence' NOT NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"dataPersistenceScope\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "aibot",
+          "ChatBot",
+          "dataPersistenceScope"
+        ],
+        "expectation": {
+          "expects": "present",
+          "object": "column \"dataPersistenceScope\" on \"ChatBot\""
+        }
+      },
+      {
+        "description": "verify column \"dataPersistenceScope\" has type \"text\"",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_attribute\" AS \"a\" INNER JOIN \"pg_class\" AS \"c\" ON \"c\".\"oid\" = \"a\".\"attrelid\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"relnamespace\" WHERE (\"n\".\"nspname\" = $1 AND \"c\".\"relname\" = $2 AND \"a\".\"attname\" = $3 AND (format_type(\"a\".\"atttypid\", \"a\".\"atttypmod\")) = $4 AND NOT (\"a\".\"attisdropped\"))) AS \"result\"",
+        "params": [
+          "aibot",
+          "ChatBot",
+          "dataPersistenceScope",
+          "text"
+        ]
+      },
+      {
+        "description": "verify column \"dataPersistenceScope\" is NOT NULL",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3 AND \"is_nullable\" = $4)) AS \"result\"",
+        "params": [
+          "aibot",
+          "ChatBot",
+          "dataPersistenceScope",
+          "NO"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "checkConstraint.ChatBot.ChatBot_dataPersistenceScope_check_9e451ce9",
+    "label": "Add check constraint \"ChatBot_dataPersistenceScope_check_9e451ce9\" on \"ChatBot\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "aibot",
+        "objectType": "checkConstraint",
+        "name": "ChatBot_dataPersistenceScope_check_9e451ce9",
+        "table": "ChatBot"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"ChatBot_dataPersistenceScope_check_9e451ce9\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "ChatBot_dataPersistenceScope_check_9e451ce9",
+          "aibot",
+          "\"aibot\".\"ChatBot\""
+        ],
+        "expectation": {
+          "expects": "absent",
+          "object": "constraint \"ChatBot_dataPersistenceScope_check_9e451ce9\" on \"ChatBot\""
+        }
+      }
+    ],
+    "execute": [
+      {
+        "description": "add check constraint \"ChatBot_dataPersistenceScope_check_9e451ce9\"",
+        "sql": "ALTER TABLE \"aibot\".\"ChatBot\" ADD CONSTRAINT \"ChatBot_dataPersistenceScope_check_9e451ce9\" CHECK (\"dataPersistenceScope\" IN ('nopersistence', 'thread', 'bot'))"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify check constraint \"ChatBot_dataPersistenceScope_check_9e451ce9\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3) AND \"c\".\"contype\" = $4)) AS \"result\"",
+        "params": [
+          "ChatBot_dataPersistenceScope_check_9e451ce9",
+          "aibot",
+          "\"aibot\".\"ChatBot\"",
+          "c"
+        ]
+      }
+    ]
+  }
+]

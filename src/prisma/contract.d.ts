@@ -23,7 +23,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'927579b9a46ad16089da0de5f5d070d6fe005255dcefba603c4eef5f339cbc30'>;
+  StorageHashBase<'764f7547cf7dc125e42c53cecdb1c50c7f05b0a92899e60abfeda437dfc9abb9'>;
 export type ExecutionHash =
   ExecutionHashBase<'c710fde4219b5316eaf5f1849710427f86ea616903d61dd2302201d85f683c35'>;
 export type ProfileHash =
@@ -292,9 +292,9 @@ type FieldTypeOverrides = {
         readonly slot: { readonly output: 'first' | 'second'; readonly input: 'first' | 'second' };
       };
       readonly ChatBot: {
-        readonly memoryConfig: {
-          readonly output: 'nouse' | 'thread' | 'bot';
-          readonly input: 'nouse' | 'thread' | 'bot';
+        readonly dataPersistenceScope: {
+          readonly output: 'nopersistence' | 'thread' | 'bot';
+          readonly input: 'nopersistence' | 'thread' | 'bot';
         };
       };
       readonly ChatBotPublicId: {
@@ -313,12 +313,6 @@ type FieldTypeOverrides = {
         readonly criteria: {
           readonly output: 'bot' | 'agent' | 'provider';
           readonly input: 'bot' | 'agent' | 'provider';
-        };
-      };
-      readonly Sandbox: {
-        readonly sandboxScope: {
-          readonly output: 'turn' | 'thread' | 'adapter' | 'bot' | 'all';
-          readonly input: 'turn' | 'thread' | 'adapter' | 'bot' | 'all';
         };
       };
     };
@@ -356,9 +350,9 @@ type ColumnTypeOverrides = {
       readonly slot: { readonly output: 'first' | 'second'; readonly input: 'first' | 'second' };
     };
     readonly ChatBot: {
-      readonly memoryConfig: {
-        readonly output: 'nouse' | 'thread' | 'bot';
-        readonly input: 'nouse' | 'thread' | 'bot';
+      readonly dataPersistenceScope: {
+        readonly output: 'nopersistence' | 'thread' | 'bot';
+        readonly input: 'nopersistence' | 'thread' | 'bot';
       };
     };
     readonly ChatBotPublicId: {
@@ -375,12 +369,6 @@ type ColumnTypeOverrides = {
       readonly criteria: {
         readonly output: 'bot' | 'agent' | 'provider';
         readonly input: 'bot' | 'agent' | 'provider';
-      };
-    };
-    readonly Sandbox: {
-      readonly sandboxScope: {
-        readonly output: 'turn' | 'thread' | 'adapter' | 'bot' | 'all';
-        readonly input: 'turn' | 'thread' | 'adapter' | 'bot' | 'all';
       };
     };
   };
@@ -505,13 +493,13 @@ export namespace Models {
   export type aibot_ChatBot = {
     agentId: FieldOutputTypes['aibot']['ChatBot']['agentId'];
     createdAt: FieldOutputTypes['aibot']['ChatBot']['createdAt'];
+    dataPersistenceScope: FieldOutputTypes['aibot']['ChatBot']['dataPersistenceScope'];
     description: FieldOutputTypes['aibot']['ChatBot']['description'];
     id: FieldOutputTypes['aibot']['ChatBot']['id'];
     instruction: FieldOutputTypes['aibot']['ChatBot']['instruction'];
     isEnabled: FieldOutputTypes['aibot']['ChatBot']['isEnabled'];
     lookbackMessages: FieldOutputTypes['aibot']['ChatBot']['lookbackMessages'];
     maxAgentSteps: FieldOutputTypes['aibot']['ChatBot']['maxAgentSteps'];
-    memoryConfig: FieldOutputTypes['aibot']['ChatBot']['memoryConfig'];
     name: FieldOutputTypes['aibot']['ChatBot']['name'];
     onFailedMessage: FieldOutputTypes['aibot']['ChatBot']['onFailedMessage'];
     organizationId: FieldOutputTypes['aibot']['ChatBot']['organizationId'];
@@ -870,7 +858,6 @@ export namespace Models {
     initCommands: FieldOutputTypes['aibot']['Sandbox']['initCommands'];
     name: FieldOutputTypes['aibot']['Sandbox']['name'];
     organizationId: FieldOutputTypes['aibot']['Sandbox']['organizationId'];
-    sandboxScope: FieldOutputTypes['aibot']['Sandbox']['sandboxScope'];
     updatedAt: FieldOutputTypes['aibot']['Sandbox']['updatedAt'];
     api: aibot_SandboxAPI;
     instances: aibot_PersistentSandboxInstance[];
@@ -1729,6 +1716,16 @@ type ContractBase = Omit<
                   readonly default: { readonly kind: 'function'; readonly expression: 'now()' };
                   readonly many: false;
                 };
+                readonly dataPersistenceScope: {
+                  readonly dataType: 'pg/text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/text@1', 'nopersistence'>;
+                  };
+                  readonly many: false;
+                };
                 readonly description: {
                   readonly dataType: 'pg/text';
                   readonly codecId: 'pg/text@1';
@@ -1770,16 +1767,6 @@ type ContractBase = Omit<
                   readonly default: {
                     readonly kind: 'literal';
                     readonly value: DefaultLiteralValue<'pg/int4@1', 8>;
-                  };
-                  readonly many: false;
-                };
-                readonly memoryConfig: {
-                  readonly dataType: 'pg/text';
-                  readonly codecId: 'pg/text@1';
-                  readonly nullable: false;
-                  readonly default: {
-                    readonly kind: 'literal';
-                    readonly value: DefaultLiteralValue<'pg/text@1', 'nouse'>;
                   };
                   readonly many: false;
                 };
@@ -4124,12 +4111,6 @@ type ContractBase = Omit<
                   readonly nullable: false;
                   readonly many: false;
                 };
-                readonly sandboxScope: {
-                  readonly dataType: 'pg/text';
-                  readonly codecId: 'pg/text@1';
-                  readonly nullable: false;
-                  readonly many: false;
-                };
                 readonly updatedAt: {
                   readonly dataType: 'pg/timestamptz';
                   readonly codecId: 'pg/timestamptz-date@1';
@@ -4705,13 +4686,13 @@ type ContractBase = Omit<
               readonly kind: 'valueSet';
               readonly values: readonly ['running', 'succeeded', 'failed', 'skipped'];
             };
+            readonly DataPersistenceScope: {
+              readonly kind: 'valueSet';
+              readonly values: readonly ['nopersistence', 'thread', 'bot'];
+            };
             readonly MCPTransport: {
               readonly kind: 'valueSet';
               readonly values: readonly ['http'];
-            };
-            readonly MemoryConfig: {
-              readonly kind: 'valueSet';
-              readonly values: readonly ['nouse', 'thread', 'bot'];
             };
             readonly PublicIdSlot: {
               readonly kind: 'valueSet';
@@ -4724,10 +4705,6 @@ type ContractBase = Omit<
             readonly Role: {
               readonly kind: 'valueSet';
               readonly values: readonly ['viewer', 'editor', 'manager'];
-            };
-            readonly SandboxScope: {
-              readonly kind: 'valueSet';
-              readonly values: readonly ['turn', 'thread', 'adapter', 'bot', 'all'];
             };
           };
         };
@@ -5517,6 +5494,10 @@ type ContractBase = Omit<
                   readonly codecId: 'pg/timestamptz-string@1';
                 };
               };
+              readonly dataPersistenceScope: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
               readonly description: {
                 readonly nullable: true;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
@@ -5540,10 +5521,6 @@ type ContractBase = Omit<
               readonly maxAgentSteps: {
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
-              };
-              readonly memoryConfig: {
-                readonly nullable: false;
-                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
               };
               readonly name: {
                 readonly nullable: false;
@@ -5676,13 +5653,13 @@ type ContractBase = Omit<
               readonly fields: {
                 readonly agentId: { readonly column: 'agentId' };
                 readonly createdAt: { readonly column: 'createdAt' };
+                readonly dataPersistenceScope: { readonly column: 'dataPersistenceScope' };
                 readonly description: { readonly column: 'description' };
                 readonly id: { readonly column: 'id' };
                 readonly instruction: { readonly column: 'instruction' };
                 readonly isEnabled: { readonly column: 'isEnabled' };
                 readonly lookbackMessages: { readonly column: 'lookbackMessages' };
                 readonly maxAgentSteps: { readonly column: 'maxAgentSteps' };
-                readonly memoryConfig: { readonly column: 'memoryConfig' };
                 readonly name: { readonly column: 'name' };
                 readonly onFailedMessage: { readonly column: 'onFailedMessage' };
                 readonly organizationId: { readonly column: 'organizationId' };
@@ -7826,10 +7803,6 @@ type ContractBase = Omit<
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/uuid@1' };
               };
-              readonly sandboxScope: {
-                readonly nullable: false;
-                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
-              };
               readonly updatedAt: {
                 readonly nullable: false;
                 readonly type: {
@@ -7900,7 +7873,6 @@ type ContractBase = Omit<
                 readonly initCommands: { readonly column: 'initCommands' };
                 readonly name: { readonly column: 'name' };
                 readonly organizationId: { readonly column: 'organizationId' };
-                readonly sandboxScope: { readonly column: 'sandboxScope' };
                 readonly updatedAt: { readonly column: 'updatedAt' };
               };
             };
@@ -8326,17 +8298,17 @@ type ContractBase = Omit<
               { readonly name: 'skipped'; readonly value: 'skipped' },
             ];
           };
-          readonly MCPTransport: {
-            readonly codecId: 'pg/text@1';
-            readonly members: readonly [{ readonly name: 'http'; readonly value: 'http' }];
-          };
-          readonly MemoryConfig: {
+          readonly DataPersistenceScope: {
             readonly codecId: 'pg/text@1';
             readonly members: readonly [
-              { readonly name: 'nouse'; readonly value: 'nouse' },
+              { readonly name: 'nopersistence'; readonly value: 'nopersistence' },
               { readonly name: 'thread'; readonly value: 'thread' },
               { readonly name: 'bot'; readonly value: 'bot' },
             ];
+          };
+          readonly MCPTransport: {
+            readonly codecId: 'pg/text@1';
+            readonly members: readonly [{ readonly name: 'http'; readonly value: 'http' }];
           };
           readonly PublicIdSlot: {
             readonly codecId: 'pg/text@1';
@@ -8361,16 +8333,6 @@ type ContractBase = Omit<
               { readonly name: 'manager'; readonly value: 'manager' },
             ];
           };
-          readonly SandboxScope: {
-            readonly codecId: 'pg/text@1';
-            readonly members: readonly [
-              { readonly name: 'turn'; readonly value: 'turn' },
-              { readonly name: 'thread'; readonly value: 'thread' },
-              { readonly name: 'adapter'; readonly value: 'adapter' },
-              { readonly name: 'bot'; readonly value: 'bot' },
-              { readonly name: 'all'; readonly value: 'all' },
-            ];
-          };
         };
         readonly enumMemberTypes?: {
           readonly BotExecutionSource: readonly [
@@ -8384,12 +8346,12 @@ type ContractBase = Omit<
             { readonly name: 'failed'; readonly value: 'failed' },
             { readonly name: 'skipped'; readonly value: 'skipped' },
           ];
-          readonly MCPTransport: readonly [{ readonly name: 'http'; readonly value: 'http' }];
-          readonly MemoryConfig: readonly [
-            { readonly name: 'nouse'; readonly value: 'nouse' },
+          readonly DataPersistenceScope: readonly [
+            { readonly name: 'nopersistence'; readonly value: 'nopersistence' },
             { readonly name: 'thread'; readonly value: 'thread' },
             { readonly name: 'bot'; readonly value: 'bot' },
           ];
+          readonly MCPTransport: readonly [{ readonly name: 'http'; readonly value: 'http' }];
           readonly PublicIdSlot: readonly [
             { readonly name: 'first'; readonly value: 'first' },
             { readonly name: 'second'; readonly value: 'second' },
@@ -8403,13 +8365,6 @@ type ContractBase = Omit<
             { readonly name: 'viewer'; readonly value: 'viewer' },
             { readonly name: 'editor'; readonly value: 'editor' },
             { readonly name: 'manager'; readonly value: 'manager' },
-          ];
-          readonly SandboxScope: readonly [
-            { readonly name: 'turn'; readonly value: 'turn' },
-            { readonly name: 'thread'; readonly value: 'thread' },
-            { readonly name: 'adapter'; readonly value: 'adapter' },
-            { readonly name: 'bot'; readonly value: 'bot' },
-            { readonly name: 'all'; readonly value: 'all' },
           ];
         };
       };

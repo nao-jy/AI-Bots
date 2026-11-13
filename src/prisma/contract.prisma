@@ -3,14 +3,6 @@ enum MCPTransport {
   http = "http"
 }
 
-enum SandboxScope {
-  turn = "turn"
-  thread = "thread"
-  adapter = "adapter"
-  bot = "bot"
-  all = "all"
-}
-
 enum PublicIdSlot {
   first = "first"
   second = "second"
@@ -22,8 +14,8 @@ enum RateLimitCriteria {
   provider = "provider"
 }
 
-enum MemoryConfig {
-  nouse = "nouse"
+enum DataPersistenceScope {
+  nopersistence = "nopersistence"
   thread = "thread"
   bot = "bot"
 }
@@ -204,7 +196,7 @@ namespace aibot {
     onFailedMessage        String
     lookbackMessages       Int
     maxAgentSteps          Int                     @default(8)
-    memoryConfig           MemoryConfig            @default(nouse)
+    dataPersistenceScope   DataPersistenceScope    @default(nopersistence)
     isEnabled              Boolean                 @default(true)
     agent                  AgentDefinition?        @relation(fields: [agentId], references: [id], onDelete: SetNull)
     agentId                Uuid?                   @unique
@@ -480,7 +472,6 @@ namespace aibot {
     envs              Jsonb?
     allowedDomainList String[]
     initCommands      String[]                    @default([])
-    sandboxScope      SandboxScope
     +Timestamps
     instances         PersistentSandboxInstance[]
   }

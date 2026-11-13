@@ -15,19 +15,13 @@ import {
 } from "../features/sandboxes/terminal-sessions";
 import { appLogger } from "~/.server/logger/app-logger";
 import { logAuditEvent } from "../logger/audit-logger";
-import { SANDBOX_SCOPES } from "~/const";
 import { t } from "~/.server/i18n";
+import type { DataPersistenceScope } from "../features/data-persistence-scope";
 import {
   filterResourcesByRole,
   hasResourceAccess,
   includeResourcePermissions,
 } from "../authorization";
-export type SandboxScope = keyof typeof SANDBOX_SCOPES;
-
-function isSandboxScope(value: string): value is SandboxScope {
-  return Object.hasOwn(SANDBOX_SCOPES, value);
-}
-
 export async function listSandboxes(user: AuthUser, ids: string[]) {
   const sandboxes = await filterResourcesByRole(
     user,
@@ -56,8 +50,6 @@ export async function listSandboxes(user: AuthUser, ids: string[]) {
             apiId: sandbox.apiId,
             type:
               sandboxApis.find((api) => api.id === sandbox.apiId)?.name ?? "—",
-            sandboxScope: sandbox.sandboxScope,
-            scope: SANDBOX_SCOPES[sandbox.sandboxScope],
             name: sandbox.name,
             envs: JSON.stringify(sandbox.envs ?? {}),
             allowedDomainList: JSON.stringify(sandbox.allowedDomainList),
@@ -229,7 +221,6 @@ export async function saveSandbox(
   values: FormData,
 ) {
   const apiId = String(values.get("apiId") ?? "").trim();
-  const sandboxScope = String(values.get("sandboxScope") ?? "").trim();
   const sandboxName = String(values.get("name") ?? "").trim();
   if (
     !isUuid(apiId) ||
@@ -239,8 +230,6 @@ export async function saveSandbox(
     }))
   )
     return { error: "server.unsupportedSandboxType" };
-  if (!isSandboxScope(sandboxScope))
-    return { error: "server.sandboxScopeRequired" };
   let envs: Record<string, string>;
   let allowedDomainList: string[];
   let initCommands: string[];
@@ -293,7 +282,6 @@ export async function saveSandbox(
   }
   const saved = {
     apiId,
-    sandboxScope,
     envs: jsonb(envs),
     allowedDomainList,
     initCommands,
@@ -364,38 +352,26 @@ export async function getChatBotSandbox(
 
 export async function getPersistentSandboxInstance(
   sandboxId: string,
-  sandboxScope: SandboxScope,
+  persistenceScope: DataPersistenceScope,
   threadId: string | null,
   adapterId: string | null,
   chatbotId: string | null,
 ) {
-  if (sandboxScope === "turn") return null;
+  if (persistenceScope === "nopersistence") return null;
 
   const instances = await db.orm.aibot.PersistentSandboxInstance.where({
     sandboxId,
   }).all();
-  switch (sandboxScope) {
+  switch (persistenceScope) {
     case "thread": {
       const isValid =
         threadId !== null && adapterId !== null && chatbotId !== null;
       if (!isValid) throw new Error("unexpected arg pattern");
       break;
     }
-    case "adapter": {
-      const isValid =
-        threadId === null && adapterId !== null && chatbotId !== null;
-      if (!isValid) throw new Error("unexpected arg pattern");
-      break;
-    }
     case "bot": {
       const isValid =
         threadId === null && adapterId === null && chatbotId !== null;
-      if (!isValid) throw new Error("unexpected arg pattern");
-      break;
-    }
-    case "all": {
-      const isValid =
-        threadId === null && adapterId === null && chatbotId === null;
       if (!isValid) throw new Error("unexpected arg pattern");
       break;
     }

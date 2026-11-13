@@ -1166,6 +1166,19 @@
                   "kind": "scalar"
                 }
               },
+              "dataPersistenceScope": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                },
+                "valueSet": {
+                  "entityKind": "enum",
+                  "entityName": "DataPersistenceScope",
+                  "namespaceId": "public",
+                  "plane": "domain"
+                }
+              },
               "description": {
                 "nullable": true,
                 "type": {
@@ -1206,19 +1219,6 @@
                 "type": {
                   "codecId": "pg/int4@1",
                   "kind": "scalar"
-                }
-              },
-              "memoryConfig": {
-                "nullable": false,
-                "type": {
-                  "codecId": "pg/text@1",
-                  "kind": "scalar"
-                },
-                "valueSet": {
-                  "entityKind": "enum",
-                  "entityName": "MemoryConfig",
-                  "namespaceId": "public",
-                  "plane": "domain"
                 }
               },
               "name": {
@@ -1401,6 +1401,9 @@
                 "createdAt": {
                   "column": "createdAt"
                 },
+                "dataPersistenceScope": {
+                  "column": "dataPersistenceScope"
+                },
                 "description": {
                   "column": "description"
                 },
@@ -1418,9 +1421,6 @@
                 },
                 "maxAgentSteps": {
                   "column": "maxAgentSteps"
-                },
-                "memoryConfig": {
-                  "column": "memoryConfig"
                 },
                 "name": {
                   "column": "name"
@@ -4697,19 +4697,6 @@
                   "kind": "scalar"
                 }
               },
-              "sandboxScope": {
-                "nullable": false,
-                "type": {
-                  "codecId": "pg/text@1",
-                  "kind": "scalar"
-                },
-                "valueSet": {
-                  "entityKind": "enum",
-                  "entityName": "SandboxScope",
-                  "namespaceId": "public",
-                  "plane": "domain"
-                }
-              },
               "updatedAt": {
                 "nullable": false,
                 "type": {
@@ -4811,9 +4798,6 @@
                 },
                 "organizationId": {
                   "column": "organizationId"
-                },
-                "sandboxScope": {
-                  "column": "sandboxScope"
                 },
                 "updatedAt": {
                   "column": "updatedAt"
@@ -5476,21 +5460,12 @@
               }
             ]
           },
-          "MCPTransport": {
+          "DataPersistenceScope": {
             "codecId": "pg/text@1",
             "members": [
               {
-                "name": "http",
-                "value": "http"
-              }
-            ]
-          },
-          "MemoryConfig": {
-            "codecId": "pg/text@1",
-            "members": [
-              {
-                "name": "nouse",
-                "value": "nouse"
+                "name": "nopersistence",
+                "value": "nopersistence"
               },
               {
                 "name": "thread",
@@ -5499,6 +5474,15 @@
               {
                 "name": "bot",
                 "value": "bot"
+              }
+            ]
+          },
+          "MCPTransport": {
+            "codecId": "pg/text@1",
+            "members": [
+              {
+                "name": "http",
+                "value": "http"
               }
             ]
           },
@@ -5546,31 +5530,6 @@
               {
                 "name": "manager",
                 "value": "manager"
-              }
-            ]
-          },
-          "SandboxScope": {
-            "codecId": "pg/text@1",
-            "members": [
-              {
-                "name": "turn",
-                "value": "turn"
-              },
-              {
-                "name": "thread",
-                "value": "thread"
-              },
-              {
-                "name": "adapter",
-                "value": "adapter"
-              },
-              {
-                "name": "bot",
-                "value": "bot"
-              },
-              {
-                "name": "all",
-                "value": "all"
               }
             ]
           }
@@ -6552,9 +6511,9 @@
             "ChatBot": {
               "checks": [
                 {
-                  "expression": "\"memoryConfig\" IN ('nouse', 'thread', 'bot')",
-                  "name": "ChatBot_memoryConfig_check_0c542cf2",
-                  "prefix": "ChatBot_memoryConfig_check"
+                  "expression": "\"dataPersistenceScope\" IN ('nopersistence', 'thread', 'bot')",
+                  "name": "ChatBot_dataPersistenceScope_check_9e451ce9",
+                  "prefix": "ChatBot_dataPersistenceScope_check"
                 }
               ],
               "columns": {
@@ -6571,6 +6530,21 @@
                     "kind": "function"
                   },
                   "nullable": false
+                },
+                "dataPersistenceScope": {
+                  "codecId": "pg/text@1",
+                  "dataType": "pg/text",
+                  "default": {
+                    "kind": "literal",
+                    "value": "nopersistence"
+                  },
+                  "nullable": false,
+                  "valueSet": {
+                    "entityKind": "valueSet",
+                    "entityName": "DataPersistenceScope",
+                    "namespaceId": "public",
+                    "plane": "storage"
+                  }
                 },
                 "description": {
                   "codecId": "pg/text@1",
@@ -6609,21 +6583,6 @@
                     "value": 8
                   },
                   "nullable": false
-                },
-                "memoryConfig": {
-                  "codecId": "pg/text@1",
-                  "dataType": "pg/text",
-                  "default": {
-                    "kind": "literal",
-                    "value": "nouse"
-                  },
-                  "nullable": false,
-                  "valueSet": {
-                    "entityKind": "valueSet",
-                    "entityName": "MemoryConfig",
-                    "namespaceId": "public",
-                    "plane": "storage"
-                  }
                 },
                 "name": {
                   "codecId": "pg/text@1",
@@ -9645,11 +9604,6 @@
                   "expression": "array_position(\"initCommands\", NULL) IS NULL",
                   "name": "Sandbox_initCommands_elem_not_null_c09761bc",
                   "prefix": "Sandbox_initCommands_elem_not_null"
-                },
-                {
-                  "expression": "\"sandboxScope\" IN ('turn', 'thread', 'adapter', 'bot', 'all')",
-                  "name": "Sandbox_sandboxScope_check_825fb1d7",
-                  "prefix": "Sandbox_sandboxScope_check"
                 }
               ],
               "columns": {
@@ -9706,17 +9660,6 @@
                   "codecId": "pg/uuid@1",
                   "dataType": "pg/uuid",
                   "nullable": false
-                },
-                "sandboxScope": {
-                  "codecId": "pg/text@1",
-                  "dataType": "pg/text",
-                  "nullable": false,
-                  "valueSet": {
-                    "entityKind": "valueSet",
-                    "entityName": "SandboxScope",
-                    "namespaceId": "public",
-                    "plane": "storage"
-                  }
                 },
                 "updatedAt": {
                   "codecId": "pg/timestamptz-date@1",
@@ -10483,18 +10426,18 @@
                 "skipped"
               ]
             },
+            "DataPersistenceScope": {
+              "kind": "valueSet",
+              "values": [
+                "nopersistence",
+                "thread",
+                "bot"
+              ]
+            },
             "MCPTransport": {
               "kind": "valueSet",
               "values": [
                 "http"
-              ]
-            },
-            "MemoryConfig": {
-              "kind": "valueSet",
-              "values": [
-                "nouse",
-                "thread",
-                "bot"
               ]
             },
             "PublicIdSlot": {
@@ -10519,16 +10462,6 @@
                 "editor",
                 "manager"
               ]
-            },
-            "SandboxScope": {
-              "kind": "valueSet",
-              "values": [
-                "turn",
-                "thread",
-                "adapter",
-                "bot",
-                "all"
-              ]
             }
           }
         },
@@ -10536,7 +10469,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "927579b9a46ad16089da0de5f5d070d6fe005255dcefba603c4eef5f339cbc30"
+    "storageHash": "764f7547cf7dc125e42c53cecdb1c50c7f05b0a92899e60abfeda437dfc9abb9"
   },
   "execution": {
     "executionHash": "c710fde4219b5316eaf5f1849710427f86ea616903d61dd2302201d85f683c35",

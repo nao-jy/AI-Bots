@@ -7,8 +7,8 @@ import {
   createPersistentSandboxInstance,
   getChatBotSandbox,
   getPersistentSandboxInstance,
-  type SandboxScope,
 } from "../repository/sandboxes";
+import type { DataPersistenceScope } from "./data-persistence-scope";
 import {
   decryptMcpContext,
   decryptMcpHeaders,
@@ -40,7 +40,7 @@ import { ApiFileSystem } from "./filesystem/api";
 import { storageConfig } from "./filesystem/config";
 import { db } from "../repository/db";
 import { buildMemoryPrompt, getMemoryTools } from "./toolsets/memory";
-import { getMemoryDirectory } from "./memory-config";
+import { getMemoryDirectory } from "./data-persistence-scope";
 import { t } from "~/.server/i18n";
 import {
   beginExecution,
@@ -60,30 +60,16 @@ function safeToolName(value: string) {
 }
 
 function getScopedIds(
-  scope: SandboxScope,
+  scope: DataPersistenceScope,
   chatbotId: string,
   adapterId: string,
   threadId: string,
 ) {
   switch (scope) {
-    case "all": {
-      return {
-        chatbotId: null,
-        adapterId: null,
-        threadId: null,
-      };
-    }
     case "bot": {
       return {
         chatbotId: chatbotId,
         adapterId: null,
-        threadId: null,
-      };
-    }
-    case "adapter": {
-      return {
-        chatbotId: chatbotId,
-        adapterId: adapterId,
         threadId: null,
       };
     }
@@ -101,6 +87,7 @@ function getScopedIds(
 async function getBotSandbox(
   organizationId: string,
   chatbotId: string,
+  chatbotScope: DataPersistenceScope,
   adapterId: string,
   threadId: string,
 ) {
@@ -108,7 +95,7 @@ async function getBotSandbox(
   if (!sandbox) return null;
 
   const scopedIds = getScopedIds(
-    sandbox.sandboxScope,
+    chatbotScope,
     chatbotId,
     adapterId,
     threadId,
@@ -120,7 +107,7 @@ async function getBotSandbox(
   if (scopedIds !== null) {
     const persistentInstance = await getPersistentSandboxInstance(
       sandbox.id,
-      sandbox.sandboxScope,
+      chatbotScope,
       scopedIds.threadId,
       scopedIds.adapterId,
       scopedIds.chatbotId,
@@ -167,7 +154,7 @@ async function getBotSandbox(
 
   return {
     instanceId: info.createdInstanceId,
-    isTurnScoped: sandbox.sandboxScope === "turn",
+    isTurnScoped: chatbotScope === "nopersistence",
     sandboxProvider,
     bashSandbox: info.sandbox,
   };
@@ -288,7 +275,7 @@ async function processBotMessage(
       "/",
       chatbot.organizationId,
       chatbot.id,
-      chatbot.memoryConfig,
+      chatbot.dataPersistenceScope,
       adapterId,
       thread.id,
     );
@@ -346,6 +333,7 @@ async function processBotMessage(
     turnSandbox = await getBotSandbox(
       chatbot.organizationId,
       chatbot.id,
+      chatbot.dataPersistenceScope,
       adapterId,
       thread.id,
     );

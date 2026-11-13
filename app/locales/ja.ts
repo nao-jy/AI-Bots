@@ -64,13 +64,6 @@ export const ja = {
     japanese: "日本語",
     english: "English",
   },
-  sandboxScopes: {
-    turn: "ターン",
-    thread: "スレッド",
-    adapter: "チャットアダプタ",
-    bot: "チャットボット",
-    all: "全体で共有",
-  },
   loading: {
     destination: "{{label}}を読み込んでいます",
     logout: "ログアウトしています",
@@ -229,10 +222,10 @@ export const ja = {
       historyMessageCountLabel: "見返すメッセージ数",
       maxAgentStepsLabel: "エージェントの最大ステップ数",
       zeroHistoryMessages: "0",
-      memoryConfigLabel: "メモリ",
-      memoryConfigNouseOption: "使用しない",
-      memoryConfigThreadOption: "スレッドごとに保存",
-      memoryConfigBotOption: "ボット全体で共有",
+      dataPersistenceScopeLabel: "データの保存範囲",
+      dataPersistenceScopeNopersistenceOption: "ターンごと（保存しない）",
+      dataPersistenceScopeThreadOption: "スレッドごとに保存",
+      dataPersistenceScopeBotOption: "ボット全体で共有",
       noLimitOption: "指定しない",
       adaptersPlaceholder: "接続するチャットアダプタを選択",
       sandboxPlaceholder: "利用するサンドボックスを選択",
@@ -455,7 +448,6 @@ export const ja = {
       description:
         "チャットボットが利用する実行環境、環境変数、ネットワーク制限を管理します。特権コマンドは新規生成時に許可ドメイン制限を一時的に解除して実行します。",
       typeLabel: "タイプ",
-      scopeLabel: "適用範囲",
       allowedDomainsLabel: "許可ドメイン",
       initCommandsLabel: "生成時特権コマンド",
       nameLabel: "名前",
@@ -963,7 +955,7 @@ export const ja = {
     mcpContextSchemaUnavailable:
       "MCPコンテキストのスキーマを取得できませんでした。",
     botNameRequired: "ボット名を入力してください。",
-    invalidMemoryConfig: "メモリ設定を選択してください。",
+    invalidDataPersistenceScope: "データの保存範囲を選択してください。",
     invalidMaxAgentSteps:
       "最大ステップ数には1から2147483647までの整数を入力してください。",
     maxAgentStepsReached:
@@ -1048,7 +1040,6 @@ export const ja = {
     invalidTerminalSize: "端末サイズが不正です。",
     sandboxShellStartFailed: "サンドボックスのシェルを開始できませんでした。",
     unsupportedSandboxType: "サポートされていないサンドボックスタイプです。",
-    sandboxScopeRequired: "サンドボックスの適用範囲を選択してください。",
     sandboxEnvironmentVariablesMustBeStringObject:
       "環境変数は文字列のキー・値オブジェクトで入力してください。",
     invalidInput: "入力値を確認してください。",
