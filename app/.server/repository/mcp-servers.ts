@@ -1,4 +1,4 @@
-import { db } from "./db";
+import { kysely } from "./kysely";
 import type { AuthUser } from "../auth";
 import {
   decryptMcpHeaders,
@@ -27,10 +27,13 @@ function isMcpTransport(value: string): value is McpTransport {
 export async function listMcpServers(user: AuthUser, ids: string[]) {
   const servers = await filterResourcesByRole(
     user,
-    await db.orm.aibot.McpServer.where({ organizationId: user.organizationId })
-      .where((server) => server.id.in(ids))
-      .orderBy((server) => server.updatedAt.desc())
-      .all(),
+    await kysely
+      .selectFrom("aibot.McpServer")
+      .selectAll()
+      .where("organizationId", "=", user.organizationId)
+      .where("id", "in", ids)
+      .orderBy("updatedAt", "desc")
+      .execute(),
   );
   return {
     records: await includeResourcePermissions(
@@ -39,7 +42,8 @@ export async function listMcpServers(user: AuthUser, ids: string[]) {
         return record(server.id, server.updatedAt, {
           name: server.name,
           description: server.description ?? "",
-          transport: TRANSPORTS[server.transport] ?? server.transport,
+          transport:
+            TRANSPORTS[server.transport as McpTransport] ?? server.transport,
           transportId: server.transport,
           endpoint: server.endpoint ?? "",
           headers: JSON.stringify(decryptMcpHeaders(server.headers), null, 2),
@@ -81,10 +85,9 @@ export async function saveMcpServer(
   }
   if (
     id !== null &&
-    (!(await db.orm.aibot.McpServer.first({
-      id,
-      organizationId: user.organizationId,
-    })) ||
+    (!(await kysely.selectFrom("aibot.McpServer").select("id")
+      .where("id", "=", id)
+      .where("organizationId", "=", user.organizationId).executeTakeFirst()) ||
       !(await hasResourceAccess(user, id, "update")))
   )
     return { error: "server.mcpServerNotFound" };
@@ -113,32 +116,37 @@ export async function saveMcpServer(
     headers: jsonb(encryptedHeaders),
   };
   if (id === null) {
-    const server = await db.transaction(async (tx) => {
+    const server = await kysely.transaction().execute(async (tx) => {
       const id = generateResourceId();
-      await tx.orm.aibot.ResourceBase.create({
-        id,
-        organizationId: user.organizationId,
-      });
-      const created = await tx.orm.aibot.McpServer.create({
-        id,
-        ...saved,
-        organizationId: user.organizationId,
-      });
-      await tx.orm.aibot.Grant.create({
-        organizationId: user.organizationId,
-        principalId: user.id,
-        resourceId: id,
-        role: "manager",
-        grantedById: user.id,
-      });
+      await tx.insertInto("aibot.ResourceBase")
+        .values({ id, organizationId: user.organizationId }).execute();
+      const created = await tx.insertInto("aibot.McpServer")
+        .values({
+          id,
+          ...saved,
+          organizationId: user.organizationId,
+          updatedAt: new Date(),
+        })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+      await tx.insertInto("aibot.Grant")
+        .values({
+          organizationId: user.organizationId,
+          principalId: user.id,
+          resourceId: id,
+          role: "manager",
+          grantedById: user.id,
+          updatedAt: new Date(),
+        }).execute();
       return created;
     });
     logAuditEvent("mcp_server.created", "mcp_server", server.id, user.id);
   } else {
-    await db.orm.aibot.McpServer.where({
-      id,
-      organizationId: user.organizationId,
-    }).update(saved);
+    await kysely.updateTable("aibot.McpServer")
+      .set({ ...saved, updatedAt: new Date() })
+      .where("id", "=", id)
+      .where("organizationId", "=", user.organizationId)
+      .execute();
     logAuditEvent("mcp_server.updated", "mcp_server", id, user.id);
   }
   return { ok: true };
@@ -146,14 +154,13 @@ export async function saveMcpServer(
 
 export async function deleteMcpServer(user: AuthUser, id: string) {
   if (
-    !(await db.orm.aibot.McpServer.first({
-      id,
-      organizationId: user.organizationId,
-    })) ||
+    !(await kysely.selectFrom("aibot.McpServer").select("id")
+      .where("id", "=", id)
+      .where("organizationId", "=", user.organizationId).executeTakeFirst()) ||
     !(await hasResourceAccess(user, id, "delete"))
   )
     return false;
-  await db.orm.aibot.ResourceBase.where({ id }).delete();
+  await kysely.deleteFrom("aibot.ResourceBase").where("id", "=", id).execute();
   logAuditEvent("mcp_server.deleted", "mcp_server", id, user.id);
   return true;
 }
