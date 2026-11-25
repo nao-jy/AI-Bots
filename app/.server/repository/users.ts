@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { db } from "./db";
+import { kysely } from "./kysely";
 import { hashPassword } from "../auth";
 import { generateResourceId, record, timestamp } from "../utils";
 import { logAuditEvent } from "../logger/audit-logger";
@@ -7,19 +8,37 @@ import { getAppSettings } from "./app-settings";
 import { meetsPasswordPolicy } from "../password-policy";
 
 export async function hasUsers() {
-  return Boolean(await db.orm.aibot.User.first());
+  return Boolean(
+    await kysely
+      .selectFrom("aibot.User")
+      .select("id")
+      .limit(1)
+      .executeTakeFirst(),
+  );
 }
 
 export async function findUserByEmail(email: string) {
-  return db.orm.aibot.User.first({ email });
+  return kysely
+    .selectFrom("aibot.User")
+    .selectAll()
+    .where("email", "=", email)
+    .executeTakeFirst();
 }
 
 export async function findUserById(id: string) {
-  return db.orm.aibot.User.first({ id });
+  return kysely
+    .selectFrom("aibot.User")
+    .selectAll()
+    .where("id", "=", id)
+    .executeTakeFirst();
 }
 
 export async function markEmailVerified(id: string, actorId?: string) {
-  await db.orm.aibot.User.where({ id }).update({ emailVerified: true });
+  await kysely
+    .updateTable("aibot.User")
+    .set({ emailVerified: true, updatedAt: new Date() })
+    .where("id", "=", id)
+    .execute();
   logAuditEvent("user.email_verified", "user", id, actorId);
 }
 
@@ -53,7 +72,11 @@ export async function saveMfaSecret(
   mfaSecret: string,
   actorId?: string,
 ) {
-  await db.orm.aibot.User.where({ id }).update({ mfaSecret });
+  await kysely
+    .updateTable("aibot.User")
+    .set({ mfaSecret, updatedAt: new Date() })
+    .where("id", "=", id)
+    .execute();
   logAuditEvent("user.mfa_configured", "user", id, actorId);
 }
 
@@ -179,11 +202,19 @@ export async function resetLoginAttemptsForLogin(
 }
 
 export async function unlockUserLogin(id: string, organizationId: string) {
-  const user = await db.orm.aibot.User.first({ id, organizationId });
+  const user = await kysely
+    .selectFrom("aibot.User")
+    .select("id")
+    .where("id", "=", id)
+    .where("organizationId", "=", organizationId)
+    .executeTakeFirst();
   if (!user) return { error: "server.userNotFound" };
-  await db.orm.aibot.User.where({ id, organizationId }).update({
-    loginAttempts: 0,
-  });
+  await kysely
+    .updateTable("aibot.User")
+    .set({ loginAttempts: 0, updatedAt: new Date() })
+    .where("id", "=", id)
+    .where("organizationId", "=", organizationId)
+    .execute();
   logAuditEvent("user.login_unlocked", "user", id);
   return { ok: true };
 }
