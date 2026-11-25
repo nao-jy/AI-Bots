@@ -1,4 +1,7 @@
-import { db } from "./db";
+import { kysely } from "./kysely";
+import type { Selectable } from "kysely";
+import { jsonObjectFrom } from "kysely/helpers/postgres";
+import type { UserTable } from "./db-schema";
 import { logAuditEvent } from "../logger/audit-logger";
 
 export async function createSession(
@@ -8,13 +11,17 @@ export async function createSession(
   organizationId: string,
   mfaVerified = true,
 ) {
-  await db.orm.aibot.Session.create({
-    tokenHash: tokenHash,
-    userId,
-    organizationId,
-    expiresAt: expiresAt.toISOString(),
-    mfaVerified,
-  });
+  await kysely
+    .insertInto("aibot.Session")
+    .values({
+      tokenHash,
+      userId,
+      organizationId,
+      expiresAt: expiresAt.toISOString(),
+      mfaVerified,
+      updatedAt: new Date(),
+    })
+    .execute();
   logAuditEvent(
     "auth.session.created",
     "user",
@@ -28,7 +35,11 @@ export async function createPendingSession(
   userId: string,
   expiresAt: Date,
 ) {
-  const user = await db.orm.aibot.User.first({ id: userId });
+  const user = await kysely
+    .selectFrom("aibot.User")
+    .select("organizationId")
+    .where("id", "=", userId)
+    .executeTakeFirst();
   if (!user) throw new Error("User not found");
   return createSession(
     tokenHash,
@@ -40,11 +51,23 @@ export async function createPendingSession(
 }
 
 export async function getPendingSession(tokenHash: string) {
-  const session = await db.orm.aibot.Session.include("user").first({
-    tokenHash,
-    mfaVerified: false,
-  });
-  return session;
+  const session = await kysely
+    .selectFrom("aibot.Session")
+    .selectAll("aibot.Session")
+    .select((eb) => [
+      jsonObjectFrom(
+        eb
+          .selectFrom("aibot.User")
+          .selectAll()
+          .whereRef("aibot.User.id", "=", "aibot.Session.userId"),
+      ).as("user"),
+    ])
+    .where("aibot.Session.tokenHash", "=", tokenHash)
+    .where("aibot.Session.mfaVerified", "=", false)
+    .executeTakeFirst();
+  return session
+    ? { ...session, user: session.user as unknown as Selectable<UserTable> }
+    : undefined;
 }
 
 export async function completePendingSession(
@@ -52,19 +75,21 @@ export async function completePendingSession(
   userId: string,
   expiresAt: Date,
 ) {
-  const completed = await db.transaction(async (tx) => {
-    const session = await tx.orm.aibot.Session.where({
-      tokenHash,
-      userId,
-      mfaVerified: false,
-    })
+  const completed = await kysely.transaction().execute(async (tx) => {
+    const session = await tx
+      .selectFrom("aibot.Session")
+      .selectAll()
+      .where("tokenHash", "=", tokenHash)
+      .where("userId", "=", userId)
+      .where("mfaVerified", "=", false)
       .forUpdate()
-      .first();
+      .executeTakeFirst();
     if (!session || Date.parse(session.expiresAt) <= Date.now()) return false;
-    await tx.orm.aibot.Session.where({ id: session.id }).update({
-      mfaVerified: true,
-      expiresAt: expiresAt.toISOString(),
-    });
+    await tx
+      .updateTable("aibot.Session")
+      .set({ mfaVerified: true, expiresAt: expiresAt.toISOString() })
+      .where("id", "=", session.id)
+      .execute();
     return true;
   });
   if (completed) logAuditEvent("auth.login.succeeded", "user", userId, userId);
@@ -72,20 +97,25 @@ export async function completePendingSession(
 }
 
 export async function recordPendingMfaFailure(tokenHash: string) {
-  const outcome = await db.transaction(async (tx) => {
-    const session = await tx.orm.aibot.Session.where({
-      tokenHash,
-      mfaVerified: false,
-    })
+  const outcome = await kysely.transaction().execute(async (tx) => {
+    const session = await tx
+      .selectFrom("aibot.Session")
+      .selectAll()
+      .where("tokenHash", "=", tokenHash)
+      .where("mfaVerified", "=", false)
       .forUpdate()
-      .first();
+      .executeTakeFirst();
     if (!session) return { locked: true, userId: null };
 
     const mfaAttempts = session.mfaAttempts + 1;
-    await tx.orm.aibot.Session.where({ id: session.id }).update({
-      mfaAttempts,
-      ...(mfaAttempts >= 5 ? { expiresAt: new Date().toISOString() } : {}),
-    });
+    await tx
+      .updateTable("aibot.Session")
+      .set({
+        mfaAttempts,
+        ...(mfaAttempts >= 5 ? { expiresAt: new Date().toISOString() } : {}),
+      })
+      .where("id", "=", session.id)
+      .execute();
     return { locked: mfaAttempts >= 5, userId: session.userId };
   });
   if (outcome.userId !== null)
@@ -94,17 +124,35 @@ export async function recordPendingMfaFailure(tokenHash: string) {
 }
 
 export async function expireSessionByToken(tokenHash: string) {
-  const session = await db.orm.aibot.Session.first({ tokenHash });
+  const session = await kysely
+    .selectFrom("aibot.Session")
+    .select(["id", "userId"])
+    .where("tokenHash", "=", tokenHash)
+    .executeTakeFirst();
   if (!session) return;
-  await db.orm.aibot.Session.where({ tokenHash }).update({
-    expiresAt: new Date().toISOString(),
-  });
+  await kysely
+    .updateTable("aibot.Session")
+    .set({ expiresAt: new Date().toISOString() })
+    .where("tokenHash", "=", tokenHash)
+    .execute();
   logAuditEvent("auth.session.expired", "user", session.userId);
 }
 
 export async function getSessionUser(tokehHash: string) {
-  const session = await db.orm.aibot.Session.include("user").first({
-    tokenHash: tokehHash,
-  });
-  return session;
+  const session = await kysely
+    .selectFrom("aibot.Session")
+    .selectAll("aibot.Session")
+    .select((eb) => [
+      jsonObjectFrom(
+        eb
+          .selectFrom("aibot.User")
+          .selectAll()
+          .whereRef("aibot.User.id", "=", "aibot.Session.userId"),
+      ).as("user"),
+    ])
+    .where("aibot.Session.tokenHash", "=", tokehHash)
+    .executeTakeFirst();
+  return session
+    ? { ...session, user: session.user as unknown as Selectable<UserTable> }
+    : undefined;
 }
