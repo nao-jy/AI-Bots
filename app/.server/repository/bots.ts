@@ -1,4 +1,3 @@
-import { db } from "./db";
 import { kysely } from "./kysely";
 import type { AuthUser } from "../auth";
 import type { PublicIdSlot } from "../../types/entities";
@@ -44,66 +43,65 @@ export async function listBots(
   publicOrigin: string,
   ids: string[],
 ) {
-  const bots = await filterResourcesByRole(
-    user,
-    await db.orm.aibot.ChatBot.where({
-      organizationId: user.organizationId,
-    })
-      .where((bot) => bot.id.in(ids))
-      .include("agent")
-      .include("adapters", (links) =>
-        links.include("adapter", (adapter) => adapter.include("publicIds")),
-      )
-      .include("mcpServers", (links) => links.include("mcpServer"))
-      .include("publicIds")
-      .orderBy((bot) => bot.updatedAt.desc())
-      .all(),
-  );
-  const agents = await filterResourcesByRole(
-    user,
-    await db.orm.aibot.AgentDefinition.where({
-      organizationId: user.organizationId,
-    })
-      .include("chatbots")
-      .include("provider")
-      .all(),
-  );
-  const adapters = await filterResourcesByRole(
-    user,
-    await db.orm.aibot.ChatAdapter.where({
-      organizationId: user.organizationId,
-    }).all(),
-  );
-  const mcpServers = await filterResourcesByRole(
-    user,
-    await db.orm.aibot.McpServer.where({
-      organizationId: user.organizationId,
-    }).all(),
-  );
+  const rawBots = await kysely.selectFrom("aibot.ChatBot").selectAll()
+    .where("organizationId", "=", user.organizationId).where("id", "in", ids)
+    .orderBy("updatedAt", "desc").execute();
+  const botIds = rawBots.map(({ id }) => id);
+  const [agentRows, providerRows, allBotAssignments, adapterLinks, adapterRows,
+    adapterPublicIds, mcpLinks, mcpServerRows, botPublicIds] = await Promise.all([
+    kysely.selectFrom("aibot.AgentDefinition").selectAll().where("organizationId", "=", user.organizationId).execute(),
+    kysely.selectFrom("aibot.Provider").selectAll().where("organizationId", "=", user.organizationId).execute(),
+    kysely.selectFrom("aibot.ChatBot").select(["id", "agentId"]).where("organizationId", "=", user.organizationId).execute(),
+    botIds.length ? kysely.selectFrom("aibot.ChatBotAdapter").selectAll().where("chatbotId", "in", botIds).execute() : [],
+    kysely.selectFrom("aibot.ChatAdapter").selectAll().where("organizationId", "=", user.organizationId).execute(),
+    botIds.length ? kysely.selectFrom("aibot.ChatAdapterPublicId").selectAll()
+      .where("adapterId", "in", (await kysely.selectFrom("aibot.ChatBotAdapter").select("adapterId").where("chatbotId", "in", botIds).execute()).map(({ adapterId }) => adapterId)).execute() : [],
+    botIds.length ? kysely.selectFrom("aibot.ChatBotMcpServer").selectAll().where("chatbotId", "in", botIds).execute() : [],
+    kysely.selectFrom("aibot.McpServer").selectAll().where("organizationId", "=", user.organizationId).execute(),
+    botIds.length ? kysely.selectFrom("aibot.ChatBotPublicId").selectAll().where("chatbotId", "in", botIds).execute() : [],
+  ]);
+  const providersById = new Map(providerRows.map((provider) => [provider.id, provider]));
+  const adaptersById = new Map(adapterRows.map((adapter) => [adapter.id, adapter]));
+  const publicIdsByAdapter = new Map<string, typeof adapterPublicIds>();
+  for (const item of adapterPublicIds) publicIdsByAdapter.set(item.adapterId, [...(publicIdsByAdapter.get(item.adapterId) ?? []), item]);
+  const mcpServersById = new Map(mcpServerRows.map((server) => [server.id, server]));
+  const bots = await filterResourcesByRole(user, rawBots.map((bot) => ({
+    ...bot,
+    agent: bot.agentId ? agentRows.find((agent) => agent.id === bot.agentId) ?? null : null,
+    adapters: adapterLinks.filter((link) => link.chatbotId === bot.id).map((link) => ({
+      ...link,
+      adapter: adaptersById.get(link.adapterId) ? {
+        ...adaptersById.get(link.adapterId)!,
+        publicIds: publicIdsByAdapter.get(link.adapterId) ?? [],
+      } : null,
+    })),
+    mcpServers: mcpLinks.filter((link) => link.chatbotId === bot.id).map((link) => ({
+      ...link,
+      mcpServer: mcpServersById.get(link.mcpServerId)!,
+    })),
+    publicIds: botPublicIds.filter((item) => item.chatbotId === bot.id),
+  })));
+  const agents = await filterResourcesByRole(user, agentRows.map((agent) => ({
+    ...agent,
+    provider: providersById.get(agent.providerId)!,
+    chatbots: allBotAssignments.filter((bot) => bot.agentId === agent.id).map(({ id }) => ({ id })),
+  })));
+  const adapters = await filterResourcesByRole(user, adapterRows);
+  const mcpServers = await filterResourcesByRole(user, mcpServerRows);
   const [sandboxRows, sandboxLinks, authRows] = await Promise.all([
-    db.orm.aibot.Sandbox.where({ organizationId: user.organizationId }).all(),
-    db.orm.aibot.ChatBotToolSandbox.where({
-      organizationId: user.organizationId,
-    })
-      .where((link) => link.chatbotId.in(ids))
-      .all(),
-    db.orm.aibot.OAuthAuthentication.where({
-      organizationId: user.organizationId,
-    }).all(),
+    kysely.selectFrom("aibot.Sandbox").selectAll().where("organizationId", "=", user.organizationId).execute(),
+    botIds.length ? kysely.selectFrom("aibot.ChatBotToolSandbox").selectAll()
+      .where("organizationId", "=", user.organizationId).where("chatbotId", "in", botIds).execute() : [],
+    kysely.selectFrom("aibot.OAuthAuthentication").selectAll().where("organizationId", "=", user.organizationId).execute(),
   ]);
   const [sandboxes, authentications] = await Promise.all([
     filterResourcesByRole(user, sandboxRows),
     filterResourcesByRole(user, authRows),
   ]);
   const [fileSystems, fileSystemLinks] = await Promise.all([
-    db.orm.aibot.FileSystemAPI.where({
-      organizationId: user.organizationId,
-    }).all(),
-    db.orm.aibot.ChatBotFileSystem.where({
-      organizationId: user.organizationId,
-    })
-      .where((link) => link.chatbotId.in(ids))
-      .all(),
+    kysely.selectFrom("aibot.FileSystemAPI").selectAll().where("organizationId", "=", user.organizationId).execute(),
+    botIds.length ? kysely.selectFrom("aibot.ChatBotFileSystem").selectAll()
+      .where("organizationId", "=", user.organizationId).where("chatbotId", "in", botIds).execute() : [],
   ]);
   const mcpContextSchemas = await Promise.all(
     mcpServers.map(async (server) => {
