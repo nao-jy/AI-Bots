@@ -1,4 +1,4 @@
-import { db } from "./db";
+import { kysely } from "./kysely";
 import type { AuthUser } from "../auth";
 
 export type Role = "viewer" | "editor" | "manager";
@@ -28,13 +28,28 @@ export async function getResourceRole(
 ): Promise<Role | null> {
   const administrator =
     isAdmin ??
-    (await db.orm.aibot.User.first({ id: userId, organizationId }))?.isAdmin ??
+    (await kysely
+      .selectFrom("aibot.User")
+      .select("isAdmin")
+      .where("id", "=", userId)
+      .where("organizationId", "=", organizationId)
+      .executeTakeFirst())?.isAdmin ??
     false;
   if (administrator) return "manager";
 
   const [memberships, grants] = await Promise.all([
-    db.orm.aibot.Membership.where({ userId, organizationId }).all(),
-    db.orm.aibot.Grant.where({ resourceId, organizationId }).all(),
+    kysely
+      .selectFrom("aibot.Membership")
+      .select(["groupId"])
+      .where("userId", "=", userId)
+      .where("organizationId", "=", organizationId)
+      .execute(),
+    kysely
+      .selectFrom("aibot.Grant")
+      .select(["principalId", "role"])
+      .where("resourceId", "=", resourceId)
+      .where("organizationId", "=", organizationId)
+      .execute(),
   ]);
   const principalIds = new Set([
     userId,
@@ -110,13 +125,18 @@ export async function grantResourceRole(
   resourceId: string,
   role: Role,
 ) {
-  await db.orm.aibot.Grant.create({
-    organizationId: actor.organizationId,
-    principalId: actor.id,
-    resourceId,
-    role,
-    grantedById: actor.id,
-  });
+  const now = new Date();
+  await kysely
+    .insertInto("aibot.Grant")
+    .values({
+      organizationId: actor.organizationId,
+      principalId: actor.id,
+      resourceId,
+      role,
+      grantedById: actor.id,
+      updatedAt: now,
+    })
+    .execute();
 }
 
 export async function setResourceGrant(
@@ -128,87 +148,74 @@ export async function setResourceGrant(
   await requireResourceAccess(actor, resourceId, "manageGrant");
   const [resourceExists, user, group] = await Promise.all([
     Promise.all([
-      db.orm.aibot.ChatBot.first({
-        id: resourceId,
-        organizationId: actor.organizationId,
-      }),
-      db.orm.aibot.ChatAdapter.first({
-        id: resourceId,
-        organizationId: actor.organizationId,
-      }),
-      db.orm.aibot.Provider.first({
-        id: resourceId,
-        organizationId: actor.organizationId,
-      }),
-      db.orm.aibot.AgentDefinition.first({
-        id: resourceId,
-        organizationId: actor.organizationId,
-      }),
-      db.orm.aibot.RateLimit.first({
-        id: resourceId,
-        organizationId: actor.organizationId,
-      }),
-      db.orm.aibot.McpServer.first({
-        id: resourceId,
-        organizationId: actor.organizationId,
-      }),
-      db.orm.aibot.OAuthClient.first({
-        id: resourceId,
-        organizationId: actor.organizationId,
-      }),
-      db.orm.aibot.OAuthAuthentication.first({
-        id: resourceId,
-        organizationId: actor.organizationId,
-      }),
-      db.orm.aibot.Sandbox.first({
-        id: resourceId,
-        organizationId: actor.organizationId,
-      }),
-      db.orm.aibot.ChatBotSchedule.first({
-        id: resourceId,
-        organizationId: actor.organizationId,
-      }),
+      ...(["ChatBot", "ChatAdapter", "Provider", "AgentDefinition", "RateLimit", "McpServer", "OAuthClient", "OAuthAuthentication", "Sandbox", "ChatBotSchedule"] as const).map((table) =>
+        kysely
+          .selectFrom(`aibot.${table}`)
+          .select("id")
+          .where("id", "=", resourceId)
+          .where("organizationId", "=", actor.organizationId)
+          .executeTakeFirst(),
+      ),
     ]),
-    db.orm.aibot.User.first({
-      id: principalId,
-      organizationId: actor.organizationId,
-    }),
-    db.orm.aibot.Group.first({
-      id: principalId,
-      organizationId: actor.organizationId,
-    }),
+    kysely
+      .selectFrom("aibot.User")
+      .select("id")
+      .where("id", "=", principalId)
+      .where("organizationId", "=", actor.organizationId)
+      .executeTakeFirst(),
+    kysely
+      .selectFrom("aibot.Group")
+      .select("id")
+      .where("id", "=", principalId)
+      .where("organizationId", "=", actor.organizationId)
+      .executeTakeFirst(),
   ]);
   if (!resourceExists.some(Boolean))
     throw new Response("Resource not found", { status: 404 });
   if (!user && !group)
     throw new Response("Principal not found", { status: 404 });
 
-  const existing = await db.orm.aibot.Grant.where({
-    organizationId: actor.organizationId,
-    resourceId,
-    principalId,
-  }).all();
+  const existing = await kysely
+    .selectFrom("aibot.Grant")
+    .select(["id"])
+    .where("organizationId", "=", actor.organizationId)
+    .where("resourceId", "=", resourceId)
+    .where("principalId", "=", principalId)
+    .execute();
   if (role === null) {
-    for (const grant of existing)
-      await db.orm.aibot.Grant.where({ id: grant.id }).delete();
+    await kysely
+      .deleteFrom("aibot.Grant")
+      .where("organizationId", "=", actor.organizationId)
+      .where("resourceId", "=", resourceId)
+      .where("principalId", "=", principalId)
+      .execute();
     return;
   }
   const [first, ...duplicates] = existing;
   if (first) {
-    await db.orm.aibot.Grant.where({ id: first.id }).update({
-      role,
-      grantedById: actor.id,
-    });
-    for (const grant of duplicates)
-      await db.orm.aibot.Grant.where({ id: grant.id }).delete();
+    const now = new Date();
+    await kysely
+      .updateTable("aibot.Grant")
+      .set({ role, grantedById: actor.id, updatedAt: now })
+      .where("id", "=", first.id)
+      .execute();
+    if (duplicates.length)
+      await kysely
+        .deleteFrom("aibot.Grant")
+        .where("id", "in", duplicates.map((grant) => grant.id))
+        .execute();
   } else {
-    await db.orm.aibot.Grant.create({
-      organizationId: actor.organizationId,
-      resourceId,
-      principalId,
-      role,
-      grantedById: actor.id,
-    });
+    await kysely
+      .insertInto("aibot.Grant")
+      .values({
+        organizationId: actor.organizationId,
+        resourceId,
+        principalId,
+        role,
+        grantedById: actor.id,
+        updatedAt: new Date(),
+      })
+      .execute();
   }
 }
 
@@ -217,13 +224,23 @@ export async function listResourceGrants(
   resourceId: string,
 ) {
   await requireResourceAccess(actor, resourceId, "manageGrant");
-  const grants = await db.orm.aibot.Grant.where({
-    organizationId: actor.organizationId,
-    resourceId,
-  }).all();
+  const grants = await kysely
+    .selectFrom("aibot.Grant")
+    .select(["principalId", "role"])
+    .where("organizationId", "=", actor.organizationId)
+    .where("resourceId", "=", resourceId)
+    .execute();
   const [users, groups] = await Promise.all([
-    db.orm.aibot.User.where({ organizationId: actor.organizationId }).all(),
-    db.orm.aibot.Group.where({ organizationId: actor.organizationId }).all(),
+    kysely
+      .selectFrom("aibot.User")
+      .select(["id", "name", "email"])
+      .where("organizationId", "=", actor.organizationId)
+      .execute(),
+    kysely
+      .selectFrom("aibot.Group")
+      .select(["id", "name"])
+      .where("organizationId", "=", actor.organizationId)
+      .execute(),
   ]);
   const principals = [
     ...users.map(({ id, name, email }) => ({
@@ -288,22 +305,22 @@ export async function getReadableResourceIds(
   user: ResourceActor,
 ): Promise<string[] | null> {
   if (user.isAdmin) return null;
-  const memberships = await db.orm.aibot.Membership.where({
-    userId: user.id,
-    organizationId: user.organizationId,
-  })
+  const memberships = await kysely
+    .selectFrom("aibot.Membership")
     .select("groupId")
-    .all();
+    .where("userId", "=", user.id)
+    .where("organizationId", "=", user.organizationId)
+    .execute();
   const principalIds = [
     user.id,
     ...memberships.map((membership) => membership.groupId),
   ];
-  const grants = await db.orm.aibot.Grant.where({
-    organizationId: user.organizationId,
-  })
-    .where((grant) => grant.principalId.in(principalIds))
-    .select("resourceId", "role")
-    .all();
+  const grants = await kysely
+    .selectFrom("aibot.Grant")
+    .select(["resourceId", "role"])
+    .where("organizationId", "=", user.organizationId)
+    .where("principalId", "in", principalIds)
+    .execute();
   return [
     ...new Set(
       grants
