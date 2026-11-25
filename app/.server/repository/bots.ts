@@ -372,18 +372,19 @@ export async function saveBot(
   if (agentId !== null && !isUuid(agentId))
     return { error: "server.agentRequired" };
   if (agentId !== null) {
-    const agent = await db.orm.aibot.AgentDefinition.where({ id: agentId })
-      .include("provider")
-      .first();
+    const agent = await kysely.selectFrom("aibot.AgentDefinition")
+      .innerJoin("aibot.Provider", "aibot.Provider.id", "aibot.AgentDefinition.providerId")
+      .select(["aibot.Provider.organizationId"]).where("aibot.AgentDefinition.id", "=", agentId).executeTakeFirst();
     if (
       !agent ||
-      agent.provider.organizationId !== user.organizationId ||
+      agent.organizationId !== user.organizationId ||
       !(await hasResourceAccess(user, agentId, "read"))
     )
       return { error: "server.selectedAgentNotFound" };
   }
   if (agentId !== null) {
-    const assignedBot = await db.orm.aibot.ChatBot.first({ agentId });
+    const assignedBot = await kysely.selectFrom("aibot.ChatBot").select(["id", "organizationId"])
+      .where("agentId", "=", agentId).executeTakeFirst();
     if (
       assignedBot &&
       (assignedBot.organizationId !== user.organizationId ||
@@ -391,9 +392,8 @@ export async function saveBot(
     )
       return { error: "server.selectedAgentAlreadyUsed" };
   }
-  const adapters = await db.orm.aibot.ChatAdapter.where({
-    organizationId: user.organizationId,
-  }).all();
+  const adapters = await kysely.selectFrom("aibot.ChatAdapter").select("id")
+    .where("organizationId", "=", user.organizationId).execute();
   const allowedAdapterIds = new Set(adapters.map((adapter) => adapter.id));
   if (
     adapterIds.some((adapterId) => !allowedAdapterIds.has(adapterId)) ||
@@ -407,9 +407,8 @@ export async function saveBot(
   ) {
     return { error: "server.selectedAdapterUnavailable" };
   }
-  const mcpServers = await db.orm.aibot.McpServer.where({
-    organizationId: user.organizationId,
-  }).all();
+  const mcpServers = await kysely.selectFrom("aibot.McpServer").selectAll()
+    .where("organizationId", "=", user.organizationId).execute();
   const allowedMcpServerIds = new Set(mcpServers.map((data) => data.id));
   if (
     mcpServerIds.some((id) => !allowedMcpServerIds.has(id)) ||
@@ -428,9 +427,8 @@ export async function saveBot(
   );
   if (new Set(mcpConnectionKeys).size !== mcpConnectionKeys.length)
     return { error: "server.duplicateMcpOauthConnection" };
-  const authentications = await db.orm.aibot.OAuthAuthentication.where({
-    organizationId: user.organizationId,
-  }).all();
+  const authentications = await kysely.selectFrom("aibot.OAuthAuthentication").select("id")
+    .where("organizationId", "=", user.organizationId).execute();
   const allowedAuthenticationIds = new Set(
     authentications.map((authentication) => authentication.id),
   );
@@ -458,9 +456,8 @@ export async function saveBot(
     return {
       error: "server.mcpOauthRequiresSelectedServerAndOwnCredentials",
     };
-  const ownedSandboxes = await db.orm.aibot.Sandbox.where({
-    organizationId: user.organizationId,
-  }).all();
+  const ownedSandboxes = await kysely.selectFrom("aibot.Sandbox").select("id")
+    .where("organizationId", "=", user.organizationId).execute();
   const allowedSandboxIds = new Set(
     ownedSandboxes.map((sandbox) => sandbox.id),
   );
@@ -474,10 +471,8 @@ export async function saveBot(
   if (
     fileSystemId &&
     (!isUuid(fileSystemId) ||
-      !(await db.orm.aibot.FileSystemAPI.first({
-        id: fileSystemId,
-        organizationId: user.organizationId,
-      })))
+      !(await kysely.selectFrom("aibot.FileSystemAPI").select("id")
+        .where("id", "=", fileSystemId).where("organizationId", "=", user.organizationId).executeTakeFirst()))
   )
     return { error: "Selected filesystem API not found" };
   for (const { serverId, context } of mcpConnections) {
@@ -502,23 +497,18 @@ export async function saveBot(
   }
   if (
     id !== null &&
-    (!(await db.orm.aibot.ChatBot.first({
-      id,
-      organizationId: user.organizationId,
-    })) ||
+    (!(await kysely.selectFrom("aibot.ChatBot").select("id")
+      .where("id", "=", id).where("organizationId", "=", user.organizationId).executeTakeFirst()) ||
       !(await hasResourceAccess(user, id, "update")))
   )
     return { error: "server.botNotFound" };
 
-  const botId = await db.transaction(async (tx) => {
+  const botId = await kysely.transaction().execute(async (tx) => {
     let botId = id;
     if (botId === null) {
       botId = generateResourceId();
-      await tx.orm.aibot.ResourceBase.create({
-        id: botId,
-        organizationId: user.organizationId,
-      });
-      const created = await tx.orm.aibot.ChatBot.create({
+      await tx.insertInto("aibot.ResourceBase").values({ id: botId, organizationId: user.organizationId }).execute();
+      const created = await tx.insertInto("aibot.ChatBot").values({
         id: botId,
         name,
         description: description || null,
@@ -529,28 +519,28 @@ export async function saveBot(
         onFailedMessage: onFailedMessage,
         agentId,
         organizationId: user.organizationId,
-      });
+        updatedAt: new Date(),
+      }).returning("id").executeTakeFirstOrThrow();
       botId = created.id;
-      await tx.orm.aibot.Grant.create({
+      await tx.insertInto("aibot.Grant").values({
         organizationId: user.organizationId,
         principalId: user.id,
         resourceId: botId,
         role: "manager",
         grantedById: user.id,
-      });
+        updatedAt: new Date(),
+      }).execute();
       for (const slot of ["first", "second"] as const) {
-        await tx.orm.aibot.ChatBotPublicId.create({
+        await tx.insertInto("aibot.ChatBotPublicId").values({
           organizationId: user.organizationId,
           publicId: generatePublicId(),
           slot,
           chatbotId: botId,
-        });
+          updatedAt: new Date(),
+        }).execute();
       }
     } else {
-      await tx.orm.aibot.ChatBot.where({
-        id: botId,
-        organizationId: user.organizationId,
-      }).update({
+      await tx.updateTable("aibot.ChatBot").set({
         name,
         description: description || null,
         instruction: instruction,
@@ -559,41 +549,46 @@ export async function saveBot(
         maxAgentSteps,
         dataPersistenceScope,
         agentId,
-      });
+        updatedAt: new Date(),
+      }).where("id", "=", botId).where("organizationId", "=", user.organizationId).execute();
     }
-    await tx.orm.aibot.ChatBotAdapter.where({ chatbotId: botId! }).delete();
+    await tx.deleteFrom("aibot.ChatBotAdapter").where("chatbotId", "=", botId!).execute();
     for (const adapterId of adapterIds) {
-      await tx.orm.aibot.ChatBotAdapter.create({
+      await tx.insertInto("aibot.ChatBotAdapter").values({
         organizationId: user.organizationId,
         chatbotId: botId!,
         adapterId,
-      });
+        updatedAt: new Date(),
+      }).execute();
     }
-    await tx.orm.aibot.ChatBotMcpServer.where({ chatbotId: botId! }).delete();
+    await tx.deleteFrom("aibot.ChatBotMcpServer").where("chatbotId", "=", botId!).execute();
     for (const { serverId, authId, context } of mcpConnections) {
-      await tx.orm.aibot.ChatBotMcpServer.create({
+      await tx.insertInto("aibot.ChatBotMcpServer").values({
         organizationId: user.organizationId,
         chatbotId: botId!,
         mcpServerId: serverId,
         authId: authId?.startsWith("thread:") ? null : authId,
         oauthClientId: authId?.startsWith("thread:") ? authId.slice(7) : null,
         context: jsonb(encryptMcpContext(context)),
-      });
+        updatedAt: new Date(),
+      }).execute();
     }
-    await tx.orm.aibot.ChatBotFileSystem.where({ chatbotId: botId! }).delete();
+    await tx.deleteFrom("aibot.ChatBotFileSystem").where("chatbotId", "=", botId!).execute();
     if (fileSystemId)
-      await tx.orm.aibot.ChatBotFileSystem.create({
+      await tx.insertInto("aibot.ChatBotFileSystem").values({
         organizationId: user.organizationId,
         chatbotId: botId!,
         sandboxId: fileSystemId,
-      });
-    await tx.orm.aibot.ChatBotToolSandbox.where({ chatbotId: botId! }).delete();
+        updatedAt: new Date(),
+      }).execute();
+    await tx.deleteFrom("aibot.ChatBotToolSandbox").where("chatbotId", "=", botId!).execute();
     if (sandboxId !== null) {
-      await tx.orm.aibot.ChatBotToolSandbox.create({
+      await tx.insertInto("aibot.ChatBotToolSandbox").values({
         organizationId: user.organizationId,
         chatbotId: botId!,
         sandboxId,
-      });
+        updatedAt: new Date(),
+      }).execute();
     }
     return botId;
   });
