@@ -1,5 +1,5 @@
 import cron from "node-cron";
-import { db } from "./db";
+import { kysely } from "./kysely";
 import type { AuthUser } from "../auth";
 import { generateResourceId, record } from "../utils";
 import { logAuditEvent } from "../logger/audit-logger";
@@ -48,16 +48,18 @@ function parseTargets(value: FormDataEntryValue | null) {
 
 export async function listSchedules(user: AuthUser, ids: string[]) {
   const [scheduleRows, chatbotAdapters] = await Promise.all([
-    db.orm.aibot.ChatBotSchedule.where({ organizationId: user.organizationId })
-      .where((schedule) => schedule.id.in(ids))
-      .include("chatTargets", (targets) =>
-        targets.include("chatbotAdapter", (link) =>
-          link.include("chatbot").include("adapter"),
-        ),
-      )
-      .orderBy((schedule) => schedule.createdAt.desc())
-      .all(),
-    db.orm.aibot.ChatBotAdapter.include("chatbot").include("adapter").all(),
+    kysely.selectFrom("aibot.ChatBotSchedule").selectAll()
+      .where("organizationId", "=", user.organizationId).where("id", "in", ids)
+      .orderBy("createdAt", "desc").execute(),
+    kysely.selectFrom("aibot.ChatBotAdapter")
+      .innerJoin("aibot.ChatBot", "aibot.ChatBot.id", "aibot.ChatBotAdapter.chatbotId")
+      .innerJoin("aibot.ChatAdapter", "aibot.ChatAdapter.id", "aibot.ChatBotAdapter.adapterId")
+      .select([
+        "aibot.ChatBotAdapter.id", "aibot.ChatBotAdapter.chatbotId", "aibot.ChatBotAdapter.adapterId",
+        "aibot.ChatBot.name as chatbotName", "aibot.ChatBot.organizationId as chatbotOrganizationId",
+        "aibot.ChatBot.isEnabled", "aibot.ChatAdapter.name as adapterName",
+        "aibot.ChatAdapter.organizationId as adapterOrganizationId",
+      ]).execute(),
   ]);
   const schedules = await filterResourcesByRole(user, scheduleRows);
   const accessibleLinkIds = new Set(
@@ -66,8 +68,8 @@ export async function listSchedules(user: AuthUser, ids: string[]) {
         chatbotAdapters.map(async (link) => ({
           id: link.id,
           allowed:
-            link.chatbot.organizationId === user.organizationId &&
-            link.adapter.organizationId === user.organizationId &&
+            link.chatbotOrganizationId === user.organizationId &&
+            link.adapterOrganizationId === user.organizationId &&
             (await hasResourceAccess(user, link.chatbotId, "read")) &&
             (await hasResourceAccess(user, link.adapterId, "read")),
         })),
@@ -76,24 +78,42 @@ export async function listSchedules(user: AuthUser, ids: string[]) {
       .filter(({ allowed }) => allowed)
       .map(({ id }) => id),
   );
+  const scheduleIds = schedules.map(({ id }) => id);
+  const [targets, targetLinks] = scheduleIds.length
+    ? await Promise.all([
+        kysely.selectFrom("aibot.ChatTarget").select(["id", "scheduleId", "chatbotAdapterId", "threadId"])
+          .where("scheduleId", "in", scheduleIds).execute(),
+        kysely.selectFrom("aibot.ChatTarget")
+          .innerJoin("aibot.ChatBotAdapter", "aibot.ChatBotAdapter.id", "aibot.ChatTarget.chatbotAdapterId")
+          .innerJoin("aibot.ChatBot", "aibot.ChatBot.id", "aibot.ChatBotAdapter.chatbotId")
+          .innerJoin("aibot.ChatAdapter", "aibot.ChatAdapter.id", "aibot.ChatBotAdapter.adapterId")
+          .select([
+            "aibot.ChatTarget.id as targetId", "aibot.ChatBotAdapter.id as linkId",
+            "aibot.ChatBot.name as chatbotName", "aibot.ChatBot.organizationId as chatbotOrganizationId",
+            "aibot.ChatAdapter.name as adapterName", "aibot.ChatAdapter.organizationId as adapterOrganizationId",
+          ]).where("aibot.ChatTarget.scheduleId", "in", scheduleIds).execute(),
+      ])
+    : [[], []];
+  const targetLinksById = new Map(targetLinks.map((link) => [link.targetId, link]));
   return {
     records: await includeResourcePermissions(
       user,
       schedules.map((schedule) => {
-        const targets = schedule.chatTargets.flatMap((target) => {
-          const link = target.chatbotAdapter;
+        const scheduleTargets = targets.filter((target) => target.scheduleId === schedule.id);
+        const targetRecords = scheduleTargets.flatMap((target) => {
+          const link = targetLinksById.get(target.id);
           if (
             !link ||
-            !accessibleLinkIds.has(link.id) ||
-            link.chatbot.organizationId !== user.organizationId ||
-            link.adapter.organizationId !== user.organizationId
+            !accessibleLinkIds.has(link.linkId) ||
+            link.chatbotOrganizationId !== user.organizationId ||
+            link.adapterOrganizationId !== user.organizationId
           )
             return [];
           return [
             {
-              chatbotAdapterId: link.id,
+              chatbotAdapterId: link.linkId,
               threadId: target.threadId,
-              label: `${link.chatbot.name} / ${link.adapter.name}`,
+              label: `${link.chatbotName} / ${link.adapterName}`,
             },
           ];
         });
@@ -102,11 +122,11 @@ export async function listSchedules(user: AuthUser, ids: string[]) {
           prompt: schedule.prompt,
           cronParam: schedule.cronParam,
           timezone: schedule.timezone,
-          targets: targets
+          targets: targetRecords
             .map(({ label, threadId }) => `${label} / ${threadId}`)
             .join(", "),
           targetsJson: JSON.stringify(
-            targets.map(({ chatbotAdapterId, threadId }) => ({
+            targetRecords.map(({ chatbotAdapterId, threadId }) => ({
               chatbotAdapterId,
               threadId,
             })),
@@ -118,10 +138,10 @@ export async function listSchedules(user: AuthUser, ids: string[]) {
       .filter((link) => accessibleLinkIds.has(link.id))
       .map((link) => ({
         label: localizedMessage(
-          link.chatbot.isEnabled
+          link.isEnabled
             ? "server.scheduleTargetOptionActive"
             : "server.scheduleTargetOptionInactive",
-          { 0: link.chatbot.name, 1: link.adapter.name },
+          { 0: link.chatbotName, 1: link.adapterName },
         ),
         value: String(link.id),
       })),
@@ -129,17 +149,47 @@ export async function listSchedules(user: AuthUser, ids: string[]) {
 }
 
 export async function getScheduleForExecution(id: string) {
-  return db.orm.aibot.ChatBotSchedule.where({ id })
-    .include("chatTargets", (targets) =>
-      targets.include("chatbotAdapter", (link) =>
-        link.include("chatbot").include("adapter"),
-      ),
-    )
-    .first();
+  const schedule = await kysely.selectFrom("aibot.ChatBotSchedule").selectAll()
+    .where("id", "=", id).executeTakeFirst();
+  if (!schedule) return undefined;
+  const chatTargets = await kysely.selectFrom("aibot.ChatTarget")
+    .innerJoin("aibot.ChatBotAdapter", "aibot.ChatBotAdapter.id", "aibot.ChatTarget.chatbotAdapterId")
+    .innerJoin("aibot.ChatBot", "aibot.ChatBot.id", "aibot.ChatBotAdapter.chatbotId")
+    .innerJoin("aibot.ChatAdapter", "aibot.ChatAdapter.id", "aibot.ChatBotAdapter.adapterId")
+    .select([
+      "aibot.ChatTarget.id", "aibot.ChatTarget.organizationId", "aibot.ChatTarget.scheduleId",
+      "aibot.ChatTarget.chatbotAdapterId", "aibot.ChatTarget.threadId",
+      "aibot.ChatBotAdapter.chatbotId", "aibot.ChatBotAdapter.adapterId",
+      "aibot.ChatBot.id as botId", "aibot.ChatBot.name as chatbotName",
+      "aibot.ChatBot.organizationId as chatbotOrganizationId", "aibot.ChatBot.agentId",
+      "aibot.ChatBot.isEnabled", "aibot.ChatAdapter.id as adapterResourceId",
+      "aibot.ChatAdapter.platform", "aibot.ChatAdapter.config", "aibot.ChatAdapter.authId",
+      "aibot.ChatAdapter.name as adapterName", "aibot.ChatAdapter.organizationId as adapterOrganizationId",
+    ]).where("aibot.ChatTarget.scheduleId", "=", id).execute();
+  return {
+    ...schedule,
+    chatTargets: chatTargets.map((target) => ({
+      id: target.id, organizationId: target.organizationId, scheduleId: target.scheduleId,
+      chatbotAdapterId: target.chatbotAdapterId, threadId: target.threadId,
+      chatbotAdapter: {
+        id: target.chatbotAdapterId, chatbotId: target.chatbotId, adapterId: target.adapterId,
+        chatbot: {
+          id: target.botId, name: target.chatbotName,
+          organizationId: target.chatbotOrganizationId, agentId: target.agentId,
+          isEnabled: target.isEnabled,
+        },
+        adapter: {
+          id: target.adapterResourceId, name: target.adapterName,
+          organizationId: target.adapterOrganizationId, platform: target.platform,
+          config: target.config, authId: target.authId,
+        },
+      },
+    })),
+  };
 }
 
 export async function listSchedulePatterns() {
-  return db.orm.aibot.ChatBotSchedule.all();
+  return kysely.selectFrom("aibot.ChatBotSchedule").selectAll().execute();
 }
 
 function isValidTimezone(timezone: string) {
@@ -178,16 +228,17 @@ export async function saveSchedule(
     return { error: "server.duplicateScheduleTarget" };
 
   for (const target of targets) {
-    const link = await db.orm.aibot.ChatBotAdapter.where({
-      id: target.chatbotAdapterId,
-    })
-      .include("chatbot")
-      .include("adapter")
-      .first();
+    const link = await kysely.selectFrom("aibot.ChatBotAdapter")
+      .innerJoin("aibot.ChatBot", "aibot.ChatBot.id", "aibot.ChatBotAdapter.chatbotId")
+      .innerJoin("aibot.ChatAdapter", "aibot.ChatAdapter.id", "aibot.ChatBotAdapter.adapterId")
+      .select([
+        "aibot.ChatBotAdapter.id", "aibot.ChatBotAdapter.chatbotId", "aibot.ChatBotAdapter.adapterId",
+        "aibot.ChatBot.organizationId as chatbotOrganizationId", "aibot.ChatAdapter.organizationId as adapterOrganizationId",
+      ]).where("aibot.ChatBotAdapter.id", "=", target.chatbotAdapterId).executeTakeFirst();
     if (
       !link ||
-      link.chatbot.organizationId !== user.organizationId ||
-      link.adapter.organizationId !== user.organizationId ||
+      link.chatbotOrganizationId !== user.organizationId ||
+      link.adapterOrganizationId !== user.organizationId ||
       !(await hasResourceAccess(user, link.chatbotId, "read")) ||
       !(await hasResourceAccess(user, link.adapterId, "read"))
     )
@@ -196,53 +247,49 @@ export async function saveSchedule(
 
   if (
     id !== null &&
-    (!(await db.orm.aibot.ChatBotSchedule.first({
-      id,
-      organizationId: user.organizationId,
-    })) ||
+    (!(await kysely.selectFrom("aibot.ChatBotSchedule").select("id")
+      .where("id", "=", id).where("organizationId", "=", user.organizationId).executeTakeFirst()) ||
       !(await hasResourceAccess(user, id, "update")))
   )
     return { error: "server.scheduleNotFound" };
 
-  const scheduleId = await db.transaction(async (tx) => {
+  const scheduleId = await kysely.transaction().execute(async (tx) => {
     let scheduleId = id;
     if (scheduleId === null) {
       scheduleId = generateResourceId();
-      await tx.orm.aibot.ResourceBase.create({
-        id: scheduleId,
-        organizationId: user.organizationId,
-      });
-      const schedule = await tx.orm.aibot.ChatBotSchedule.create({
+      await tx.insertInto("aibot.ResourceBase").values({ id: scheduleId, organizationId: user.organizationId }).execute();
+      const schedule = await tx.insertInto("aibot.ChatBotSchedule").values({
         id: scheduleId,
         name,
         prompt,
         cronParam,
         timezone,
         organizationId: user.organizationId,
-      });
+        updatedAt: new Date(),
+      }).returning("id").executeTakeFirstOrThrow();
       scheduleId = schedule.id;
-      await tx.orm.aibot.Grant.create({
+      await tx.insertInto("aibot.Grant").values({
         organizationId: user.organizationId,
         principalId: user.id,
         resourceId: scheduleId,
         role: "manager",
         grantedById: user.id,
-      });
+        updatedAt: new Date(),
+      }).execute();
     } else {
-      await tx.orm.aibot.ChatBotSchedule.where({
-        id: scheduleId,
-        organizationId: user.organizationId,
-      }).update({ name, prompt, cronParam, timezone });
-      await tx.orm.aibot.ChatTarget.where({ scheduleId }).delete();
+      await tx.updateTable("aibot.ChatBotSchedule").set({ name, prompt, cronParam, timezone, updatedAt: new Date() })
+        .where("id", "=", scheduleId).where("organizationId", "=", user.organizationId).execute();
+      await tx.deleteFrom("aibot.ChatTarget").where("scheduleId", "=", scheduleId).execute();
     }
 
     for (const target of targets) {
-      await tx.orm.aibot.ChatTarget.create({
+      await tx.insertInto("aibot.ChatTarget").values({
         organizationId: user.organizationId,
         scheduleId,
         chatbotAdapterId: target.chatbotAdapterId,
         threadId: target.threadId,
-      });
+        updatedAt: new Date(),
+      }).execute();
     }
     return scheduleId;
   });
@@ -256,12 +303,10 @@ export async function saveSchedule(
 }
 
 export async function deleteSchedule(user: AuthUser, id: string) {
-  const schedule = await db.orm.aibot.ChatBotSchedule.first({
-    id,
-    organizationId: user.organizationId,
-  });
+  const schedule = await kysely.selectFrom("aibot.ChatBotSchedule").select("id")
+    .where("id", "=", id).where("organizationId", "=", user.organizationId).executeTakeFirst();
   if (!schedule || !(await hasResourceAccess(user, id, "delete"))) return false;
-  await db.orm.aibot.ResourceBase.where({ id }).delete();
+  await kysely.deleteFrom("aibot.ResourceBase").where("id", "=", id).execute();
   logAuditEvent("schedule.deleted", "schedule", id, user.id);
   return true;
 }
