@@ -41,6 +41,7 @@
 - [x] `authorization.ts` をKyselyへ移行した。直接／グループ権限計算と組織内リソース・主体確認を移行。
 - [x] `groups.ts` をKyselyへ移行した。メンバー一覧、作成、所属変更、名称変更、削除を移行。
 - [x] `runtime-lookups.ts` をKyselyへ移行した。ダッシュボード用検索、利用集計、API・組織参照を移行。
+- [x] `thread-oauth.ts` をKyselyへ移行した。呼出元ユーザーの資格情報分離、設定検証、ロックと認証バージョン確認、作成／削除のトランザクションを維持。
 - [ ] 関連データの取得、集計、競合時の処理、削除と cascade、エラーの扱いを SQL と実 DB で確認する。N+1 や意図しない行の重複を避ける。
 - [ ] `bots.ts`、`oauth.ts`、`rate-limits.ts` などの複数操作を伴う処理は、従来の原子性と分離の前提を保つ。ひとつの論理操作の途中で Prisma と Kysely の別トランザクションを混在させない。
 - [ ] `users.ts`、`session.ts`、`authorization.ts`、`thread-oauth.ts`、`oauth-revocation.ts` など認証・認可に関係する操作は条件や失敗時の動作を重点的に確認する。
