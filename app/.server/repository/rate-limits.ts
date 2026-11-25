@@ -1,6 +1,9 @@
 import { CronExpressionParser } from "cron-parser";
 import cron from "node-cron";
+import { kysely } from "./kysely";
 import { db } from "./db";
+import type { Selectable } from "kysely";
+import type { AgentUsageTable, RateLimitTable } from "./db-schema";
 import type { AuthUser } from "../auth";
 import { generateResourceId, isUuid, jsonb, record } from "../utils";
 import { logAuditEvent } from "../logger/audit-logger";
@@ -20,12 +23,10 @@ type UsageMetric =
   | "outputDetails.textTokens"
   | "outputDetails.reasoningTokens";
 type UsageRow = Pick<
-  Awaited<ReturnType<typeof db.orm.aibot.AgentUsage.all>>[number],
+  Selectable<AgentUsageTable>,
   "inputTokens" | "outputTokens" | "inputDetails" | "outputDetails"
 >;
-type RateLimitRow = Awaited<
-  ReturnType<typeof db.orm.aibot.RateLimit.all>
->[number];
+type RateLimitRow = Selectable<RateLimitTable>;
 
 const usageMetrics: UsageMetric[] = [
   "inputTokens",
@@ -100,44 +101,14 @@ async function getUsageForLimit(
   threadId: string,
   resetAt: Date,
 ) {
-  const threadFilter = limit.perThread ? { threadId } : {};
-  const since = resetAt.toISOString();
-  const usage = db.orm.aibot.AgentUsage;
-  const columns = [
-    "inputTokens",
-    "outputTokens",
-    "inputDetails",
-    "outputDetails",
-  ] as const;
-  switch (limit.criteria) {
-    case "bot":
-      return usage
-        .where({
-          chatbotId: limit.criteriaId ?? chatbotId,
-          ...threadFilter,
-        })
-        .where((row) => row.createdAt.gte(since))
-        .select(...columns)
-        .all();
-    case "agent":
-      return usage
-        .where({
-          agentId: limit.criteriaId ?? agentId,
-          ...threadFilter,
-        })
-        .where((row) => row.createdAt.gte(since))
-        .select(...columns)
-        .all();
-    case "provider":
-      return usage
-        .where({
-          providerId: limit.criteriaId ?? providerId,
-          ...threadFilter,
-        })
-        .where((row) => row.createdAt.gte(since))
-        .select(...columns)
-        .all();
-  }
+  const key = limit.criteria === "bot" ? "chatbotId" : limit.criteria === "agent" ? "agentId" : "providerId";
+  const value = limit.criteria === "bot" ? (limit.criteriaId ?? chatbotId) : limit.criteria === "agent" ? (limit.criteriaId ?? agentId) : (limit.criteriaId ?? providerId);
+  let query = kysely.selectFrom("aibot.AgentUsage")
+    .select(["inputTokens", "outputTokens", "inputDetails", "outputDetails"])
+    .where(key, "=", value)
+    .where("createdAt", ">=", resetAt.toISOString());
+  if (limit.perThread) query = query.where("threadId", "=", threadId);
+  return query.execute();
 }
 
 function isExceeded(limit: RateLimitRow, rows: UsageRow[]) {
@@ -173,7 +144,8 @@ export async function getExceededRateLimit(
   providerId: string,
   threadId: string,
 ) {
-  const limits = await db.orm.aibot.RateLimit.where({ organizationId }).all();
+  const limits = await kysely.selectFrom("aibot.RateLimit").selectAll()
+    .where("organizationId", "=", organizationId).execute();
   const matches = limits.filter(
     (limit) =>
       (limit.criteria === "bot" && limit.criteriaId === chatbotId) ||
