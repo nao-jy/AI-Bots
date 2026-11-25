@@ -1,4 +1,4 @@
-import { db } from "./db";
+import { kysely } from "./kysely";
 import type { AuthUser } from "../auth";
 import {
   decryptMcpHeaders,
@@ -17,10 +17,13 @@ import {
 export async function listProviders(user: AuthUser, ids: string[]) {
   const providers = await filterResourcesByRole(
     user,
-    await db.orm.aibot.Provider.where({ organizationId: user.organizationId })
-      .where((provider) => provider.id.in(ids))
-      .orderBy((provider) => provider.updatedAt.desc())
-      .all(),
+    await kysely
+      .selectFrom("aibot.Provider")
+      .selectAll()
+      .where("organizationId", "=", user.organizationId)
+      .where("id", "in", ids)
+      .orderBy("updatedAt", "desc")
+      .execute(),
   );
   return {
     records: await includeResourcePermissions(
@@ -73,17 +76,15 @@ export async function saveProvider(
   }
   if (
     id !== null &&
-    (!(await db.orm.aibot.Provider.first({
-      id,
-      organizationId: user.organizationId,
-    })) ||
+    (!(await kysely.selectFrom("aibot.Provider").select("id")
+      .where("id", "=", id)
+      .where("organizationId", "=", user.organizationId).executeTakeFirst()) ||
       !(await hasResourceAccess(user, id, "update")))
   )
     return { error: "server.providerNotFound" };
-  const duplicate = await db.orm.aibot.Provider.first({
-    organizationId: user.organizationId,
-    name,
-  });
+  const duplicate = await kysely.selectFrom("aibot.Provider").select("id")
+    .where("organizationId", "=", user.organizationId)
+    .where("name", "=", name).executeTakeFirst();
   if (duplicate && duplicate.id !== id)
     return { error: "server.duplicateProviderName" };
   let encryptedHeaders: ReturnType<typeof encryptStringMap>;
@@ -104,32 +105,37 @@ export async function saveProvider(
     headers: jsonb(encryptedHeaders),
   };
   if (id === null) {
-    const provider = await db.transaction(async (tx) => {
+    const provider = await kysely.transaction().execute(async (tx) => {
       const id = generateResourceId();
-      await tx.orm.aibot.ResourceBase.create({
-        id,
-        organizationId: user.organizationId,
-      });
-      const created = await tx.orm.aibot.Provider.create({
-        id,
-        ...saved,
-        organizationId: user.organizationId,
-      });
-      await tx.orm.aibot.Grant.create({
-        organizationId: user.organizationId,
-        principalId: user.id,
-        resourceId: id,
-        role: "manager",
-        grantedById: user.id,
-      });
+      await tx.insertInto("aibot.ResourceBase")
+        .values({ id, organizationId: user.organizationId }).execute();
+      const created = await tx.insertInto("aibot.Provider")
+        .values({
+          id,
+          ...saved,
+          organizationId: user.organizationId,
+          updatedAt: new Date(),
+        })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+      await tx.insertInto("aibot.Grant")
+        .values({
+          organizationId: user.organizationId,
+          principalId: user.id,
+          resourceId: id,
+          role: "manager",
+          grantedById: user.id,
+          updatedAt: new Date(),
+        }).execute();
       return created;
     });
     logAuditEvent("provider.created", "provider", provider.id, user.id);
   } else {
-    await db.orm.aibot.Provider.where({
-      id,
-      organizationId: user.organizationId,
-    }).update(saved);
+    await kysely.updateTable("aibot.Provider")
+      .set({ ...saved, updatedAt: new Date() })
+      .where("id", "=", id)
+      .where("organizationId", "=", user.organizationId)
+      .execute();
     logAuditEvent("provider.updated", "provider", id, user.id);
   }
   return { ok: true };
@@ -137,26 +143,25 @@ export async function saveProvider(
 
 export async function deleteProvider(user: AuthUser, id: string) {
   if (
-    !(await db.orm.aibot.Provider.first({
-      id,
-      organizationId: user.organizationId,
-    })) ||
+    !(await kysely.selectFrom("aibot.Provider").select("id")
+      .where("id", "=", id)
+      .where("organizationId", "=", user.organizationId).executeTakeFirst()) ||
     !(await hasResourceAccess(user, id, "delete"))
   )
     return false;
-  const deleted = await db.transaction(async (tx) => {
-    const provider = await tx.orm.aibot.Provider.where({
-      id,
-      organizationId: user.organizationId,
-    })
+  const deleted = await kysely.transaction().execute(async (tx) => {
+    const provider = await tx.selectFrom("aibot.Provider").select("id")
+      .where("id", "=", id)
+      .where("organizationId", "=", user.organizationId)
       .forUpdate()
-      .first();
+      .executeTakeFirst();
     if (
       !provider ||
-      (await tx.orm.aibot.AgentDefinition.first({ providerId: id }))
+      (await tx.selectFrom("aibot.AgentDefinition").select("id")
+        .where("providerId", "=", id).executeTakeFirst())
     )
       return false;
-    await tx.orm.aibot.ResourceBase.where({ id }).delete();
+    await tx.deleteFrom("aibot.ResourceBase").where("id", "=", id).execute();
     return true;
   });
   if (!deleted) return false;
@@ -165,10 +170,9 @@ export async function deleteProvider(user: AuthUser, id: string) {
 }
 
 export async function getProvider(providerId: string, user: AuthUser) {
-  const provider = await db.orm.aibot.Provider.first({
-    id: providerId,
-    organizationId: user.organizationId,
-  });
+  const provider = await kysely.selectFrom("aibot.Provider").selectAll()
+    .where("id", "=", providerId)
+    .where("organizationId", "=", user.organizationId).executeTakeFirst();
   if (!provider || !(await hasResourceAccess(user, providerId, "read")))
     return null;
   return provider;
