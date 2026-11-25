@@ -48,8 +48,13 @@ export async function resetUserPassword(
   passwordHash: string,
   actorId?: string,
 ) {
-  const updated = await db.transaction(async (tx) => {
-    const user = await tx.orm.aibot.User.where({ id }).forUpdate().first();
+  const updated = await kysely.transaction().execute(async (tx) => {
+    const user = await tx
+      .selectFrom("aibot.User")
+      .select(["passwordHash"])
+      .where("id", "=", id)
+      .forUpdate()
+      .executeTakeFirst();
     if (
       !user ||
       createHash("sha256").update(user.passwordHash).digest("base64url") !==
@@ -57,10 +62,17 @@ export async function resetUserPassword(
     )
       return false;
 
-    await tx.orm.aibot.User.where({ id }).update({ passwordHash });
-    await tx.orm.aibot.Session.where({ userId: id }).update({
-      expiresAt: new Date().toISOString(),
-    });
+    const now = new Date();
+    await tx
+      .updateTable("aibot.User")
+      .set({ passwordHash, updatedAt: now })
+      .where("id", "=", id)
+      .execute();
+    await tx
+      .updateTable("aibot.Session")
+      .set({ expiresAt: now.toISOString(), updatedAt: now })
+      .where("userId", "=", id)
+      .execute();
     return true;
   });
   if (updated) logAuditEvent("user.password_reset", "user", id, actorId);
@@ -89,7 +101,7 @@ export async function createUser(values: {
   organizationId?: string;
   organizationName?: string;
 }) {
-  const user = await db.transaction(async (tx) => {
+  const user = await kysely.transaction().execute(async (tx) => {
     const {
       organizationId: providedOrganizationId,
       organizationName,
@@ -100,11 +112,23 @@ export async function createUser(values: {
       const name = organizationName?.trim();
       if (!name)
         throw new Error("Organization name is required for the first account");
-      organizationId = (await tx.orm.aibot.Organization.create({ name })).id;
+      const organization = await tx
+        .insertInto("aibot.Organization")
+        .values({ id: generateResourceId(), name, updatedAt: new Date() })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+      organizationId = organization.id;
     }
     const id = generateResourceId();
-    await tx.orm.aibot.PrincipalBase.create({ id, organizationId });
-    return tx.orm.aibot.User.create({ id, ...userValues, organizationId });
+    await tx
+      .insertInto("aibot.PrincipalBase")
+      .values({ id, organizationId })
+      .execute();
+    return tx
+      .insertInto("aibot.User")
+      .values({ ...userValues, id, organizationId, updatedAt: new Date() })
+      .returningAll()
+      .executeTakeFirstOrThrow();
   });
   logAuditEvent("user.created", "user", user.id);
   return user;
@@ -169,13 +193,22 @@ export async function recordFailedLoginAttempt(
   id: string,
   maxLoginAttempts: number,
 ) {
-  const outcome = await db.transaction(async (tx) => {
-    const user = await tx.orm.aibot.User.where({ id }).forUpdate().first();
+  const outcome = await kysely.transaction().execute(async (tx) => {
+    const user = await tx
+      .selectFrom("aibot.User")
+      .select("loginAttempts")
+      .where("id", "=", id)
+      .forUpdate()
+      .executeTakeFirst();
     if (!user || user.loginAttempts >= maxLoginAttempts)
       return { result: "locked" as const, attempts: null };
 
     const loginAttempts = user.loginAttempts + 1;
-    await tx.orm.aibot.User.where({ id }).update({ loginAttempts });
+    await tx
+      .updateTable("aibot.User")
+      .set({ loginAttempts, updatedAt: new Date() })
+      .where("id", "=", id)
+      .execute();
     return {
       result:
         loginAttempts >= maxLoginAttempts
@@ -192,11 +225,20 @@ export async function resetLoginAttemptsForLogin(
   id: string,
   maxLoginAttempts: number,
 ) {
-  return db.transaction(async (tx) => {
-    const user = await tx.orm.aibot.User.where({ id }).forUpdate().first();
+  return kysely.transaction().execute(async (tx) => {
+    const user = await tx
+      .selectFrom("aibot.User")
+      .select("loginAttempts")
+      .where("id", "=", id)
+      .forUpdate()
+      .executeTakeFirst();
     if (!user || user.loginAttempts >= maxLoginAttempts) return false;
     if (user.loginAttempts > 0)
-      await tx.orm.aibot.User.where({ id }).update({ loginAttempts: 0 });
+      await tx
+        .updateTable("aibot.User")
+        .set({ loginAttempts: 0, updatedAt: new Date() })
+        .where("id", "=", id)
+        .execute();
     return true;
   });
 }
