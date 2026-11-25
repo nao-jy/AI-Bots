@@ -1,4 +1,4 @@
-import { db } from "./db";
+import { kysely } from "./kysely";
 import type { AuthUser } from "../auth";
 import {
   decryptMcpHeaders,
@@ -38,12 +38,10 @@ export function isBuiltinApiRouteMigration(
 export async function listServiceApis(user: AuthUser) {
   if (!user.isAdmin) throw new Response("Forbidden", { status: 403 });
   const [sandboxes, filesystems] = await Promise.all([
-    db.orm.aibot.SandboxAPI.where({
-      organizationId: user.organizationId,
-    }).all(),
-    db.orm.aibot.FileSystemAPI.where({
-      organizationId: user.organizationId,
-    }).all(),
+    kysely.selectFrom("aibot.SandboxAPI").select(["id", "name", "endpoint"])
+      .where("organizationId", "=", user.organizationId).execute(),
+    kysely.selectFrom("aibot.FileSystemAPI").select(["id", "name", "endpoint"])
+      .where("organizationId", "=", user.organizationId).execute(),
   ]);
   return {
     sandboxes: sandboxes.map(({ id, name, endpoint }) => ({
@@ -89,10 +87,8 @@ export async function loadFileSystemContextSchema(
         throw new Error("Invalid headers");
       headers = parsed as Record<string, string>;
     } else if (id) {
-      const api = await db.orm.aibot.FileSystemAPI.first({
-        id,
-        organizationId: user.organizationId,
-      });
+      const api = await kysely.selectFrom("aibot.FileSystemAPI").select(["endpoint", "headers"])
+        .where("id", "=", id).where("organizationId", "=", user.organizationId).executeTakeFirst();
       if (!api || api.endpoint !== endpoint) throw new Error("Invalid API");
       headers = decryptMcpHeaders(api.headers);
     } else {
@@ -129,19 +125,15 @@ export async function testServiceApi(user: AuthUser, form: FormData) {
     const id = String(form.get("id") ?? "");
     const rawHeaders = String(form.get("headers") ?? "").trim();
     const rawContext = String(form.get("context") ?? "").trim();
-    let existing = null;
+    let existing: { endpoint: string; headers: unknown; context?: unknown } | null = null;
     if (id && (!rawHeaders || (kind === "filesystem" && !rawContext))) {
       if (!/^[0-9a-f-]{36}$/i.test(id)) throw new Error();
       existing =
         kind === "sandbox"
-          ? await db.orm.aibot.SandboxAPI.first({
-              id,
-              organizationId: user.organizationId,
-            })
-          : await db.orm.aibot.FileSystemAPI.first({
-              id,
-              organizationId: user.organizationId,
-            });
+          ? await kysely.selectFrom("aibot.SandboxAPI").select(["endpoint", "headers"])
+              .where("id", "=", id).where("organizationId", "=", user.organizationId).executeTakeFirst() ?? null
+          : (await kysely.selectFrom("aibot.FileSystemAPI").select(["endpoint", "headers", "context"])
+              .where("id", "=", id).where("organizationId", "=", user.organizationId).executeTakeFirst()) ?? null;
       if (!existing || existing.endpoint !== endpoint) throw new Error();
     }
     const parsedHeaders: unknown = rawHeaders
@@ -214,14 +206,10 @@ export async function saveServiceApi(user: AuthUser, form: FormData) {
     return { error: "Invalid API" };
   const existing = idValue
     ? kind === "sandbox"
-      ? await db.orm.aibot.SandboxAPI.first({
-          id: idValue,
-          organizationId: user.organizationId,
-        })
-      : await db.orm.aibot.FileSystemAPI.first({
-          id: idValue,
-          organizationId: user.organizationId,
-        })
+      ? await kysely.selectFrom("aibot.SandboxAPI").selectAll()
+          .where("id", "=", idValue).where("organizationId", "=", user.organizationId).executeTakeFirst()
+      : await kysely.selectFrom("aibot.FileSystemAPI").selectAll()
+          .where("id", "=", idValue).where("organizationId", "=", user.organizationId).executeTakeFirst()
     : null;
   if (idValue && !existing) return { error: "API not found" };
   const name = String(form.get("name") ?? "").trim();
@@ -285,61 +273,54 @@ export async function saveServiceApi(user: AuthUser, form: FormData) {
       if (
         existing.endpoint !== endpoint &&
         !isBuiltinApiRouteMigration(kind, existing.endpoint, endpoint) &&
-        (await db.orm.aibot.Sandbox.first({ apiId: id }))
+        (await kysely.selectFrom("aibot.Sandbox").select("id").where("apiId", "=", id).executeTakeFirst())
       )
         return { error: "Cannot change an API endpoint while it is in use" };
-      await db.orm.aibot.SandboxAPI.where({
-        id,
-        organizationId: user.organizationId,
-      }).update({ name, endpoint, headers: encryptedHeaders });
+      await kysely.updateTable("aibot.SandboxAPI").set({ name, endpoint, headers: encryptedHeaders, updatedAt: new Date() })
+        .where("id", "=", id).where("organizationId", "=", user.organizationId).execute();
     } else {
       if (
         ((existing.endpoint !== endpoint &&
           !isBuiltinApiRouteMigration(kind, existing.endpoint, endpoint)) ||
           encryptedContext) &&
-        ((await db.orm.aibot.ChatBotFileSystem.first({ sandboxId: id })) ||
-          (await db.orm.aibot.Organization.first({
-            temporaryFileSystemApiId: id,
-          })))
+        ((await kysely.selectFrom("aibot.ChatBotFileSystem").select("id").where("sandboxId", "=", id).executeTakeFirst()) ||
+          (await kysely.selectFrom("aibot.Organization").select("id").where("temporaryFileSystemApiId", "=", id).executeTakeFirst()))
       )
         return {
           error: "Cannot change an API endpoint or context while it is in use",
         };
-      await db.orm.aibot.FileSystemAPI.where({
-        id,
-        organizationId: user.organizationId,
-      }).update({
+      await kysely.updateTable("aibot.FileSystemAPI").set({
         name,
         endpoint,
         headers: encryptedHeaders,
         ...(encryptedContext ? { context: encryptedContext } : {}),
-      });
+        updatedAt: new Date(),
+      }).where("id", "=", id).where("organizationId", "=", user.organizationId).execute();
     }
     logAuditEvent(`${kind}_api.updated`, `${kind}_api`, id, user.id);
     return { ok: true };
   }
-  await db.transaction(async (tx) => {
-    await tx.orm.aibot.ResourceBase.create({
-      id,
-      organizationId: user.organizationId,
-    });
+  await kysely.transaction().execute(async (tx) => {
+    await tx.insertInto("aibot.ResourceBase").values({ id, organizationId: user.organizationId }).execute();
     if (kind === "sandbox")
-      await tx.orm.aibot.SandboxAPI.create({
+      await tx.insertInto("aibot.SandboxAPI").values({
         id,
         organizationId: user.organizationId,
         name,
         endpoint,
         headers: encryptedHeaders,
-      });
+        updatedAt: new Date(),
+      }).execute();
     else
-      await tx.orm.aibot.FileSystemAPI.create({
+      await tx.insertInto("aibot.FileSystemAPI").values({
         id,
         organizationId: user.organizationId,
         name,
         endpoint,
         headers: encryptedHeaders,
         context: encryptedContext!,
-      });
+        updatedAt: new Date(),
+      }).execute();
   });
   logAuditEvent(`${kind}_api.created`, `${kind}_api`, id, user.id);
   return { ok: true };
@@ -352,36 +333,28 @@ export async function deleteServiceApi(user: AuthUser, form: FormData) {
   if (!/^[0-9a-f-]{36}$/i.test(id)) return { error: "Invalid API" };
   if (kind !== "sandbox" && kind !== "filesystem")
     return { error: "Invalid API type" };
-  const deleted = await db.transaction(async (tx) => {
+  const deleted = await kysely.transaction().execute(async (tx) => {
     if (kind === "sandbox") {
-      const api = await tx.orm.aibot.SandboxAPI.where({
-        id,
-        organizationId: user.organizationId,
-      })
+      const api = await tx.selectFrom("aibot.SandboxAPI").select("id")
+        .where("id", "=", id).where("organizationId", "=", user.organizationId)
         .forUpdate()
-        .first();
-      if (!api || (await tx.orm.aibot.Sandbox.first({ apiId: id })))
+        .executeTakeFirst();
+      if (!api || (await tx.selectFrom("aibot.Sandbox").select("id").where("apiId", "=", id).executeTakeFirst()))
         return false;
     } else {
-      const api = await tx.orm.aibot.FileSystemAPI.where({
-        id,
-        organizationId: user.organizationId,
-      })
+      const api = await tx.selectFrom("aibot.FileSystemAPI").select("id")
+        .where("id", "=", id).where("organizationId", "=", user.organizationId)
         .forUpdate()
-        .first();
+        .executeTakeFirst();
       if (
         !api ||
-        (await tx.orm.aibot.ChatBotFileSystem.first({ sandboxId: id })) ||
-        (await tx.orm.aibot.Organization.first({
-          temporaryFileSystemApiId: id,
-        }))
+        (await tx.selectFrom("aibot.ChatBotFileSystem").select("id").where("sandboxId", "=", id).executeTakeFirst()) ||
+        (await tx.selectFrom("aibot.Organization").select("id").where("temporaryFileSystemApiId", "=", id).executeTakeFirst())
       )
         return false;
     }
-    await tx.orm.aibot.ResourceBase.where({
-      id,
-      organizationId: user.organizationId,
-    }).delete();
+    await tx.deleteFrom("aibot.ResourceBase").where("id", "=", id)
+      .where("organizationId", "=", user.organizationId).execute();
     return true;
   });
   if (!deleted) return { error: "API is in use or not found" };
@@ -395,15 +368,13 @@ export async function saveTemporaryFileApi(user: AuthUser, form: FormData) {
   if (
     apiId &&
     (!/^[0-9a-f-]{36}$/i.test(apiId) ||
-      !(await db.orm.aibot.FileSystemAPI.first({
-        id: apiId,
-        organizationId: user.organizationId,
-      })))
+      !(await kysely.selectFrom("aibot.FileSystemAPI").select("id")
+        .where("id", "=", apiId).where("organizationId", "=", user.organizationId).executeTakeFirst()))
   )
     return { error: "Filesystem API not found" };
-  await db.orm.aibot.Organization.where({ id: user.organizationId }).update({
-    temporaryFileSystemApiId: apiId || null,
-  });
+  await kysely.updateTable("aibot.Organization")
+    .set({ temporaryFileSystemApiId: apiId || null, updatedAt: new Date() })
+    .where("id", "=", user.organizationId).execute();
   logAuditEvent(
     "temporary_file_api.updated",
     "organization",
