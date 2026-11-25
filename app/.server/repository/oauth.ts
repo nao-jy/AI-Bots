@@ -1,6 +1,5 @@
 import * as oidc from "openid-client";
 import { kysely } from "./kysely";
-import { db } from "./db";
 import type { AuthUser } from "../auth";
 import {
   decryptCredential,
@@ -65,15 +64,13 @@ interface AdapterOAuthInfo {
 }
 
 export async function getAdapterOAuthInfo(authId: string) {
-  const authentication = await db.orm.aibot.OAuthAuthentication.first({
-    id: authId,
-  });
+  const authentication = await kysely.selectFrom("aibot.OAuthAuthentication").selectAll()
+    .where("id", "=", authId).executeTakeFirst();
   if (!authentication) throw new Error("server.oauthAuthenticationNotFound");
 
-  const client = await db.orm.aibot.OAuthClient.first({
-    id: authentication.oauthId,
-    organizationId: authentication.organizationId,
-  });
+  const client = await kysely.selectFrom("aibot.OAuthClient").selectAll()
+    .where("id", "=", authentication.oauthId)
+    .where("organizationId", "=", authentication.organizationId).executeTakeFirst();
   if (!client) throw new Error("server.oauthClientNotFound");
 
   if (client.clientSecret !== null && authentication.refreshToken !== null) {
@@ -91,18 +88,16 @@ export async function getAdapterOAuthInfo(authId: string) {
 
 /** Return an authentication's access token, refreshing it shortly before expiry. */
 export async function getAccessToken(authId: string) {
-  return db.transaction(async (tx) => {
-    const authentication = await tx.orm.aibot.OAuthAuthentication.where({
-      id: authId,
-    })
+  return kysely.transaction().execute(async (tx) => {
+    const authentication = await tx.selectFrom("aibot.OAuthAuthentication").selectAll()
+      .where("id", "=", authId)
       .forUpdate()
-      .first();
+      .executeTakeFirst();
     if (!authentication) throw new Error("server.oauthAuthenticationNotFound");
 
-    const client = await tx.orm.aibot.OAuthClient.first({
-      id: authentication.oauthId,
-      organizationId: authentication.organizationId,
-    });
+    const client = await tx.selectFrom("aibot.OAuthClient").selectAll()
+      .where("id", "=", authentication.oauthId)
+      .where("organizationId", "=", authentication.organizationId).executeTakeFirst();
     if (!client) throw new Error("server.oauthClientNotFound");
 
     const expiresAt = authentication.expiresAt
@@ -133,14 +128,13 @@ export async function getAccessToken(authId: string) {
     const refreshToken = tokens.refresh_token
       ? encryptCredential(tokens.refresh_token)
       : authentication.refreshToken;
-    await tx.orm.aibot.OAuthAuthentication.where({
-      id: authId,
-      organizationId: authentication.organizationId,
-    }).update({
+    await tx.updateTable("aibot.OAuthAuthentication").set({
       accessToken: encryptCredential(tokens.access_token),
       refreshToken,
       expiresAt: refreshedExpiresAt,
-    });
+      updatedAt: new Date(),
+    }).where("id", "=", authId)
+      .where("organizationId", "=", authentication.organizationId).execute();
     logAuditEvent(
       "oauth.access_token.refreshed",
       "oauth_authentication",
@@ -164,24 +158,20 @@ export async function saveOAuthAuthentication(
   },
 ) {
   if (id === null) {
-    const authentication = await db.transaction(async (tx) => {
+    const authentication = await kysely.transaction().execute(async (tx) => {
       const authenticationId = generateResourceId();
-      await tx.orm.aibot.ResourceBase.create({
-        id: authenticationId,
-        organizationId,
-      });
-      const created = await tx.orm.aibot.OAuthAuthentication.create({
-        id: authenticationId,
-        ...values,
-        organizationId,
-      });
-      await tx.orm.aibot.Grant.create({
+      await tx.insertInto("aibot.ResourceBase").values({ id: authenticationId, organizationId }).execute();
+      const created = await tx.insertInto("aibot.OAuthAuthentication").values({
+        id: authenticationId, ...values, organizationId, updatedAt: new Date(),
+      }).returningAll().executeTakeFirstOrThrow();
+      await tx.insertInto("aibot.Grant").values({
         organizationId,
         principalId,
         resourceId: authenticationId,
         role: "manager",
         grantedById: principalId,
-      });
+        updatedAt: new Date(),
+      }).execute();
       return created;
     });
     logAuditEvent(
@@ -199,10 +189,9 @@ export async function saveOAuthAuthentication(
     ))
   )
     throw new Response("Forbidden", { status: 403 });
-  const updated = await db.orm.aibot.OAuthAuthentication.where({
-    id,
-    organizationId,
-  }).update(values);
+  const updated = await kysely.updateTable("aibot.OAuthAuthentication")
+    .set({ ...values, updatedAt: new Date() }).where("id", "=", id)
+    .where("organizationId", "=", organizationId).returningAll().executeTakeFirst();
   logAuditEvent("oauth.authentication.updated", "oauth_authentication", id);
   return updated;
 }
@@ -276,10 +265,8 @@ export async function saveOAuthClient(
   const existing =
     id === null
       ? null
-      : await db.orm.aibot.OAuthClient.first({
-          id,
-          organizationId: user.organizationId,
-        });
+      : await kysely.selectFrom("aibot.OAuthClient").selectAll()
+          .where("id", "=", id).where("organizationId", "=", user.organizationId).executeTakeFirst() ?? null;
   if (
     id !== null &&
     (!existing || !(await hasResourceAccess(user, id, "update")))
@@ -311,61 +298,48 @@ export async function saveOAuthClient(
     scopes,
   };
   if (id === null) {
-    const client = await db.transaction(async (tx) => {
+    const client = await kysely.transaction().execute(async (tx) => {
       const id = generateResourceId();
-      await tx.orm.aibot.ResourceBase.create({
-        id,
-        organizationId: user.organizationId,
-      });
-      const created = await tx.orm.aibot.OAuthClient.create({
-        id,
-        ...saved,
-        organizationId: user.organizationId,
-      });
-      await tx.orm.aibot.Grant.create({
+      await tx.insertInto("aibot.ResourceBase").values({ id, organizationId: user.organizationId }).execute();
+      const created = await tx.insertInto("aibot.OAuthClient").values({
+        id, ...saved, organizationId: user.organizationId, updatedAt: new Date(),
+      }).returning("id").executeTakeFirstOrThrow();
+      await tx.insertInto("aibot.Grant").values({
         organizationId: user.organizationId,
         principalId: user.id,
         resourceId: id,
         role: "manager",
         grantedById: user.id,
-      });
+        updatedAt: new Date(),
+      }).execute();
       return created;
     });
     logAuditEvent("oauth.client.created", "oauth_client", client.id, user.id);
   } else {
-    await db.orm.aibot.OAuthClient.where({
-      id,
-      organizationId: user.organizationId,
-    }).update(saved);
+    await kysely.updateTable("aibot.OAuthClient").set({ ...saved, updatedAt: new Date() })
+      .where("id", "=", id).where("organizationId", "=", user.organizationId).execute();
     logAuditEvent("oauth.client.updated", "oauth_client", id, user.id);
   }
   return { ok: true };
 }
 
 export async function deleteOAuthClient(user: AuthUser, id: string) {
-  const client = await db.orm.aibot.OAuthClient.first({
-    id,
-    organizationId: user.organizationId,
-  });
+  const client = await kysely.selectFrom("aibot.OAuthClient").select("id")
+    .where("id", "=", id).where("organizationId", "=", user.organizationId).executeTakeFirst();
   if (!client || !(await hasResourceAccess(user, id, "delete"))) return false;
-  const authentications = await db.orm.aibot.OAuthAuthentication.where({
-    oauthId: id,
-    organizationId: user.organizationId,
-  }).all();
-  const deleted = await db.transaction(async (tx) => {
-    const client = await tx.orm.aibot.OAuthClient.where({
-      id,
-      organizationId: user.organizationId,
-    })
+  const authentications = await kysely.selectFrom("aibot.OAuthAuthentication").select("id")
+    .where("oauthId", "=", id).where("organizationId", "=", user.organizationId).execute();
+  const deleted = await kysely.transaction().execute(async (tx) => {
+    const client = await tx.selectFrom("aibot.OAuthClient").select("id")
+      .where("id", "=", id).where("organizationId", "=", user.organizationId)
       .forUpdate()
-      .first();
+      .executeTakeFirst();
     if (!client) return false;
-    const children = await tx.orm.aibot.OAuthAuthentication.where({
-      oauthId: id,
-    }).all();
-    for (const child of children)
-      await tx.orm.aibot.ResourceBase.where({ id: child.id }).delete();
-    await tx.orm.aibot.ResourceBase.where({ id }).delete();
+    const children = await tx.selectFrom("aibot.OAuthAuthentication").select("id")
+      .where("oauthId", "=", id).execute();
+    if (children.length) await tx.deleteFrom("aibot.ResourceBase")
+      .where("id", "in", children.map(({ id }) => id)).execute();
+    await tx.deleteFrom("aibot.ResourceBase").where("id", "=", id).execute();
     return true;
   });
   if (!deleted) return false;
@@ -382,17 +356,17 @@ export async function deleteOAuthClient(user: AuthUser, id: string) {
 
 export async function listOauth(organizationId: string, principalId?: string) {
   const user = principalId ? { id: principalId, organizationId } : null;
-  const clientRows = await db.orm.aibot.OAuthClient.where({ organizationId })
-    .include("authentications")
-    .orderBy((authentication) => authentication.updatedAt.desc())
-    .all();
+  const clientRows = await kysely.selectFrom("aibot.OAuthClient").selectAll()
+    .where("organizationId", "=", organizationId).execute();
+  const authenticationRows = await kysely.selectFrom("aibot.OAuthAuthentication").selectAll()
+    .where("organizationId", "=", organizationId).execute();
   const data = user
     ? await filterResourcesByRole(user, clientRows)
     : clientRows;
   const authRows = user
     ? await filterResourcesByRole(
         user,
-        await db.orm.aibot.OAuthAuthentication.where({ organizationId }).all(),
+        authenticationRows,
       )
     : null;
   const allowedAuthIds = authRows
@@ -403,7 +377,7 @@ export async function listOauth(organizationId: string, principalId?: string) {
     .map((client) => ({
       id: client.id,
       name: client.name,
-      authentications: client.authentications
+      authentications: authenticationRows.filter((auth) => auth.oauthId === client.id)
         .filter((auth) => !allowedAuthIds || allowedAuthIds.has(auth.id))
         .sort((a, b) => a.name.localeCompare(b.name))
         .map((auth) => ({
@@ -417,16 +391,12 @@ export async function listOAuthAuthentications(user: AuthUser, ids: string[]) {
   const [authentications, clientRows] = await Promise.all([
     filterResourcesByRole(
       user,
-      await db.orm.aibot.OAuthAuthentication.where({
-        organizationId: user.organizationId,
-      })
-        .where((authentication) => authentication.id.in(ids))
-        .orderBy((authentication) => authentication.updatedAt.desc())
-        .all(),
+      await kysely.selectFrom("aibot.OAuthAuthentication").selectAll()
+        .where("organizationId", "=", user.organizationId).where("id", "in", ids)
+        .orderBy("updatedAt", "desc").execute(),
     ),
-    db.orm.aibot.OAuthClient.where({
-      organizationId: user.organizationId,
-    }).all(),
+    kysely.selectFrom("aibot.OAuthClient").selectAll()
+      .where("organizationId", "=", user.organizationId).execute(),
   ]);
   const clients = await filterResourcesByRole(user, clientRows);
   const clientsById = new Map(
@@ -465,17 +435,13 @@ export async function renameOAuthAuthentication(
   const name = String(values.get("name") ?? "").trim();
   if (!name) return { error: "server.oauthAuthenticationNameRequired" };
   if (
-    !(await db.orm.aibot.OAuthAuthentication.first({
-      id,
-      organizationId: user.organizationId,
-    })) ||
+    !(await kysely.selectFrom("aibot.OAuthAuthentication").select("id")
+      .where("id", "=", id).where("organizationId", "=", user.organizationId).executeTakeFirst()) ||
     !(await hasResourceAccess(user, id, "update"))
   )
     return { error: "server.oauthAuthenticationNotFound" };
-  await db.orm.aibot.OAuthAuthentication.where({
-    id,
-    organizationId: user.organizationId,
-  }).update({ name });
+  await kysely.updateTable("aibot.OAuthAuthentication").set({ name, updatedAt: new Date() })
+    .where("id", "=", id).where("organizationId", "=", user.organizationId).execute();
   logAuditEvent(
     "oauth.authentication.renamed",
     "oauth_authentication",
@@ -486,13 +452,11 @@ export async function renameOAuthAuthentication(
 }
 
 export async function deleteOAuthAuthentication(user: AuthUser, id: string) {
-  const authentication = await db.orm.aibot.OAuthAuthentication.first({
-    id,
-    organizationId: user.organizationId,
-  });
+  const authentication = await kysely.selectFrom("aibot.OAuthAuthentication").select("id")
+    .where("id", "=", id).where("organizationId", "=", user.organizationId).executeTakeFirst();
   if (!authentication || !(await hasResourceAccess(user, id, "delete")))
     return false;
-  await db.orm.aibot.ResourceBase.where({ id }).delete();
+  await kysely.deleteFrom("aibot.ResourceBase").where("id", "=", id).execute();
   logAuditEvent(
     "oauth.authentication.deleted",
     "oauth_authentication",
