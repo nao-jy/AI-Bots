@@ -13,6 +13,15 @@ export type Locale = "ja" | "en";
 export const DEFAULT_LOCALE: Locale = "ja";
 export const LOCALE_COOKIE = "app_locale";
 
+const i18nOptions = {
+  resources,
+  fallbackLng: DEFAULT_LOCALE,
+  returnEmptyString: true,
+  defaultNS: "translation",
+  interpolation: { escapeValue: false },
+  react: { useSuspense: false },
+};
+
 export function isLocale(value: string): value is Locale {
   return value === "ja" || value === "en";
 }
@@ -32,24 +41,16 @@ function getInitialLocale(): Locale {
 function initializeInstance(instance: I18nInstance, locale: Locale) {
   instance.use(initReactI18next);
   void instance.init({
-    resources,
+    ...i18nOptions,
     lng: locale,
-    fallbackLng: DEFAULT_LOCALE,
-    defaultNS: "translation",
-    interpolation: { escapeValue: false },
-    react: { useSuspense: false },
   });
 }
 
 export async function createRequestI18n(locale: Locale): Promise<I18nInstance> {
   const instance = i18next.createInstance();
   await instance.init({
-    resources,
+    ...i18nOptions,
     lng: locale,
-    fallbackLng: DEFAULT_LOCALE,
-    defaultNS: "translation",
-    interpolation: { escapeValue: false },
-    react: { useSuspense: false },
   });
   return instance;
 }
@@ -123,7 +124,7 @@ export function t(
     ).__appServerTranslator;
     return serverTranslator?.(key, values) ?? fallbackTranslate(key, values);
   }
-  return i18n.t(key, values);
+  return i18n.t(key, values ?? {});
 }
 
 export function tMessage(message: string | TranslationMessage): string {
