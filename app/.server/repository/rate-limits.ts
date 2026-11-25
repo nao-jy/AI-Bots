@@ -1,7 +1,6 @@
 import { CronExpressionParser } from "cron-parser";
 import cron from "node-cron";
 import { kysely } from "./kysely";
-import { db } from "./db";
 import type { Selectable } from "kysely";
 import type { AgentUsageTable, RateLimitTable } from "./db-schema";
 import type { AuthUser } from "../auth";
@@ -175,29 +174,23 @@ export async function listRateLimits(user: AuthUser, ids: string[]) {
   const [limits, bots, agents, providers] = await Promise.all([
     filterResourcesByRole(
       user,
-      await db.orm.aibot.RateLimit.where({
-        organizationId: user.organizationId,
-      })
-        .where((limit) => limit.id.in(ids))
-        .all(),
+      await kysely.selectFrom("aibot.RateLimit").selectAll()
+        .where("organizationId", "=", user.organizationId).where("id", "in", ids).execute(),
     ),
     filterResourcesByRole(
       user,
-      await db.orm.aibot.ChatBot.where({
-        organizationId: user.organizationId,
-      }).all(),
+      await kysely.selectFrom("aibot.ChatBot").selectAll()
+        .where("organizationId", "=", user.organizationId).execute(),
     ),
     filterResourcesByRole(
       user,
-      await db.orm.aibot.AgentDefinition.where({
-        organizationId: user.organizationId,
-      }).all(),
+      await kysely.selectFrom("aibot.AgentDefinition").selectAll()
+        .where("organizationId", "=", user.organizationId).execute(),
     ),
     filterResourcesByRole(
       user,
-      await db.orm.aibot.Provider.where({
-        organizationId: user.organizationId,
-      }).all(),
+      await kysely.selectFrom("aibot.Provider").selectAll()
+        .where("organizationId", "=", user.organizationId).execute(),
     ),
   ]);
   const criteriaOptions = [
@@ -242,7 +235,7 @@ export async function listRateLimits(user: AuthUser, ids: string[]) {
       criteriaId,
       criteriaLabel: criteriaLabels.get(limit.criteria) ?? limit.criteria,
       targetLabel:
-        targetLabels[limit.criteria]?.get(criteriaId) ??
+        targetLabels[limit.criteria as RateLimitCriteria]?.get(criteriaId) ??
         "server.targetNotFound",
       perThread: String(limit.perThread),
       perThreadLabel: limit.perThread
@@ -302,45 +295,36 @@ export async function saveRateLimit(
     return { error: "server.limitExceededMessageRequired" };
 
   if (id !== null) {
-    const existing = await db.orm.aibot.RateLimit.first({
-      id,
-      organizationId: user.organizationId,
-    });
+    const existing = await kysely.selectFrom("aibot.RateLimit").select("id")
+      .where("id", "=", id).where("organizationId", "=", user.organizationId).executeTakeFirst();
     if (!existing || !(await hasResourceAccess(user, id, "update")))
       return { error: "server.rateLimitNotFound" };
   }
   if (criteria === "bot") {
     if (
-      !(await db.orm.aibot.ChatBot.first({
-        id: criteriaId,
-        organizationId: user.organizationId,
-      })) ||
+      !(await kysely.selectFrom("aibot.ChatBot").select("id")
+        .where("id", "=", criteriaId).where("organizationId", "=", user.organizationId).executeTakeFirst()) ||
       !(await hasResourceAccess(user, criteriaId, "read"))
     )
       return { error: "server.selectedBotNotFound" };
   } else if (criteria === "agent") {
     if (
-      !(await db.orm.aibot.AgentDefinition.first({
-        id: criteriaId,
-        organizationId: user.organizationId,
-      })) ||
+      !(await kysely.selectFrom("aibot.AgentDefinition").select("id")
+        .where("id", "=", criteriaId).where("organizationId", "=", user.organizationId).executeTakeFirst()) ||
       !(await hasResourceAccess(user, criteriaId, "read"))
     )
       return { error: "server.selectedAgentNotFound" };
   } else {
     if (
-      !(await db.orm.aibot.Provider.first({
-        id: criteriaId,
-        organizationId: user.organizationId,
-      })) ||
+      !(await kysely.selectFrom("aibot.Provider").select("id")
+        .where("id", "=", criteriaId).where("organizationId", "=", user.organizationId).executeTakeFirst()) ||
       !(await hasResourceAccess(user, criteriaId, "read"))
     )
       return { error: "server.selectedProviderNotFound" };
   }
 
-  const existingLimits = await db.orm.aibot.RateLimit.where({
-    organizationId: user.organizationId,
-  }).all();
+  const existingLimits = await kysely.selectFrom("aibot.RateLimit").selectAll()
+    .where("organizationId", "=", user.organizationId).execute();
   if (
     existingLimits.some(
       (existing) => existing.id !== id && existing.name === name,
@@ -371,31 +355,26 @@ export async function saveRateLimit(
     organizationId: user.organizationId,
   };
   if (id === null) {
-    const created = await db.transaction(async (tx) => {
+    const created = await kysely.transaction().execute(async (tx) => {
       const id = generateResourceId();
-      await tx.orm.aibot.ResourceBase.create({
-        id,
-        organizationId: user.organizationId,
-      });
-      const resource = await tx.orm.aibot.RateLimit.create({
-        id,
-        ...saved,
-      });
-      await tx.orm.aibot.Grant.create({
+      await tx.insertInto("aibot.ResourceBase").values({ id, organizationId: user.organizationId }).execute();
+      const resource = await tx.insertInto("aibot.RateLimit").values({
+        id, ...saved, updatedAt: new Date(),
+      }).returning("id").executeTakeFirstOrThrow();
+      await tx.insertInto("aibot.Grant").values({
         organizationId: user.organizationId,
         principalId: user.id,
         resourceId: id,
         role: "manager",
         grantedById: user.id,
-      });
+        updatedAt: new Date(),
+      }).execute();
       return resource;
     });
     logAuditEvent("rate_limit.created", "rate_limit", created.id, user.id);
   } else {
-    await db.orm.aibot.RateLimit.where({
-      id,
-      organizationId: user.organizationId,
-    }).update(saved);
+    await kysely.updateTable("aibot.RateLimit").set({ ...saved, updatedAt: new Date() })
+      .where("id", "=", id).where("organizationId", "=", user.organizationId).execute();
     logAuditEvent("rate_limit.updated", "rate_limit", id, user.id);
   }
   return { ok: true };
@@ -411,12 +390,10 @@ function isValidTimezone(timezone: string) {
 }
 
 export async function deleteRateLimit(user: AuthUser, id: string) {
-  const existing = await db.orm.aibot.RateLimit.first({
-    id,
-    organizationId: user.organizationId,
-  });
+  const existing = await kysely.selectFrom("aibot.RateLimit").select("id")
+    .where("id", "=", id).where("organizationId", "=", user.organizationId).executeTakeFirst();
   if (!existing || !(await hasResourceAccess(user, id, "delete"))) return false;
-  await db.orm.aibot.ResourceBase.where({ id }).delete();
+  await kysely.deleteFrom("aibot.ResourceBase").where("id", "=", id).execute();
   logAuditEvent("rate_limit.deleted", "rate_limit", id, user.id);
   return true;
 }

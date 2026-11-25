@@ -50,7 +50,7 @@
 - [x] `schedules.ts` をKyselyへ移行した。targetのbot／adapter結合、アクセス可能な送信先の絞り込み、スケジュールとtargetの原子的な保存を移行。
 - [x] `service-apis.ts` をKyselyへ移行した。API設定の読み書き、利用中の変更／削除防止、組織設定の更新を移行。
 - [x] `sandboxes.ts` をKyselyへ移行した。権限検証、永続インスタンス、削除前の外部sandbox破棄を移行。
-- [ ] `rate-limits.ts` の使用量照会と対象limit取得をKyselyへ移行中。保存・一覧処理はPrismaのまま。
+- [x] `rate-limits.ts` をKyselyへ移行した。使用量計算、権限フィルター、複合操作のトランザクションを移行。
 - [ ] 関連データの取得、集計、競合時の処理、削除と cascade、エラーの扱いを SQL と実 DB で確認する。N+1 や意図しない行の重複を避ける。
 - [ ] `bots.ts`、`oauth.ts`、`rate-limits.ts` などの複数操作を伴う処理は、従来の原子性と分離の前提を保つ。ひとつの論理操作の途中で Prisma と Kysely の別トランザクションを混在させない。
 - [ ] `users.ts`、`session.ts`、`authorization.ts`、`thread-oauth.ts`、`oauth-revocation.ts` など認証・認可に関係する操作は条件や失敗時の動作を重点的に確認する。
