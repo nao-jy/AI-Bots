@@ -2,6 +2,7 @@ import { db } from "./db";
 import { kysely } from "./kysely";
 import type { AuthUser } from "../auth";
 import type { PublicIdSlot } from "../../types/entities";
+import type { DataPersistenceScope } from "../features/data-persistence-scope";
 import {
   generatePublicId,
   generateResourceId,
@@ -675,31 +676,81 @@ export async function setBotEnabled(
 }
 
 export async function getAvailableBot(botId: string) {
-  const chatbot = await db.orm.aibot.ChatBot.where({
-    id: botId,
-    isEnabled: true,
-  })
-    .include("agent", (agent) => agent.include("provider"))
-    .include("mcpServers", (server) =>
-      server.include("mcpServer").include("authentication"),
-    )
-    .first();
-  return chatbot;
+  const chatbot = await kysely.selectFrom("aibot.ChatBot").selectAll()
+    .where("id", "=", botId).where("isEnabled", "=", true).executeTakeFirst();
+  if (!chatbot) return undefined;
+  const [agent, mcpLinks] = await Promise.all([
+    chatbot.agentId
+      ? kysely.selectFrom("aibot.AgentDefinition")
+          .innerJoin("aibot.Provider", "aibot.Provider.id", "aibot.AgentDefinition.providerId")
+          .selectAll("aibot.AgentDefinition")
+          .select([
+            "aibot.Provider.id as providerIdValue", "aibot.Provider.name as providerName",
+            "aibot.Provider.organizationId as providerOrganizationId", "aibot.Provider.providerName",
+            "aibot.Provider.args as providerArgs", "aibot.Provider.headers as providerHeaders",
+          ])
+          .where("aibot.AgentDefinition.id", "=", chatbot.agentId).executeTakeFirst()
+      : undefined,
+    kysely.selectFrom("aibot.ChatBotMcpServer").selectAll()
+      .where("chatbotId", "=", botId).execute(),
+  ]);
+  const servers = mcpLinks.length
+    ? await kysely.selectFrom("aibot.McpServer").selectAll()
+        .where("id", "in", mcpLinks.map(({ mcpServerId }) => mcpServerId)).execute()
+    : [];
+  const authIds = mcpLinks.flatMap(({ authId }) => authId ? [authId] : []);
+  const authentications = authIds.length
+    ? await kysely.selectFrom("aibot.OAuthAuthentication").selectAll().where("id", "in", authIds).execute()
+    : [];
+  const serversById = new Map(servers.map((server) => [server.id, server]));
+  const authById = new Map(authentications.map((auth) => [auth.id, auth]));
+  return {
+    ...chatbot,
+    dataPersistenceScope: chatbot.dataPersistenceScope as DataPersistenceScope,
+    agent: agent ? {
+      id: agent.id, name: agent.name, organizationId: agent.organizationId,
+      providerId: agent.providerId, modelId: agent.modelId, options: agent.options,
+      provider: {
+        id: agent.providerIdValue, name: agent.providerName,
+        organizationId: agent.providerOrganizationId, providerName: agent.providerName,
+        args: agent.providerArgs, headers: agent.providerHeaders,
+      },
+    } : null,
+    mcpServers: mcpLinks.map((link) => ({
+      ...link,
+      mcpServer: serversById.get(link.mcpServerId)!,
+      authentication: link.authId ? authById.get(link.authId) ?? null : null,
+    })),
+  };
 }
 
 export async function getAvailableBotByPublicId(publicId: string) {
-  const botPublicId = await db.orm.aibot.ChatBotPublicId.where({
-    publicId,
-  }).first();
+  const botPublicId = await kysely.selectFrom("aibot.ChatBotPublicId").select("chatbotId")
+    .where("publicId", "=", publicId).executeTakeFirst();
   if (!botPublicId) return null;
 
-  const chatbot = await db.orm.aibot.ChatBot.where({
-    id: botPublicId.chatbotId,
-    isEnabled: true,
-  })
-    .include("adapters", (links) =>
-      links.include("adapter", (adapter) => adapter.include("publicIds")),
-    )
-    .first();
-  return chatbot;
+  const chatbot = await kysely.selectFrom("aibot.ChatBot").selectAll()
+    .where("id", "=", botPublicId.chatbotId).where("isEnabled", "=", true).executeTakeFirst();
+  if (!chatbot) return null;
+  const links = await kysely.selectFrom("aibot.ChatBotAdapter").selectAll()
+    .where("chatbotId", "=", chatbot.id).execute();
+  const adapterIds = links.map(({ adapterId }) => adapterId);
+  const adapters = adapterIds.length
+    ? await kysely.selectFrom("aibot.ChatAdapter").selectAll()
+        .where("id", "in", adapterIds).execute()
+    : [];
+  const publicIds = adapterIds.length
+    ? await kysely.selectFrom("aibot.ChatAdapterPublicId").selectAll()
+        .where("adapterId", "in", adapterIds).execute()
+    : [];
+  const publicIdsByAdapter = new Map<string, typeof publicIds>();
+  for (const item of publicIds) publicIdsByAdapter.set(item.adapterId, [...(publicIdsByAdapter.get(item.adapterId) ?? []), item]);
+  const adaptersById = new Map(adapters.map((adapter) => [adapter.id, adapter]));
+  return {
+    ...chatbot,
+    adapters: links.map((link) => ({
+      ...link,
+      adapter: { ...adaptersById.get(link.adapterId)!, publicIds: publicIdsByAdapter.get(link.adapterId) ?? [] },
+    })),
+  };
 }
