@@ -1,7 +1,7 @@
-import { or } from "@prisma/orm-postgres/orm-client";
+import { sql } from "kysely";
 import type { AuthUser } from "../auth";
 import { getReadableResourceIds } from "../authorization";
-import { db } from "./db";
+import { kysely } from "./kysely";
 import { ENTITY_PAGE_SIZE } from "../../const";
 
 export type EntityListKind =
@@ -29,6 +29,26 @@ export function entityListParams(request: Request) {
   return { query, page };
 }
 
+const PAGE_TABLES: Record<Exclude<EntityListKind, "users" | "groups">, string> = {
+  bots: "ChatBot",
+  adapters: "ChatAdapter",
+  providers: "Provider",
+  agents: "AgentDefinition",
+  "rate-limits": "RateLimit",
+  sandboxes: "Sandbox",
+  schedules: "ChatBotSchedule",
+  "mcp-servers": "McpServer",
+  "oauth-clients": "OAuthClient",
+  "oauth-authentications": "OAuthAuthentication",
+};
+
+const ordering = (kind: EntityListKind) => {
+  if (kind === "groups") return '"name" ASC, "id" ASC';
+  if (kind === "users") return '"createdAt" ASC, "id" ASC';
+  if (kind === "schedules") return '"createdAt" DESC, "id" DESC';
+  return '"updatedAt" DESC, "id" DESC';
+};
+
 export async function entityListPage(
   user: AuthUser,
   kind: EntityListKind,
@@ -45,183 +65,29 @@ export async function entityListPage(
   if (readableIds?.length === 0) return empty;
   const pattern = `%${query.replace(/[\\%_]/g, "\\$&")}%`;
   const offset = (page - 1) * ENTITY_PAGE_SIZE;
-  const finish = (rows: Array<{ id: string }>) => ({
-    ids: rows.slice(0, ENTITY_PAGE_SIZE).map((row) => row.id),
+  const table = kind === "users" || kind === "groups" ? kind : PAGE_TABLES[kind];
+  const orderingSql = sql.raw(ordering(kind));
+  const rows =
+    kind === "users"
+      ? await sql<{ id: string }>`
+          SELECT "id" FROM aibot."User"
+          WHERE "organizationId" = ${user.organizationId}
+            AND ("name" ILIKE ${pattern} OR "email" ILIKE ${pattern})
+          ORDER BY ${orderingSql}
+          LIMIT ${ENTITY_PAGE_SIZE + 1} OFFSET ${offset}
+        `.execute(kysely)
+      : await sql<{ id: string }>`
+          SELECT "id" FROM aibot.${sql.raw(`"${table}"`)}
+          WHERE "organizationId" = ${user.organizationId}
+            AND "name" ILIKE ${pattern}
+            AND (${readableIds}::text[] IS NULL OR "id" = ANY(${readableIds}::text[]))
+          ORDER BY ${orderingSql}
+          LIMIT ${ENTITY_PAGE_SIZE + 1} OFFSET ${offset}
+        `.execute(kysely);
+  return {
+    ids: rows.rows.slice(0, ENTITY_PAGE_SIZE).map((row) => row.id),
     query,
     page,
-    hasNext: rows.length > ENTITY_PAGE_SIZE,
-  });
-
-  switch (kind) {
-    case "bots":
-      return finish(
-        await db.orm.aibot.ChatBot.where({
-          organizationId: user.organizationId,
-        })
-          .where((row) => row.name.ilike(pattern))
-          .where((row) =>
-            readableIds === null ? row.id.isNotNull() : row.id.in(readableIds),
-          )
-          .select("id")
-          .orderBy([(row) => row.updatedAt.desc(), (row) => row.id.desc()])
-          .limit(ENTITY_PAGE_SIZE + 1)
-          .offset(offset)
-          .all(),
-      );
-    case "adapters":
-      return finish(
-        await db.orm.aibot.ChatAdapter.where({
-          organizationId: user.organizationId,
-        })
-          .where((row) => row.name.ilike(pattern))
-          .where((row) =>
-            readableIds === null ? row.id.isNotNull() : row.id.in(readableIds),
-          )
-          .select("id")
-          .orderBy([(row) => row.updatedAt.desc(), (row) => row.id.desc()])
-          .limit(ENTITY_PAGE_SIZE + 1)
-          .offset(offset)
-          .all(),
-      );
-    case "providers":
-      return finish(
-        await db.orm.aibot.Provider.where({
-          organizationId: user.organizationId,
-        })
-          .where((row) => row.name.ilike(pattern))
-          .where((row) =>
-            readableIds === null ? row.id.isNotNull() : row.id.in(readableIds),
-          )
-          .select("id")
-          .orderBy([(row) => row.updatedAt.desc(), (row) => row.id.desc()])
-          .limit(ENTITY_PAGE_SIZE + 1)
-          .offset(offset)
-          .all(),
-      );
-    case "agents":
-      return finish(
-        await db.orm.aibot.AgentDefinition.where({
-          organizationId: user.organizationId,
-        })
-          .where((row) => row.name.ilike(pattern))
-          .where((row) =>
-            readableIds === null ? row.id.isNotNull() : row.id.in(readableIds),
-          )
-          .select("id")
-          .orderBy([(row) => row.updatedAt.desc(), (row) => row.id.desc()])
-          .limit(ENTITY_PAGE_SIZE + 1)
-          .offset(offset)
-          .all(),
-      );
-    case "rate-limits":
-      return finish(
-        await db.orm.aibot.RateLimit.where({
-          organizationId: user.organizationId,
-        })
-          .where((row) => row.name.ilike(pattern))
-          .where((row) =>
-            readableIds === null ? row.id.isNotNull() : row.id.in(readableIds),
-          )
-          .select("id")
-          .orderBy([(row) => row.updatedAt.desc(), (row) => row.id.desc()])
-          .limit(ENTITY_PAGE_SIZE + 1)
-          .offset(offset)
-          .all(),
-      );
-    case "sandboxes":
-      return finish(
-        await db.orm.aibot.Sandbox.where({
-          organizationId: user.organizationId,
-        })
-          .where((row) => row.name.ilike(pattern))
-          .where((row) =>
-            readableIds === null ? row.id.isNotNull() : row.id.in(readableIds),
-          )
-          .select("id")
-          .orderBy([(row) => row.updatedAt.desc(), (row) => row.id.desc()])
-          .limit(ENTITY_PAGE_SIZE + 1)
-          .offset(offset)
-          .all(),
-      );
-    case "schedules":
-      return finish(
-        await db.orm.aibot.ChatBotSchedule.where({
-          organizationId: user.organizationId,
-        })
-          .where((row) => row.name.ilike(pattern))
-          .where((row) =>
-            readableIds === null ? row.id.isNotNull() : row.id.in(readableIds),
-          )
-          .select("id")
-          .orderBy([(row) => row.createdAt.desc(), (row) => row.id.desc()])
-          .limit(ENTITY_PAGE_SIZE + 1)
-          .offset(offset)
-          .all(),
-      );
-    case "mcp-servers":
-      return finish(
-        await db.orm.aibot.McpServer.where({
-          organizationId: user.organizationId,
-        })
-          .where((row) => row.name.ilike(pattern))
-          .where((row) =>
-            readableIds === null ? row.id.isNotNull() : row.id.in(readableIds),
-          )
-          .select("id")
-          .orderBy([(row) => row.updatedAt.desc(), (row) => row.id.desc()])
-          .limit(ENTITY_PAGE_SIZE + 1)
-          .offset(offset)
-          .all(),
-      );
-    case "oauth-clients":
-      return finish(
-        await db.orm.aibot.OAuthClient.where({
-          organizationId: user.organizationId,
-        })
-          .where((row) => row.name.ilike(pattern))
-          .where((row) =>
-            readableIds === null ? row.id.isNotNull() : row.id.in(readableIds),
-          )
-          .select("id")
-          .orderBy([(row) => row.updatedAt.desc(), (row) => row.id.desc()])
-          .limit(ENTITY_PAGE_SIZE + 1)
-          .offset(offset)
-          .all(),
-      );
-    case "oauth-authentications":
-      return finish(
-        await db.orm.aibot.OAuthAuthentication.where({
-          organizationId: user.organizationId,
-        })
-          .where((row) => row.name.ilike(pattern))
-          .where((row) =>
-            readableIds === null ? row.id.isNotNull() : row.id.in(readableIds),
-          )
-          .select("id")
-          .orderBy([(row) => row.updatedAt.desc(), (row) => row.id.desc()])
-          .limit(ENTITY_PAGE_SIZE + 1)
-          .offset(offset)
-          .all(),
-      );
-    case "users":
-      return finish(
-        await db.orm.aibot.User.where({ organizationId: user.organizationId })
-          .where((row) => or(row.name.ilike(pattern), row.email.ilike(pattern)))
-          .select("id")
-          .orderBy([(row) => row.createdAt.asc(), (row) => row.id.asc()])
-          .limit(ENTITY_PAGE_SIZE + 1)
-          .offset(offset)
-          .all(),
-      );
-    case "groups":
-      return finish(
-        await db.orm.aibot.Group.where({ organizationId: user.organizationId })
-          .where((row) => row.name.ilike(pattern))
-          .select("id")
-          .orderBy([(row) => row.name.asc(), (row) => row.id.asc()])
-          .limit(ENTITY_PAGE_SIZE + 1)
-          .offset(offset)
-          .all(),
-      );
-  }
+    hasNext: rows.rows.length > ENTITY_PAGE_SIZE,
+  };
 }
