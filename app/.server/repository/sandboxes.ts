@@ -1,4 +1,4 @@
-import { db } from "./db";
+import { kysely } from "./kysely";
 import type { AuthUser } from "../auth";
 import {
   generateResourceId,
@@ -25,15 +25,16 @@ import {
 export async function listSandboxes(user: AuthUser, ids: string[]) {
   const sandboxes = await filterResourcesByRole(
     user,
-    await db.orm.aibot.Sandbox.where({
-      organizationId: user.organizationId,
-    })
-      .where((sandbox) => sandbox.id.in(ids))
-      .all(),
+    await kysely.selectFrom("aibot.Sandbox").selectAll()
+      .where("organizationId", "=", user.organizationId).where("id", "in", ids).execute(),
   );
-  const sandboxApis = await db.orm.aibot.SandboxAPI.where({
-    organizationId: user.organizationId,
-  }).all();
+  const sandboxApis = await kysely.selectFrom("aibot.SandboxAPI").select(["id", "name"])
+    .where("organizationId", "=", user.organizationId).execute();
+  const sandboxIds = sandboxes.map(({ id }) => id);
+  const instances = sandboxIds.length
+    ? await kysely.selectFrom("aibot.PersistentSandboxInstance").selectAll()
+        .where("sandboxId", "in", sandboxIds).execute()
+    : [];
   return {
     sandboxApiOptions: sandboxApis.map((api) => ({
       label: api.name,
@@ -43,9 +44,7 @@ export async function listSandboxes(user: AuthUser, ids: string[]) {
       user,
       await Promise.all(
         sandboxes.map(async (sandbox) => {
-          const instances = await db.orm.aibot.PersistentSandboxInstance.where({
-            sandboxId: sandbox.id,
-          }).all();
+          const sandboxInstances = instances.filter(({ sandboxId }) => sandboxId === sandbox.id);
           return record(sandbox.id, "—", {
             apiId: sandbox.apiId,
             type:
@@ -55,7 +54,7 @@ export async function listSandboxes(user: AuthUser, ids: string[]) {
             allowedDomainList: JSON.stringify(sandbox.allowedDomainList),
             initCommands: sandbox.initCommands.join("\n"),
             instances: JSON.stringify(
-              instances.map((instance) => ({
+              sandboxInstances.map((instance) => ({
                 instanceId: instance.instanceId,
                 scopeLabel: instance.threadId
                   ? "server.thread"
@@ -95,18 +94,14 @@ export async function runPersistentSandboxCommand(
   if (command.length > 4_000)
     return { ok: false, error: "server.commandTooLong" };
 
-  const sandbox = await db.orm.aibot.Sandbox.first({
-    id: sandboxId,
-    organizationId: user.organizationId,
-  });
+  const sandbox = await kysely.selectFrom("aibot.Sandbox").selectAll()
+    .where("id", "=", sandboxId).where("organizationId", "=", user.organizationId).executeTakeFirst();
   if (!sandbox) return { ok: false, error: "server.sandboxNotFound" };
   if (!(await hasResourceAccess(user, sandboxId, "update")))
     return { ok: false, error: "server.sandboxNotFound" };
 
-  const instance = await db.orm.aibot.PersistentSandboxInstance.where({
-    instanceId,
-    sandboxId,
-  }).first();
+  const instance = await kysely.selectFrom("aibot.PersistentSandboxInstance").selectAll()
+    .where("instanceId", "=", instanceId).where("sandboxId", "=", sandboxId).executeTakeFirst();
   if (!instance || instance.sandboxId !== sandbox.id)
     return { ok: false, error: "server.selectedInstanceNotFound" };
 
@@ -168,18 +163,14 @@ export async function startPersistentSandboxTerminal(
     return { ok: false, error: "server.invalidTerminalSize" };
   }
 
-  const sandbox = await db.orm.aibot.Sandbox.first({
-    id: sandboxId,
-    organizationId: user.organizationId,
-  });
+  const sandbox = await kysely.selectFrom("aibot.Sandbox").selectAll()
+    .where("id", "=", sandboxId).where("organizationId", "=", user.organizationId).executeTakeFirst();
   if (!sandbox) return { ok: false, error: "server.sandboxNotFound" };
   if (!(await hasResourceAccess(user, sandboxId, "update")))
     return { ok: false, error: "server.sandboxNotFound" };
 
-  const instance = await db.orm.aibot.PersistentSandboxInstance.where({
-    instanceId,
-    sandboxId,
-  }).first();
+  const instance = await kysely.selectFrom("aibot.PersistentSandboxInstance").selectAll()
+    .where("instanceId", "=", instanceId).where("sandboxId", "=", sandboxId).executeTakeFirst();
   if (!instance || instance.sandboxId !== sandbox.id)
     return { ok: false, error: "server.selectedInstanceNotFound" };
 
@@ -224,10 +215,8 @@ export async function saveSandbox(
   const sandboxName = String(values.get("name") ?? "").trim();
   if (
     !isUuid(apiId) ||
-    !(await db.orm.aibot.SandboxAPI.first({
-      id: apiId,
-      organizationId: user.organizationId,
-    }))
+    !(await kysely.selectFrom("aibot.SandboxAPI").select("id")
+      .where("id", "=", apiId).where("organizationId", "=", user.organizationId).executeTakeFirst())
   )
     return { error: "server.unsupportedSandboxType" };
   let envs: Record<string, string>;
@@ -259,22 +248,18 @@ export async function saveSandbox(
   }
   if (
     id !== null &&
-    (!(await db.orm.aibot.Sandbox.first({
-      id,
-      organizationId: user.organizationId,
-    })) ||
+    (!(await kysely.selectFrom("aibot.Sandbox").select("id")
+      .where("id", "=", id).where("organizationId", "=", user.organizationId).executeTakeFirst()) ||
       !(await hasResourceAccess(user, id, "update")))
   )
     return { error: "server.sandboxNotFound" };
   if (id !== null) {
-    const existing = await db.orm.aibot.Sandbox.first({
-      id,
-      organizationId: user.organizationId,
-    });
+    const existing = await kysely.selectFrom("aibot.Sandbox").select("apiId")
+      .where("id", "=", id).where("organizationId", "=", user.organizationId).executeTakeFirst();
     if (
       existing &&
       existing.apiId !== apiId &&
-      (await db.orm.aibot.PersistentSandboxInstance.first({ sandboxId: id }))
+      (await kysely.selectFrom("aibot.PersistentSandboxInstance").select("id").where("sandboxId", "=", id).executeTakeFirst())
     )
       return {
         error: "Delete existing sandbox instances before changing the API.",
@@ -288,51 +273,42 @@ export async function saveSandbox(
     name: sandboxName,
   };
   if (id === null) {
-    const sandbox = await db.transaction(async (tx) => {
+    const sandbox = await kysely.transaction().execute(async (tx) => {
       const id = generateResourceId();
-      await tx.orm.aibot.ResourceBase.create({
-        id,
-        organizationId: user.organizationId,
-      });
-      const created = await tx.orm.aibot.Sandbox.create({
-        id,
-        ...saved,
-        organizationId: user.organizationId,
-      });
-      await tx.orm.aibot.Grant.create({
+      await tx.insertInto("aibot.ResourceBase").values({ id, organizationId: user.organizationId }).execute();
+      const created = await tx.insertInto("aibot.Sandbox").values({
+        id, ...saved, organizationId: user.organizationId, updatedAt: new Date(),
+      }).returning("id").executeTakeFirstOrThrow();
+      await tx.insertInto("aibot.Grant").values({
         organizationId: user.organizationId,
         principalId: user.id,
         resourceId: id,
         role: "manager",
         grantedById: user.id,
-      });
+        updatedAt: new Date(),
+      }).execute();
       return created;
     });
     logAuditEvent("sandbox.created", "sandbox", sandbox.id, user.id);
   } else {
-    await db.orm.aibot.Sandbox.where({
-      id,
-      organizationId: user.organizationId,
-    }).update(saved);
+    await kysely.updateTable("aibot.Sandbox").set({ ...saved, updatedAt: new Date() })
+      .where("id", "=", id).where("organizationId", "=", user.organizationId).execute();
     logAuditEvent("sandbox.updated", "sandbox", id, user.id);
   }
   return { ok: true };
 }
 
 export async function deleteSandbox(user: AuthUser, id: string) {
-  const sandbox = await db.orm.aibot.Sandbox.first({
-    id,
-    organizationId: user.organizationId,
-  });
+  const sandbox = await kysely.selectFrom("aibot.Sandbox").select(["id", "apiId"])
+    .where("id", "=", id).where("organizationId", "=", user.organizationId).executeTakeFirst();
   if (!sandbox || !(await hasResourceAccess(user, id, "delete"))) return false;
 
-  const instances = await db.orm.aibot.PersistentSandboxInstance.where({
-    sandboxId: id,
-  }).all();
+  const instances = await kysely.selectFrom("aibot.PersistentSandboxInstance").select("instanceId")
+    .where("sandboxId", "=", id).execute();
   for (const instance of instances)
     await destroySandboxInstance(sandbox.apiId, instance.instanceId);
 
-  await db.orm.aibot.ResourceBase.where({ id }).delete();
+  await kysely.deleteFrom("aibot.ResourceBase").where("id", "=", id).execute();
   logAuditEvent("sandbox.deleted", "sandbox", id, user.id);
   return true;
 }
@@ -341,13 +317,12 @@ export async function getChatBotSandbox(
   chatbotId: string,
   organizationId: string,
 ) {
-  const links = await db.orm.aibot.ChatBotToolSandbox.where({ chatbotId })
-    .include("sandBox")
-    .all();
-  return (
-    links.find((link) => link.sandBox.organizationId === organizationId)
-      ?.sandBox ?? null
-  );
+  return kysely.selectFrom("aibot.ChatBotToolSandbox")
+    .innerJoin("aibot.Sandbox", "aibot.Sandbox.id", "aibot.ChatBotToolSandbox.sandboxId")
+    .selectAll("aibot.Sandbox")
+    .where("aibot.ChatBotToolSandbox.chatbotId", "=", chatbotId)
+    .where("aibot.Sandbox.organizationId", "=", organizationId)
+    .executeTakeFirst().then((sandbox) => sandbox ?? null);
 }
 
 export async function getPersistentSandboxInstance(
@@ -359,9 +334,8 @@ export async function getPersistentSandboxInstance(
 ) {
   if (persistenceScope === "nopersistence") return null;
 
-  const instances = await db.orm.aibot.PersistentSandboxInstance.where({
-    sandboxId,
-  }).all();
+  const instances = await kysely.selectFrom("aibot.PersistentSandboxInstance").selectAll()
+    .where("sandboxId", "=", sandboxId).execute();
   switch (persistenceScope) {
     case "thread": {
       const isValid =
@@ -392,13 +366,15 @@ export async function createPersistentSandboxInstance(values: {
   adapterId: string | null;
   threadId: string | null;
 }) {
-  const sandbox = await db.orm.aibot.Sandbox.first({ id: values.sandboxId });
+  const sandbox = await kysely.selectFrom("aibot.Sandbox").select(["apiId", "organizationId"])
+    .where("id", "=", values.sandboxId).executeTakeFirst();
   if (!sandbox) throw new Error("server.sandboxNotFound");
-  const instance = await db.orm.aibot.PersistentSandboxInstance.create({
+  const instance = await kysely.insertInto("aibot.PersistentSandboxInstance").values({
     ...values,
     apiId: sandbox.apiId,
     organizationId: sandbox.organizationId,
-  });
+    updatedAt: new Date(),
+  }).returningAll().executeTakeFirstOrThrow();
   logAuditEvent(
     "sandbox_instance.created",
     "sandbox_instance",
@@ -413,30 +389,30 @@ export async function deleteSandboxInstance(
   instanceId: string,
 ) {
   if (!/^[0-9a-f-]{36}$/i.test(sandboxId) || !instanceId.trim()) return false;
-  const instance = await db.orm.aibot.PersistentSandboxInstance.where({
-    instanceId,
-    sandboxId,
-  })
-    .include("sandbox")
-    .first();
+  const instance = await kysely.selectFrom("aibot.PersistentSandboxInstance")
+    .innerJoin("aibot.Sandbox", "aibot.Sandbox.id", "aibot.PersistentSandboxInstance.sandboxId")
+    .select([
+      "aibot.PersistentSandboxInstance.sandboxId", "aibot.PersistentSandboxInstance.instanceId",
+      "aibot.Sandbox.organizationId as sandboxOrganizationId", "aibot.Sandbox.apiId",
+    ])
+    .where("aibot.PersistentSandboxInstance.instanceId", "=", instanceId)
+    .where("aibot.PersistentSandboxInstance.sandboxId", "=", sandboxId).executeTakeFirst();
   if (
     !instance ||
     instance.sandboxId !== sandboxId ||
-    instance.sandbox.organizationId !== user.organizationId ||
+    instance.sandboxOrganizationId !== user.organizationId ||
     !(await hasResourceAccess(user, sandboxId, "update"))
   )
     return false;
 
   await closeSandboxTerminalsForInstance(
     user.id,
-    instance.sandbox.apiId,
+    instance.apiId,
     instanceId,
   );
-  await destroySandboxInstance(instance.sandbox.apiId, instanceId);
-  await db.orm.aibot.PersistentSandboxInstance.where({
-    instanceId,
-    sandboxId,
-  }).delete();
+  await destroySandboxInstance(instance.apiId, instanceId);
+  await kysely.deleteFrom("aibot.PersistentSandboxInstance")
+    .where("instanceId", "=", instanceId).where("sandboxId", "=", sandboxId).execute();
   logAuditEvent(
     "sandbox_instance.deleted",
     "sandbox_instance",
