@@ -1,5 +1,5 @@
 import { requireUser } from "../.server/auth";
-import { db } from "../.server/repository/db";
+import { getDashboardResources, getDashboardUsage } from "../.server/repository/runtime-lookups";
 import Dashboard from "../components/dashboard";
 import { t } from "~/i18n";
 import { APP_NAME } from "~/const";
@@ -32,12 +32,7 @@ export async function loader({ request }: Route.LoaderArgs) {
   const end = today + DAY_MS;
   const startIso = new Date(start).toISOString();
   const endIso = new Date(end).toISOString();
-  const [botRows, agentRows] = await Promise.all([
-    db.orm.aibot.ChatBot.where({ organizationId: user.organizationId }).all(),
-    db.orm.aibot.AgentDefinition.where({ organizationId: user.organizationId })
-      .include("provider")
-      .all(),
-  ]);
+  const [botRows, agentRows] = await getDashboardResources(user.organizationId);
   const [bots, agents] = await Promise.all([
     filterResourcesByRole(user, botRows),
     filterResourcesByRole(user, agentRows),
@@ -51,26 +46,9 @@ export async function loader({ request }: Route.LoaderArgs) {
   );
   const botIds = [...botNames.keys()];
   const agentIds = [...agentNames.keys()];
-  const usage =
-    botIds.length && agentIds.length
-      ? await db.orm.aibot.AgentUsage.where({
-          organizationId: user.organizationId,
-        })
-          .where((row) => row.createdAt.gte(startIso))
-          .where((row) => row.createdAt.lt(endIso))
-          .where((row) => row.chatbotId.in(botIds))
-          .where((row) => row.agentId.in(agentIds))
-          .select(
-            "id",
-            "createdAt",
-            "inputTokens",
-            "outputTokens",
-            "platform",
-            "chatbotId",
-            "agentId",
-          )
-          .all()
-      : [];
+  const usage = await getDashboardUsage(
+    user.organizationId, startIso, endIso, botIds, agentIds,
+  );
 
   const days = Array.from({ length: PERIOD_DAYS }, (_, index) => {
     const date = new Date(start + index * DAY_MS);

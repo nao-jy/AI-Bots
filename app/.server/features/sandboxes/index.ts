@@ -1,6 +1,6 @@
 import { type Sandbox as BashSandbox } from "bash-tool";
 import { createSandboxApiProvider } from "./api";
-import { db } from "../../repository/db";
+import { getSandboxApi } from "../../repository/runtime-lookups";
 import { decryptMcpHeaders } from "../../utils";
 
 export interface BashSandboxExtended extends BashSandbox {
@@ -52,7 +52,7 @@ export interface Sandbox {
 }
 
 export async function getSandbox(apiId: string) {
-  const api = await db.orm.aibot.SandboxAPI.first({ id: apiId });
+  const api = await getSandboxApi(apiId);
   return api
     ? createSandboxApiProvider(api.id, {
         baseUrl: api.endpoint,

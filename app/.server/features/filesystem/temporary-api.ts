@@ -1,11 +1,11 @@
-import { db } from "../../repository/db";
+import { getFilesystemApi, getOrganization, getOrganizationFilesystemApi } from "../../repository/runtime-lookups";
 import { decryptMcpContext, decryptMcpHeaders, isUuid } from "../../utils";
 import { ApiFileSystem, type FileSystemConfig } from "./api";
 import { TemporaryFileStore } from "./temporary";
 
 export async function getTemporaryStoreForApi(apiId: string) {
   if (!isUuid(apiId)) return null;
-  const api = await db.orm.aibot.FileSystemAPI.first({ id: apiId });
+  const api = await getFilesystemApi(apiId);
   if (!api) return null;
   const context = decryptMcpContext(api.context) as unknown as FileSystemConfig;
   return new TemporaryFileStore(
@@ -17,14 +17,9 @@ export async function getTemporaryStoreForApi(apiId: string) {
 }
 
 export async function getOrganizationTemporaryStore(organizationId: string) {
-  const organization = await db.orm.aibot.Organization.first({
-    id: organizationId,
-  });
+  const organization = await getOrganization(organizationId);
   if (!organization?.temporaryFileSystemApiId) return null;
-  const api = await db.orm.aibot.FileSystemAPI.first({
-    id: organization.temporaryFileSystemApiId,
-    organizationId,
-  });
+  const api = await getOrganizationFilesystemApi(organization.temporaryFileSystemApiId, organizationId);
   if (!api) throw new Error("Temporary filesystem API is not available");
   const store = await getTemporaryStoreForApi(api.id);
   if (!store) throw new Error("Temporary filesystem API is not available");

@@ -38,7 +38,7 @@ import { getThreadOAuthAuthentication } from "../repository/thread-oauth";
 import { getOwnedOAuthClient } from "../repository/oauth";
 import { ApiFileSystem } from "./filesystem/api";
 import { storageConfig } from "./filesystem/config";
-import { db } from "../repository/db";
+import { getBotFilesystemLink, getOrganizationFilesystemApi } from "../repository/runtime-lookups";
 import { buildMemoryPrompt, getMemoryTools } from "./toolsets/memory";
 import { getMemoryDirectory } from "./data-persistence-scope";
 import { t } from "~/.server/i18n";
@@ -279,15 +279,9 @@ async function processBotMessage(
       adapterId,
       thread.id,
     );
-    const fsLink = await db.orm.aibot.ChatBotFileSystem.first({
-      chatbotId: chatbot.id,
-      organizationId: chatbot.organizationId,
-    });
+    const fsLink = await getBotFilesystemLink(chatbot.id, chatbot.organizationId);
     const fileSystemApi = fsLink
-      ? await db.orm.aibot.FileSystemAPI.first({
-          id: fsLink.sandboxId,
-          organizationId: chatbot.organizationId,
-        })
+      ? await getOrganizationFilesystemApi(fsLink.sandboxId, chatbot.organizationId)
       : null;
     const fsContext = fileSystemApi
       ? decryptMcpContext(fileSystemApi.context)
