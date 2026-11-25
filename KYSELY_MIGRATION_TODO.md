@@ -52,6 +52,7 @@
 - [x] `sandboxes.ts` をKyselyへ移行した。権限検証、永続インスタンス、削除前の外部sandbox破棄を移行。
 - [x] `rate-limits.ts` をKyselyへ移行した。使用量計算、権限フィルター、複合操作のトランザクションを移行。
 - [x] `oauth.ts` をKyselyへ移行した。行ロック付きtoken更新、認証・クライアント作成とcascade削除を含む。
+- [ ] `bots.ts` の有効化、削除、公開ID再生成をKyselyへ移行した。bot一覧・保存と関連取得は残る。
 - [ ] 関連データの取得、集計、競合時の処理、削除と cascade、エラーの扱いを SQL と実 DB で確認する。N+1 や意図しない行の重複を避ける。
 - [ ] `bots.ts`、`oauth.ts`、`rate-limits.ts` などの複数操作を伴う処理は、従来の原子性と分離の前提を保つ。ひとつの論理操作の途中で Prisma と Kysely の別トランザクションを混在させない。
 - [ ] `users.ts`、`session.ts`、`authorization.ts`、`thread-oauth.ts`、`oauth-revocation.ts` など認証・認可に関係する操作は条件や失敗時の動作を重点的に確認する。

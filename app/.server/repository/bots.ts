@@ -1,4 +1,5 @@
 import { db } from "./db";
+import { kysely } from "./kysely";
 import type { AuthUser } from "../auth";
 import type { PublicIdSlot } from "../../types/entities";
 import {
@@ -606,29 +607,21 @@ export async function saveBot(
 }
 
 export async function deleteBot(user: AuthUser, id: string) {
-  const bot = await db.orm.aibot.ChatBot.first({
-    id,
-    organizationId: user.organizationId,
-  });
+  const bot = await kysely.selectFrom("aibot.ChatBot").select("id")
+    .where("id", "=", id).where("organizationId", "=", user.organizationId).executeTakeFirst();
   if (!bot || !(await hasResourceAccess(user, id, "delete"))) return false;
-  const deleted = await db.transaction(async (tx) => {
-    const bot = await tx.orm.aibot.ChatBot.where({
-      id,
-      organizationId: user.organizationId,
-    })
+  const deleted = await kysely.transaction().execute(async (tx) => {
+    const bot = await tx.selectFrom("aibot.ChatBot").select("id")
+      .where("id", "=", id).where("organizationId", "=", user.organizationId)
       .forUpdate()
-      .first();
+      .executeTakeFirst();
     if (!bot) return false;
-    const connections = await tx.orm.aibot.ThreadOAuthConnection.where({
-      chatbotId: id,
-      organizationId: user.organizationId,
-    }).all();
-    for (const connection of connections)
-      await tx.orm.aibot.ResourceBase.where({
-        id: connection.authenticationId,
-        organizationId: user.organizationId,
-      }).delete();
-    await tx.orm.aibot.ResourceBase.where({ id }).delete();
+    const connections = await tx.selectFrom("aibot.ThreadOAuthConnection").select("authenticationId")
+      .where("chatbotId", "=", id).where("organizationId", "=", user.organizationId).execute();
+    if (connections.length) await tx.deleteFrom("aibot.ResourceBase")
+      .where("id", "in", connections.map(({ authenticationId }) => authenticationId))
+      .where("organizationId", "=", user.organizationId).execute();
+    await tx.deleteFrom("aibot.ResourceBase").where("id", "=", id).execute();
     return true;
   });
   if (!deleted) return false;
@@ -641,29 +634,26 @@ export async function regenerateBotPublicIds(
   id: string,
   slot: PublicIdSlot,
 ) {
-  const regenerated = await db.transaction(async (tx) => {
-    const bot = await tx.orm.aibot.ChatBot.first({
-      id,
-      organizationId: user.organizationId,
-    });
+  const regenerated = await kysely.transaction().execute(async (tx) => {
+    const bot = await tx.selectFrom("aibot.ChatBot").select("id")
+      .where("id", "=", id).where("organizationId", "=", user.organizationId).executeTakeFirst();
     if (!bot || !(await hasResourceAccess(user, id, "manageGrant")))
       return false;
 
-    const publicIds = await tx.orm.aibot.ChatBotPublicId.where({
-      chatbotId: id,
-    }).all();
+    const publicIds = await tx.selectFrom("aibot.ChatBotPublicId").select(["id", "slot"])
+      .where("chatbotId", "=", id).execute();
     const publicId = publicIds.find((item) => item.slot === slot);
     if (publicId) {
-      await tx.orm.aibot.ChatBotPublicId.where({ id: publicId.id }).update({
-        publicId: generatePublicId(),
-      });
+      await tx.updateTable("aibot.ChatBotPublicId").set({ publicId: generatePublicId(), updatedAt: new Date() })
+        .where("id", "=", publicId.id).execute();
     } else {
-      await tx.orm.aibot.ChatBotPublicId.create({
+      await tx.insertInto("aibot.ChatBotPublicId").values({
         organizationId: user.organizationId,
         publicId: generatePublicId(),
         slot,
         chatbotId: id,
-      });
+        updatedAt: new Date(),
+      }).execute();
     }
     return true;
   });
@@ -678,19 +668,13 @@ export async function setBotEnabled(
   isEnabled: boolean,
 ) {
   if (
-    !(await db.orm.aibot.ChatBot.first({
-      id,
-      organizationId: user.organizationId,
-    })) ||
+    !(await kysely.selectFrom("aibot.ChatBot").select("id")
+      .where("id", "=", id).where("organizationId", "=", user.organizationId).executeTakeFirst()) ||
     !(await hasResourceAccess(user, id, "update"))
   )
     return false;
-  await db.orm.aibot.ChatBot.where({
-    id,
-    organizationId: user.organizationId,
-  }).update({
-    isEnabled,
-  });
+  await kysely.updateTable("aibot.ChatBot").set({ isEnabled, updatedAt: new Date() })
+    .where("id", "=", id).where("organizationId", "=", user.organizationId).execute();
   logAuditEvent(isEnabled ? "bot.enabled" : "bot.disabled", "bot", id, user.id);
   return true;
 }
