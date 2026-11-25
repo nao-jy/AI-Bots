@@ -467,6 +467,10 @@ export function EntityPageDialogs({
   const canTest = ["adapters", "agents", "mcp"].includes(page.icon);
   const [selectedOAuthClientId, setSelectedOAuthClientId] = useState("");
   const [adapterPlatform, setAdapterPlatform] = useState("");
+  const [userEmail, setUserEmail] = useState("");
+  useEffect(() => {
+    setUserEmail(mode === "edit" ? String(selected?.email ?? "") : "");
+  }, [mode, selected]);
   useEffect(() => {
     setAdapterPlatform(
       mode === "edit" ? String(selected?.platformId ?? "") : "",
@@ -759,6 +763,7 @@ export function EntityPageDialogs({
                         placeholder={field.placeholder}
                         autoComplete="new-password"
                         minimumStrength={minimumPasswordStrength}
+                        userId={userEmail}
                         required={field.required && mode === "create"}
                       />
                     ) : (
@@ -773,6 +778,11 @@ export function EntityPageDialogs({
                   ) : (
                     <TextInput
                       name={field.key}
+                      onChange={
+                        page.icon === "users" && field.key === "email"
+                          ? (event) => setUserEmail(event.currentTarget.value)
+                          : undefined
+                      }
                       type={
                         field.type === "email" || field.type === "number"
                           ? field.type

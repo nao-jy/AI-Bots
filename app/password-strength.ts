@@ -8,6 +8,7 @@ const checker = new ZxcvbnFactory({
   translations: english.translations,
 });
 
-export function getPasswordStrength(password: string) {
-  return checker.check(password).score;
+export function getPasswordStrength(password: string, userId: string) {
+  return checker.check(password, [userId, userId.split("@")[0]].filter(Boolean))
+    .score;
 }

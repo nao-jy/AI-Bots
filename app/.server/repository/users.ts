@@ -203,7 +203,7 @@ export async function saveUser(
     return { error: "server.displayNameAndValidEmailRequired" };
   if (id === null) {
     const settings = await getAppSettings(organizationId);
-    if (!meetsPasswordPolicy(password, settings.minimumPasswordStrength))
+    if (!meetsPasswordPolicy(password, settings.minimumPasswordStrength, email))
       return { error: "server.passwordStrengthInsufficient" };
     const emailVerified = !emailVerificationEnabled;
     const user = await createUser({
@@ -220,7 +220,9 @@ export async function saveUser(
     if (!user) return { error: "server.userNotFound" };
     if (password) {
       const settings = await getAppSettings(organizationId);
-      if (!meetsPasswordPolicy(password, settings.minimumPasswordStrength))
+      if (
+        !meetsPasswordPolicy(password, settings.minimumPasswordStrength, email)
+      )
         return { error: "server.passwordStrengthInsufficient" };
     }
     const emailChanged = user.email !== email;

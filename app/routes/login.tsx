@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { t } from "~/i18n";
 import { Alert, Button, PasswordInput, TextInput } from "@mantine/core";
 import { ArrowRightIcon } from "@phosphor-icons/react";
@@ -84,6 +85,7 @@ export async function action({ request }: Route.ActionArgs) {
       !meetsPasswordPolicy(
         password,
         (await getAppSettings()).minimumPasswordStrength,
+        email,
       )
     ) {
       return data(
@@ -194,6 +196,7 @@ export async function action({ request }: Route.ActionArgs) {
 
 export default function Login({ loaderData }: Route.ComponentProps) {
   const actionData = useActionData<typeof action>();
+  const [email, setEmail] = useState("");
   const setupRequired = loaderData.setupRequired;
 
   return (
@@ -242,6 +245,7 @@ export default function Login({ loaderData }: Route.ComponentProps) {
             )}
             <TextInput
               name="email"
+              onChange={(event) => setEmail(event.currentTarget.value)}
               label={t("pages.login.emailLabel")}
               placeholder={t("pages.login.emailPlaceholder")}
               type="email"
@@ -254,6 +258,7 @@ export default function Login({ loaderData }: Route.ComponentProps) {
                 label={t("pages.login.passwordMinimumLabel")}
                 autoComplete="new-password"
                 minimumStrength={loaderData.minimumPasswordStrength}
+                userId={email}
                 required
               />
             ) : (

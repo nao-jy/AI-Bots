@@ -5,10 +5,12 @@ import { t } from "~/i18n";
 
 type PasswordStrengthInputProps = PasswordInputProps & {
   minimumStrength?: number;
+  userId: string;
 };
 
 export function PasswordStrengthInput({
   minimumStrength = 0,
+  userId,
   ...props
 }: PasswordStrengthInputProps) {
   const [password, setPassword] = useState("");
@@ -24,12 +26,13 @@ export function PasswordStrengthInput({
     }
 
     void import("../password-strength").then(({ getPasswordStrength }) => {
-      if (active) setScore(getPasswordStrength(password));
+      if (active)
+        setScore(getPasswordStrength(password, userId.trim().toLowerCase()));
     });
     return () => {
       active = false;
     };
-  }, [password]);
+  }, [password, userId]);
 
   const levels = [
     t("components.passwordStrength.veryWeak"),

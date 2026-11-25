@@ -86,6 +86,7 @@ export default function ResetPassword({ loaderData }: Route.ComponentProps) {
                   label={t("pages.resetPassword.newPasswordLabel")}
                   autoComplete="new-password"
                   minimumStrength={loaderData.minimumPasswordStrength}
+                  userId={loaderData.userId}
                   required
                 />
                 <Button type="submit" fullWidth>

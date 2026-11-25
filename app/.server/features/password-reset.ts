@@ -116,6 +116,7 @@ async function resolvePasswordReset(token: string) {
   return {
     status: "ready" as const,
     userId,
+    email: user.email,
     organizationId: user.organizationId,
     passwordHashDigest,
   };
@@ -124,11 +125,12 @@ async function resolvePasswordReset(token: string) {
 export async function inspectPasswordReset(token: string) {
   const resolved = await resolvePasswordReset(token);
   if (resolved.status !== "ready")
-    return { status: resolved.status, minimumPasswordStrength: 0 };
+    return { status: resolved.status, minimumPasswordStrength: 0, userId: "" };
   const settings = await getAppSettings(resolved.organizationId);
   return {
     status: resolved.status,
     minimumPasswordStrength: settings.minimumPasswordStrength,
+    userId: resolved.email,
   };
 }
 
@@ -136,7 +138,13 @@ export async function completePasswordReset(token: string, password: string) {
   const resolved = await resolvePasswordReset(token);
   if (resolved.status !== "ready") return resolved;
   const settings = await getAppSettings(resolved.organizationId);
-  if (!meetsPasswordPolicy(password, settings.minimumPasswordStrength))
+  if (
+    !meetsPasswordPolicy(
+      password,
+      settings.minimumPasswordStrength,
+      resolved.email,
+    )
+  )
     return { status: "weak-password" as const };
 
   const updated = await resetUserPassword(
