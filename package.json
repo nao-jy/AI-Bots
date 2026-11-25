@@ -8,7 +8,7 @@
     "dev:app": "node --env-file-if-exists=.env.dev ./node_modules/@react-router/dev/bin.cjs dev",
     "start": "node --env-file-if-exists=.env.prd scripts/production-server.mjs",
     "typecheck": "react-router typegen && tsc",
-    "contract:emit": "prisma contract emit",
+    "db:migrate": "node --env-file-if-exists=.env.dev scripts/migrate.mjs",
     "test": "vitest run"
   },
   "dependencies": {
@@ -28,7 +28,6 @@
     "@mantine/hooks": "^9.7.3",
     "@mantine/notifications": "^9.7.4",
     "@phosphor-icons/react": "^2.1.10",
-    "@prisma/orm-postgres": "^8.0.0-rc.18",
     "@react-router/express": "^8.5.1",
     "@react-router/node": "^8.4.0",
     "@react-router/serve": "^8.4.0",
@@ -76,6 +75,7 @@
     "@react-router/dev": "^8.4.0",
     "@tailwindcss/vite": "^4.2.2",
     "@types/node": "^22",
+    "@types/pg": "^8.20.4",
     "@types/qrcode": "^1.5.6",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.7",
@@ -84,7 +84,6 @@
     "postcss-preset-mantine": "^1.18.0",
     "postcss-simple-vars": "^7.0.1",
     "prettier": "^3.9.10",
-    "prisma": "^8.0.0-rc.23",
     "tailwindcss": "^4.2.2",
     "typescript": "^5.9.3",
     "vite": "^8.0.3",

@@ -87,13 +87,13 @@ The provided Compose configuration uses PostgreSQL 16.
    docker compose --env-file .env.dev -f infra/compose.yaml up -d postgres
    ```
 
-   Wait for the database to become healthy, then initialize the database tables on first setup:
+   Wait for the database to become healthy, then create the schema:
 
    ```bash
-   npx prisma db migrate
+   npm run db:migrate
    ```
 
-   Run `npx prisma db migrate` before starting a new application version when upgrading an existing database too. The migrations create the OAuth revocation tables and install deletion triggers and backfill existing snapshots. Run migrations from a checkout with development dependencies installed; the production image does not include the Prisma CLI. The database user needs permission to create tables, functions and triggers in the `aibot` schema. Use `db migrate` rather than `db init` or `db update`: those commands do not execute the trigger and backfill migration.
+   This command applies the SQL migrations in order and records them in `aibot."SchemaMigration"`. This release expects a new, empty database; the initial migration does not import or upgrade a database created by Prisma. For a production database, run `node --env-file=.env.prd scripts/migrate.mjs` from the project checkout. The database role needs permission to create the `aibot` schema, tables, functions and triggers.
 
    Deleted OAuth credentials are queued for asynchronous revocation, including when deleted by a cascade. The application retries failures with backoff and logs them. Set a revocation endpoint on every OAuth client; jobs without one remain pending. Pending jobs retain encrypted tokens and client secrets until revocation succeeds, so monitor the logs and the `aibot."OAuthRevocationQueue"` table for persistent failures. Keep `CREDENTIALS_ENCRYPTION_KEY` available to process pending jobs.
 
@@ -166,7 +166,7 @@ npm run build
 npm run start
 ```
 
-`npm run start` loads `.env.prd`. The production server needs a reachable, initialized PostgreSQL database. To migrate production, run `DOTENV_CONFIG_PATH=.env.prd npx prisma db migrate` with a database address reachable from the machine running the command; the Docker-only `postgres` hostname may not resolve on the host.
+`npm run start` loads `.env.prd`. The production server needs a reachable PostgreSQL database. Run `node --env-file=.env.prd scripts/migrate.mjs` before starting the app. The Docker-only `postgres` hostname may not resolve from the host machine.
 
 ### Docker
 
@@ -196,4 +196,4 @@ docker compose --env-file .env.prd -f infra/compose.production.yaml \
 
 If you change `LOG_DIR`, keep it inside the `/app/data` volume or mount a separate volume there. Rebuild the image to update `cloudflared`.
 
-**Migrating an existing installation:** The new database and application volume start empty. The existing database and `bot-data` volume are not migrated automatically. Prepare a backup and restore procedure to retain them, and keep the original `CREDENTIALS_ENCRYPTION_KEY` to decrypt existing data. Compose does not stop the existing `ai-bots` container, so avoid running both installations during the cutover.
+**Existing Prisma installations:** This pre-launch release does not migrate application data or Prisma schema history. Point it at a new database; the SQL baseline will fail if the old application tables already exist. The production Compose project uses separate volumes and does not stop any existing `ai-bots` container.

@@ -6,12 +6,10 @@ import {
   randomBytes,
 } from "node:crypto";
 import { randomUUID } from "node:crypto";
-import type { CodecTypes } from "../../src/prisma/contract";
 import type { EntityRecord } from "../types/entities";
 import { type TranslationMessage } from "../i18n";
 
-export const jsonb = (value: unknown) =>
-  value as CodecTypes["pg/jsonb@1"]["input"];
+export const jsonb = (value: unknown) => value;
 
 export function jsonbToStringRecord(value: unknown): Record<string, string> {
   if (!value || typeof value !== "object" || Array.isArray(value)) return {};

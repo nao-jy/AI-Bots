@@ -43,11 +43,3 @@ CREATE TRIGGER oauth_revocation_snapshot_client AFTER UPDATE OF "clientId", "cli
 DROP TRIGGER IF EXISTS oauth_revocation_enqueue ON aibot."OAuthAuthentication";
 CREATE TRIGGER oauth_revocation_enqueue BEFORE DELETE ON aibot."OAuthAuthentication"
   FOR EACH ROW EXECUTE FUNCTION aibot.oauth_revocation_enqueue();
-
-INSERT INTO aibot."OAuthRevocationSnapshot"
-  ("authenticationId", "oauthId", "clientId", "clientSecret", "revocationEndpoint")
-SELECT a.id, c.id, c."clientId", c."clientSecret", c."revocationEndpoint"
-FROM aibot."OAuthAuthentication" a JOIN aibot."OAuthClient" c ON c.id = a."oauthId"
-ON CONFLICT ("authenticationId") DO UPDATE SET
-  "oauthId" = EXCLUDED."oauthId", "clientId" = EXCLUDED."clientId",
-  "clientSecret" = EXCLUDED."clientSecret", "revocationEndpoint" = EXCLUDED."revocationEndpoint";

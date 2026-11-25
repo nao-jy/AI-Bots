@@ -89,13 +89,13 @@ AI Botsは、SlackやMicrosoft Teamsなどで動くAIボットを作り、運用
    docker compose --env-file .env.dev -f infra/compose.yaml up -d postgres
    ```
 
-   データベースが正常起動したことを確認し、初回のみテーブルを初期化します。
+   データベースが正常起動したことを確認し、スキーマを作成します。
 
    ```bash
-   npx prisma db migrate
+   npm run db:migrate
    ```
 
-   既存のデータベースを更新する場合も、新しいアプリを起動する前に `npx prisma db migrate` を実行してください。OAuth 失効用テーブルの作成、削除トリガーの設定、既存クライアント情報のバックフィルを行います。マイグレーションは開発用依存関係をインストールしたチェックアウトから実行してください。本番イメージには Prisma CLI は含まれません。データベースユーザーには `aibot` スキーマ内でテーブル、関数、トリガーを作成する権限が必要です。`db init` や `db update` ではトリガーとバックフィルが適用されないため、`db migrate` を使用してください。
+   このコマンドはSQLマイグレーションを順に適用し、`aibot."SchemaMigration"` に記録します。このリリースは空の新規DBを前提としており、Prismaで作成したDBのスキーマやデータは移行しません。本番DBではプロジェクトのチェックアウトから `node --env-file=.env.prd scripts/migrate.mjs` を実行してください。DBユーザーには `aibot` スキーマ、テーブル、関数、トリガーを作成する権限が必要です。
 
    削除された OAuth 認証情報は、cascade による削除も含め非同期で失効されます。失敗時は間隔を空けて再試行し、ログに記録します。各 OAuth クライアントに失効エンドポイントを設定してください。未設定の場合、ジョブは保留されます。保留中のジョブには暗号化されたトークンとクライアントシークレットが成功まで保持されるため、ログと `aibot."OAuthRevocationQueue"` テーブルを監視してください。処理には `CREDENTIALS_ENCRYPTION_KEY` が引き続き必要です。
 
@@ -168,7 +168,7 @@ npm run build
 npm run start
 ```
 
-`npm run start` は `.env.prd` を読み込みます。本番サーバーには初期化済みで到達可能なPostgreSQLデータベースが必要です。本番DBをマイグレーションする場合は、実行元からDBへ到達できる接続先を設定したうえで `DOTENV_CONFIG_PATH=.env.prd npx prisma db migrate` を実行してください。Docker内専用ホスト名の `postgres` はホスト側から解決できない場合があります。
+`npm run start` は `.env.prd` を読み込みます。本番サーバーには到達可能なPostgreSQLデータベースが必要です。アプリ起動前に `node --env-file=.env.prd scripts/migrate.mjs` を実行してください。Docker内専用ホスト名の `postgres` はホスト側から解決できない場合があります。
 
 ### Docker
 
@@ -197,4 +197,4 @@ docker compose --env-file .env.prd -f infra/compose.production.yaml \
 ```
 
 
-**既存環境から切り替える場合:** 新しいDBとアプリ用ボリュームは空です。現在のDBや `bot-data` は自動では移行されません。既存データを引き継ぐ場合はバックアップ・復元の手順を別途用意し、暗号化済みデータを復号できるよう元の `CREDENTIALS_ENCRYPTION_KEY` を維持してください。現在の `ai-bots` コンテナもComposeによって自動停止されないため、切り替え時に重複起動しないようにしてください。
+**既存のPrisma環境:** 運用開始前のリリースのため、アプリデータとPrismaのスキーマ履歴は移行しません。新しい空DBを指定してください。旧アプリのテーブルが残るDBでは初期SQLマイグレーションが失敗します。本番Composeは別のボリュームを使用し、既存の `ai-bots` コンテナを停止しません。

@@ -5,42 +5,14 @@ const { limits, usages } = vi.hoisted(() => ({
   usages: [] as any[],
 }));
 
-vi.mock("./db", () => ({
-  db: {
-    orm: {
-      aibot: {
-        RateLimit: {
-          where: ({ organizationId }: any) => ({
-            all: async () =>
-              limits.filter((row) => row.organizationId === organizationId),
-          }),
-        },
-        AgentUsage: {
-          where: (conditions: Record<string, unknown>) => ({
-            where: (predicate: (row: any) => any) => {
-              const filter = predicate({
-                createdAt: {
-                  gte: (since: string) => (row: any) => row.createdAt >= since,
-                },
-              });
-              return {
-                select: () => ({
-                  all: async () =>
-                    usages.filter(
-                      (row) =>
-                        Object.entries(conditions).every(
-                          ([key, value]) => row[key] === value,
-                        ) && filter(row),
-                    ),
-                }),
-              };
-            },
-          }),
-        },
-      },
-    },
-  },
-}));
+vi.mock("./kysely", async () => {
+  const { createTestKysely } = await import("./test-kysely");
+  return {
+    kysely: createTestKysely((table) =>
+      table === "aibot.RateLimit" ? limits : table === "aibot.AgentUsage" ? usages : [],
+    ),
+  };
+});
 vi.mock("../logger/audit-logger", () => ({ logAuditEvent: vi.fn() }));
 
 import { getExceededRateLimit } from "./rate-limits";

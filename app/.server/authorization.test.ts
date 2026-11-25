@@ -5,21 +5,21 @@ const mocks = vi.hoisted(() => ({
   memberships: vi.fn(),
   grants: vi.fn(),
 }));
-vi.mock("./repository/db", () => ({
-  db: {
-    orm: {
-      aibot: {
-        User: { first: mocks.userFirst },
-        Membership: {
-          where: (query: unknown) => ({ all: () => mocks.memberships(query) }),
-        },
-        Grant: {
-          where: (query: unknown) => ({ all: () => mocks.grants(query) }),
-        },
-      },
-    },
-  },
-}));
+vi.mock("./repository/kysely", async () => {
+  const { createTestKysely } = await import("./repository/test-kysely");
+  return {
+    kysely: createTestKysely(async (table, conditions) => {
+      const query = Object.fromEntries(conditions.map(({ column, value }) => [column, value]));
+      if (table === "aibot.User") {
+        const row = await mocks.userFirst(query);
+        return row ? [row] : [];
+      }
+      if (table === "aibot.Membership") return mocks.memberships(query);
+      if (table === "aibot.Grant") return mocks.grants(query);
+      return [];
+    }, undefined, false),
+  };
+});
 
 import {
   filterResourcesByRole,

@@ -3,30 +3,28 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const { existingLimits, create, update } = vi.hoisted(() => ({
   existingLimits: [] as Array<Record<string, unknown>>,
   create: vi.fn(async (row) => row),
-  update: vi.fn(async () => undefined),
+  update: vi.fn(async (_values?: unknown, _conditions?: unknown) => undefined),
 }));
 
-vi.mock("./db", () => {
-  const rateLimit = {
-    first: async ({ id }: { id: string }) =>
-      existingLimits.find((row) => row.id === id),
-    where: () => ({ all: async () => existingLimits, update }),
-    create,
-  };
-  const orm = {
-    aibot: {
-      RateLimit: rateLimit,
-      ChatBot: { first: async () => ({ id: "bot" }) },
-      ResourceBase: { create: async () => ({}) },
-      Grant: { create: async () => ({}) },
-    },
-  };
+vi.mock("./kysely", async () => {
+  const { createTestKysely } = await import("./test-kysely");
   return {
-    db: {
-      orm,
-      transaction: async (fn: (tx: { orm: typeof orm }) => unknown) =>
-        fn({ orm }),
-    },
+    kysely: createTestKysely(
+      (table, conditions) => {
+        if (table === "aibot.RateLimit")
+          return existingLimits.filter((row) => conditions.every(({ column, operator, value }) =>
+            operator !== "=" || row[column] === value,
+          ));
+        if (table === "aibot.ChatBot") return [{ id: "bot" }];
+        return [];
+      },
+      (table, values, conditions, returning) => {
+        if (table === "aibot.RateLimit" && returning) return create(values);
+        if (table === "aibot.RateLimit") return update(values, conditions);
+        return undefined;
+      },
+      false,
+    ),
   };
 });
 vi.mock("../authorization", () => ({ hasResourceAccess: async () => true }));

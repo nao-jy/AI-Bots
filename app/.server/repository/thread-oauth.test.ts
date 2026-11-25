@@ -8,20 +8,24 @@ const mocks = vi.hoisted(() => ({
   connection: vi.fn(),
   authentication: vi.fn(),
 }));
-vi.mock("./db", () => ({
-  db: {
-    orm: {
-      aibot: {
-        ChatBot: { first: mocks.bot },
-        ChatBotAdapter: { first: mocks.adapter },
-        OAuthClient: { first: mocks.client },
-        ChatBotMcpServer: { first: mocks.mcp },
-        ThreadOAuthConnection: { first: mocks.connection },
-        OAuthAuthentication: { first: mocks.authentication },
-      },
-    },
-  },
-}));
+vi.mock("./kysely", async () => {
+  const { createTestKysely } = await import("./test-kysely");
+  return {
+    kysely: createTestKysely(async (table, conditions) => {
+      const query = Object.fromEntries(conditions.map(({ column, value }) => [column, value]));
+      const mock = {
+        "aibot.ChatBot": mocks.bot,
+        "aibot.ChatBotAdapter": mocks.adapter,
+        "aibot.OAuthClient": mocks.client,
+        "aibot.ChatBotMcpServer": mocks.mcp,
+        "aibot.ThreadOAuthConnection": mocks.connection,
+        "aibot.OAuthAuthentication": mocks.authentication,
+      }[table];
+      const row = await mock?.(query);
+      return row ? [row] : [];
+    }, undefined, false),
+  };
+});
 
 import { getThreadOAuthAuthentication, isThreadOAuthAllowed } from "./thread-oauth";
 
@@ -42,16 +46,8 @@ describe("thread OAuth authorization", () => {
 
   it("requires the OAuth client to be attached to the current bot and organization", async () => {
     expect(await isThreadOAuthAllowed(scope)).toBe(true);
-    expect(mocks.mcp).toHaveBeenCalledWith({
-      organizationId: "org",
-      chatbotId: "bot",
-      oauthClientId: "client",
-    });
-    expect(mocks.bot).toHaveBeenCalledWith({
-      id: "bot",
-      organizationId: "org",
-      isEnabled: true,
-    });
+    expect(mocks.mcp).toHaveBeenCalledWith({ chatbotId: "bot", oauthClientId: "client", organizationId: "org" });
+    expect(mocks.bot).toHaveBeenCalledWith({ id: "bot", organizationId: "org", isEnabled: true });
     mocks.mcp.mockResolvedValue(null);
     expect(await isThreadOAuthAllowed(scope)).toBe(false);
   });
@@ -61,8 +57,20 @@ describe("thread OAuth authorization", () => {
     mocks.authentication.mockResolvedValue({ id: "auth-a" });
     expect(await getThreadOAuthAuthentication(scope)).toEqual({ id: "auth-a" });
     expect(await getThreadOAuthAuthentication({ ...scope, authorId: "other" })).toBeNull();
-    expect(mocks.connection).toHaveBeenNthCalledWith(1, scope);
-    expect(mocks.connection).toHaveBeenNthCalledWith(2, { ...scope, authorId: "other" });
+    expect(mocks.connection).toHaveBeenNthCalledWith(1, {
+      organizationId: scope.organizationId,
+      oauthClientId: scope.oauthClientId,
+      chatbotId: scope.chatbotId,
+      adapterId: scope.adapterId,
+      authorId: scope.authorId,
+    });
+    expect(mocks.connection).toHaveBeenNthCalledWith(2, {
+      organizationId: scope.organizationId,
+      oauthClientId: scope.oauthClientId,
+      chatbotId: scope.chatbotId,
+      adapterId: scope.adapterId,
+      authorId: "other",
+    });
     expect(mocks.authentication).toHaveBeenCalledOnce();
   });
 });

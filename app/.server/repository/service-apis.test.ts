@@ -1,19 +1,19 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-const { sandboxFirst, filesystemFirst } = vi.hoisted(() => ({
-  sandboxFirst: vi.fn(),
+const { filesystemFirst } = vi.hoisted(() => ({
   filesystemFirst: vi.fn(),
 }));
-vi.mock("./db", () => ({
-  db: {
-    orm: {
-      aibot: {
-        SandboxAPI: { first: sandboxFirst },
-        FileSystemAPI: { first: filesystemFirst },
-      },
-    },
-  },
-}));
+vi.mock("./kysely", async () => {
+  const { createTestKysely } = await import("./test-kysely");
+  return {
+    kysely: createTestKysely(async (table, conditions) => {
+      if (table !== "aibot.FileSystemAPI") return [];
+      const query = Object.fromEntries(conditions.map(({ column, value }) => [column, value]));
+      const row = await filesystemFirst(query);
+      return row ? [row] : [];
+    }),
+  };
+});
 vi.mock("../logger/audit-logger", () => ({ logAuditEvent: vi.fn() }));
 import {
   deleteServiceApi,
@@ -172,10 +172,7 @@ describe("service API connection tests", () => {
     values.set("id", "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
     values.set("headers", "");
     expect((await testServiceApi(admin, values)).apiTestOk).toBe(false);
-    expect(filesystemFirst).toHaveBeenCalledWith({
-      id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
-      organizationId: "org",
-    });
+    expect(filesystemFirst).toHaveBeenCalledWith({ id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", organizationId: "org" });
     expect(fetchMock).not.toHaveBeenCalled();
   });
 });

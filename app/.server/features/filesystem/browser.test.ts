@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { AuthUser } from "../../auth";
-const mocks = vi.hoisted(() => ({ first: vi.fn() }));
-vi.mock("../../repository/db", () => ({
-  db: { orm: { aibot: { FileSystemAPI: { first: mocks.first } } } },
+const mocks = vi.hoisted(() => ({ lookup: vi.fn() }));
+vi.mock("../../repository/runtime-lookups", () => ({
+  getBrowserFilesystemApi: mocks.lookup,
 }));
 import { getBrowserFileSystem } from "./browser";
 
@@ -18,16 +18,13 @@ describe("filesystem browser access", () => {
     await expect(
       getBrowserFileSystem({ ...admin, isAdmin: false }, apiId),
     ).rejects.toMatchObject({ status: 403 });
-    expect(mocks.first).not.toHaveBeenCalled();
+    expect(mocks.lookup).not.toHaveBeenCalled();
   });
   it("looks up the API in the administrator's organization", async () => {
-    mocks.first.mockResolvedValueOnce(null);
+    mocks.lookup.mockResolvedValueOnce(null);
     await expect(getBrowserFileSystem(admin, apiId)).rejects.toMatchObject({
       status: 404,
     });
-    expect(mocks.first).toHaveBeenCalledWith({
-      id: apiId,
-      organizationId: "org-a",
-    });
+    expect(mocks.lookup).toHaveBeenCalledWith(apiId, "org-a");
   });
 });
