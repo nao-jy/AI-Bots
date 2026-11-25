@@ -1,7 +1,8 @@
-import { db } from "./db";
+import { kysely } from "./kysely";
 import type { AuthUser } from "../auth";
 import { filterResourcesByRole } from "../authorization";
 import { appLogger } from "../logger/app-logger";
+import { generateResourceId } from "../utils";
 
 export type ExecutionSource = "direct_message" | "mention" | "schedule";
 export type ExecutionStatus = "running" | "succeeded" | "failed" | "skipped";
@@ -42,16 +43,21 @@ export async function beginExecution(input: {
   threadId: string;
 }) {
   try {
-    const execution = await db.orm.aibot.BotExecution.create({
-      organizationId: input.organizationId,
-      chatbotId: input.chatbotId,
-      agentId: input.agentId ?? null,
-      adapterId: input.adapterId,
-      scheduleId: input.scheduleId ?? null,
-      source: input.source,
-      status: "running",
-      threadId: input.threadId,
-    });
+    const execution = await kysely
+      .insertInto("aibot.BotExecution")
+      .values({
+        id: generateResourceId(),
+        organizationId: input.organizationId,
+        chatbotId: input.chatbotId,
+        agentId: input.agentId ?? null,
+        adapterId: input.adapterId,
+        scheduleId: input.scheduleId ?? null,
+        source: input.source,
+        status: "running",
+        threadId: input.threadId,
+      })
+      .returning("id")
+      .executeTakeFirstOrThrow();
     return execution.id;
   } catch (error) {
     appLogger.error(
@@ -68,15 +74,19 @@ export async function finishExecution(
 ) {
   if (!id) return;
   try {
-    await db.orm.aibot.BotExecution.where({ id }).update({
-      status: outcome.status,
-      finishedAt: new Date().toISOString(),
-      errorCode: outcome.errorCode ?? null,
-      errorSummary: outcome.errorCode
-        ? errorSummaries[outcome.errorCode]
-        : null,
-      usageId: outcome.usageId ?? null,
-    });
+    await kysely
+      .updateTable("aibot.BotExecution")
+      .set({
+        status: outcome.status,
+        finishedAt: new Date().toISOString(),
+        errorCode: outcome.errorCode ?? null,
+        errorSummary: outcome.errorCode
+          ? errorSummaries[outcome.errorCode]
+          : null,
+        usageId: outcome.usageId ?? null,
+      })
+      .where("id", "=", id)
+      .execute();
   } catch (error) {
     appLogger.error(`Failed to record completion for execution ${id}`, error);
   }
@@ -85,9 +95,11 @@ export async function finishExecution(
 async function visibleBots(user: AuthUser) {
   return filterResourcesByRole(
     user,
-    await db.orm.aibot.ChatBot.where({ organizationId: user.organizationId })
-      .select("id", "name", "organizationId")
-      .all(),
+    await kysely
+      .selectFrom("aibot.ChatBot")
+      .select(["id", "name", "organizationId"])
+      .where("organizationId", "=", user.organizationId)
+      .execute(),
   );
 }
 
@@ -102,9 +114,11 @@ export async function listExecutionHistory(
 ) {
   const [bots, schedules] = await Promise.all([
     visibleBots(user),
-    db.orm.aibot.ChatBotSchedule.where({ organizationId: user.organizationId })
-      .select("id", "name", "organizationId")
-      .all()
+    kysely
+      .selectFrom("aibot.ChatBotSchedule")
+      .select(["id", "name", "organizationId"])
+      .where("organizationId", "=", user.organizationId)
+      .execute()
       .then((rows) => filterResourcesByRole(user, rows)),
   ]);
   const botIds = bots.map((bot) => bot.id);
@@ -125,17 +139,20 @@ export async function listExecutionHistory(
   };
   if (!user.isAdmin && botIds.length === 0) return empty;
 
-  let query = db.orm.aibot.BotExecution.where({
-    organizationId: user.organizationId,
-  }).where((row) => row.startedAt.gte(since));
-  if (!user.isAdmin) query = query.where((row) => row.chatbotId.in(botIds));
-  if (filters.botId) query = query.where({ chatbotId: filters.botId });
-  if (filters.status) query = query.where({ status: filters.status });
+  let query = kysely
+    .selectFrom("aibot.BotExecution")
+    .selectAll()
+    .where("organizationId", "=", user.organizationId)
+    .where("startedAt", ">=", since);
+  if (!user.isAdmin) query = query.where("chatbotId", "in", botIds);
+  if (filters.botId) query = query.where("chatbotId", "=", filters.botId);
+  if (filters.status) query = query.where("status", "=", filters.status);
   const rows = await query
-    .orderBy([(row) => row.startedAt.desc(), (row) => row.id.desc()])
+    .orderBy("startedAt", "desc")
+    .orderBy("id", "desc")
     .limit(pageSize + 1)
     .offset((filters.page - 1) * pageSize)
-    .all();
+    .execute();
   const botNames = new Map(bots.map((bot) => [bot.id, bot.name]));
   const staleBefore = Date.now() - 15 * 60 * 1_000;
   return {
@@ -174,21 +191,23 @@ export async function recentExecutionFailures(
   if (!user.isAdmin && botIds.length === 0) return { count: 0, records: [] };
 
   const since = new Date(Date.now() - 24 * 60 * 60 * 1_000).toISOString();
-  let query = db.orm.aibot.BotExecution.where({
-    organizationId: user.organizationId,
-    status: "failed",
-  }).where((row) => row.startedAt.gte(since));
-  if (!user.isAdmin) query = query.where((row) => row.chatbotId.in(botIds));
+  let query = kysely
+    .selectFrom("aibot.BotExecution")
+    .selectAll()
+    .where("organizationId", "=", user.organizationId)
+    .where("status", "=", "failed")
+    .where("startedAt", ">=", since);
+  if (!user.isAdmin) query = query.where("chatbotId", "in", botIds);
   const [totals, rows] = await Promise.all([
-    query.aggregate((aggregate) => ({ count: aggregate.count() })),
+    query.select((eb) => eb.fn.countAll<number>().as("count")).executeTakeFirst(),
     query
-      .orderBy((row) => row.startedAt.desc())
+      .orderBy("startedAt", "desc")
       .limit(5)
-      .all(),
+      .execute(),
   ]);
   const botNames = new Map(bots.map((bot) => [bot.id, bot.name]));
   return {
-    count: totals.count,
+    count: Number(totals?.count ?? 0),
     records: rows.map((row) => ({
       id: row.id,
       botName: row.chatbotId ? (botNames.get(row.chatbotId) ?? null) : null,
