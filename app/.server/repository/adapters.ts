@@ -1,4 +1,5 @@
-import { db } from "./db";
+import { kysely } from "./kysely";
+import { jsonArrayFrom } from "kysely/helpers/postgres";
 import type { AuthUser } from "../auth";
 import type { PublicIdSlot } from "../../types/entities";
 import {
@@ -22,18 +23,20 @@ export async function listAdapters(user: AuthUser, ids: string[]) {
   const [adapters, authentications] = await Promise.all([
     filterResourcesByRole(
       user,
-      await db.orm.aibot.ChatAdapter.where({
-        organizationId: user.organizationId,
-      })
-        .where((adapter) => adapter.id.in(ids))
-        .include("publicIds")
-        .all(),
+      await kysely.selectFrom("aibot.ChatAdapter")
+        .selectAll("aibot.ChatAdapter")
+        .select((eb) => [jsonArrayFrom(
+          eb.selectFrom("aibot.ChatAdapterPublicId").select(["slot", "publicId"])
+            .whereRef("aibot.ChatAdapterPublicId.adapterId", "=", "aibot.ChatAdapter.id"),
+        ).as("publicIds")])
+        .where("aibot.ChatAdapter.organizationId", "=", user.organizationId)
+        .where("aibot.ChatAdapter.id", "in", ids)
+        .execute(),
     ),
     filterResourcesByRole(
       user,
-      await db.orm.aibot.OAuthAuthentication.where({
-        organizationId: user.organizationId,
-      }).all(),
+      await kysely.selectFrom("aibot.OAuthAuthentication").select(["id", "name", "organizationId"])
+        .where("organizationId", "=", user.organizationId).execute(),
     ),
   ]);
   const authNames = new Map(
@@ -103,10 +106,8 @@ export async function saveAdapter(
   }
   if (id !== null) {
     if (
-      !(await db.orm.aibot.ChatAdapter.first({
-        id,
-        organizationId: user.organizationId,
-      })) ||
+      !(await kysely.selectFrom("aibot.ChatAdapter").select("id")
+        .where("id", "=", id).where("organizationId", "=", user.organizationId).executeTakeFirst()) ||
       !(await hasResourceAccess(user, id, "update"))
     )
       return { error: "server.adapterNotFound" };
@@ -114,10 +115,8 @@ export async function saveAdapter(
   if (authId !== null) {
     if (
       !isUuid(authId) ||
-      !(await db.orm.aibot.OAuthAuthentication.first({
-        id: authId,
-        organizationId: user.organizationId,
-      })) ||
+      !(await kysely.selectFrom("aibot.OAuthAuthentication").select("id")
+        .where("id", "=", authId).where("organizationId", "=", user.organizationId).executeTakeFirst()) ||
       !(await hasResourceAccess(user, authId, "read"))
     )
       return { error: "server.selectedOauthAuthenticationNotFound" };
@@ -135,48 +134,37 @@ export async function saveAdapter(
   }
   const storedEnvs = jsonb(encryptedConfig);
   if (id === null) {
-    const adapterId = await db.transaction(async (tx) => {
+    const adapterId = await kysely.transaction().execute(async (tx) => {
       const id = generateResourceId();
-      await tx.orm.aibot.ResourceBase.create({
-        id,
-        organizationId: user.organizationId,
-      });
-      const adapter = await tx.orm.aibot.ChatAdapter.create({
-        id,
-        name,
-        platform,
-        organizationId: user.organizationId,
-        config: storedEnvs,
-        authId,
-      });
+      await tx.insertInto("aibot.ResourceBase").values({ id, organizationId: user.organizationId }).execute();
+      const adapter = await tx.insertInto("aibot.ChatAdapter").values({
+        id, name, platform, organizationId: user.organizationId,
+        config: storedEnvs, authId, updatedAt: new Date(),
+      }).returning("id").executeTakeFirstOrThrow();
       for (const slot of ["first", "second"] as const) {
-        await tx.orm.aibot.ChatAdapterPublicId.create({
+        await tx.insertInto("aibot.ChatAdapterPublicId").values({
           organizationId: user.organizationId,
           publicId: generatePublicId(),
           slot,
           adapterId: adapter.id,
-        });
+          updatedAt: new Date(),
+        }).execute();
       }
-      await tx.orm.aibot.Grant.create({
+      await tx.insertInto("aibot.Grant").values({
         organizationId: user.organizationId,
         principalId: user.id,
         resourceId: id,
         role: "manager",
         grantedById: user.id,
-      });
+        updatedAt: new Date(),
+      }).execute();
       return adapter.id;
     });
     logAuditEvent("adapter.created", "adapter", adapterId, user.id);
   } else {
-    await db.orm.aibot.ChatAdapter.where({
-      id,
-      organizationId: user.organizationId,
-    }).update({
-      name,
-      platform,
-      config: storedEnvs,
-      authId,
-    });
+    await kysely.updateTable("aibot.ChatAdapter").set({
+      name, platform, config: storedEnvs, authId, updatedAt: new Date(),
+    }).where("id", "=", id).where("organizationId", "=", user.organizationId).execute();
     logAuditEvent("adapter.updated", "adapter", id, user.id);
   }
   return { ok: true };
@@ -184,34 +172,24 @@ export async function saveAdapter(
 
 export async function deleteAdapter(user: AuthUser, id: string) {
   if (
-    !(await db.orm.aibot.ChatAdapter.first({
-      id,
-      organizationId: user.organizationId,
-    })) ||
+    !(await kysely.selectFrom("aibot.ChatAdapter").select("id")
+      .where("id", "=", id).where("organizationId", "=", user.organizationId).executeTakeFirst()) ||
     !(await hasResourceAccess(user, id, "delete"))
   )
     return false;
-  await db.transaction(async (tx) => {
-    const adapter = await tx.orm.aibot.ChatAdapter.where({
-      id,
-      organizationId: user.organizationId,
-    })
+  await kysely.transaction().execute(async (tx) => {
+    const adapter = await tx.selectFrom("aibot.ChatAdapter").select("id")
+      .where("id", "=", id).where("organizationId", "=", user.organizationId)
       .forUpdate()
-      .first();
+      .executeTakeFirst();
     if (!adapter) return;
-    const connections = await tx.orm.aibot.ThreadOAuthConnection.where({
-      adapterId: id,
-      organizationId: user.organizationId,
-    }).all();
-    for (const connection of connections)
-      await tx.orm.aibot.ResourceBase.where({
-        id: connection.authenticationId,
-        organizationId: user.organizationId,
-      }).delete();
-    await tx.orm.aibot.ResourceBase.where({
-      id,
-      organizationId: user.organizationId,
-    }).delete();
+    const connections = await tx.selectFrom("aibot.ThreadOAuthConnection").select("authenticationId")
+      .where("adapterId", "=", id).where("organizationId", "=", user.organizationId).execute();
+    if (connections.length) await tx.deleteFrom("aibot.ResourceBase")
+      .where("id", "in", connections.map(({ authenticationId }) => authenticationId))
+      .where("organizationId", "=", user.organizationId).execute();
+    await tx.deleteFrom("aibot.ResourceBase").where("id", "=", id)
+      .where("organizationId", "=", user.organizationId).execute();
   });
   logAuditEvent("adapter.deleted", "adapter", id, user.id);
   return true;
@@ -222,31 +200,27 @@ export async function regenerateAdapterPublicIds(
   id: string,
   slot: PublicIdSlot,
 ) {
-  const updated = await db.transaction(async (tx) => {
-    const adapter = await tx.orm.aibot.ChatAdapter.first({
-      id,
-      organizationId: user.organizationId,
-    });
+  const updated = await kysely.transaction().execute(async (tx) => {
+    const adapter = await tx.selectFrom("aibot.ChatAdapter").select("id")
+      .where("id", "=", id).where("organizationId", "=", user.organizationId).executeTakeFirst();
     if (!adapter || !(await hasResourceAccess(user, id, "manageGrant")))
       return false;
 
-    const publicIds = await tx.orm.aibot.ChatAdapterPublicId.where({
-      adapterId: id,
-    }).all();
+    const publicIds = await tx.selectFrom("aibot.ChatAdapterPublicId").select(["id", "slot"])
+      .where("adapterId", "=", id).execute();
     const publicId = publicIds.find((item) => item.slot === slot);
     if (publicId) {
-      await tx.orm.aibot.ChatAdapterPublicId.where({
-        id: publicId.id,
-      }).update({
-        publicId: generatePublicId(),
-      });
+      await tx.updateTable("aibot.ChatAdapterPublicId").set({
+        publicId: generatePublicId(), updatedAt: new Date(),
+      }).where("id", "=", publicId.id).execute();
     } else {
-      await tx.orm.aibot.ChatAdapterPublicId.create({
+      await tx.insertInto("aibot.ChatAdapterPublicId").values({
         organizationId: user.organizationId,
         publicId: generatePublicId(),
         slot,
         adapterId: id,
-      });
+        updatedAt: new Date(),
+      }).execute();
     }
     return true;
   });
