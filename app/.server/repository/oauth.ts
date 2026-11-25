@@ -1,4 +1,5 @@
 import * as oidc from "openid-client";
+import { kysely } from "./kysely";
 import { db } from "./db";
 import type { AuthUser } from "../auth";
 import {
@@ -22,11 +23,13 @@ export async function getOwnedOAuthAuthentication(
   id: string,
   organizationId: string,
 ) {
-  return db.orm.aibot.OAuthAuthentication.first({ id, organizationId });
+  return kysely.selectFrom("aibot.OAuthAuthentication").selectAll()
+    .where("id", "=", id).where("organizationId", "=", organizationId).executeTakeFirst();
 }
 
 export async function getOwnedOAuthClient(id: string, organizationId: string) {
-  return db.orm.aibot.OAuthClient.first({ id, organizationId });
+  return kysely.selectFrom("aibot.OAuthClient").selectAll()
+    .where("id", "=", id).where("organizationId", "=", organizationId).executeTakeFirst();
 }
 
 function refreshConfiguration(client: {
@@ -214,15 +217,9 @@ function validHttpUrl(value: string) {
 }
 
 export async function listOAuthClients(user: AuthUser, ids: string[]) {
-  const clients = await filterResourcesByRole(
-    user,
-    await db.orm.aibot.OAuthClient.where({
-      organizationId: user.organizationId,
-    })
-      .where((client) => client.id.in(ids))
-      .orderBy((client) => client.updatedAt.desc())
-      .all(),
-  );
+  const clients = await filterResourcesByRole(user, await kysely.selectFrom("aibot.OAuthClient")
+    .selectAll().where("organizationId", "=", user.organizationId)
+    .where("id", "in", ids).orderBy("updatedAt", "desc").execute());
   return {
     records: await includeResourcePermissions(
       user,
