@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
-import { db } from "./db";
 import { kysely } from "./kysely";
+import { jsonArrayFrom } from "kysely/helpers/postgres";
 import { hashPassword } from "../auth";
 import { generateResourceId, record, timestamp } from "../utils";
 import { logAuditEvent } from "../logger/audit-logger";
@@ -141,26 +141,39 @@ export async function listUsers(
   ids: string[],
 ) {
   if (!emailVerificationEnabled) {
-    const pendingUsers = await db.orm.aibot.User.where({
-      emailVerified: false,
-      organizationId,
-    }).all();
+    const pendingUsers = await kysely
+      .selectFrom("aibot.User")
+      .select("id")
+      .where("emailVerified", "=", false)
+      .where("organizationId", "=", organizationId)
+      .execute();
     if (pendingUsers.length) {
-      await db.orm.aibot.User.where({
-        emailVerified: false,
-        organizationId,
-      }).update({
-        emailVerified: true,
-      });
+      await kysely
+        .updateTable("aibot.User")
+        .set({ emailVerified: true, updatedAt: new Date() })
+        .where("emailVerified", "=", false)
+        .where("organizationId", "=", organizationId)
+        .execute();
       for (const user of pendingUsers)
         logAuditEvent("user.email_verified", "user", user.id);
     }
   }
-  const users = await db.orm.aibot.User.where({ organizationId })
-    .where((user) => user.id.in(ids))
-    .include("sessions")
-    .orderBy((user) => user.createdAt.asc())
-    .all();
+  const users = await kysely
+    .selectFrom("aibot.User")
+    .selectAll("aibot.User")
+    .select((eb) => [
+      jsonArrayFrom(
+        eb
+          .selectFrom("aibot.Session")
+          .selectAll()
+          .whereRef("aibot.Session.userId", "=", "aibot.User.id")
+          .orderBy("aibot.Session.createdAt", "desc"),
+      ).as("sessions"),
+    ])
+    .where("aibot.User.organizationId", "=", organizationId)
+    .where("aibot.User.id", "in", ids)
+    .orderBy("aibot.User.createdAt", "asc")
+    .execute();
   const now = Date.now();
   return users.map((user) => {
     const sessions = user.sessions.sort(
@@ -289,7 +302,12 @@ export async function saveUser(
     });
     return { ok: true, verificationRequired: !emailVerified };
   } else {
-    const user = await db.orm.aibot.User.first({ id, organizationId });
+    const user = await kysely
+      .selectFrom("aibot.User")
+      .select(["email", "emailVerified"])
+      .where("id", "=", id)
+      .where("organizationId", "=", organizationId)
+      .executeTakeFirst();
     if (!user) return { error: "server.userNotFound" };
     if (password) {
       const settings = await getAppSettings(organizationId);
@@ -302,12 +320,18 @@ export async function saveUser(
     const emailVerified = emailChanged
       ? !emailVerificationEnabled
       : user.emailVerified;
-    await db.orm.aibot.User.where({ id, organizationId }).update({
-      name,
-      email,
-      emailVerified,
-      ...(password ? { passwordHash: await hashPassword(password) } : {}),
-    });
+    await kysely
+      .updateTable("aibot.User")
+      .set({
+        name,
+        email,
+        emailVerified,
+        updatedAt: new Date(),
+        ...(password ? { passwordHash: await hashPassword(password) } : {}),
+      })
+      .where("id", "=", id)
+      .where("organizationId", "=", organizationId)
+      .execute();
     if (emailChanged) logAuditEvent("user.email_changed", "user", id);
     if (password) logAuditEvent("user.password_changed", "user", id);
     if (!emailChanged && !password) logAuditEvent("user.updated", "user", id);
@@ -328,21 +352,32 @@ export async function setUserAdmin(
     return { error: "server.cannotRevokeOwnAdmin" };
 
   let changed = false;
-  const result = await db.transaction(async (tx) => {
-    const administrators = await tx.orm.aibot.User.where({
-      isAdmin: true,
-      organizationId,
-    })
-      .orderBy((user) => user.id.asc())
+  const result = await kysely.transaction().execute(async (tx) => {
+    const administrators = await tx
+      .selectFrom("aibot.User")
+      .select("id")
+      .where("isAdmin", "=", true)
+      .where("organizationId", "=", organizationId)
+      .orderBy("id", "asc")
       .forUpdate()
-      .all();
-    const user = await tx.orm.aibot.User.first({ id, organizationId });
+      .execute();
+    const user = await tx
+      .selectFrom("aibot.User")
+      .select("isAdmin")
+      .where("id", "=", id)
+      .where("organizationId", "=", organizationId)
+      .executeTakeFirst();
     if (!user) return { error: "server.userNotFound" };
     if (user.isAdmin === isAdmin) return { ok: true };
     if (!isAdmin && administrators.length <= 1)
       return { error: "server.atLeastOneAdminRequired" };
 
-    await tx.orm.aibot.User.where({ id, organizationId }).update({ isAdmin });
+    await tx
+      .updateTable("aibot.User")
+      .set({ isAdmin, updatedAt: new Date() })
+      .where("id", "=", id)
+      .where("organizationId", "=", organizationId)
+      .execute();
     changed = true;
     return { ok: true };
   });
@@ -363,20 +398,29 @@ export async function deleteUser(
 ) {
   if (id === currentUserId) return { error: "server.cannotDeleteOwnAccount" };
 
-  const deleted = await db.transaction(async (tx) => {
-    const administrators = await tx.orm.aibot.User.where({
-      isAdmin: true,
-      organizationId,
-    })
-      .orderBy((user) => user.id.asc())
+  const deleted = await kysely.transaction().execute(async (tx) => {
+    const administrators = await tx
+      .selectFrom("aibot.User")
+      .select("id")
+      .where("isAdmin", "=", true)
+      .where("organizationId", "=", organizationId)
+      .orderBy("id", "asc")
       .forUpdate()
-      .all();
-    const user = await tx.orm.aibot.User.first({ id, organizationId });
+      .execute();
+    const user = await tx
+      .selectFrom("aibot.User")
+      .select("isAdmin")
+      .where("id", "=", id)
+      .where("organizationId", "=", organizationId)
+      .executeTakeFirst();
     if (!user) return { error: "server.userNotFound" };
     if (user.isAdmin && administrators.length <= 1)
       return { error: "server.atLeastOneAdminRequired" };
 
-    await tx.orm.aibot.PrincipalBase.where({ id }).delete();
+    await tx
+      .deleteFrom("aibot.PrincipalBase")
+      .where("id", "=", id)
+      .execute();
     return { ok: true };
   });
   if ("ok" in deleted) logAuditEvent("user.deleted", "user", id, currentUserId);
@@ -389,19 +433,33 @@ export async function forceLogoutUser(
   organizationId: string,
 ) {
   if (id === currentUserId) return { error: "server.cannotForceLogoutSelf" };
-  const result = await db.transaction(async (tx) => {
-    const user = await tx.orm.aibot.User.where({ id, organizationId })
-      .include("sessions")
-      .first();
+  const result = await kysely.transaction().execute(async (tx) => {
+    const user = await tx
+      .selectFrom("aibot.User")
+      .select((eb) => [
+        jsonArrayFrom(
+          eb
+            .selectFrom("aibot.Session")
+            .select(["expiresAt"])
+            .whereRef("aibot.Session.userId", "=", "aibot.User.id"),
+        ).as("sessions"),
+      ])
+      .where("aibot.User.id", "=", id)
+      .where("aibot.User.organizationId", "=", organizationId)
+      .executeTakeFirst();
     if (!user) return { error: "server.userNotFound" };
     const isLoggedIn = user.sessions.some(
       (session) => Date.parse(session.expiresAt) > Date.now(),
     );
     if (!isLoggedIn) return { error: "server.userNotLoggedIn" };
 
-    await tx.orm.aibot.Session.where({ userId: id, organizationId }).update({
-      expiresAt: new Date().toISOString(),
-    });
+    const now = new Date();
+    await tx
+      .updateTable("aibot.Session")
+      .set({ expiresAt: now.toISOString(), updatedAt: now })
+      .where("userId", "=", id)
+      .where("organizationId", "=", organizationId)
+      .execute();
     return { ok: true };
   });
   if ("ok" in result)
@@ -410,17 +468,29 @@ export async function forceLogoutUser(
 }
 
 export async function resetUserMfa(id: string, organizationId: string) {
-  const user = await db.orm.aibot.User.first({ id, organizationId });
+  const user = await kysely
+    .selectFrom("aibot.User")
+    .select("mfaSecret")
+    .where("id", "=", id)
+    .where("organizationId", "=", organizationId)
+    .executeTakeFirst();
   if (!user) return { error: "server.userNotFound" };
   if (!user.mfaSecret) return { error: "server.userMfaNotConfigured" };
 
-  await db.transaction(async (tx) => {
-    await tx.orm.aibot.User.where({ id, organizationId }).update({
-      mfaSecret: null,
-    });
-    await tx.orm.aibot.Session.where({ userId: id, organizationId }).update({
-      expiresAt: new Date().toISOString(),
-    });
+  await kysely.transaction().execute(async (tx) => {
+    const now = new Date();
+    await tx
+      .updateTable("aibot.User")
+      .set({ mfaSecret: null, updatedAt: now })
+      .where("id", "=", id)
+      .where("organizationId", "=", organizationId)
+      .execute();
+    await tx
+      .updateTable("aibot.Session")
+      .set({ expiresAt: now.toISOString(), updatedAt: now })
+      .where("userId", "=", id)
+      .where("organizationId", "=", organizationId)
+      .execute();
   });
   logAuditEvent("user.mfa_reset", "user", id);
   return { ok: true };
