@@ -1,5 +1,5 @@
 import type { AuthUser } from "../auth";
-import { db } from "./db";
+import { kysely } from "./kysely";
 import { generateResourceId } from "../utils";
 import { logAuditEvent } from "../logger/audit-logger";
 
@@ -10,14 +10,24 @@ function requireOrganizationAdmin(user: AuthUser) {
 export async function listGroups(user: AuthUser, ids: string[]) {
   requireOrganizationAdmin(user);
   const [groups, memberships, users] = await Promise.all([
-    db.orm.aibot.Group.where({ organizationId: user.organizationId })
-      .where((group) => group.id.in(ids))
-      .orderBy((group) => group.name.asc())
-      .all(),
-    db.orm.aibot.Membership.where({ organizationId: user.organizationId })
-      .where((membership) => membership.groupId.in(ids))
-      .all(),
-    db.orm.aibot.User.where({ organizationId: user.organizationId }).all(),
+    kysely
+      .selectFrom("aibot.Group")
+      .selectAll()
+      .where("organizationId", "=", user.organizationId)
+      .where("id", "in", ids)
+      .orderBy("name", "asc")
+      .execute(),
+    kysely
+      .selectFrom("aibot.Membership")
+      .select(["groupId", "userId"])
+      .where("organizationId", "=", user.organizationId)
+      .where("groupId", "in", ids)
+      .execute(),
+    kysely
+      .selectFrom("aibot.User")
+      .select(["id", "name", "email"])
+      .where("organizationId", "=", user.organizationId)
+      .execute(),
   ]);
   const usersById = new Map(users.map((member) => [member.id, member]));
   return groups.map((group) => ({
@@ -35,9 +45,12 @@ export async function listGroups(user: AuthUser, ids: string[]) {
 export async function listGroupCandidates(user: AuthUser) {
   requireOrganizationAdmin(user);
   return (
-    await db.orm.aibot.User.where({ organizationId: user.organizationId })
-      .orderBy((member) => member.name.asc())
-      .all()
+    await kysely
+      .selectFrom("aibot.User")
+      .select(["id", "name", "email"])
+      .where("organizationId", "=", user.organizationId)
+      .orderBy("name", "asc")
+      .execute()
   ).map(({ id, name, email }) => ({ id, name, email }));
 }
 
@@ -46,23 +59,30 @@ export async function createGroup(user: AuthUser, nameValue: string) {
   const name = nameValue.trim();
   if (!name) return { error: "server.groupNameRequired" };
   if (
-    await db.orm.aibot.Group.first({
-      organizationId: user.organizationId,
-      name,
-    })
+    await kysely
+      .selectFrom("aibot.Group")
+      .select("id")
+      .where("organizationId", "=", user.organizationId)
+      .where("name", "=", name)
+      .executeTakeFirst()
   )
     return { error: "server.duplicateGroupName" };
-  const group = await db.transaction(async (tx) => {
+  const group = await kysely.transaction().execute(async (tx) => {
     const id = generateResourceId();
-    await tx.orm.aibot.PrincipalBase.create({
-      id,
-      organizationId: user.organizationId,
-    });
-    return tx.orm.aibot.Group.create({
-      id,
-      organizationId: user.organizationId,
-      name,
-    });
+    await tx
+      .insertInto("aibot.PrincipalBase")
+      .values({ id, organizationId: user.organizationId })
+      .execute();
+    return tx
+      .insertInto("aibot.Group")
+      .values({
+        id,
+        organizationId: user.organizationId,
+        name,
+        updatedAt: new Date(),
+      })
+      .returning("id")
+      .executeTakeFirstOrThrow();
   });
   logAuditEvent("group.created", "group", group.id, user.id);
   return { ok: true, id: group.id };
@@ -76,31 +96,47 @@ export async function setGroupMembership(
 ) {
   requireOrganizationAdmin(user);
   const [group, member] = await Promise.all([
-    db.orm.aibot.Group.first({
-      id: groupId,
-      organizationId: user.organizationId,
-    }),
-    db.orm.aibot.User.first({
-      id: memberId,
-      organizationId: user.organizationId,
-    }),
+    kysely
+      .selectFrom("aibot.Group")
+      .select("id")
+      .where("id", "=", groupId)
+      .where("organizationId", "=", user.organizationId)
+      .executeTakeFirst(),
+    kysely
+      .selectFrom("aibot.User")
+      .select("id")
+      .where("id", "=", memberId)
+      .where("organizationId", "=", user.organizationId)
+      .executeTakeFirst(),
   ]);
   if (!group || !member) return { error: "server.groupOrUserNotFound" };
-  const memberships = await db.orm.aibot.Membership.where({
-    organizationId: user.organizationId,
-    groupId,
-    userId: memberId,
-  }).all();
-  if (isMember && memberships.length === 0) {
-    await db.orm.aibot.Membership.create({
-      organizationId: user.organizationId,
-      groupId,
-      userId: memberId,
-    });
-  } else if (!isMember) {
-    for (const membership of memberships)
-      await db.orm.aibot.Membership.where({ id: membership.id }).delete();
-  }
+  await kysely.transaction().execute(async (tx) => {
+    const memberships = await tx
+      .selectFrom("aibot.Membership")
+      .select("id")
+      .where("organizationId", "=", user.organizationId)
+      .where("groupId", "=", groupId)
+      .where("userId", "=", memberId)
+      .execute();
+    if (isMember && memberships.length === 0) {
+      await tx
+        .insertInto("aibot.Membership")
+        .values({
+          organizationId: user.organizationId,
+          groupId,
+          userId: memberId,
+          updatedAt: new Date(),
+        })
+        .execute();
+    } else if (!isMember) {
+      await tx
+        .deleteFrom("aibot.Membership")
+        .where("organizationId", "=", user.organizationId)
+        .where("groupId", "=", groupId)
+        .where("userId", "=", memberId)
+        .execute();
+    }
+  });
   logAuditEvent(
     isMember ? "group.member_added" : "group.member_removed",
     "group",
@@ -118,33 +154,44 @@ export async function renameGroup(
   requireOrganizationAdmin(user);
   const name = nameValue.trim();
   if (!name) return { error: "server.groupNameRequired" };
-  const group = await db.orm.aibot.Group.first({
-    id: groupId,
-    organizationId: user.organizationId,
-  });
+  const group = await kysely
+    .selectFrom("aibot.Group")
+    .select("id")
+    .where("id", "=", groupId)
+    .where("organizationId", "=", user.organizationId)
+    .executeTakeFirst();
   if (!group) return { error: "server.groupNotFound" };
-  const duplicate = await db.orm.aibot.Group.first({
-    organizationId: user.organizationId,
-    name,
-  });
+  const duplicate = await kysely
+    .selectFrom("aibot.Group")
+    .select("id")
+    .where("organizationId", "=", user.organizationId)
+    .where("name", "=", name)
+    .executeTakeFirst();
   if (duplicate && duplicate.id !== groupId)
     return { error: "server.duplicateGroupName" };
-  await db.orm.aibot.Group.where({
-    id: groupId,
-    organizationId: user.organizationId,
-  }).update({ name });
+  await kysely
+    .updateTable("aibot.Group")
+    .set({ name, updatedAt: new Date() })
+    .where("id", "=", groupId)
+    .where("organizationId", "=", user.organizationId)
+    .execute();
   logAuditEvent("group.renamed", "group", groupId, user.id);
   return { ok: true };
 }
 
 export async function deleteGroup(user: AuthUser, groupId: string) {
   requireOrganizationAdmin(user);
-  const group = await db.orm.aibot.Group.first({
-    id: groupId,
-    organizationId: user.organizationId,
-  });
+  const group = await kysely
+    .selectFrom("aibot.Group")
+    .select("id")
+    .where("id", "=", groupId)
+    .where("organizationId", "=", user.organizationId)
+    .executeTakeFirst();
   if (!group) return false;
-  await db.orm.aibot.PrincipalBase.where({ id: groupId }).delete();
+  await kysely
+    .deleteFrom("aibot.PrincipalBase")
+    .where("id", "=", groupId)
+    .execute();
   logAuditEvent("group.deleted", "group", groupId, user.id);
   return true;
 }
