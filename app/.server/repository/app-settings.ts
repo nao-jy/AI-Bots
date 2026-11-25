@@ -1,4 +1,4 @@
-import { db } from "./db";
+import { kysely } from "./kysely";
 import { logAuditEvent } from "../logger/audit-logger";
 
 const DEFAULT_SESSION_DURATION_SECONDS = 60 * 60 * 24 * 30;
@@ -6,9 +6,9 @@ const DEFAULT_MAX_LOGIN_ATTEMPTS = 5;
 const DEFAULT_MINIMUM_PASSWORD_STRENGTH = 2;
 
 export async function getAppSettings(organizationId?: string) {
-  const settings = organizationId
-    ? await db.orm.aibot.Organization.first({ id: organizationId })
-    : await db.orm.aibot.Organization.first();
+  let query = kysely.selectFrom("aibot.Organization").selectAll();
+  if (organizationId) query = query.where("id", "=", organizationId);
+  const settings = await query.executeTakeFirst();
   const sessionDurationSeconds = settings?.sessionDurationSeconds;
   const maxLoginAttempts = settings?.maxLoginAttempts;
   const minimumPasswordStrength =
@@ -47,9 +47,10 @@ export async function saveAppSettings(values: {
   minimumPasswordStrength: number;
 }) {
   const { organizationId, organizationName, ...settings } = values;
-  await db.orm.aibot.Organization.where({ id: organizationId }).update({
-    ...settings,
-    name: organizationName.trim(),
-  });
+  await kysely
+    .updateTable("aibot.Organization")
+    .set({ ...settings, name: organizationName.trim() })
+    .where("id", "=", organizationId)
+    .execute();
   logAuditEvent("app_settings.updated", "organization", organizationId);
 }
