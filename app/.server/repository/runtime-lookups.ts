@@ -1,11 +1,34 @@
-import { db } from "./db";
+import { kysely } from "./kysely";
+import type { Selectable } from "kysely";
+import { jsonObjectFrom } from "kysely/helpers/postgres";
+import type { ProviderTable } from "./db-schema";
 
 export function getDashboardResources(organizationId: string) {
   return Promise.all([
-    db.orm.aibot.ChatBot.where({ organizationId }).all(),
-    db.orm.aibot.AgentDefinition.where({ organizationId })
-      .include("provider")
-      .all(),
+    kysely
+      .selectFrom("aibot.ChatBot")
+      .selectAll()
+      .where("organizationId", "=", organizationId)
+      .execute(),
+    kysely
+      .selectFrom("aibot.AgentDefinition")
+      .selectAll("aibot.AgentDefinition")
+      .select((eb) => [
+        jsonObjectFrom(
+          eb
+            .selectFrom("aibot.Provider")
+            .selectAll()
+            .whereRef("aibot.Provider.id", "=", "aibot.AgentDefinition.providerId"),
+        ).as("provider"),
+      ])
+      .where("aibot.AgentDefinition.organizationId", "=", organizationId)
+      .execute()
+      .then((agents) =>
+        agents.map((agent) => ({
+          ...agent,
+          provider: agent.provider as unknown as Selectable<ProviderTable>,
+        })),
+      ),
   ]);
 }
 
@@ -17,21 +40,55 @@ export function getDashboardUsage(
   agentIds: string[],
 ) {
   if (!botIds.length || !agentIds.length) return Promise.resolve([]);
-  return db.orm.aibot.AgentUsage.where({ organizationId })
-    .where((row) => row.createdAt.gte(start))
-    .where((row) => row.createdAt.lt(end))
-    .where((row) => row.chatbotId.in(botIds))
-    .where((row) => row.agentId.in(agentIds))
-    .select("id", "createdAt", "inputTokens", "outputTokens", "platform", "chatbotId", "agentId")
-    .all();
+  return kysely
+    .selectFrom("aibot.AgentUsage")
+    .select([
+      "id",
+      "createdAt",
+      "inputTokens",
+      "outputTokens",
+      "platform",
+      "chatbotId",
+      "agentId",
+    ])
+    .where("organizationId", "=", organizationId)
+    .where("createdAt", ">=", start)
+    .where("createdAt", "<", end)
+    .where("chatbotId", "in", botIds)
+    .where("agentId", "in", agentIds)
+    .execute();
 }
 
-export const getSandboxApi = (id: string) => db.orm.aibot.SandboxAPI.first({ id });
-export const getFilesystemApi = (id: string) => db.orm.aibot.FileSystemAPI.first({ id });
-export const getOrganization = (id: string) => db.orm.aibot.Organization.first({ id });
+export const getSandboxApi = (id: string) =>
+  kysely
+    .selectFrom("aibot.SandboxAPI")
+    .selectAll()
+    .where("id", "=", id)
+    .executeTakeFirst();
+export const getFilesystemApi = (id: string) =>
+  kysely
+    .selectFrom("aibot.FileSystemAPI")
+    .selectAll()
+    .where("id", "=", id)
+    .executeTakeFirst();
+export const getOrganization = (id: string) =>
+  kysely
+    .selectFrom("aibot.Organization")
+    .selectAll()
+    .where("id", "=", id)
+    .executeTakeFirst();
 export const getOrganizationFilesystemApi = (id: string, organizationId: string) =>
-  db.orm.aibot.FileSystemAPI.first({ id, organizationId });
-export const getBrowserFilesystemApi = (id: string, organizationId: string) =>
-  db.orm.aibot.FileSystemAPI.first({ id, organizationId });
+  kysely
+    .selectFrom("aibot.FileSystemAPI")
+    .selectAll()
+    .where("id", "=", id)
+    .where("organizationId", "=", organizationId)
+    .executeTakeFirst();
+export const getBrowserFilesystemApi = getOrganizationFilesystemApi;
 export const getBotFilesystemLink = (chatbotId: string, organizationId: string) =>
-  db.orm.aibot.ChatBotFileSystem.first({ chatbotId, organizationId });
+  kysely
+    .selectFrom("aibot.ChatBotFileSystem")
+    .selectAll()
+    .where("chatbotId", "=", chatbotId)
+    .where("organizationId", "=", organizationId)
+    .executeTakeFirst();
