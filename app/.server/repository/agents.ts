@@ -1,4 +1,5 @@
-import { db } from "./db";
+import { kysely } from "./kysely";
+import { jsonObjectFrom } from "kysely/helpers/postgres";
 import type { AuthUser } from "../auth";
 import { generateResourceId, idList, isUuid, jsonb, record } from "../utils";
 import { logAuditEvent } from "../logger/audit-logger";
@@ -18,13 +19,17 @@ import type {
 export async function listAgents(user: AuthUser, ids: string[]) {
   const agents = await filterResourcesByRole(
     user,
-    await db.orm.aibot.AgentDefinition.where({
-      organizationId: user.organizationId,
-    })
-      .where((agent) => agent.id.in(ids))
-      .include("chatbots")
-      .include("provider")
-      .all(),
+    await kysely.selectFrom("aibot.AgentDefinition")
+      .selectAll("aibot.AgentDefinition")
+      .select((eb) => [
+        jsonObjectFrom(eb.selectFrom("aibot.Provider").selectAll()
+          .whereRef("aibot.Provider.id", "=", "aibot.AgentDefinition.providerId")).as("provider"),
+        eb.selectFrom("aibot.ChatBot").select((eb2) => eb2.fn.countAll<number>().as("count"))
+          .whereRef("aibot.ChatBot.agentId", "=", "aibot.AgentDefinition.id").as("chatbotCount"),
+      ])
+      .where("aibot.AgentDefinition.organizationId", "=", user.organizationId)
+      .where("aibot.AgentDefinition.id", "in", ids)
+      .execute(),
   );
   return {
     records: await includeResourcePermissions(
@@ -34,11 +39,11 @@ export async function listAgents(user: AuthUser, ids: string[]) {
           name: agent.name,
           model: agent.modelId,
           modelId: agent.modelId,
-          provider: agent.provider.name,
-          providerId: agent.provider.id,
+          provider: agent.provider!.name,
+          providerId: agent.provider!.id,
           options: JSON.stringify(agent.options ?? {}, null, 2),
-          status: agent.chatbots.length
-            ? t("server.usedByBot", { 0: agent.chatbots.length })
+          status: Number(agent.chatbotCount) > 0
+            ? t("server.usedByBot", { 0: Number(agent.chatbotCount) })
             : "server.unused",
         });
       }),
@@ -46,9 +51,8 @@ export async function listAgents(user: AuthUser, ids: string[]) {
     providerOptions: (
       await filterResourcesByRole(
         user,
-        await db.orm.aibot.Provider.where({
-          organizationId: user.organizationId,
-        }).all(),
+        await kysely.selectFrom("aibot.Provider").selectAll()
+          .where("organizationId", "=", user.organizationId).execute(),
       )
     ).map((provider) => ({
       label: `${provider.name} (${provider.providerName})`,
@@ -91,10 +95,8 @@ export async function saveAgent(
   if (!isUuid(providerId) || !modelId)
     return { error: "server.providerAndModelRequired" };
   if (
-    !(await db.orm.aibot.Provider.first({
-      id: providerId,
-      organizationId: user.organizationId,
-    })) ||
+    !(await kysely.selectFrom("aibot.Provider").select("id")
+      .where("id", "=", providerId).where("organizationId", "=", user.organizationId).executeTakeFirst()) ||
     !(await hasResourceAccess(user, providerId, "read"))
   )
     return { error: "server.selectedProviderNotFound" };
@@ -106,12 +108,12 @@ export async function saveAgent(
   } catch {
     return { error: "server.invalidOptionsJson" };
   }
-  const servers = await db.orm.aibot.McpServer.where({
-    organizationId: user.organizationId,
-  }).all();
-  const ownedBots = await db.orm.aibot.ChatBot.where({
-    organizationId: user.organizationId,
-  }).all();
+  const [servers, ownedBots] = await Promise.all([
+    kysely.selectFrom("aibot.McpServer").select("id")
+      .where("organizationId", "=", user.organizationId).execute(),
+    kysely.selectFrom("aibot.ChatBot").select("id")
+      .where("organizationId", "=", user.organizationId).execute(),
+  ]);
   const allowedIds = new Set(servers.map((server) => server.id));
   if (
     serverIds.some((serverId) => !allowedIds.has(serverId)) ||
@@ -124,9 +126,8 @@ export async function saveAgent(
     ).some((allowed) => !allowed)
   )
     return { error: "server.selectedMcpServerUnavailable" };
-  const authentications = await db.orm.aibot.OAuthAuthentication.where({
-    organizationId: user.organizationId,
-  }).all();
+  const authentications = await kysely.selectFrom("aibot.OAuthAuthentication").select("id")
+    .where("organizationId", "=", user.organizationId).execute();
   const allowedAuthIds = new Set(authentications.map((auth) => auth.id));
   if (
     Object.values(mcpAuthIds).some((authId) => !allowedAuthIds.has(authId)) ||
@@ -143,18 +144,20 @@ export async function saveAgent(
       error: "server.mcpOauthRequiresSelectedServerAndOwnCredentials",
     };
   if (id !== null) {
-    const existing = await db.orm.aibot.AgentDefinition.where({ id })
-      .include("provider")
-      .first();
+    const existing = await kysely.selectFrom("aibot.AgentDefinition")
+      .innerJoin("aibot.Provider", "aibot.Provider.id", "aibot.AgentDefinition.providerId")
+      .select(["aibot.Provider.organizationId"])
+      .where("aibot.AgentDefinition.id", "=", id).executeTakeFirst();
     if (
       !existing ||
-      existing.provider.organizationId !== user.organizationId ||
+      existing.organizationId !== user.organizationId ||
       !(await hasResourceAccess(user, id, "update"))
     )
       return { error: "server.agentNotFound" };
   }
   if (id !== null) {
-    const assignedBot = await db.orm.aibot.ChatBot.first({ agentId: id });
+    const assignedBot = await kysely.selectFrom("aibot.ChatBot").select(["id", "organizationId"])
+      .where("agentId", "=", id).executeTakeFirst();
     if (assignedBot && !ownedBots.some((bot) => bot.id === assignedBot.id))
       return { error: "server.agentEditForbidden" };
   }
@@ -166,28 +169,26 @@ export async function saveAgent(
     options: jsonb(options),
     organizationId: user.organizationId,
   };
-  const agentId = await db.transaction(async (tx) => {
+  const agentId = await kysely.transaction().execute(async (tx) => {
     let agentId = id;
     if (agentId === null) {
       agentId = generateResourceId();
-      await tx.orm.aibot.ResourceBase.create({
-        id: agentId,
-        organizationId: user.organizationId,
-      });
-      await tx.orm.aibot.AgentDefinition.create({
-        ...valuesToSave,
-        id: agentId,
-      });
-      await tx.orm.aibot.Grant.create({
+      await tx.insertInto("aibot.ResourceBase").values({ id: agentId, organizationId: user.organizationId }).execute();
+      await tx.insertInto("aibot.AgentDefinition").values({
+        ...valuesToSave, id: agentId, updatedAt: new Date(),
+      }).execute();
+      await tx.insertInto("aibot.Grant").values({
         organizationId: user.organizationId,
         principalId: user.id,
         resourceId: agentId,
         role: "manager",
         grantedById: user.id,
-      });
+        updatedAt: new Date(),
+      }).execute();
     }
     if (id !== null)
-      await tx.orm.aibot.AgentDefinition.where({ id }).update(valuesToSave);
+      await tx.updateTable("aibot.AgentDefinition").set({ ...valuesToSave, updatedAt: new Date() })
+        .where("id", "=", id).execute();
     return agentId;
   });
   logAuditEvent(
@@ -200,18 +201,19 @@ export async function saveAgent(
 }
 
 export async function deleteAgent(user: AuthUser, id: string) {
-  const agent = await db.orm.aibot.AgentDefinition.where({ id })
-    .include("provider")
-    .first();
+  const agent = await kysely.selectFrom("aibot.AgentDefinition")
+    .innerJoin("aibot.Provider", "aibot.Provider.id", "aibot.AgentDefinition.providerId")
+    .select(["aibot.Provider.organizationId"])
+    .where("aibot.AgentDefinition.id", "=", id).executeTakeFirst();
   if (
     !agent ||
-    agent.provider.organizationId !== user.organizationId ||
+    agent.organizationId !== user.organizationId ||
     !(await hasResourceAccess(user, id, "delete"))
   )
     return false;
-  const bot = await db.orm.aibot.ChatBot.first({ agentId: id });
+  const bot = await kysely.selectFrom("aibot.ChatBot").select("id").where("agentId", "=", id).executeTakeFirst();
   if (bot) return false;
-  await db.orm.aibot.ResourceBase.where({ id }).delete();
+  await kysely.deleteFrom("aibot.ResourceBase").where("id", "=", id).execute();
   logAuditEvent("agent.deleted", "agent", id, user.id);
   return true;
 }
@@ -225,9 +227,10 @@ export async function insertUsage(
   platform: string,
   threadId: string,
 ) {
-  const chatbot = await db.orm.aibot.ChatBot.first({ id: chatbotId });
+  const chatbot = await kysely.selectFrom("aibot.ChatBot").select("organizationId")
+    .where("id", "=", chatbotId).executeTakeFirst();
   if (!chatbot) throw new Error("server.botNotFound");
-  const created = await db.orm.aibot.AgentUsage.create({
+  const created = await kysely.insertInto("aibot.AgentUsage").values({
     organizationId: chatbot.organizationId,
     chatbotId: chatbotId,
     agentId: agentId,
@@ -252,7 +255,8 @@ export async function insertUsage(
     ),
     platform: platform,
     threadId: threadId,
-  });
+    updatedAt: new Date(),
+  }).returning("id").executeTakeFirstOrThrow();
   logAuditEvent("agent.usage_recorded", "bot", chatbotId);
   return created.id;
 }

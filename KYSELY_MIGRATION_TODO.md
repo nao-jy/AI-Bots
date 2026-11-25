@@ -47,6 +47,7 @@
 - [x] `list-pages.ts` をKyselyへ移行した。検索、アクセス可能ID、ソート、ページングを1つのパラメータ化SQLヘルパーにまとめた。
 - [x] `executions.ts` をKyselyへ移行した。開始／終了記録、権限別履歴ページング、失敗集計を移行。
 - [x] `adapters.ts` をKyselyへ移行した。公開ID・認証情報の一覧、作成／更新／削除と公開ID再生成を移行。
+- [x] `agents.ts` をKyselyへ移行した。provider／bot参照、権限検証、作成／更新／削除、利用量記録を移行。
 - [ ] 関連データの取得、集計、競合時の処理、削除と cascade、エラーの扱いを SQL と実 DB で確認する。N+1 や意図しない行の重複を避ける。
 - [ ] `bots.ts`、`oauth.ts`、`rate-limits.ts` などの複数操作を伴う処理は、従来の原子性と分離の前提を保つ。ひとつの論理操作の途中で Prisma と Kysely の別トランザクションを混在させない。
 - [ ] `users.ts`、`session.ts`、`authorization.ts`、`thread-oauth.ts`、`oauth-revocation.ts` など認証・認可に関係する操作は条件や失敗時の動作を重点的に確認する。
